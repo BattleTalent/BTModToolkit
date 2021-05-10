@@ -1,0 +1,12 @@
+
+local t = {}
+
+function t:Awake()
+	--print(self)
+end
+
+function t:OnGrab(a, g)
+	--print(a, g)
+end
+
+return Class(nil,nil,t)

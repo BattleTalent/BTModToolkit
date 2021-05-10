@@ -1,0 +1,16 @@
+
+local table = {}
+
+
+function table:OnCollision(collision, pu)
+    if (pu ~= null and pu.unitType == CL.Tagger.Tag.FlyObject) then    
+        local fo = pu
+        if (fo ~= null) then
+            fo:OnCollisionUpdate(collision)
+            fo:OnFinish()
+        end
+    end
+
+end
+
+return Class(nil,nil,table)

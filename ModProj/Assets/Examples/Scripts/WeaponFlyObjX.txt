@@ -1,0 +1,147 @@
+
+local table = {}
+
+--[[
+the ref list:
+// basic shooting
+public Transform shootPosition;
+public string flyobjName;
+public float shootVel = -1;
+
+// aim effect
+public AimWidget aimWidget;
+
+// recoil & anim
+public Animator shootAnim;
+public AnimationCurve recoilCurve;
+public Vector3 recoilVector = new Vector3(0, 0.2f, -1);
+public float recoilRotate = -3;
+public float recoilRandomBias = 3;
+int recoilActId = -1;
+
+// charge
+public bool dontShootOnInstant = false;
+public bool shootOnCharge = true;
+public bool shootOnActivateEnd = false;
+public bool autoSetupBulletIgnore = true;
+]]
+
+
+
+
+
+function table:PlayShootAction()
+	local interact = self.host.interact
+	local shootPosition = self.shootPosition
+	local aimWidget = self.aimWidget
+	local shootVel = self.shootVel or -1
+
+	local ph = interact:GetPrimaryHand()
+	if (ph ~= nil) then
+		ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+	end
+
+
+	local aimDir = shootPosition.forward
+	if (aimWidget ~= nil and aimWidget:GetValidHitLatly()) then
+		local targetPos = aimWidget:GetValidHitPos();
+		aimDir = (targetPos - shootPosition.position).normalized
+	end
+
+	local bulletScript = self.host:CreateFlyObj(shootPosition.name, shootPosition.position, aimDir, shootVel)
+    
+    if (self.shootSound ~= nil) then
+        self.shootSound:PlaySound()
+    end
+
+	if (self.autoSetupBulletIgnore ~= nil) then
+		CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), true)
+
+        CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if (bulletScript ~= null and interact ~= null) then
+                CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), false)
+            end
+        end
+        , 0, 0, 0.2)		
+	end
+
+	if (self.shootAnim ~= nil) then
+		self.shootAnim:Play("Shoot")
+	end
+
+	local recoilCurve = self.recoilCurve
+
+	if (recoilCurve ~= nil and recoilCurve.length > 0) then
+        self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
+        local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
+
+    	local addForce = function (sche, t, s)
+            interact.rb:AddForce(
+            	shootPosition:TransformVector(self.recoilVector) * recoilCurve:Evaluate(t), 
+            	UE.ForceMode.Acceleration)
+            interact.rb:AddRelativeTorque(
+            	UE.Vector3(self.recoilRotate, bias, 0), 
+            	UE.ForceMode.Impulse)
+        end
+
+        self.recoilActId = Scheduler.Create(self.host, addForce, 0, recoilCurve.keys[recoilCurve.length - 1].time).actionId
+	end
+
+    interact:CostDurability()
+    self.shootTime = UE.Time.time
+
+    return bulletScript
+end
+
+
+
+
+function table:UpdateSkill()
+	local shootInterval = self.shootInterval or 0.1
+	local st = self.shootTime or 0
+	local ct = UE.Time.time
+	if ct - st < shootInterval then
+		return
+	end	
+	if (self.dontShootOnInstant == nil) then
+		self:PlayShootAction()
+	end
+end
+
+
+
+
+function table:OnChargeRelease()
+	if (self.shootOnCharge ~= nil) then
+		self:PlayShootAction()
+	end
+end
+
+
+
+
+function table:OnActivateEnd()
+	if (self.shootOnActivateEnd ~= nil) then
+		self:PlayShootAction()
+	end
+end
+
+
+
+
+function table:OnGrab(attach, isGrabbed)
+	if (self.aimWidget ~= nil) then
+		self.aimWidget.gameObject:SetActive(isGrabbed)
+		if (isGrabbed and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim")) then
+			self.aimWidget.enabled = true
+		else
+			self.aimWidget.enabled = false
+		end
+	end
+end
+
+
+
+
+return Class(nil,nil,table)
