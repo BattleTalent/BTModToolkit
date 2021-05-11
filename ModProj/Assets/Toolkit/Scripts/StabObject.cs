@@ -37,7 +37,7 @@ namespace CrossLink
             [Tooltip("stabbed slide distance, should be between min and max, the smaller the deeper")]
             public float stabTie = -0.12f;
             [Tooltip("detemine how precise the direction you stab in, 0 means super easy, 1 means super hard")]
-            public float stabDot = -0.5f;
+            public float stabDot = 0.5f;
             [Tooltip("detemine how fast the weapon should have, it's a sqrt number, if you want it to be 4, you should fill in 4x4=16")]
             public float stabHandVelSqrtRequire = 3.5f * 3.5f;
             [Tooltip("detemine how slick it's. the higher the slicker")]
