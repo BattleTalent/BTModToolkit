@@ -222,7 +222,7 @@ Lua Host Classes</h4>
 <h1><a class="anchor" id="autotoc_md18"></a>
 Coding Examples</h1>
 <h4><a class="anchor" id="autotoc_md19"></a>
-tick a function</h4>
+tick a function, update at 0.1 second intervals within 10 seconds, and execute after 0.2 seconds</h4>
 <pre class="fragment">local scheId = CL.Scheduler.Create(target,
 function(sche, t, s)
     local progress = t/s
@@ -277,7 +277,7 @@ check npc's hp</h4>
     end     
 end
 </pre><h4><a class="anchor" id="autotoc_md23"></a>
-apply hit scan(in C#), raycast with the weapon's direction then apply hitscan dmg</h4>
+apply hit scan(in C#), raycast then apply hitscan damage to target, and using specific hitinfo as damage source</h4>
 <pre class="fragment">if (Physics.SphereCast(interact.trans.position +
         interact.trans.forward * slashDetectOffset, 0.2f,
         interact.trans.forward,
@@ -297,7 +297,7 @@ apply hit scan(in C#), raycast with the weapon's direction then apply hitscan dm
         }                
 }
 </pre><h4><a class="anchor" id="autotoc_md24"></a>
-search enemies around you(in C#), the value of paramter camp is only "Good" and "Bad"</h4>
+search enemies around you(in C#), the value of camp is either "Good"(friend) or "Bad"(enemy)</h4>
 <pre class="fragment">static public AIProxy GetCloestTarget(Transform self, string camp, bool goodRelate = true, bool includeDown = false)
 {
         AIProxy target = null;

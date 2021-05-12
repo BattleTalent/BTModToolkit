@@ -165,7 +165,7 @@ For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event in
 
 
 
-#### tick a function
+#### tick a function, update at 0.1 second intervals within 10 seconds, and execute after 0.2 seconds
 
 	local scheId = CL.Scheduler.Create(target,
 	function(sche, t, s)
@@ -226,7 +226,7 @@ For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event in
 	end
 
 
-#### apply hit scan(in C#), raycast with the weapon's direction then apply hitscan dmg
+#### apply hit scan(in C#), raycast then apply hitscan damage to target, and using specific hitinfo as damage source
 
 	if (Physics.SphereCast(interact.trans.position +
 			interact.trans.forward * slashDetectOffset, 0.2f,
@@ -248,7 +248,7 @@ For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event in
 	}
 
 
-#### search enemies around you(in C#), the value of paramter camp is only "Good" and "Bad"
+#### search enemies around you(in C#), the value of camp is either "Good"(friend) or "Bad"(enemy)
 
 	static public AIProxy GetCloestTarget(Transform self, string camp, bool goodRelate = true, bool includeDown = false)
 	{
