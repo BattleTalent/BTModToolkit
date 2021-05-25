@@ -3,6 +3,8 @@ local table = {}
 
 
 function table:Awake()
+    --system will cache up cols, we should do this manual before disabling collider
+    self.host.interact:GetCols() 
     self.initLocalScale = self.blade.localScale
     self.blade.localScale = UE.Vector3.zero
     self.blade.gameObject:SetActive(false)
