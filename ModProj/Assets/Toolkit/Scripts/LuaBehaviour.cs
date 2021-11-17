@@ -21,6 +21,12 @@ namespace CrossLink
         public float value;
     }
 
+    [System.Serializable]
+    public class InjectionString
+    {
+        public string name;
+        public string value;
+    }
 
     [System.Serializable]
     public class LuaScript
@@ -32,6 +38,23 @@ namespace CrossLink
         Injection[] objList;
         [SerializeField]
         InjectionNumber[] numberList;
+        [SerializeField]
+        InjectionString[] stringList;
+
+        public string GetLuaScript()
+        {
+            return luaScript;
+        }
+
+        public void SetLuaScript(string script)
+        {
+            luaScript = script;
+        }
+
+        public InjectionString[] GetStringList()
+        {
+            return stringList;
+        }
     }
 
     public class LuaBehaviour : MonoBehaviour

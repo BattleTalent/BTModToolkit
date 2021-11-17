@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -70,6 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_hand_pose_control-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.HandPoseControl Class Reference</div>  </div>
@@ -83,24 +84,36 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3b9edea5eba5e4eb2dbc2d3a7924f652"><td class="memItemLeft" align="right" valign="top"><a id="a3b9edea5eba5e4eb2dbc2d3a7924f652"></a>
 Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>GetFingerGrabRB</b> ()</td></tr>
 <tr class="separator:a3b9edea5eba5e4eb2dbc2d3a7924f652"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a427ed5380dfdd90b373e75fc99bbb13e"><td class="memItemLeft" align="right" valign="top"><a id="a427ed5380dfdd90b373e75fc99bbb13e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ToOriginalPose</b> ()</td></tr>
-<tr class="separator:a427ed5380dfdd90b373e75fc99bbb13e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f6167c1367538882c9ce6edd4cca222"><td class="memItemLeft" align="right" valign="top"><a id="a4f6167c1367538882c9ce6edd4cca222"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ToGrabPose</b> ()</td></tr>
-<tr class="separator:a4f6167c1367538882c9ce6edd4cca222"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee3c78dea94041d3ade75819b9f7f25c"><td class="memItemLeft" align="right" valign="top"><a id="aee3c78dea94041d3ade75819b9f7f25c"></a>
+Collider&#160;</td><td class="memItemRight" valign="bottom"><b>CheckFingerGrabBoardPhase</b> ()</td></tr>
+<tr class="separator:aee3c78dea94041d3ade75819b9f7f25c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a351a0ff8035bc8f6527f5a4e4f6687d3"><td class="memItemLeft" align="right" valign="top"><a id="a351a0ff8035bc8f6527f5a4e4f6687d3"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>DoFingerGrab</b> ()</td></tr>
 <tr class="separator:a351a0ff8035bc8f6527f5a4e4f6687d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aead3a397a2ce095dc4c2eca31af1c273"><td class="memItemLeft" align="right" valign="top"><a id="aead3a397a2ce095dc4c2eca31af1c273"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFingerFollowSpeed</b> (float weightPerSec)</td></tr>
+<tr class="separator:aead3a397a2ce095dc4c2eca31af1c273"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaebf27fed5dfdb4f8c7662bbc9a2935b"><td class="memItemLeft" align="right" valign="top"><a id="aaebf27fed5dfdb4f8c7662bbc9a2935b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SubmitFingerTarget</b> (int index, float weight, bool ignoreFreeze=false)</td></tr>
+<tr class="separator:aaebf27fed5dfdb4f8c7662bbc9a2935b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaae549e06d8cdba35d45ff8a1ae1bcbb"><td class="memItemLeft" align="right" valign="top"><a id="aaae549e06d8cdba35d45ff8a1ae1bcbb"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFreeze</b> ()</td></tr>
+<tr class="separator:aaae549e06d8cdba35d45ff8a1ae1bcbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16d06f858cba719fdc0bd71f25ed2385"><td class="memItemLeft" align="right" valign="top"><a id="a16d06f858cba719fdc0bd71f25ed2385"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFingerFreeze</b> (bool f)</td></tr>
+<tr class="separator:a16d06f858cba719fdc0bd71f25ed2385"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35b0e79e912b1d73487980db49dd229d"><td class="memItemLeft" align="right" valign="top"><a id="a35b0e79e912b1d73487980db49dd229d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TickUpdate</b> ()</td></tr>
+<tr class="separator:a35b0e79e912b1d73487980db49dd229d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64b6159591e152e4a525042b3ad59e3d"><td class="memItemLeft" align="right" valign="top"><a id="a64b6159591e152e4a525042b3ad59e3d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPose</b> (<a class="el" href="class_cross_link_1_1_hand_pose_preset.html">HandPosePreset</a> preset, float weight, bool ignoreFreeze=false)</td></tr>
+<tr class="separator:a64b6159591e152e4a525042b3ad59e3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6a185a47132af4aa0611fe5c0029a80"><td class="memItemLeft" align="right" valign="top"><a id="ad6a185a47132af4aa0611fe5c0029a80"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPose</b> (List&lt; float &gt; fingerWeights, float weight=1, bool ignoreFreeze=false)</td></tr>
+<tr class="separator:ad6a185a47132af4aa0611fe5c0029a80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4fdb394d8671d3e83bb23847936de675"><td class="memItemLeft" align="right" valign="top"><a id="a4fdb394d8671d3e83bb23847936de675"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPose</b> (float weight)</td></tr>
 <tr class="separator:a4fdb394d8671d3e83bb23847936de675"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a73c123801f2170450093f8264bf5c7d1"><td class="memItemLeft" align="right" valign="top"><a id="a73c123801f2170450093f8264bf5c7d1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPose</b> (List&lt; float &gt; fingerWeights, float weight=1)</td></tr>
-<tr class="separator:a73c123801f2170450093f8264bf5c7d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaafeeeb5f4d83467dc8fc40f4d8b4524"><td class="memItemLeft" align="right" valign="top"><a id="aaafeeeb5f4d83467dc8fc40f4d8b4524"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPose</b> (<a class="el" href="class_cross_link_1_1_hand_pose_preset.html">HandPosePreset</a> preset, float weight)</td></tr>
-<tr class="separator:aaafeeeb5f4d83467dc8fc40f4d8b4524"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -110,6 +123,33 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:aaf38ddb09d86c1766b4c42d005360f06"><td class="memItemLeft" align="right" valign="top"><a id="aaf38ddb09d86c1766b4c42d005360f06"></a>
 RootMotion.FinalIK.HandPoser&#160;</td><td class="memItemRight" valign="bottom"><b>handPoser</b></td></tr>
 <tr class="separator:aaf38ddb09d86c1766b4c42d005360f06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a671d213288a5f7bedad597bf17885ba4"><td class="memItemLeft" align="right" valign="top"><a id="a671d213288a5f7bedad597bf17885ba4"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>ThumbFinger</b> = 0</td></tr>
+<tr class="separator:a671d213288a5f7bedad597bf17885ba4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49e70a582390a392db3cf2637b8eaac3"><td class="memItemLeft" align="right" valign="top"><a id="a49e70a582390a392db3cf2637b8eaac3"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>IndexFinger</b> = 1</td></tr>
+<tr class="separator:a49e70a582390a392db3cf2637b8eaac3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2aff495ecf9f9ec4223b941e6af736b8"><td class="memItemLeft" align="right" valign="top"><a id="a2aff495ecf9f9ec4223b941e6af736b8"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>MiddleFinger</b> = 2</td></tr>
+<tr class="separator:a2aff495ecf9f9ec4223b941e6af736b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac05751c723c79116ef9eceb0d2f0fd18"><td class="memItemLeft" align="right" valign="top"><a id="ac05751c723c79116ef9eceb0d2f0fd18"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>RingFinger</b> = 3</td></tr>
+<tr class="separator:ac05751c723c79116ef9eceb0d2f0fd18"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac63e54a62b43725845a1eae8c6de6f82"><td class="memItemLeft" align="right" valign="top"><a id="ac63e54a62b43725845a1eae8c6de6f82"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>PinkieFinger</b> = 4</td></tr>
+<tr class="separator:ac63e54a62b43725845a1eae8c6de6f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa3926ff2c1d9e69a1c80fb209e9b65a"><td class="memItemLeft" align="right" valign="top"><a id="aaa3926ff2c1d9e69a1c80fb209e9b65a"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>FastWeightSpeed</b> = 12f</td></tr>
+<tr class="separator:aaa3926ff2c1d9e69a1c80fb209e9b65a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4fc95f12f8e9fb99cb5c924c7e1450ba"><td class="memItemLeft" align="right" valign="top"><a id="a4fc95f12f8e9fb99cb5c924c7e1450ba"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>NormalWeightSpeed</b> = 5f</td></tr>
+<tr class="separator:a4fc95f12f8e9fb99cb5c924c7e1450ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9af61acab6c30d6e1a35a62f0b12fd63"><td class="memItemLeft" align="right" valign="top"><a id="a9af61acab6c30d6e1a35a62f0b12fd63"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>SlowWeightSpeed</b> = 2f</td></tr>
+<tr class="separator:a9af61acab6c30d6e1a35a62f0b12fd63"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

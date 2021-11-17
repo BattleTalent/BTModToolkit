@@ -1,0 +1,188 @@
+
+local TowerBase = {
+    }
+
+
+function TowerBase:TryTransformation()
+    self.timerId = CL.Scheduler.RemoveSchedule(self.timerId)
+    self.timerId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            local isGround = self.host.interact:CheckGrounded(0.5)
+            if isGround then
+                if self.halfWidth and self:CheckSpace(self.halfWidth) then
+                    --expression: sound, animation and so on.
+                    self:Transformation()
+                else
+                    self:Reset()
+                end
+                self.timerId = CL.Scheduler.RemoveSchedule(self.timerId)
+            end
+        end
+    , 1, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function TowerBase:CheckSpace(halfWidth)
+    local offsets = {
+            [1] = UE.Vector3(halfWidth, 0.1, halfWidth),            
+            [2] = UE.Vector3(halfWidth, 0.1, -halfWidth),
+            [3] = UE.Vector3(-halfWidth, 0.1, halfWidth),
+            [4] = UE.Vector3(-halfWidth, 0.1, -halfWidth),
+
+        }
+    for i = 1, 4 do
+        local isHit, raycastHit = UE.Physics.SphereCast(self.host.interact.trans.position + offsets[i], 0.04, UE.Vector3.down, 0.2, CL.LayerDefine.EnvLayerMask.value)
+        if not isHit then
+            return false
+        end
+    end
+    
+    return true
+end
+
+
+function TowerBase:Transformation()
+    self.animTimerId = CL.Scheduler.RemoveSchedule(self.animTimerId)
+    
+    self.modelTrans.gameObject:SetActive(true)
+    self.dModelTrans.gameObject:SetActive(false)
+    
+    self.modelTrans.rotation = UE.Quaternion.LookRotation(UE.Vector3.forward)
+    self.modelTrans.localScale = UE.Vector3.zero
+    
+    local rb = self.host.gameObject:GetComponent("Rigidbody")
+    rb.constraints = UE.RigidbodyConstraints.FreezeRotation
+    
+    CL.TransformHelper.SetLayerAll(self.host.interact.trans, CL.LayerDefine.EnvLayer.value)
+    self.animTimerId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            local scale = CL.EasingEquations.EaseOutElastic(0, 1, t)
+            scale = scale - scale % 0.01
+            self.modelTrans.localScale = UE.Vector3(scale, scale, scale)
+        end
+    , UE.Time.unscaledDeltaTime, 1)
+    :SetOnStop(
+        function()
+            self:StartUpdate()
+            self:OnTransformation()
+        end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function TowerBase:OnTransformation()
+    local rb = self.host.gameObject:GetComponent("Rigidbody")
+    rb.mass = 60
+end
+
+function TowerBase:UndoTransformation()
+    self.undoTimerId = CL.Scheduler.RemoveSchedule(self.undoTimerId)
+    
+    self.undoTimerId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            local scale = CL.EasingEquations.EaseOutBack(0, 1, (1-t*2))
+            scale = scale - scale % 0.01
+            self.modelTrans.localScale = UE.Vector3(scale, scale, scale)
+        end
+    , UE.Time.unscaledDeltaTime, 0.5)
+    :SetOnStop(
+        function()
+            self:OnUndoTransformation()
+            local rb = self.host.gameObject:GetComponent("Rigidbody")
+            rb.constraints = UE.RigidbodyConstraints.None
+            self.modelTrans.gameObject:SetActive(false)
+            self.dModelTrans.gameObject:SetActive(true)
+            
+            CL.TransformHelper.SetLayerAll(self.host.interact.trans, CL.LayerDefine.InteractLayer.value)
+            self:Reset()
+            
+            self.host.interact:AddForce(3 * UE.Vector3.up, UE.ForceMode.VelocityChange)
+        end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function TowerBase:OnUndoTransformation()
+    local rb = self.host.gameObject:GetComponent("Rigidbody")
+    rb.mass = 5
+end
+
+function TowerBase:StartUpdate()
+
+end
+
+function TowerBase:Reset()
+
+end
+
+function TowerBase:SearchTarget()
+    local target = nil
+    target = CL.AIProxy.GetCloestTarget(self.host.interact.trans, CL.AIProxy.CampBad)
+    if target then
+        local targetTrans = target:GetMuscle(CL.RagdollBoneInfo.Spine).rbTrans
+        
+        if not self:ChackAttackCondition() then
+            return nil
+        end
+        return targetTrans
+    end
+    return nil
+end
+
+function TowerBase:ChackAttackCondition()
+    --rewrite this function, ray check and so on.
+    return true
+end
+
+
+function TowerBase:BodyRotateTo(bodyTrans, position, rotSpeed)
+    local dir = position - bodyTrans.position
+    local euler = UE.Quaternion.LookRotation(dir).eulerAngles
+    
+    local angle = bodyTrans.eulerAngles.y - euler.y
+    if angle < 0 then
+        angle = angle + 360
+    end
+    if angle > rotSpeed and angle < 180 then
+        bodyTrans:Rotate(0, -rotSpeed, 0)
+        self:OnBodyRotate()
+    elseif angle > 180 and angle < 360 - rotSpeed then
+        bodyTrans:Rotate(0, rotSpeed, 0)
+        self:OnBodyRotate()
+    end
+end
+
+function TowerBase:OnBodyRotate()
+    
+end
+
+function TowerBase:GunRotateTo(gunTrans, position, rotSpeed, maxAngle, minAngle)
+    local dir = position - gunTrans.position
+    local eulerTarget = UE.Quaternion.LookRotation(dir).eulerAngles
+    
+    local worldEuler = gunTrans.eulerAngles
+    local localEuler = gunTrans.localEulerAngles
+    
+    local angle = gunTrans.eulerAngles.x - eulerTarget.x
+    if angle < 0 then
+        angle = angle + 360
+    end
+    if angle > rotSpeed and angle < 180 then
+        gunTrans:Rotate(-rotSpeed, 0, 0)
+    elseif angle > 180 and angle < 360 - rotSpeed then
+        gunTrans:Rotate(rotSpeed, 0, 0)
+    end
+    
+    local euler = gunTrans.localEulerAngles
+    if euler.x > 180 then
+        euler.x = euler.x - 360
+    end
+    if euler.x > maxAngle then
+        euler.x = maxAngle
+    end
+    if euler.x < minAngle then
+        euler.x = minAngle
+    end
+    
+    gunTrans.localEulerAngles = UE.Vector3(euler.x, localEuler.y, localEuler.z)
+end
+
+return Class(nil,nil,TowerBase)

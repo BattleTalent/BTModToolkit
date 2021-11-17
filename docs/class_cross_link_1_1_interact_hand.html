@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -85,6 +85,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a598a78fb6289f0502f5da75ef15d5a13"><td class="memItemLeft" align="right" valign="top"><a id="a598a78fb6289f0502f5da75ef15d5a13"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>CheckHandConnection</b> ()</td></tr>
 <tr class="separator:a598a78fb6289f0502f5da75ef15d5a13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e45fca7c6c986d922ffbdab8d0cbbbd"><td class="memItemLeft" align="right" valign="top"><a id="a9e45fca7c6c986d922ffbdab8d0cbbbd"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>CheckAccHit</b> (Vector3 checkDir, int num)</td></tr>
+<tr class="separator:a9e45fca7c6c986d922ffbdab8d0cbbbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfda6ddb956ae339f4189d0a6e6a59c9"><td class="memItemLeft" align="right" valign="top"><a id="abfda6ddb956ae339f4189d0a6e6a59c9"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetLocalHandOffset</b> ()</td></tr>
+<tr class="separator:abfda6ddb956ae339f4189d0a6e6a59c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a561af31df5237fab90f8806c868677e1"><td class="memItemLeft" align="right" valign="top"><a id="a561af31df5237fab90f8806c868677e1"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetTrackerLocalPos</b> ()</td></tr>
+<tr class="separator:a561af31df5237fab90f8806c868677e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7c9a9b8f47aa1e4e98cc7f049521a581"><td class="memItemLeft" align="right" valign="top"><a id="a7c9a9b8f47aa1e4e98cc7f049521a581"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandIndex</b> ()</td></tr>
 <tr class="separator:a7c9a9b8f47aa1e4e98cc7f049521a581"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -94,6 +103,9 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandIndex</b> ()</t
 <tr class="memitem:a35208e1c975906f77d054b93124f63e0"><td class="memItemLeft" align="right" valign="top"><a id="a35208e1c975906f77d054b93124f63e0"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandHeadOffset</b> ()</td></tr>
 <tr class="separator:a35208e1c975906f77d054b93124f63e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b7dddb96dc169e09bdd86edeb36c9cd"><td class="memItemLeft" align="right" valign="top"><a id="a8b7dddb96dc169e09bdd86edeb36c9cd"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetTearVec</b> ()</td></tr>
+<tr class="separator:a8b7dddb96dc169e09bdd86edeb36c9cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad687c2c6ab12e773ae8e6d2e014b70c1"><td class="memItemLeft" align="right" valign="top"><a id="ad687c2c6ab12e773ae8e6d2e014b70c1"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetArmTargetOffset</b> ()</td></tr>
 <tr class="separator:ad687c2c6ab12e773ae8e6d2e014b70c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -106,24 +118,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandOffsetOnPlatfo
 <tr class="memitem:a80be78c84ef77ea33237d0f2200052a5"><td class="memItemLeft" align="right" valign="top"><a id="a80be78c84ef77ea33237d0f2200052a5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsTriggering</b> ()</td></tr>
 <tr class="separator:a80be78c84ef77ea33237d0f2200052a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abfda6ddb956ae339f4189d0a6e6a59c9"><td class="memItemLeft" align="right" valign="top"><a id="abfda6ddb956ae339f4189d0a6e6a59c9"></a>
-Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetLocalHandOffset</b> ()</td></tr>
-<tr class="separator:abfda6ddb956ae339f4189d0a6e6a59c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a561af31df5237fab90f8806c868677e1"><td class="memItemLeft" align="right" valign="top"><a id="a561af31df5237fab90f8806c868677e1"></a>
-Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetTrackerLocalPos</b> ()</td></tr>
-<tr class="separator:a561af31df5237fab90f8806c868677e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8a627df0feb477f51fad1e95c1894f8"><td class="memItemLeft" align="right" valign="top"><a id="af8a627df0feb477f51fad1e95c1894f8"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsBan</b> ()</td></tr>
 <tr class="separator:af8a627df0feb477f51fad1e95c1894f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91f073f2f500b2301f06a1bf2506fa6b"><td class="memItemLeft" align="right" valign="top"><a id="a91f073f2f500b2301f06a1bf2506fa6b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Ban</b> (bool b)</td></tr>
 <tr class="separator:a91f073f2f500b2301f06a1bf2506fa6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4224c35ad4ce37231555294d8cc8b3b0"><td class="memItemLeft" align="right" valign="top"><a id="a4224c35ad4ce37231555294d8cc8b3b0"></a>
-<a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetLatestLegalAttachObj</b> ()</td></tr>
-<tr class="separator:a4224c35ad4ce37231555294d8cc8b3b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adcbf9f38c2d6f088633a71bd970e0dca"><td class="memItemLeft" align="right" valign="top"><a id="adcbf9f38c2d6f088633a71bd970e0dca"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheckAttachLegal</b> (<a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a> att)</td></tr>
-<tr class="separator:adcbf9f38c2d6f088633a71bd970e0dca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a640614b2f2fae261b942562aa9888292"><td class="memItemLeft" align="right" valign="top"><a id="a640614b2f2fae261b942562aa9888292"></a>
+<a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetLatestLegalAttachObj</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
+<tr class="separator:a640614b2f2fae261b942562aa9888292"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d955f7977c2b77d5e90f40086a18a4f"><td class="memItemLeft" align="right" valign="top"><a id="a1d955f7977c2b77d5e90f40086a18a4f"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheckAttachLegal</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand, <a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a> att)</td></tr>
+<tr class="separator:a1d955f7977c2b77d5e90f40086a18a4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab5dca043ec94c3159af4cdd51c73631"><td class="memItemLeft" align="right" valign="top"><a id="aab5dca043ec94c3159af4cdd51c73631"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAttachHint</b> (<a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a> att)</td></tr>
 <tr class="separator:aab5dca043ec94c3159af4cdd51c73631"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,27 +148,36 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>CallAndGrab</b> (<a c
 <tr class="memitem:a2a24bee7fada988d2f2df91010c59889"><td class="memItemLeft" align="right" valign="top"><a id="a2a24bee7fada988d2f2df91010c59889"></a>
 Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>GetFingerGrabObj</b> ()</td></tr>
 <tr class="separator:a2a24bee7fada988d2f2df91010c59889"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a515478a8cf14afb39969718dacb6a60f"><td class="memItemLeft" align="right" valign="top"><a id="a515478a8cf14afb39969718dacb6a60f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFingerGrabObj</b> (Rigidbody fb)</td></tr>
+<tr class="separator:a515478a8cf14afb39969718dacb6a60f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad12b2d5000203567aaf422b60660dc9e"><td class="memItemLeft" align="right" valign="top"><a id="ad12b2d5000203567aaf422b60660dc9e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFingerGrabRBJoint</b> (ConfigurableJoint j)</td></tr>
+<tr class="separator:ad12b2d5000203567aaf422b60660dc9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a07836889ba0f894aa0e9f382d4896354"><td class="memItemLeft" align="right" valign="top"><a id="a07836889ba0f894aa0e9f382d4896354"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsGrabbing</b> ()</td></tr>
 <tr class="separator:a07836889ba0f894aa0e9f382d4896354"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e93c5e228430cf2cc8c4671e88ec71a"><td class="memItemLeft" align="right" valign="top"><a id="a5e93c5e228430cf2cc8c4671e88ec71a"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>FreeGrab</b> ()</td></tr>
+<tr class="separator:a5e93c5e228430cf2cc8c4671e88ec71a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05015cbfc69fd34a2b6797e77ad37d6d"><td class="memItemLeft" align="right" valign="top"><a id="a05015cbfc69fd34a2b6797e77ad37d6d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ReleaseFingerGrab</b> ()</td></tr>
 <tr class="separator:a05015cbfc69fd34a2b6797e77ad37d6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a419fcb7895ae5a1a5b432bd9b4909178"><td class="memItemLeft" align="right" valign="top"><a id="a419fcb7895ae5a1a5b432bd9b4909178"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetThumbDir</b> ()</td></tr>
+<tr class="separator:a419fcb7895ae5a1a5b432bd9b4909178"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0286db6c60ec6e37eca189ed4261ff7b"><td class="memItemLeft" align="right" valign="top"><a id="a0286db6c60ec6e37eca189ed4261ff7b"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetIndexDir</b> ()</td></tr>
+<tr class="separator:a0286db6c60ec6e37eca189ed4261ff7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47de73cc439723d937815cbca71ad1f7"><td class="memItemLeft" align="right" valign="top"><a id="a47de73cc439723d937815cbca71ad1f7"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandDirection</b> ()</td></tr>
+<tr class="separator:a47de73cc439723d937815cbca71ad1f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15c318ac68517a851c2488d7b2e5ab8c"><td class="memItemLeft" align="right" valign="top"><a id="a15c318ac68517a851c2488d7b2e5ab8c"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetPalmDir</b> ()</td></tr>
 <tr class="separator:a15c318ac68517a851c2488d7b2e5ab8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a00d15168e803860a5beba25b765ceb19"><td class="memItemLeft" align="right" valign="top"><a id="a00d15168e803860a5beba25b765ceb19"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearBareHandPose</b> ()</td></tr>
-<tr class="separator:a00d15168e803860a5beba25b765ceb19"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a235dc86393ea4da9e8ac7bd9a0eb66fa"><td class="memItemLeft" align="right" valign="top"><a id="a235dc86393ea4da9e8ac7bd9a0eb66fa"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>HandAnime</b> (<a class="el" href="class_cross_link_1_1_hand_pose_setup.html">HandPoseSetup</a> pose)</td></tr>
-<tr class="separator:a235dc86393ea4da9e8ac7bd9a0eb66fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a361473f3fca7358d5bc331e1e53e7fa3"><td class="memItemLeft" align="right" valign="top"><a id="a361473f3fca7358d5bc331e1e53e7fa3"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearHandAnime</b> ()</td></tr>
-<tr class="separator:a361473f3fca7358d5bc331e1e53e7fa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af6a48225f25cf9d97ee2e090d9c0bb3c"><td class="memItemLeft" align="right" valign="top"><a id="af6a48225f25cf9d97ee2e090d9c0bb3c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>FistHand</b> (bool f)</td></tr>
-<tr class="separator:af6a48225f25cf9d97ee2e090d9c0bb3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7c9abccc39ff3774d88e04c2fea10a8"><td class="memItemLeft" align="right" valign="top"><a id="ae7c9abccc39ff3774d88e04c2fea10a8"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetGrabDir</b> ()</td></tr>
+<tr class="separator:ae7c9abccc39ff3774d88e04c2fea10a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8515f9e88df4e451bcdc713e8ec32a0c"><td class="memItemLeft" align="right" valign="top"><a id="a8515f9e88df4e451bcdc713e8ec32a0c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> ()</td></tr>
 <tr class="separator:a8515f9e88df4e451bcdc713e8ec32a0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -199,6 +214,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>HapticPulse</b> (floa
 <tr class="memitem:a1674d81537054c38c916903934ab50ed"><td class="memItemLeft" align="right" valign="top"><a id="a1674d81537054c38c916903934ab50ed"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>HapticPulse</b> (AnimationCurve curve, float sec, float strengthLv=1)</td></tr>
 <tr class="separator:a1674d81537054c38c916903934ab50ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac65021bb8641ab7c1e970dfc81f55a11"><td class="memItemLeft" align="right" valign="top"><a id="ac65021bb8641ab7c1e970dfc81f55a11"></a>
+Renderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetGloveRenderers</b> ()</td></tr>
+<tr class="separator:ac65021bb8641ab7c1e970dfc81f55a11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c5a3aa332b938d8467716bb3ba17688"><td class="memItemLeft" align="right" valign="top"><a id="a1c5a3aa332b938d8467716bb3ba17688"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LerpGloveColor</b> (Color c, float lerpTime)</td></tr>
+<tr class="separator:a1c5a3aa332b938d8467716bb3ba17688"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0afb2bbd1e4fd5185237729c64e9a9b4"><td class="memItemLeft" align="right" valign="top"><a id="a0afb2bbd1e4fd5185237729c64e9a9b4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetGloveColor</b> (Color color)</td></tr>
+<tr class="separator:a0afb2bbd1e4fd5185237729c64e9a9b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ccd25953e5f712f8bbf897c9b4c6d38"><td class="memItemLeft" align="right" valign="top"><a id="a1ccd25953e5f712f8bbf897c9b4c6d38"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ToggleGloveColor</b> ()</td></tr>
+<tr class="separator:a1ccd25953e5f712f8bbf897c9b4c6d38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa88aa1aa5232eaa49087ace31bab7753"><td class="memItemLeft" align="right" valign="top"><a id="aa88aa1aa5232eaa49087ace31bab7753"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ShakeGlove</b> (float len)</td></tr>
+<tr class="separator:aa88aa1aa5232eaa49087ace31bab7753"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff26b9b3d8d105c2c7d6d868ddb5e9c6"><td class="memItemLeft" align="right" valign="top"><a id="aff26b9b3d8d105c2c7d6d868ddb5e9c6"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StopGloveShake</b> ()</td></tr>
+<tr class="separator:aff26b9b3d8d105c2c7d6d868ddb5e9c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -223,12 +256,21 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>linkToDevice</b> = fa
 <tr class="memitem:a6f91b799aeb31148e1f23a991978d8f2"><td class="memItemLeft" align="right" valign="top"><a id="a6f91b799aeb31148e1f23a991978d8f2"></a>
 RootMotion.FinalIK.IKSolverVR.Arm&#160;</td><td class="memItemRight" valign="bottom"><b>armIK</b></td></tr>
 <tr class="separator:a6f91b799aeb31148e1f23a991978d8f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a030e1d27c3eee2567edae7cdf7e89f3a"><td class="memItemLeft" align="right" valign="top"><a id="a030e1d27c3eee2567edae7cdf7e89f3a"></a>
+List&lt; <a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>recentlyThrowList</b> = new List&lt;<a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a>&gt;()</td></tr>
+<tr class="separator:a030e1d27c3eee2567edae7cdf7e89f3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ad1cd6867a4b5be309904bb923373b0"><td class="memItemLeft" align="right" valign="top"><a id="a1ad1cd6867a4b5be309904bb923373b0"></a>
+<a class="el" href="class_cross_link_1_1_velocity_calculator.html">VelocityCalculator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>velocityEstimator</b> = new <a class="el" href="class_cross_link_1_1_velocity_calculator.html">VelocityCalculator</a>()</td></tr>
+<tr class="separator:a1ad1cd6867a4b5be309904bb923373b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0ff2886480e48cb43586197f33e6343"><td class="memItemLeft" align="right" valign="top"><a id="ae0ff2886480e48cb43586197f33e6343"></a>
+<a class="el" href="class_cross_link_1_1_v_r_t_k_hand_tracker.html">VRTKHandTracker</a>&#160;</td><td class="memItemRight" valign="bottom"><b>handTracker</b></td></tr>
+<tr class="separator:ae0ff2886480e48cb43586197f33e6343"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6992c56ee3dfdae01294dbc06937cb64"><td class="memItemLeft" align="right" valign="top"><a id="a6992c56ee3dfdae01294dbc06937cb64"></a>
 GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>uiAimer</b></td></tr>
 <tr class="separator:a6992c56ee3dfdae01294dbc06937cb64"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab908bebaa08f2055c81ed47d51668da"><td class="memItemLeft" align="right" valign="top"><a id="aab908bebaa08f2055c81ed47d51668da"></a>
-AudioSource&#160;</td><td class="memItemRight" valign="bottom"><b>windSound</b></td></tr>
-<tr class="separator:aab908bebaa08f2055c81ed47d51668da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad65f42561a04ac4f634ec62bcc390750"><td class="memItemLeft" align="right" valign="top"><a id="ad65f42561a04ac4f634ec62bcc390750"></a>
+<a class="el" href="class_cross_link_1_1_whoosh_sound_controller.html">WhooshSoundController</a>&#160;</td><td class="memItemRight" valign="bottom"><b>soundController</b></td></tr>
+<tr class="separator:ad65f42561a04ac4f634ec62bcc390750"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac944417c79fe63756e3442cf8802c26c"><td class="memItemLeft" align="right" valign="top"><a id="ac944417c79fe63756e3442cf8802c26c"></a>
 <a class="el" href="class_cross_link_1_1_slot_trigger.html">SlotTrigger</a>&#160;</td><td class="memItemRight" valign="bottom"><b>mountHint</b></td></tr>
 <tr class="separator:ac944417c79fe63756e3442cf8802c26c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -247,36 +289,33 @@ ConfigurableJoint&#160;</td><td class="memItemRight" valign="bottom"><b>grabJoin
 <tr class="memitem:a838290eb8c45e9b4d09781a120ff5c68"><td class="memItemLeft" align="right" valign="top"><a id="a838290eb8c45e9b4d09781a120ff5c68"></a>
 <a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>attachHint</b></td></tr>
 <tr class="separator:a838290eb8c45e9b4d09781a120ff5c68"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ad1cd6867a4b5be309904bb923373b0"><td class="memItemLeft" align="right" valign="top"><a id="a1ad1cd6867a4b5be309904bb923373b0"></a>
-<a class="el" href="class_cross_link_1_1_velocity_calculator.html">VelocityCalculator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>velocityEstimator</b> = new <a class="el" href="class_cross_link_1_1_velocity_calculator.html">VelocityCalculator</a>()</td></tr>
-<tr class="separator:a1ad1cd6867a4b5be309904bb923373b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae0ff2886480e48cb43586197f33e6343"><td class="memItemLeft" align="right" valign="top"><a id="ae0ff2886480e48cb43586197f33e6343"></a>
-<a class="el" href="class_cross_link_1_1_v_r_t_k_hand_tracker.html">VRTKHandTracker</a>&#160;</td><td class="memItemRight" valign="bottom"><b>handTracker</b></td></tr>
-<tr class="separator:ae0ff2886480e48cb43586197f33e6343"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a00e719b0e676e44b742fe6303d8d51bf"><td class="memItemLeft" align="right" valign="top"><a id="a00e719b0e676e44b742fe6303d8d51bf"></a>
 <a class="el" href="class_cross_link_1_1_physics_hand.html">PhysicsHand</a>&#160;</td><td class="memItemRight" valign="bottom"><b>physicsHand</b></td></tr>
 <tr class="separator:a00e719b0e676e44b742fe6303d8d51bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35a26e52b49feb1e830a00323fb5ed0d"><td class="memItemLeft" align="right" valign="top"><a id="a35a26e52b49feb1e830a00323fb5ed0d"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>followTarget</b></td></tr>
 <tr class="separator:a35a26e52b49feb1e830a00323fb5ed0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04a2c2978b6d1feb916e44f83d3dff76"><td class="memItemLeft" align="right" valign="top"><a id="a04a2c2978b6d1feb916e44f83d3dff76"></a>
-Transform&#160;</td><td class="memItemRight" valign="bottom"><b>shoulder</b></td></tr>
-<tr class="separator:a04a2c2978b6d1feb916e44f83d3dff76"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4599f2e2d483f228d916c5fb17e461b2"><td class="memItemLeft" align="right" valign="top"><a id="a4599f2e2d483f228d916c5fb17e461b2"></a>
 <a class="el" href="class_cross_link_1_1_hand_pose_control.html">HandPoseControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>handPoseControl</b></td></tr>
 <tr class="separator:a4599f2e2d483f228d916c5fb17e461b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adb21623671184759b7c311b3db471b0f"><td class="memItemLeft" align="right" valign="top"><a id="adb21623671184759b7c311b3db471b0f"></a>
-VRIK&#160;</td><td class="memItemRight" valign="bottom"><b>vrik</b></td></tr>
-<tr class="separator:adb21623671184759b7c311b3db471b0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef1141466fec2d0412747b8568295ed0"><td class="memItemLeft" align="right" valign="top"><a id="aef1141466fec2d0412747b8568295ed0"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>handDir</b></td></tr>
 <tr class="separator:aef1141466fec2d0412747b8568295ed0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e301461eb1f15d7f1bf75fcd9856072"><td class="memItemLeft" align="right" valign="top"><a id="a3e301461eb1f15d7f1bf75fcd9856072"></a>
+Transform&#160;</td><td class="memItemRight" valign="bottom"><b>gemTrans</b></td></tr>
+<tr class="separator:a3e301461eb1f15d7f1bf75fcd9856072"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a157ef1fa193c20d9eb33305b7b450f6f"><td class="memItemLeft" align="right" valign="top"><a id="a157ef1fa193c20d9eb33305b7b450f6f"></a>
 <a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html">VRTKInputDevice</a>&#160;</td><td class="memItemRight" valign="bottom"><b>inputDevice</b></td></tr>
 <tr class="separator:a157ef1fa193c20d9eb33305b7b450f6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3963d210d2c6cb7d143a0e94736375e2"><td class="memItemLeft" align="right" valign="top"><a id="a3963d210d2c6cb7d143a0e94736375e2"></a>
 Dictionary&lt; VRTKInputButton.ButtonType, <a class="el" href="class_cross_link_1_1_v_r_t_k_input_button.html">VRTKInputButton</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>inputs</b> = new Dictionary&lt;VRTKInputButton.ButtonType, <a class="el" href="class_cross_link_1_1_v_r_t_k_input_button.html">VRTKInputButton</a>&gt;()</td></tr>
 <tr class="separator:a3963d210d2c6cb7d143a0e94736375e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c745c49a792f8fb95914c9d157f194b"><td class="memItemLeft" align="right" valign="top"><a id="a7c745c49a792f8fb95914c9d157f194b"></a>
+Color&#160;</td><td class="memItemRight" valign="bottom"><b>gloveLightColor</b> = new Color(0.943f, 0.952f, 0.588f)</td></tr>
+<tr class="separator:a7c745c49a792f8fb95914c9d157f194b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a96cb0958d1e410a968fd32f9bbb48bda"><td class="memItemLeft" align="right" valign="top"><a id="a96cb0958d1e410a968fd32f9bbb48bda"></a>
+Color&#160;</td><td class="memItemRight" valign="bottom"><b>gloveDefaultColor</b> = Color.black</td></tr>
+<tr class="separator:a96cb0958d1e410a968fd32f9bbb48bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -286,11 +325,53 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>HAND_SPEED_FAS
 <tr class="memitem:a4ba6604c4c99655646b958736633b403"><td class="memItemLeft" align="right" valign="top"><a id="a4ba6604c4c99655646b958736633b403"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>HAND_SPEED_HIGHEST</b> = 6</td></tr>
 <tr class="separator:a4ba6604c4c99655646b958736633b403"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7498389eb4a4a7fb929441f23dca4c2e"><td class="memItemLeft" align="right" valign="top"><a id="a7498389eb4a4a7fb929441f23dca4c2e"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>HAND_CALL_CLOSE_DIS</b> = 0.25f</td></tr>
+<tr class="separator:a7498389eb4a4a7fb929441f23dca4c2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31e719ea3bde92efac120f7bd1e3bbf7"><td class="memItemLeft" align="right" valign="top"><a id="a31e719ea3bde92efac120f7bd1e3bbf7"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>HAND_CALL_CLOSE_DIS_SQRT</b> = HAND_CALL_CLOSE_DIS* HAND_CALL_CLOSE_DIS</td></tr>
+<tr class="separator:a31e719ea3bde92efac120f7bd1e3bbf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb6e91b0f098fe08b091d7e0389a3297"><td class="memItemLeft" align="right" valign="top"><a id="afb6e91b0f098fe08b091d7e0389a3297"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>HAND_CALL_AWAY_DIS</b> = 0.5f</td></tr>
+<tr class="separator:afb6e91b0f098fe08b091d7e0389a3297"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80736b074461a357a8c8874c0481c028"><td class="memItemLeft" align="right" valign="top"><a id="a80736b074461a357a8c8874c0481c028"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>HAND_CALL_AWAY_DIS_SQRT</b> = HAND_CALL_AWAY_DIS * HAND_CALL_AWAY_DIS</td></tr>
+<tr class="separator:a80736b074461a357a8c8874c0481c028"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec78e6ff77de28ac272712484f466cd5"><td class="memItemLeft" align="right" valign="top"><a id="aec78e6ff77de28ac272712484f466cd5"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>GRAB_DIS</b> = 0.2f</td></tr>
+<tr class="separator:aec78e6ff77de28ac272712484f466cd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38ea6aaaa8a60867740fea4b1ab882e3"><td class="memItemLeft" align="right" valign="top"><a id="a38ea6aaaa8a60867740fea4b1ab882e3"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>GRAB_DIS_SQRT</b> = GRAB_DIS * GRAB_DIS</td></tr>
+<tr class="separator:a38ea6aaaa8a60867740fea4b1ab882e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8901aab6dc763b1ec85897d8a882164c"><td class="memItemLeft" align="right" valign="top"><a id="a8901aab6dc763b1ec85897d8a882164c"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>FREE_GRAB_DIS</b> = 0.05f</td></tr>
+<tr class="separator:a8901aab6dc763b1ec85897d8a882164c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71f368ad53eacf8c8b676bee8e6cc15b"><td class="memItemLeft" align="right" valign="top"><a id="a71f368ad53eacf8c8b676bee8e6cc15b"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>FREE_GRAB_DIS_SQRT</b> = FREE_GRAB_DIS * FREE_GRAB_DIS</td></tr>
+<tr class="separator:a71f368ad53eacf8c8b676bee8e6cc15b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3a6493ecadc4174ffbeaf9958020d77"><td class="memItemLeft" align="right" valign="top"><a id="ab3a6493ecadc4174ffbeaf9958020d77"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>AccListLen</b> = 16</td></tr>
+<tr class="separator:ab3a6493ecadc4174ffbeaf9958020d77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7998c8433faaf1e7b39e2446929f296f"><td class="memItemLeft" align="right" valign="top"><a id="a7998c8433faaf1e7b39e2446929f296f"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>AccCheck100ms</b> = (int)(0.1f / AccUpdateInterval)</td></tr>
+<tr class="separator:a7998c8433faaf1e7b39e2446929f296f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a552d256f7b2787306418097c77414e87"><td class="memItemLeft" align="right" valign="top"><a id="a552d256f7b2787306418097c77414e87"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>AccCheck200ms</b> = (int)(0.2f / AccUpdateInterval)</td></tr>
+<tr class="separator:a552d256f7b2787306418097c77414e87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1dc15726f19214241d24e495f9a3435"><td class="memItemLeft" align="right" valign="top"><a id="ac1dc15726f19214241d24e495f9a3435"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>AccCheck300ms</b> = (int)(0.3f / AccUpdateInterval)</td></tr>
+<tr class="separator:ac1dc15726f19214241d24e495f9a3435"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0fb00e5b754edaf02a1f32f39acfa737"><td class="memItemLeft" align="right" valign="top"><a id="a0fb00e5b754edaf02a1f32f39acfa737"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>AccCheck400ms</b> = (int)(0.4f / AccUpdateInterval)</td></tr>
+<tr class="separator:a0fb00e5b754edaf02a1f32f39acfa737"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5777c98e45d06afad0939bbeedcf1bed"><td class="memItemLeft" align="right" valign="top"><a id="a5777c98e45d06afad0939bbeedcf1bed"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>AccCheck500ms</b> = (int)(0.5f / AccUpdateInterval)</td></tr>
+<tr class="separator:a5777c98e45d06afad0939bbeedcf1bed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d08805db462710dc836b4299f20ed51"><td class="memItemLeft" align="right" valign="top"><a id="a7d08805db462710dc836b4299f20ed51"></a>
 static int&#160;</td><td class="memItemRight" valign="bottom"><b>IsCheckUI</b> = 0</td></tr>
 <tr class="separator:a7d08805db462710dc836b4299f20ed51"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8120e196952adf329db7f3f6d18d6a71"><td class="memItemLeft" align="right" valign="top"><a id="a8120e196952adf329db7f3f6d18d6a71"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>CallbackTime</b> = 1.2f</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>CallbackTime</b> = 0.3f</td></tr>
 <tr class="separator:a8120e196952adf329db7f3f6d18d6a71"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->

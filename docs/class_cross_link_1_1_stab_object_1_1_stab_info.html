@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -71,6 +71,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_stab_object_1_1_stab_info-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.StabObject.StabInfo Class Reference</div>  </div>
@@ -88,9 +89,15 @@ Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetStabDir</b> ()<
 <tr class="memitem:a6eaf6f6302770c4ac42daa2984605b50"><td class="memItemLeft" align="right" valign="top"><a id="a6eaf6f6302770c4ac42daa2984605b50"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateStabSpring</b> (float stabberProjDis, float stabMin, float stabMax)</td></tr>
 <tr class="separator:a6eaf6f6302770c4ac42daa2984605b50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa01917c00a7f36325d05bb8742ebb36b"><td class="memItemLeft" align="right" valign="top"><a id="aa01917c00a7f36325d05bb8742ebb36b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateStabPosEvent</b> (float curProjDis)</td></tr>
+<tr class="separator:aa01917c00a7f36325d05bb8742ebb36b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:a680cf13ed1b2e771e82fdd2fb2fa2247"><td class="memItemLeft" align="right" valign="top"><a id="a680cf13ed1b2e771e82fdd2fb2fa2247"></a>
+<a class="el" href="class_cross_link_1_1_stab_object.html">StabObject</a>&#160;</td><td class="memItemRight" valign="bottom"><b>so</b></td></tr>
+<tr class="separator:a680cf13ed1b2e771e82fdd2fb2fa2247"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a03efa0bab72a71b49c915b046ce9af34"><td class="memItemLeft" align="right" valign="top"><a id="a03efa0bab72a71b49c915b046ce9af34"></a>
 ConfigurableJoint&#160;</td><td class="memItemRight" valign="bottom"><b>joint</b></td></tr>
 <tr class="separator:a03efa0bab72a71b49c915b046ce9af34"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -142,6 +149,15 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisRes
 <tr class="memitem:ab583a210b5f1246d4185bdff9646885e"><td class="memItemLeft" align="right" valign="top"><a id="ab583a210b5f1246d4185bdff9646885e"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisRestDamper</b> = 1000</td></tr>
 <tr class="separator:ab583a210b5f1246d4185bdff9646885e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3e50e2abf69f70b9074b59f928ca525"><td class="memItemLeft" align="right" valign="top"><a id="ae3e50e2abf69f70b9074b59f928ca525"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>StabPosUpdateInterval</b> = 0.1f</td></tr>
+<tr class="separator:ae3e50e2abf69f70b9074b59f928ca525"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:aa987152e49fdf94b9eb664b4e95675c7"><td class="memItemLeft" align="right" valign="top"><a id="aa987152e49fdf94b9eb664b4e95675c7"></a>
+System.Action&lt; float, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StabPosUpdateEvent</b></td></tr>
+<tr class="separator:aa987152e49fdf94b9eb664b4e95675c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

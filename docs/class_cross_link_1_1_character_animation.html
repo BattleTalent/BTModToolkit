@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -70,6 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_character_animation-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -81,12 +82,33 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a1746bcbb1be35fc09870437a2ec5431d"><td class="memItemLeft" align="right" valign="top"><a id="a1746bcbb1be35fc09870437a2ec5431d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>EyesOn</b> (Transform target)</td></tr>
+<tr class="separator:a1746bcbb1be35fc09870437a2ec5431d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25ec12501a7b7d1c0a7d985d49f84d94"><td class="memItemLeft" align="right" valign="top"><a id="a25ec12501a7b7d1c0a7d985d49f84d94"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateAimPos</b> ()</td></tr>
+<tr class="separator:a25ec12501a7b7d1c0a7d985d49f84d94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab44ef4f6cfa47bb5becaaf102665b158"><td class="memItemLeft" align="right" valign="top"><a id="ab44ef4f6cfa47bb5becaaf102665b158"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAimPos</b> (Vector3 aimPos)</td></tr>
+<tr class="separator:ab44ef4f6cfa47bb5becaaf102665b158"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc59167f1a3ad142155af176d32e633f"><td class="memItemLeft" align="right" valign="top"><a id="adc59167f1a3ad142155af176d32e633f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearAimPos</b> ()</td></tr>
+<tr class="separator:adc59167f1a3ad142155af176d32e633f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab70f3d8ec2ea70393103a1b6542749cd"><td class="memItemLeft" align="right" valign="top"><a id="ab70f3d8ec2ea70393103a1b6542749cd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayFacial</b> (string facial)</td></tr>
+<tr class="separator:ab70f3d8ec2ea70393103a1b6542749cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec335fa512986d97bf433424c0eb9b3e"><td class="memItemLeft" align="right" valign="top"><a id="aec335fa512986d97bf433424c0eb9b3e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFacial</b> (string facial, float percent=1)</td></tr>
+<tr class="separator:aec335fa512986d97bf433424c0eb9b3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9c9349bc135127c3698ffdf660648d5"><td class="memItemLeft" align="right" valign="top"><a id="af9c9349bc135127c3698ffdf660648d5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableEyeTrail</b> (bool e)</td></tr>
 <tr class="separator:af9c9349bc135127c3698ffdf660648d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a472938b0432e48e6c57832e4ca7aedff"><td class="memItemLeft" align="right" valign="top"><a id="a472938b0432e48e6c57832e4ca7aedff"></a>
 AnimationClip&#160;</td><td class="memItemRight" valign="bottom"><b>GetClip</b> (string anim)</td></tr>
 <tr class="separator:a472938b0432e48e6c57832e4ca7aedff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade54919def61d73afce455183ca7400c"><td class="memItemLeft" align="right" valign="top"><a id="ade54919def61d73afce455183ca7400c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateDyBones</b> (float dt)</td></tr>
+<tr class="separator:ade54919def61d73afce455183ca7400c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abbbf9172b99217ab9c9181013292740e"><td class="memItemLeft" align="right" valign="top"><a id="abbbf9172b99217ab9c9181013292740e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetParams</b> ()</td></tr>
 <tr class="separator:abbbf9172b99217ab9c9181013292740e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -99,12 +121,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>PlayRandom</b> (strin
 <tr class="memitem:ad7080640b4acbb57f98153ea91d2c4ae"><td class="memItemLeft" align="right" valign="top"><a id="ad7080640b4acbb57f98153ea91d2c4ae"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetCurrentAnimLength</b> ()</td></tr>
 <tr class="separator:ad7080640b4acbb57f98153ea91d2c4ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abde34410919ecf66a366bc8fec9b35a4"><td class="memItemLeft" align="right" valign="top"><a id="abde34410919ecf66a366bc8fec9b35a4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetState</b> (float crossFade=0.15f)</td></tr>
-<tr class="separator:abde34410919ecf66a366bc8fec9b35a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aefeb5d527e79a9d2e208555f7bb5d869"><td class="memItemLeft" align="right" valign="top"><a id="aefeb5d527e79a9d2e208555f7bb5d869"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayState</b> (string name, float crossFade=0.2f, int layer=0)</td></tr>
-<tr class="separator:aefeb5d527e79a9d2e208555f7bb5d869"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c90d49941d0462e5ed068963af77701"><td class="memItemLeft" align="right" valign="top"><a id="a2c90d49941d0462e5ed068963af77701"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetState</b> (float crossFade=DefaultCrossFadeSec)</td></tr>
+<tr class="separator:a2c90d49941d0462e5ed068963af77701"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93226bc9fbe119d5b3c4be06e46fe54d"><td class="memItemLeft" align="right" valign="top"><a id="a93226bc9fbe119d5b3c4be06e46fe54d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayState</b> (string name, float crossFade=DefaultCrossFadeSec, int layer=0)</td></tr>
+<tr class="separator:a93226bc9fbe119d5b3c4be06e46fe54d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa2ce6f8128b4cb7bc5435282f844f1cf"><td class="memItemLeft" align="right" valign="top"><a id="aa2ce6f8128b4cb7bc5435282f844f1cf"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAnimSpeed</b> (float s)</td></tr>
 <tr class="separator:aa2ce6f8128b4cb7bc5435282f844f1cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -138,12 +160,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableGrounder</b> (b
 <tr class="memitem:a2dddffe36cb889bad415b5d05bbe7e29"><td class="memItemLeft" align="right" valign="top"><a id="a2dddffe36cb889bad415b5d05bbe7e29"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDyBonesEnable</b> (bool en)</td></tr>
 <tr class="separator:a2dddffe36cb889bad415b5d05bbe7e29"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a73599e0d7543b548c6ee67bef7c2d7c8"><td class="memItemLeft" align="right" valign="top"><a id="a73599e0d7543b548c6ee67bef7c2d7c8"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>OpenMesh</b> (bool o)</td></tr>
-<tr class="separator:a73599e0d7543b548c6ee67bef7c2d7c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c1975e63b5a43368d0d2a56c395f229"><td class="memItemLeft" align="right" valign="top"><a id="a6c1975e63b5a43368d0d2a56c395f229"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableLod</b> (bool elod1)</td></tr>
 <tr class="separator:a6c1975e63b5a43368d0d2a56c395f229"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a41428ad4055da626bd11fbf6e6c0db"><td class="memItemLeft" align="right" valign="top"><a id="a9a41428ad4055da626bd11fbf6e6c0db"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetSkinnedMeshOffScreenUpdate</b> (bool u)</td></tr>
+<tr class="separator:a9a41428ad4055da626bd11fbf6e6c0db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a285b7ae82e53d21b387bb243d46676bd"><td class="memItemLeft" align="right" valign="top"><a id="a285b7ae82e53d21b387bb243d46676bd"></a>
+Bounds&#160;</td><td class="memItemRight" valign="bottom"><b>GetBounds</b> ()</td></tr>
+<tr class="separator:a285b7ae82e53d21b387bb243d46676bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -177,12 +202,27 @@ Transform&#160;</td><td class="memItemRight" valign="bottom"><b>lookat</b></td><
 <tr class="memitem:aa263b03efccf1acd1f132af6b0919056"><td class="memItemLeft" align="right" valign="top"><a id="aa263b03efccf1acd1f132af6b0919056"></a>
 TrailRenderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>eyeTrails</b></td></tr>
 <tr class="separator:aa263b03efccf1acd1f132af6b0919056"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa3809d3bb879b25070446c1ad3213aae"><td class="memItemLeft" align="right" valign="top"><a id="aa3809d3bb879b25070446c1ad3213aae"></a>
-GameObject[]&#160;</td><td class="memItemRight" valign="bottom"><b>lod1</b></td></tr>
-<tr class="separator:aa3809d3bb879b25070446c1ad3213aae"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6097fc2702388b7da71612b24ee445b2"><td class="memItemLeft" align="right" valign="top"><a id="a6097fc2702388b7da71612b24ee445b2"></a>
-GameObject[]&#160;</td><td class="memItemRight" valign="bottom"><b>lod3</b></td></tr>
-<tr class="separator:a6097fc2702388b7da71612b24ee445b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3381bc6f853605e2a330e4595afd7c38"><td class="memItemLeft" align="right" valign="top"><a id="a3381bc6f853605e2a330e4595afd7c38"></a>
+<a class="el" href="class_cross_link_1_1_blend_shape_controller.html">BlendShapeController</a>&#160;</td><td class="memItemRight" valign="bottom"><b>blendShape</b></td></tr>
+<tr class="separator:a3381bc6f853605e2a330e4595afd7c38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c9cdf2653acafaaa4347a7176e47d75"><td class="memItemLeft" align="right" valign="top"><a id="a8c9cdf2653acafaaa4347a7176e47d75"></a>
+FIMSpace.FEyes.FEyesAnimator&#160;</td><td class="memItemRight" valign="bottom"><b>eyesAnim</b></td></tr>
+<tr class="separator:a8c9cdf2653acafaaa4347a7176e47d75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90182779ed32eb95ff0751242d4a6f75"><td class="memItemLeft" align="right" valign="top"><a id="a90182779ed32eb95ff0751242d4a6f75"></a>
+RootMotion.FinalIK.AimIK&#160;</td><td class="memItemRight" valign="bottom"><b>aimIK</b></td></tr>
+<tr class="separator:a90182779ed32eb95ff0751242d4a6f75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f37703a9e45071213975a889b6e09cc"><td class="memItemLeft" align="right" valign="top"><a id="a2f37703a9e45071213975a889b6e09cc"></a>
+SkinnedMeshRenderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>lod1</b></td></tr>
+<tr class="separator:a2f37703a9e45071213975a889b6e09cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa100c9700d1fb0d6ff6c3093de34921"><td class="memItemLeft" align="right" valign="top"><a id="afa100c9700d1fb0d6ff6c3093de34921"></a>
+SkinnedMeshRenderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>lod3</b></td></tr>
+<tr class="separator:afa100c9700d1fb0d6ff6c3093de34921"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a3d4ad9a3f1aad2de72ff48a5e1776526"><td class="memItemLeft" align="right" valign="top"><a id="a3d4ad9a3f1aad2de72ff48a5e1776526"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultCrossFadeSec</b> = 0.2f</td></tr>
+<tr class="separator:a3d4ad9a3f1aad2de72ff48a5e1776526"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -71,6 +71,8 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_collision_effect-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.CollisionEffect Class Reference</div>  </div>
@@ -90,18 +92,15 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsColLatly</b> (<a cl
 <tr class="memitem:a8dbc79ce182c8355f6b4c6a1bb4de5c4"><td class="memItemLeft" align="right" valign="top"><a id="a8dbc79ce182c8355f6b4c6a1bb4de5c4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableContactForAWhild</b> (float sec)</td></tr>
 <tr class="separator:a8dbc79ce182c8355f6b4c6a1bb4de5c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d595f229081f9f3fd7bd206159b14de"><td class="memItemLeft" align="right" valign="top"><a id="a4d595f229081f9f3fd7bd206159b14de"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsContactLatly</b> ()</td></tr>
-<tr class="separator:a4d595f229081f9f3fd7bd206159b14de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61786608bbb8c6676d645456347efbf2"><td class="memItemLeft" align="right" valign="top"><a id="a61786608bbb8c6676d645456347efbf2"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsContactLatly</b> (float ct)</td></tr>
+<tr class="separator:a61786608bbb8c6676d645456347efbf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9eb8570650490431c6c6b6934466db70"><td class="memItemLeft" align="right" valign="top"><a id="a9eb8570650490431c6c6b6934466db70"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TapContact</b> ()</td></tr>
 <tr class="separator:a9eb8570650490431c6c6b6934466db70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a45df0a15528a1804daf7b5d7c267f41c"><td class="memItemLeft" align="right" valign="top"><a id="a45df0a15528a1804daf7b5d7c267f41c"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsIgnore</b> (<a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a> ce1, <a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a> ce2, Collider c1, Collider c2)</td></tr>
-<tr class="separator:a45df0a15528a1804daf7b5d7c267f41c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae46c7ab915fc044e4c2c4a488477ca1"><td class="memItemLeft" align="right" valign="top"><a id="aae46c7ab915fc044e4c2c4a488477ca1"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableGlobalContactForAWhild</b> (float sec)</td></tr>
 <tr class="separator:aae46c7ab915fc044e4c2c4a488477ca1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -111,9 +110,24 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a033bbc5f1138e2991e7d645c78ca02a4"><td class="memItemLeft" align="right" valign="top"><a id="a033bbc5f1138e2991e7d645c78ca02a4"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>materialName</b></td></tr>
 <tr class="separator:a033bbc5f1138e2991e7d645c78ca02a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2df65551374ac19b4f51e754afbcbac5"><td class="memItemLeft" align="right" valign="top"><a id="a2df65551374ac19b4f51e754afbcbac5"></a>
-Tagger.Tag&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreTag</b> = Tagger.Tag.None</td></tr>
-<tr class="separator:a2df65551374ac19b4f51e754afbcbac5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d6ad1d40b7e211f95a6921b24c09331"><td class="memItemLeft" align="right" valign="top"><a id="a7d6ad1d40b7e211f95a6921b24c09331"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>contactInterval</b> = ContactIntervalNonSensitive</td></tr>
+<tr class="separator:a7d6ad1d40b7e211f95a6921b24c09331"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a69d3b221b392a6f45d20cccc97ea1bbe"><td class="memItemLeft" align="right" valign="top"><a id="a69d3b221b392a6f45d20cccc97ea1bbe"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>ContactIntervalSensitive</b> = 0.2f</td></tr>
+<tr class="separator:a69d3b221b392a6f45d20cccc97ea1bbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97ce8a64cbc574e028b176483c09cfdb"><td class="memItemLeft" align="right" valign="top"><a id="a97ce8a64cbc574e028b176483c09cfdb"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>ContactIntervalNonSensitive</b> = 1f</td></tr>
+<tr class="separator:a97ce8a64cbc574e028b176483c09cfdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:a86738d761ca1d2abf99aab2aa8a60dbd"><td class="memItemLeft" align="right" valign="top"><a id="a86738d761ca1d2abf99aab2aa8a60dbd"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_collision_effect_table_1_1_continuous_collision_record.html">CollisionEffectTable.ContinuousCollisionRecord</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>SlidingEvent</b></td></tr>
+<tr class="separator:a86738d761ca1d2abf99aab2aa8a60dbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

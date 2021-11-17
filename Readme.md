@@ -1,8 +1,13 @@
+
+[TOC]
+
 # Welcome to the Scripting Document
 
-Hello, this is scripting document, you can query these API, then use them in lua, looking forward to what will everyone create. We will open more system in the future, currently we only export weapon related tools(in C#). 
+Hello, this is the scripting document, you can query these API, then use them in lua.
+Looking forward to what everyone will create. We will open more systems in the future, currently we only export weapon related tools(in C#). 
 
-##### Quick Start
+
+#### Quick Start
 
 1. install Unity 2019.4.12f(download [UnityHub](https://unity3d.com/get-unity/download), then download Engine via Hub)
 2. download [ModProj](https://github.com/fonzieyang/BTModToolkit)
@@ -10,18 +15,27 @@ Hello, this is scripting document, you can query these API, then use them in lua
 4. copy the mod files to the corresponding path:
 	* Windows: C:\Users\[username]\AppData\LocalLow\CrossLink\BattleTalent\Mods
 	* Quest:      /sdcard/Android/data/com.CrossLink.SAO/files/Mods/
-5. Done! (if something goes wrong, please open your cheat menu then tell us about your error messages)
+5. Done! (if something goes wrong, please open your cheat menu then tell us with your error messages)
 
 if you just want to try play this mod, you can download it from [HERE](https://github.com/fonzieyang/BTModToolkit/releases/download/V0.0.1/ModProj.zip)
 
-##### Make your first weapon with BTModToolkit in 10 mintues
+#### Make your first weapon with BTModToolkit in 10 mintues
 
-please check out this [Weapon Modding Video](https://youtu.be/IqPl5KRgZ8Y), for more details please check out this [Weapon Modding Doc](https://docs.google.com/spreadsheets/d/1z3dAbbIpCERFYRC-NOEZxo7R3kv008184Jws9MFz2NI/edit?usp=sharing)
+please check out this [Weapon Modding Video](https://youtu.be/IqPl5KRgZ8Y)
 
 
-##### Before release your own mod
+#### Mod Host Community
 
-please make sure you've *cleared the project* and *renamed the product*
+We host most of our mods on [Mod.io](https://battletalent.mod.io/). There are so many resources out there.
+
+As a thank you to the player community, the Battle Talent demo should be called community version, it'll be free and share the same code base with the official version(not release yet). 
+
+Feel free to use Battle Talent as your VR coding playground and ask question on our [discord](https://discord.gg/f4dmSG9).
+
+
+#### Before release your own mod
+
+please make sure you've **cleared the project** and **renamed the product**
 
 two ways to clear the example project:
 * remove the pre-added addressables(window->asset management->addressables->group)
@@ -30,7 +44,15 @@ two ways to clear the example project:
 the way to change product name:
 * Edit -> Project Settings -> Modify the Project Name
 
-##### Tips for scripting in lua:
+
+
+#### Workflow
+
+ <img src="workflow.png">
+
+
+
+#### Tips for scripting in lua:
 
 * namespace of CShape code is CS in lua
 * namespace CrossLink is CL in lua, CL == CS.CrossLink
@@ -38,18 +60,18 @@ the way to change product name:
 * calling a static function should use '.' instead of ':' in lua
 * recommend using [ZeroBrane Studio](https://studio.zerobrane.com/) as lua editor
 
-##### TODO
+#### ZeroBrane IDE auto-complete
 
-* lua grammar completion(ZeroBrane based)
-* lua break point debug(ZeroBrane based)
-* level modding
-* npc modding
-* player modding
 
+1. copy syntax.lua(ModProj/Assets/Resources/Tools/ZeroBraneAutoCompleteTool) to path ZeroBraneStudio/api/lua.
+2. open ZeroBrane Studio and click Edit->Preferances->Settings User to open user.lua.
+3. write "table.insert(api, 'syntax')" in user.lua.
 
 
 
-##### Related Manual
+
+
+#### Related Manual
 
 * [Unity manual](https://docs.unity3d.com/2019.4/Documentation/Manual/)
 * [Lua manual](https://www.lua.org/manual/5.1/)
@@ -57,7 +79,19 @@ the way to change product name:
 * [EasySave3](https://docs.moodkie.com/easy-save-3/es3-api/es3-class/)
 
 
+#### TODO
+
+* player modding
+* level modding
+* npc modding
+
+
+
 ---
+
+
+
+
 
 # Basic Concept
 
@@ -71,8 +105,10 @@ Battle Talent is fully driven by physics, so every collider in this game, we can
 	else
 		print(pu.unitType)
 	end
-
-	local puRB = CL.PhysicsUnit.GetPhysicsUnit(rigidbody.transform)
+	
+	-- by default, we use Bottom Up Method, which means, we may get the sub object of another object
+	-- if we want to get the root object, then we should use GetPhysicsUnitTopDown instead
+	local puRB = CL.PhysicsUnit.GetPhysicsUnitTopDown(rigidbody.transform)
 	if (puRB == nil || puRB:IsScene()) then
 		print("Env")
 	else
@@ -100,8 +136,6 @@ layer name| physics object associated
 BodyMask | Npc&Player's Bodypart
 EnvLayerMask | Environment
 InteractLayerMask | Weapon, Item, Part of BodyPart
-
-
 
 ---
 
@@ -158,233 +192,317 @@ For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event in
 
 
 
+#### Built in CollisionEffect
+
+| Collision Material Name | Used For                     |
+| ----------------------- | ---------------------------- |
+| Weapon                  | Blade                        |
+| WeaponBlunt             | Hammer, Metal, Handle        |
+| Metal                   | Environment                  |
+| Brick                   | Environment                  |
+| Wood                    | Environment or Wooden Weapon |
+
+#### Commonly used components
+
+| Basic Components                   | Function                                                     |
+| ---------------------------------- | ------------------------------------------------------------ |
+| InteractWeapon                     | represent the entity of weapon                               |
+| InteractTrigger / InteractTriggerX | define how weapon works when player pressing trigger button  |
+| StabObj                            | define how your weapon penetrate others                      |
+| RagdollHitInfoObj                  | define how to calculate damage                               |
+| RagdollHitInfoRef                  | it'll define a group of RagdollHitInfoObj as a whole, so that they won't hit multiple times |
+| RagdollInit                        | define intertia tensor and center mass, if it's zero, then it'll not take effect on the rigidbody |
+| CollisionEffect                    | simulate physics collision effect                            |
+| AttachLine / AttachPoint           | define how player grabs it                                   |
+| Mount Point                        | define how player put it in the pocket                       |
+| FlyObj / FlyObjX                   | attached on Fly Object, such as bullet, magic                |
+
+
+
+
+ 
+#### How to setup InteractTrigger
+
+
+Here shows: 
+* What will happen when you toggled those paramters on InteractTrigger component.
+* How's the mana cost system work.
+* What's the callback function we'll call when we pull the trigger.
+
+For more examples, please check out the Mod Toolkit
+
+
+| manaCost                |                                                             |                            |                                                             |                                                             |                                                             |
+| ----------------------- | ------------------------------------------------------------ | --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| instantSkill            |                                                              | √                           | √                                                            |                                                              |                                                              |
+| skillChargeEndTime      |                                                              |                             | √                                                            | √                                                            | √                                                            |
+| activateTime            |                                                              |                             |                                                              | √                                                            |                                                              |
+|                         |                                                              |                             |                                                              |                                                              |                                                              |
+| example                 | Continuous updated skill, such as telekinesis, sprint spear, slash katana | one shot skill, such as gun | can be shot and charged at the same time, such as storm pistol | can be charged into special state, such as thunder spear     | Charged for an one shot release, such as fireball spell      |
+| Real mana in calcuation | manaCostOnCharge                                             | manaCost                    | manaCost     manaCostOnCharge                                | manaCostOnCharge                                             | manaCostOnCharge                                             |
+| callback                | OpenSkill<br />UpdateSkill<br />CloseSkill                   | UpdateSkill                 | UpdateSkill    <br />OnChargeBegin<br />OnChargeReady<br />OnChargeUpdate<br />OnChargeRelease    <br />OnChargeCancel | OnActivateBegin  <br />OnActivateEnd  <br />OnActivateCancel | OnChargeBegin->OnChargeReady->OnChargeUpdate->OnChargeRelease |
+
+
+#### CollisionEffect
+
+BuiltIn collision materials for weapon here, paste the name into CollisionEffect component, then the colliders under this will be identified as this material.
+
+| Collision Material Name | Used For                     |
+| ----------------------- | ---------------------------- |
+| Weapon                  | Blade                        |
+| WeaponBlunt             | Hammer, Metal, Handle        |
+| Metal                   | Environment                  |
+| Brick                   | Environment                  |
+| Wood                    | Environment or Wooden Weapon |
+
+
+
+
+#### HitInfo
+
+Builtin hit type, paste the name into RagdollHitInfoObj component, then the colliders under this will be identified as this hit type
+
+Notice that you may need to use RagdollHitInfoRef component to bind multiple RagdollHitInfoObj as one hit identity, otherwise it will cause multiple hits at a time.
+
+
+
+| Name            | VelocityMlp | DamageMlp | DamageThrough | DamageCrit | StabMlp | HitMlp | HitRandom | StabDamage | BreakDefenceMlp | HitBackMlp | KnockoutFactor | DizzyFactor | StiffValue |
+| --------------- | ----------- | --------- | ------------- | ---------- | ------- | ------ | --------- | ---------- | --------------- | ---------- | -------------- | ----------- | ---------- |
+| Sword           | 1.2         | 10        | 0.5           | 1.5        | 1.5     | 115    | 0.2       | 120        | 1               | 90         | 0.1            | 0           | 2.8        |
+| LightSaber      | 1.2         | 35        | 0.5           | 1.5        | 1.5     | 120    | 0.2       | 120        | 1               | 90         | 0.1            | 0           | 2.8        |
+| Wood            | 1.2         | 5         | 1.5           | 1.5        | 1       | 125    | 1         | 0          | 1.2             | 90         | 0.5            | 0.5         | 2.8        |
+| Brick           | 1.2         | 5         | 1.5           | 1.5        | 1       | 130    | 1         | 0          | 1.2             | 90         | 0.5            | 0.5         | 2.8        |
+| Metal           | 1.2         | 7         | 1.2           | 1.5        | 1       | 125    | 1         | 0          | 1.3             | 112.5      | 0.3            | 0.4         | 2.8        |
+| Fist            | 1.2         | 4         | 1.2           | 1.5        | 1       | 125    | 1         | 0          | 1               | 90         | 0.3            | 0.4         | 2.8        |
+| Hammer          | 1.2         | 6         | 1.5           | 1.5        | 1       | 130    | 0.1       | 0          | 2               | 112.5      | 0.4            | 0.4         | 3.6        |
+| SingleHammer    | 1.2         | 8         | 2             | 1.5        | 1       | 125    | 0.1       | 0          | 2               | 112.5      | 0.45           | 0.45        | 3.6        |
+| Axe             | 1.2         | 12        | 1             | 1.5        | 1.8     | 120    | 0.1       | 120        | 2               | 90         | 0.1            | 0           | 3.6        |
+| Dagger          | 1.3         | 5         | 0.5           | 2          | 4.5     | 115    | 0.2       | 120        | 0.8             | 90         | 0.1            | 0           | 1.6        |
+| Katana          | 1.2         | 12        | 0.1           | 1.3        | 1       | 115    | 0.2       | 120        | 1               | 90         | 0.1            | 0           | 1.6        |
+| Rapier          | 1.2         | 8         | 0.2           | 1.5        | 3       | 115    | 0.1       | 120        | 1.5             | 90         | 0.1            | 0           | 2.8        |
+| Shield          | 1.2         | 8         | 1.2           | 1.5        | 1       | 125    | 0.1       | 0          | 2               | 90         | 0.3            | 0.4         | 2.8        |
+| Spear           | 1.3         | 7         | 0.8           | 1.8        | 2.5     | 120    | 0.1       | 120        | 1.4             | 112.5      | 0.1            | 0           | 2.8        |
+| Stick           | 1.2         | 6         | 1             | 2          | 1       | 125    | 1         | 0          | 1.5             | 90         | 0.5            | 0.6         | 2.8        |
+| SwordWind       | 1.2         | 12        | 0.5           | 1.5        | 1.1     | 115    | 0.1       | 120        | 1               | 90         | 0.1            | 0           | 2.8        |
+| SwordWind_Slash | 1.2         | 20        | 0.5           | 1.5        | 1.1     | 115    | 0.5       | 0          | 1               | 112.5      | 0.5            | 0           | 2.8        |
+| Wand            | 1.2         | 6         | 1             | 2          | 1       | 120    | 0.8       | 0          | 1.2             | 90         | 0.5            | 0.6         | 2.8        |
+| Bullet          | 1.2         | 3         | 0.4           | 4.5        | 1       | 115    | 0.1       | 0          | 1               | 90         | 0.1            | 0           | 2.8        |
+| Explode         | 1.2         | 40        | 1             | 1          | 1       | 115    | 0.1       | 0          | 1               | 400        | 1              | 0           | 2.8        |
+| Arrow           | 1.2         | 6         | 0.5           | 6          | 2       | 120    | 0.5       | 120        | 1               | 90         | 0.1            | 0           | 2.8        |
+| MagicBall       | 1.2         | 12        | 0.5           | 4          | 1       | 115    | 0.1       | 0          | 1               | 90         | 0.3            | 0           | 2.8        |
+| Flame           | 1.2         | 5         | 0.6           | 2          | 1       | 120    | 0.1       | 0          | 1               | 112.5      | 0.3            | 0           | 2.8        |
+| IceSword        | 1.2         | 20        | 0.5           | 1.5        | 1.5     | 115    | 0.2       | 120        | 1               | 90         | 0.1            | 0           | 2.8        |
+| Laser           | 1.2         | 15        | 0.6           | 2          | 1.5     | 115    | 0.1       | 0          | 1               | 90         | 0.3            | 0           | 2.8        |
+| FlySlash        | 1.2         | 15        | 0.5           | 1          | 1.3     | 115    | 0.1       | 0          | 1               | 90         | 0.3            | 0           | 2.8        |
+| FlyString       | 1.2         | 15        | 0.5           | 1          | 1.3     | 115    | 0.1       | 0          | 1               | 90         | 0.3            | 0           | 2.8        |
+| FlyThunder      | 1.2         | 3         | 0.5           | 1          | 1.3     | 115    | 0.1       | 0          | 1               | 140        | 0.1            | 0           | 2.8        |
+| FlyOriFire      | 1.2         | 15        | 0.5           | 4          | 1       | 115    | 0.1       | 0          | 1               | 90         | 0.3            | 0           | 2.8        |
+| TrackBall       | 2.2         | 10        | 1             | 1.5        | 1.3     | 115    | 0.1       | 0          | 1               | 90         | 0.6            | 0           | 2.8        |
+| Spike           | 1.2         | 5         | 1             | 1.5        | 2       | 115    | 0.1       | 120        | 1               | 112.5      | 0.3            | 0           | 2.8        |
+| SpikeSmall      | 1.2         | 3         | 1             | 1.5        | 2       | 115    | 0.1       | 120        | 1               | 112.5      | 0.3            | 0           | 2.8        |
+| Drone           | 1.2         | 22.5      | 1             | 1          | 1       | 115    | 0.1       | 0          | 1               | 150        | 0.3            | 0           | 2.8        |
+| DropObj         | 1.2         | 50        | 1             | 2          | 1       | 115    | 2         | 120        | 1               | 150        | 1              | 0           | 2.8        |
+| KO              | 1.2         | 20        | 1             | 2          | 1       | 115    | 2         | 0          | 1               | 120        | 1              | 0           | 2.8        |
+
+
+
+
+
+
+---
+
+#### FlyObject
+
+
+##### Life Cycle
+
+Once collision count meet with collisionCount or maxFlyTime is over, then flyobject will enter finish state
+
+ <img src="FlyObjLifeCycle.png">
+
+
+
+
+##### Fly Logic
+
+In fly state, FlyObject can play trail and keep track of the trajectory
+
+Once collision count meet with collisionFlyCount, then flyobject will enter flystop state
+
+ <img src="FlyState.png">
+
+
+
+##### Collision Ignore Settings
+
+You can setup the flyobject ignore specific type of objects.
+
+ignoreDamageList: you can ignore collision with specific type objs 
+
+ignoreHolder: you can also ignore the role spawn this flyobj
+
+
+
+##### Collision Callback Functions:
+
+Note: collision event will override the original functions in lua, so you need to call the OnCollisionUpdate manually to maintain the life cycle, please check out the FlySpellBaseScript.txt for example.
+
+|            | Collision                 |                          |
+| ---------- | ------------------------- | ------------------------ |
+| PlayerHand | OnCollisionWithPlayerHand | OnTriggerWithPlayerHand  |
+| Player     | OnCollisionWithPlayer     | OnTriggerWithPlayer      |
+| HitScan    | OnCollisionWithHitScan    |                          |
+| Scene      | OnCollisionWithScene      | OnTriggerWithStaticScene |
+| Role       | OnCollisionWithRole       | OnTriggerWithRole        |
+| default    | OnCollision               | OnTrigger                |
+
+
 ---
 
 
-# Coding Examples
+
+
+#### Damage Pipeline
+
+from now on, we can use modifier to modify each hit our weapon caused.
+
+here's the damage pipeline, and we'll inject our code to modify the data though to pipeline to get the result we want
+
+ <img src="DamagePipeline.png">
+
+
+##### How we register the phase event
+
+for local event, such as for specific hit, you can get the RagdollHitInfo structure, then register the functions below
+
+        OnInteractRoleHitPhase1Event // used for hit detetion, built-in function will fill those data here
+        OnInteractRoleHitPhase2Event // you can modify the damage effect here
+        OnInteractRoleHitPhase3Event // we can do extra stuff, such as recover hp from attack
+
+
+for global event, it's not opened to modder yet, we'll introduce it later
+
+
+[DamageBasicData](class_cross_link_1_1_damage_basic_data.html)
+
+Basic collision data, contains collider, rigidbody, impact...
 
 
 
-#### tick a function, update at 0.1 second intervals within 10 seconds, and execute after 0.2 seconds
 
-	local scheId = CL.Scheduler.Create(target,
-	function(sche, t, s)
-		local progress = t/s
-		print("updating:" .. progress)
-		if (t>=s) then
-			print("finished succ")
-		end
-	end
-	, 0.1, 10, 0.2)
-	:SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
-	:IgnoreTimeScale(true)
-	:SetOnStop(function(sche)
-		print("on stop")
-	end).actionId
-	CL.Scheduler.RemoveScheduler(scheId)
+[DamageHitData](class_cross_link_1_1_damage_hit_data.html)
 
-#### add store item
-
-	storeItem = CL.UnlockContentItem()
-	storeItem.name = weaponName
-	storeItem.dependItemName = dependWeapon
-	storeItem.iconName = weaponName
-	storeItem.contentType = CL.UnlockContentConfig.UnlockContentType.Weapon
-	storeItem.unlockRequireCoinNum = 1
-	CL.UnlockContentConfig.AddItem(storeItem)
-
-#### add a new hitinfo to the config file
-
-	HitInfoConfig = CL.GameDataMgr.GetData(typeof(CL.HitInfoConfig))
-	local lightBladeHitInfo = CL.HitInfoConfig.HitInfoConfigItem()
-	lightBladeHitInfo.Name = "WMD_LightBlade"
-	lightBladeHitInfo.VelocityMlp = 1.5
-	lightBladeHitInfo.DamageMlp = 30
-	lightBladeHitInfo.DamageThrough = 1.5
-	lightBladeHitInfo.DamageCrit = 1.5
-	lightBladeHitInfo.StabMlp = 1.5
-	lightBladeHitInfo.HitMlp = 120
-	lightBladeHitInfo.HitRandom = 0.2
-	lightBladeHitInfo.StabDamage = 120
-	lightBladeHitInfo.BreakDefenceMlp = 1
-	lightBladeHitInfo.HitBackMlp = 90
-	lightBladeHitInfo.KnockoutFactor = 0.1
-	lightBladeHitInfo.DizzyFactor = 0
-	lightBladeHitInfo.StiffValue = 2.5
-	HitInfoConfig:AddData(lightBladeHitInfo)
+Determines the damage calculation
 
 
-#### check npc's hp
 
-	if (pu.unitType == CL.Tagger.Tag.InteractRole) then
-		local fc = pu
-		print(fc.attr.HpBase)
-		// even change camp(from enemy to friend)
-		if (fc.attr.camp == "Bad") then
-			fc.attr:ChangeCamp()
-		end		
-	end
+[DamageEffectData](class_cross_link_1_1_damage_effect_data.html)
+
+Behaviour by this damage, such as knockdown, dizzy, floating...
 
 
-#### apply hit scan(in C#), raycast then apply hitscan damage to target, and using specific hitinfo as damage source
-
-	if (Physics.SphereCast(interact.trans.position +
-			interact.trans.forward * slashDetectOffset, 0.2f,
-			interact.trans.forward,
-			out hitInfo, slashDis, slashLayer))
-	{
-			InteractTrigger.SetOverrideHitInfo(rgHitInfo);
-			InteractTrigger.BeginScanDmg();
-			InteractTrigger.AddHitScanProtect();
-			InteractTrigger.ApplyHitScanDamage(hitInfo.collider, interact,
-					interact.rb, hitCol, interact.rb.velocity.normalized,
-					holdingCharacter.aiProxy.GetCamp());
-			InteractTrigger.EndHitScan();
-			InteractTrigger.SetOverrideHitInfo(null);
-			if (InteractTrigger.ScanHited)
-			{
-					windCutSound.Play(hitInfo.point);
-			}                
-	}
 
 
-#### search enemies around you(in C#), the value of camp is either "Good"(friend) or "Bad"(enemy)
 
-	static public AIProxy GetCloestTarget(Transform self, string camp, bool goodRelate = true, bool includeDown = false)
-	{
-			AIProxy target = null;
-			float minDis = 10000;
 
-			var allChar = AIProxy.GetAroundAITarget();
-			var charIte = allChar.GetEnumerator();
-
-			while (charIte.MoveNext()){
-					var proxy = charIte.Current.Value;
-
-					if (includeDown == false && proxy.IsDown())
-							continue;
-
-					if (proxy.GetTransform() == self || proxy.gameObject.activeInHierarchy == false)
-							continue;
-
-					var rela = SocietyMgr.GetSocietyInfo().GetCampRelationTo(camp, proxy.GetCamp());
-					if ((goodRelate && rela > 0)||
-							(!goodRelate && rela < 0)){
-							var dis = (proxy.GetTransform().position - self.position).sqrMagnitude;
-							if (dis < minDis){
-									minDis = dis;
-									target = proxy;
-							}
-					}
-			}
-			return target;
-	}
-
-#### xlua tips
-
-	// cast & typeof example
-	cast(castObj, typeof(CL.TestCastClass))
-
-	// the way we implemented oop
-	function Clone(t, cpFunc)
-		cpFunc = cpFunc or true
-		if type(t) ~= 'table' then return t end
-		local meta = getmetatable(t)
-		local target = {}
-		for k, v in pairs(t) do
-				if type(v) == 'table' then
-						target[k] = Clone(v, cpFunc)
-				else
-						if not cpFunc and type(v) == 'function' then
-						else
-								target[k] = v
-						end            
-				end
-		end
-		setmetatable(target, meta)
-		return target
-	end
-
-	local getmetatable = getmetatable
-	function Class(base,static,instance)
-
-		local mt = nil
-		if (base ~= nil) then
-				mt = getmetatable(base)
-		end
-
-		local class = static or {}
-
-		local callfunc
-		callfunc = function(cls, ...)
-								local r = nil
-								if (mt ~= nil) then
-										r = mt.__call(cls, ...)
-								end
-								local ret
-								if instance ~= nil then
-										ret = Clone(instance, false)
-								else
-										ret = {}
-								end
-
-								local ins_ret = setmetatable(
-										{
-												__base = r,
-										},
-
-										{
-												__index = function(t, k)
-														local ret_field
-														ret_field = rawget(t,k)
-														if nil ~= ret_field then
-																return ret_field
-														end
-
-														ret_field = ret[k]
-														if nil == ret_field and r ~= nil then
-																ret_field = r[k]
-														end
-														return ret_field
-												end,
-
-												__newindex = function(t,k,v)
-														if r == nil or r[k] == nil then
-																rawset(t,k,v)
-														else
-																r[k] = v
-														end
-												end,
-										})
-
-								if ret.ctor then
-										ins_ret:ctor(...)
-								end
-
-								return ins_ret
-						end
-
-		setmetatable(class,
-				{
-						__index = function(t, k)
-												if k == 'CreateFromClass' then
-														return callfunc
-												end
-
-												if base ~= nil and base[k] ~= nil then
-														return base[k]
-												end
-
-												if instance ~= nil and instance[k] ~= nil then
-														return instance[k]
-												end                    
-											end,
-
-						__call = callfunc,
-				}
-		)
-		return class
-	end
-	";
 
 ---
+
+# Tricks
+
+#### A easier way to config addressables.
+
+1. put you mod folder under the path: "Asset/Build". for anything doesn't need to be addressable, please put outside of this folder.
+
+ <img src="addressable_1.png">
+
+2. put you resources into the corresponding folder, such as Weapon, Audio, ICon
+
+3. add WeaponPaths in addressableConfig(Assets->Resources->AddressableConfig).
+
+4. define you prefix.
+
+5. click - **Create And Refresh Addressable Name**.
+
+ <img src="addressable_3.png">
+
+6. fill the old and new prefix, click invoke to modify. it will modify all perfabs and scripts at WeaponPaths.
+
+ <img src="addressable_4.png">
+
+#### For HandAttach component, use HandPoseHelper to adject hand's position and rotation.
+
+1. add HandPoseHelper("Asset/Resources/Tools/HandPoseHelper") to you scene.
+
+2. select **HandAttach**.
+
+ <img src="HandPoseHelper.png">
+
+3. click AddDrawTool to draw hand.
+
+4. adject node **Bip002 R Hand** and **Bip002 L Hand** according to the hand.
+
+5. click RemoveDrawTool to remove tool, save your weapon's perfab, done.
+
+
+
+#### Background Knowledge
+
+| Term                  | Explaination                                                 |
+| --------------------- | ------------------------------------------------------------ |
+| addressables          | by pressing the addressable toggle box to build resource into addressable resource, then rename the path to make it get loaded correctly in game.  once you filled in correct addressable resources, then the game will load it on start |
+| resources path        | Weapon Path: Weapon/<br>        Script Path: LuaScript/<br>        ICon Path:ICon/<br>        Effect Path:Effect/<br>        Audio Path: Audio/Sound/<br>        FlyObj Path: FlyObj/<br>                           any resource's addressable name in the path above, can be loaded by the system without path included. for example, if an effect's addressable name is Effect/explosion, can be create by EffectMgr.Instance:PlayEffect("explosion") |
+| entry point           | any lua script's addressable name is Entry, will become the entry point of this mod |
+| components end with X | means it's scriptable, such as FlyObjectX, InteractTriggerX  |
+| coordinate            | z is forward, x is right, y is up                            |
+
+
+
+
+#### DebugTools
+
+| Dev Environment                             | Pros                                                         | Cons                                                |
+| ------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------- |
+| edit in Editor + debug in Windows Simulator | 1. dosen't need a gaming PC<br> 2. iterate very fast, because you don't need to put on headset<br> 3. you can make use of shotcut to debug faster | 1. the feeling is different from in VR              |
+| edit in Editor + debug in SteamVR           | 1. you can check the real size in headset<br> 2. you can make use of shotcut to debug faster | 1. need to install mod and put on headset everytime |
+| edit in Editor + debug in Quest             | 1. you can check the real size in headset                    | 1. need to install mod and put on headset everytime |
+
+#### Shotcut
+
+| Shotcut        | Function at Body Mode | Function at Hand Mode    |
+| -------------- | --------------------- | ------------------------ |
+| WASD           | walk                  | walk                     |
+| Shift          | run                   | hand rotation            |
+| Alt            | switch to Hand Mode   | switch to Body Mode      |
+| Tab            |                       | switch between your hand |
+| Mouse Movement | body rotation         | hand movement            |
+| Ctrl           |                       | hand movement on Z axis  |
+
+| Shotcut  | Function                         |
+| -------- | -------------------------------- |
+| F12      | open or close MainMenu           |
+| F11      | open or close CheatMenu          |
+| F10      | reload mods(not working for now) |
+| F9       | remove mods(not working for now) |
+| F8       | jump to test scene               |
+| F4       | hide mouse                       |
+| PageDown | select next target               |
+| U        | kill target                      |
+| Y        | stun target                      |
+| PadNum   | target attacks                   |
+| Home     | enable target's AI               |
+| End      | disable target's AI              |
+| K        | kill all                         |
+| Space    | jump                             |
+| G        | jump(no cooldown)                |
+| V        | dash(no cooldown)                |
+
+#### Log Path
+
+| Log     | Log Path                                                     |
+| ------- | ------------------------------------------------------------ |
+| Windows | https://docs.unity3d.com/Manual/LogFiles.html                |
+| Quest   | read it on **in-game console** or using **adb log command** or using **sidequest's adb window** |
+
+
+

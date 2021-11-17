@@ -1,0 +1,75 @@
+
+local ExplodeArrow = {}
+local color1 = UE.Color(1, 0, 0, 0)
+local color2 = UE.Color(0, 0, 0, 0)
+
+function ExplodeArrow:Awake()
+    if not self.stab then
+        self.stab = self.host.interact:GetStabObject()
+    end
+    self.stabFunc = function(si)
+        self:DelayExpode(3)
+    end
+    if self.stab and self.stab.StabEnterEvent then
+        self.stab:StabEnterEvent("+",self.stabFunc)
+    end
+end
+
+--引爆
+function ExplodeArrow:DelayExpode(time)
+    if self.onCount then
+        return
+    end
+    self.delayTimerId = CL.Scheduler.RemoveSchedule(self.delayTimerId)
+    self.onCount = true
+    
+    local onRed = false
+    local count = 10
+    local lastTime = 0
+    self.delayTimerId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.renderer) then
+                return
+            end
+            --红色闪烁动画
+            if not onRed and t - lastTime < 0.1 then
+                self:SetColor(color2)
+                onRed = false
+            end
+            
+            if t - lastTime < 0.05 * count then
+                return
+            end
+
+            self:SetColor(color1)
+            lastTime = t
+            count = count - 1
+        end
+    , 0.05, time)
+    :SetOnStop(function()
+        if not IsNullOrDestroyed(self.host) then
+            self:Explode()
+        end
+    end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ExplodeArrow:Explode()
+    local explode = self.host:CreateFlyObj("FlyExplodeX", self.host.interact.trans.position, UE.Vector3.zero)
+    self.host.interact:Dead()
+end
+
+function ExplodeArrow:SetColor(color)
+    if not IsNullOrDestroyed(self.renderer) then
+        self.renderer.material:SetColor("_EmissionColor", color * 2)
+        self.renderer.material:EnableKeyword("_EMISSION")
+    end
+end
+
+function ExplodeArrow:Reset()
+    self.delayTimerId = CL.Scheduler.RemoveSchedule(self.delayTimerId)
+    self.onCount = nil
+    self.stab:StabEnterEvent("-", self.stabFunc)
+end
+
+return Class(nil,nil,ExplodeArrow)

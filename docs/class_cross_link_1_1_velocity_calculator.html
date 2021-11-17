@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -78,15 +78,51 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:adf5f77178f82b06c5838557487fd9821"><td class="memItemLeft" align="right" valign="top"><a id="adf5f77178f82b06c5838557487fd9821"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetParent</b> (<a class="el" href="class_cross_link_1_1_velocity_calculator.html">VelocityCalculator</a> pb)</td></tr>
+<tr class="separator:adf5f77178f82b06c5838557487fd9821"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bd81bc926a193e0e64151fb0e6e5479"><td class="memItemLeft" align="right" valign="top"><a id="a9bd81bc926a193e0e64151fb0e6e5479"></a>
+<a class="el" href="class_cross_link_1_1_velocity_calculator.html">VelocityCalculator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetParent</b> ()</td></tr>
+<tr class="separator:a9bd81bc926a193e0e64151fb0e6e5479"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2dbfb778c913352f895b460f10122ca4"><td class="memItemLeft" align="right" valign="top"><a id="a2dbfb778c913352f895b460f10122ca4"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetVelocityEstimateLocal</b> ()</td></tr>
+<tr class="separator:a2dbfb778c913352f895b460f10122ca4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c1031b2c6cb3305f47df53ef9d8ad4f"><td class="memItemLeft" align="right" valign="top"><a id="a1c1031b2c6cb3305f47df53ef9d8ad4f"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetAngularVelocityEstimateLocal</b> ()</td></tr>
+<tr class="separator:a1c1031b2c6cb3305f47df53ef9d8ad4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a5bff11a5605d7b18aa283fdce8c7b7"><td class="memItemLeft" align="right" valign="top"><a id="a0a5bff11a5605d7b18aa283fdce8c7b7"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>CalcVelIndexOffset</b> (int index, int offset)</td></tr>
+<tr class="separator:a0a5bff11a5605d7b18aa283fdce8c7b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb459167fb1e37adab66103e20ca00fa"><td class="memItemLeft" align="right" valign="top"><a id="abb459167fb1e37adab66103e20ca00fa"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>CalcAccLocal</b> (int index)</td></tr>
+<tr class="separator:abb459167fb1e37adab66103e20ca00fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa590d1ffbfea05fcc79b32227a9c98ae"><td class="memItemLeft" align="right" valign="top"><a id="aa590d1ffbfea05fcc79b32227a9c98ae"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>SneakPeekRecentAcc</b> (int frames=3)</td></tr>
+<tr class="separator:aa590d1ffbfea05fcc79b32227a9c98ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf5d6bd7ff634c3729f6e9054f4b0cb5"><td class="memItemLeft" align="right" valign="top"><a id="abf5d6bd7ff634c3729f6e9054f4b0cb5"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheckHit</b> ()</td></tr>
+<tr class="separator:abf5d6bd7ff634c3729f6e9054f4b0cb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb2c06250d39be44a3d8e0a6f90d6929"><td class="memItemLeft" align="right" valign="top"><a id="abb2c06250d39be44a3d8e0a6f90d6929"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearVelocity</b> ()</td></tr>
 <tr class="separator:abb2c06250d39be44a3d8e0a6f90d6929"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64d96eb567347613659822467524b82b"><td class="memItemLeft" align="right" valign="top"><a id="a64d96eb567347613659822467524b82b"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetAvgVelocityLocal</b> (int frames)</td></tr>
+<tr class="separator:a64d96eb567347613659822467524b82b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11a870e88de6327390a769682bc53912"><td class="memItemLeft" align="right" valign="top"><a id="a11a870e88de6327390a769682bc53912"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>GetContinousMoveFrames</b> ()</td></tr>
+<tr class="separator:a11a870e88de6327390a769682bc53912"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70800c4ffaa1efd1e682a003cc90c171"><td class="memItemLeft" align="right" valign="top"><a id="a70800c4ffaa1efd1e682a003cc90c171"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>FindVelocityContinous</b> ()</td></tr>
+<tr class="separator:a70800c4ffaa1efd1e682a003cc90c171"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a088eaebe0948695cf9bcf828de44216e"><td class="memItemLeft" align="right" valign="top"><a id="a088eaebe0948695cf9bcf828de44216e"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>CalcVelocityConinousDistance</b> (int targetIndex)</td></tr>
+<tr class="separator:a088eaebe0948695cf9bcf828de44216e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a683f0b7d17709acab39a9fac2b710687"><td class="memItemLeft" align="right" valign="top"><a id="a683f0b7d17709acab39a9fac2b710687"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>FindMaxVecLocal</b> (int targetIndex)</td></tr>
+<tr class="separator:a683f0b7d17709acab39a9fac2b710687"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1bdc85833689c191f7874b54f572d97"><td class="memItemLeft" align="right" valign="top"><a id="ad1bdc85833689c191f7874b54f572d97"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetVelocityEstimate</b> ()</td></tr>
 <tr class="separator:ad1bdc85833689c191f7874b54f572d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adffa0c4517a3f94d403205c4f72ccd18"><td class="memItemLeft" align="right" valign="top"><a id="adffa0c4517a3f94d403205c4f72ccd18"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsVelocityContinue</b> ()</td></tr>
-<tr class="separator:adffa0c4517a3f94d403205c4f72ccd18"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac488836794921b12b43d2425d80b6a4b"><td class="memItemLeft" align="right" valign="top"><a id="ac488836794921b12b43d2425d80b6a4b"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetAngularVelocityEstimate</b> ()</td></tr>
 <tr class="separator:ac488836794921b12b43d2425d80b6a4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -99,6 +135,12 @@ Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetAngularAccelera
 <tr class="memitem:a8e8d8e378c7fa4cad6200525bd64bdb8"><td class="memItemLeft" align="right" valign="top"><a id="a8e8d8e378c7fa4cad6200525bd64bdb8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> (Transform estTarget)</td></tr>
 <tr class="separator:a8e8d8e378c7fa4cad6200525bd64bdb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a614d9c8156d321789d3f1a1f81667e2d"><td class="memItemLeft" align="right" valign="top"><a id="a614d9c8156d321789d3f1a1f81667e2d"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>GetSample</b> ()</td></tr>
+<tr class="separator:a614d9c8156d321789d3f1a1f81667e2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adccd1b57830acf45ac737b4b87d26125"><td class="memItemLeft" align="right" valign="top"><a id="adccd1b57830acf45ac737b4b87d26125"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>GetVelocitySampleHead</b> ()</td></tr>
+<tr class="separator:adccd1b57830acf45ac737b4b87d26125"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8429ffae2b91d02d4593da08311c817d"><td class="memItemLeft" align="right" valign="top"><a id="a8429ffae2b91d02d4593da08311c817d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateFrame</b> ()</td></tr>
 <tr class="separator:a8429ffae2b91d02d4593da08311c817d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -111,6 +153,15 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>velocityAverageFrames<
 <tr class="memitem:a3d815e2be8ef45542a065584405e464a"><td class="memItemLeft" align="right" valign="top"><a id="a3d815e2be8ef45542a065584405e464a"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>angularVelocityAverageFrames</b> = 11</td></tr>
 <tr class="separator:a3d815e2be8ef45542a065584405e464a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab697450d12f9c045441d2a5673b65947"><td class="memItemLeft" align="right" valign="top"><a id="ab697450d12f9c045441d2a5673b65947"></a>
+Vector3[]&#160;</td><td class="memItemRight" valign="bottom"><b>velocitySamples</b></td></tr>
+<tr class="separator:ab697450d12f9c045441d2a5673b65947"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a855d79b72f3f2d80cfcbdc7a97c7d6f3"><td class="memItemLeft" align="right" valign="top"><a id="a855d79b72f3f2d80cfcbdc7a97c7d6f3"></a>
+Vector3[]&#160;</td><td class="memItemRight" valign="bottom"><b>angularVelocitySamples</b></td></tr>
+<tr class="separator:a855d79b72f3f2d80cfcbdc7a97c7d6f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d87789bf1ea6ac9a0b8f53a496958fa"><td class="memItemLeft" align="right" valign="top"><a id="a8d87789bf1ea6ac9a0b8f53a496958fa"></a>
+Vector3[]&#160;</td><td class="memItemRight" valign="bottom"><b>velocitySamplesLocal</b></td></tr>
+<tr class="separator:a8d87789bf1ea6ac9a0b8f53a496958fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -5,6 +5,13 @@ using UnityEngine;
 
 namespace CrossLink
 {
+    public enum HandSide
+    {
+        Right = 0,
+        Left = 1,
+        Both = 2,
+        None = 3,
+    }
     public class AttachObj : MonoBehaviour
     {
         public InteractBase interact;
@@ -13,6 +20,10 @@ namespace CrossLink
         public AttachObj dependAttachObj;
         public string handPose = "HoldPose";
 
+        public HandSide handSide = HandSide.Both;
+        public bool allowTrigger = true;
+
+        public bool isClimbAttach = false;
         public void Reset()
         {
             if (interact == null && transform.parent != null)

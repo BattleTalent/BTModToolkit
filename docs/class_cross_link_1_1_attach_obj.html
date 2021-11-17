@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -72,6 +72,7 @@ $(function() {
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="class_cross_link_1_1_attach_obj-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.AttachObj Class Reference</div>  </div>
@@ -114,9 +115,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetupHandPose</b> (<a
 <tr class="memitem:ac92e2eae481150d0315207a4f6a32a17"><td class="memItemLeft" align="right" valign="top"><a id="ac92e2eae481150d0315207a4f6a32a17"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearHandPose</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
 <tr class="separator:ac92e2eae481150d0315207a4f6a32a17"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1561909a47eddfcaab7ec4698f7e545"><td class="memItemLeft" align="right" valign="top"><a id="ad1561909a47eddfcaab7ec4698f7e545"></a>
-virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>CanGrab</b> ()</td></tr>
-<tr class="separator:ad1561909a47eddfcaab7ec4698f7e545"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2baac2b7c15fdafabb4c0f277ddd7f7"><td class="memItemLeft" align="right" valign="top"><a id="ab2baac2b7c15fdafabb4c0f277ddd7f7"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsLegalHandIndex</b> (int index)</td></tr>
+<tr class="separator:ab2baac2b7c15fdafabb4c0f277ddd7f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b4dafc9ca829d100be13931ce067e5c"><td class="memItemLeft" align="right" valign="top"><a id="a6b4dafc9ca829d100be13931ce067e5c"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>CanGrab</b> (int handIndex)</td></tr>
+<tr class="separator:a6b4dafc9ca829d100be13931ce067e5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad69ccdef7fa9abd42893321316af17a1"><td class="memItemLeft" align="right" valign="top"><a id="ad69ccdef7fa9abd42893321316af17a1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Grab</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
 <tr class="separator:ad69ccdef7fa9abd42893321316af17a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -171,6 +175,12 @@ Transform&#160;</td><td class="memItemRight" valign="bottom"><b>trans</b></td></
 <tr class="memitem:a33dcf7d31b9c4f27c83d9487590e3ae0"><td class="memItemLeft" align="right" valign="top"><a id="a33dcf7d31b9c4f27c83d9487590e3ae0"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>handPose</b> = HandPoseLibrary.HoldPose</td></tr>
 <tr class="separator:a33dcf7d31b9c4f27c83d9487590e3ae0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7fd59d36d05c523879b836d9d15dd734"><td class="memItemLeft" align="right" valign="top"><a id="a7fd59d36d05c523879b836d9d15dd734"></a>
+HandSide&#160;</td><td class="memItemRight" valign="bottom"><b>handSide</b> = HandSide.Both</td></tr>
+<tr class="separator:a7fd59d36d05c523879b836d9d15dd734"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab403ec364464fb090abc2e38f852b263"><td class="memItemLeft" align="right" valign="top"><a id="ab403ec364464fb090abc2e38f852b263"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>allowTrigger</b> = true</td></tr>
+<tr class="separator:ab403ec364464fb090abc2e38f852b263"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adff081fc3cf376aea497ef5944e4a645"><td class="memItemLeft" align="right" valign="top"><a id="adff081fc3cf376aea497ef5944e4a645"></a>
 <a class="el" href="class_cross_link_1_1_attach_point_quad.html">AttachPointQuad</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>panels</b> = new <a class="el" href="class_cross_link_1_1_attach_point_quad.html">AttachPointQuad</a>[RagdollBoneInfo.HAND_NUM]</td></tr>
 <tr class="separator:adff081fc3cf376aea497ef5944e4a645"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -207,6 +217,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveAllPanel</b> ()
 <tr class="memitem:a4906edd4f7d8348c133a108156f7108e"><td class="memItemLeft" align="right" valign="top"><a id="a4906edd4f7d8348c133a108156f7108e"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>GiveBackHandPose</b> (<a class="el" href="class_cross_link_1_1_hand_pose_setup.html">HandPoseSetup</a> hps)</td></tr>
 <tr class="separator:a4906edd4f7d8348c133a108156f7108e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1561909a47eddfcaab7ec4698f7e545"><td class="memItemLeft" align="right" valign="top"><a id="ad1561909a47eddfcaab7ec4698f7e545"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>CanGrab</b> ()</td></tr>
+<tr class="separator:ad1561909a47eddfcaab7ec4698f7e545"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1a1fb6da40af0628ce718e6439076d28"><td class="memItemLeft" align="right" valign="top"><a id="a1a1fb6da40af0628ce718e6439076d28"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LinkJoint</b> (ConfigurableJoint mountJoint, bool enableLock=false)</td></tr>
 <tr class="separator:a1a1fb6da40af0628ce718e6439076d28"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -222,6 +235,21 @@ Transform[]&#160;</td><td class="memItemRight" valign="bottom"><b>panelPoints</b
 <tr class="memitem:aa449d41f9630f5e4405f05c16af88629"><td class="memItemLeft" align="right" valign="top"><a id="aa449d41f9630f5e4405f05c16af88629"></a>
 ConfigurableJoint&#160;</td><td class="memItemRight" valign="bottom"><b>reactJoint</b></td></tr>
 <tr class="separator:aa449d41f9630f5e4405f05c16af88629"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:a5d88d8177a2930dbdaa8148109322daa"><td class="memItemLeft" align="right" valign="top"><a id="a5d88d8177a2930dbdaa8148109322daa"></a>
+static Quaternion&#160;</td><td class="memItemRight" valign="bottom"><b>rightFixer</b> = new Quaternion(-0.0177f, 0.0679f, -0.2445f, 0.96708f)</td></tr>
+<tr class="separator:a5d88d8177a2930dbdaa8148109322daa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd73ba1c58b2ece4a1ed40498ca30cb6"><td class="memItemLeft" align="right" valign="top"><a id="acd73ba1c58b2ece4a1ed40498ca30cb6"></a>
+static Quaternion&#160;</td><td class="memItemRight" valign="bottom"><b>leftFixer</b> = new Quaternion(0.08408f, -0.0162f, -0.9610f, 0.26259f)</td></tr>
+<tr class="separator:acd73ba1c58b2ece4a1ed40498ca30cb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1c81e5dbed36b420db240f2a0e55bfe"><td class="memItemLeft" align="right" valign="top"><a id="ac1c81e5dbed36b420db240f2a0e55bfe"></a>
+static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>rightOffset</b> = new Vector3(0, 0, 0)</td></tr>
+<tr class="separator:ac1c81e5dbed36b420db240f2a0e55bfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a413c076b1749875a52d49c8f32caac05"><td class="memItemLeft" align="right" valign="top"><a id="a413c076b1749875a52d49c8f32caac05"></a>
+static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>leftOffset</b> = new Vector3(0.0176f, -0.0023f, -0.002f)</td></tr>
+<tr class="separator:a413c076b1749875a52d49c8f32caac05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

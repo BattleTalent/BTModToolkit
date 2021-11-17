@@ -1,0 +1,341 @@
+
+local Scabbard = {
+    maxConnectDis = 0.1,
+    
+    pForce = 1000,
+    eForce = 200,
+    scrollForce = 1000,
+    dragLength = 0.05,
+    
+    maxAngle = 70,
+    jointZOffset = 0.2,
+    jointXOffset = 0.3,
+    
+    isConnect = false,
+}
+
+-- entryPoint detectPoint
+
+function Scabbard:Awake()
+    
+    self.scabbardGrabCb = function(a, g)
+        self:ScabbardOnGrab(a, g)
+    end
+    self.ib:GrabEvent("+", self.scabbardGrabCb)
+    
+    self.col = self.host.gameObject:GetComponent("Collider")
+    self.rb = self.host.gameObject:GetComponent("Rigidbody")
+
+    self.z_e = self.entryPoint.localPosition.z
+    self.z_t = self.detectPoint.localPosition.z
+    
+    self.scabbardCols = self.ib:GetCols()
+    self.lHandCols = CL.InteractCharacter.PlayerInstance.hands[1].physicsHand.colliders
+    self.rHandCols = CL.InteractCharacter.PlayerInstance.hands[0].physicsHand.colliders
+end
+
+function Scabbard:OnTriggerStay(other)
+    if self.isConnect then
+        return
+    end
+    
+    local itx = other.transform.root:GetComponent("InteractTriggerX")
+    if itx and itx.script then
+        local lua = itx.script.self
+        if lua.isScabbardUser and lua:GetSwordType() == self.swordType then
+            self.sword = other.transform.root.gameObject
+            
+            local angle = UE.Vector3.Angle(self.host.transform.forward, self.sword.transform.forward)
+            local dis = UE.Vector3.Distance(lua.peakPoint.position, self.detectPoint.position)
+            if angle <= self.maxAngle and dis <= self.maxConnectDis then
+                
+                self.leftOffset = UE.Vector3(self.jointXOffset, 0, -self.jointZOffset)
+                self.rightOffset = UE.Vector3(-self.jointXOffset, 0, -self.jointZOffset)
+                
+                self.su = lua
+                self.peakPoint = self.su.peakPoint
+                self.rootPoint = self.su.rootPoint
+                
+                self.swordLength = self.peakPoint.localPosition.z - self.rootPoint.localPosition.z
+                self.z_d = self.entryPoint.localPosition.z + self.swordLength
+                
+                
+                self.swordGrabCb = function(a, g)
+                        self:SwordOnGrab(a, g)
+                    end
+                    
+                self.su.ib:GrabEvent("+", self.swordGrabCb)
+                
+                self:BuildConnect(other.attachedRigidbody)
+                self.isConnect = true
+                
+                self.timerId = CL.Scheduler.RemoveSchedule(self.timerId)
+                self.timerId = CL.Scheduler.Create(self,
+                    function(sche, t, s)
+                        self:ConnectUpdate()
+                    end
+                , UE.Time.unscaledDeltaTime, -1)
+                :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+            end
+            
+        end
+    end
+end
+
+function Scabbard:ConnectUpdate()
+    if not self.isConnect then
+        return
+    end
+    
+    local localPos = self.host.transform:InverseTransformPoint(self.peakPoint.position)
+    local z_p = localPos.z
+    
+    if z_p > self.z_e then
+        if not self.isLock then
+            self:LockJoint()
+            self.isLock = true
+        end
+        self.isIn = true
+        if z_p > self.z_d - self.dragLength then
+            local prog = 1 -(self.z_d - z_p)/self.dragLength
+            local needForce = self.scrollForce * prog
+            
+            local jd = self.cJoint.xDrive
+            jd.positionSpring = needForce
+            self.lJoint.zDrive = jd
+            self.rJoint.zDrive = jd
+        else
+            local jd = self.cJoint.xDrive
+            jd.positionSpring = 0
+            self.lJoint.zDrive = jd
+            self.rJoint.zDrive = jd
+        end
+    else
+        
+        if self.isLock then
+            self:UnlockJoint()
+            self.isLock = false
+        end
+        
+        if self.isIn or (z_p < self.z_t - 0.03 ) then
+            if self.su then
+                self.su.ib:GrabEvent("-", self.swordGrabCb)
+            end
+            
+            self:Disconnect()
+            self.isConnect = false
+            self.isIn = false
+            return
+        end
+        
+        if z_p > self.z_t then
+            
+            local prog = 1 - ((self.z_e - z_p)/(self.z_e - self.z_t))
+            local needForce = self.pForce * prog
+            
+            local jd = self.cJoint.xDrive
+            jd.positionSpring = needForce
+            jd.positionDamper = needForce * 0.001
+            
+            self.cJoint.xDrive = jd
+            self.cJoint.yDrive = jd
+            
+            
+            needForce = self.eForce * prog
+            jd.positionSpring = needForce
+            jd.positionDamper = needForce * 0.001
+            self.lJoint.xDrive = jd
+            self.lJoint.yDrive = jd
+            
+            self.rJoint.xDrive = jd
+            self.rJoint.yDrive = jd
+        end
+    end
+end
+
+function Scabbard:BuildConnect(rb)
+    self.cJoint = self.host.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.cJoint.autoConfigureConnectedAnchor = false
+    
+    self.lJoint = self.host.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.lJoint.autoConfigureConnectedAnchor = false
+    
+    self.rJoint = self.host.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.rJoint.autoConfigureConnectedAnchor = false
+    
+    self.cJoint.connectedBody = rb
+    self.cJoint.connectedAnchor = self.peakPoint.localPosition
+    
+    
+    local lCPoint = UE.Vector3(0, 0, self.entryPoint.localPosition.z)
+    self.cJoint.anchor = lCPoint
+    
+    self.cJoint.zMotion = UE.ConfigurableJointMotion.Limited
+    local ll = self.cJoint.linearLimit
+    ll.limit = self.swordLength
+    self.cJoint.linearLimit = ll
+    
+    
+    local leftPoint = lCPoint + self.leftOffset
+    local rightPoint = lCPoint + self.rightOffset
+    local wLlp = self.host.gameObject.transform:TransformPoint(leftPoint)
+    
+    local connectLeftPoint = self.rootPoint.localPosition + self.leftOffset
+    local connectRightPoint = self.rootPoint.localPosition + self.rightOffset
+    
+    local wlPoint = self.rootPoint.transform:TransformPoint(connectLeftPoint)
+    local wrPoint = self.rootPoint.transform:TransformPoint(connectRightPoint)
+    
+    self.lJoint.connectedBody = rb
+    self.rJoint.connectedBody = rb
+    
+    if (wlPoint - wLlp).sqrMagnitude < (wrPoint - wLlp).sqrMagnitude then
+        
+        self.lJoint.connectedAnchor = connectLeftPoint
+        self.lJoint.anchor = leftPoint
+        self.point1.transform.localPosition = leftPoint;
+        self.swordPoint1.transform.localPosition = connectLeftPoint
+        
+        self.rJoint.connectedAnchor = connectRightPoint
+        self.rJoint.anchor = rightPoint
+        self.point2.transform.localPosition = rightPoint;
+        self.swordPoint2.transform.localPosition = connectRightPoint
+    else
+       
+        self.lJoint.connectedAnchor = connectRightPoint
+        self.lJoint.anchor = leftPoint
+        self.point1.transform.localPosition = rightPoint;
+        self.swordPoint1.transform.localPosition = connectRightPoint
+        
+        self.rJoint.connectedAnchor = connectLeftPoint
+        self.rJoint.anchor = rightPoint
+        self.point2.transform.localPosition = leftPoint;
+        self.swordPoint2.transform.localPosition = connectLeftPoint
+        
+    end
+    
+    local swordCols = self.su.ib:GetCols()
+    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, true)
+    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, true)
+    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, true)
+    CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
+    
+end
+
+function Scabbard:LockJoint()
+    self.cJoint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.cJoint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.cJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.cJoint.projectionDistance = 0.5
+    
+    self.lJoint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.lJoint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.lJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.lJoint.projectionDistance = 0.5
+    
+    self.rJoint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.rJoint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.rJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.rJoint.projectionDistance = 0.5
+end
+
+function Scabbard:UnlockJoint()
+    self.cJoint.xMotion = UE.ConfigurableJointMotion.Free
+    self.cJoint.yMotion = UE.ConfigurableJointMotion.Free
+    
+    self.lJoint.xMotion = UE.ConfigurableJointMotion.Free
+    self.lJoint.yMotion = UE.ConfigurableJointMotion.Free
+    
+    self.rJoint.xMotion = UE.ConfigurableJointMotion.Free
+    self.rJoint.yMotion = UE.ConfigurableJointMotion.Free
+end
+
+function Scabbard:Disconnect()
+    if not IsNullOrDestroyed(self.cJoint) then
+        UE.Object.Destroy(self.cJoint)
+    end
+    if not IsNullOrDestroyed(self.lJoint) then
+        UE.Object.Destroy(self.lJoint)
+    end
+    if not IsNullOrDestroyed(self.rJoint) then
+        UE.Object.Destroy(self.rJoint)
+    end
+    
+    local pHand = self.su.ib:GetPrimaryHand();
+    local sHand = self.su.ib:GetSecondaryHand();
+    local swordCols = self.su.ib:GetCols()
+    
+    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, false)
+        
+    if IsNullOrDestroyed(pHand) and IsNullOrDestroyed(sHand) then
+        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, false)
+        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, false)
+    else
+        local rIg, lIg = true
+        if (not IsNullOrDestroyed(pHand) and pHand:GetHandIndex() == 0) or (not IsNullOrDestroyed(sHand) and sHand:GetHandIndex() == 0) then
+            lIg = false
+        elseif (not IsNullOrDestroyed(pHand) and pHand:GetHandIndex() == 1) or (not IsNullOrDestroyed(sHand) and sHand:GetHandIndex() == 1) then
+            rIg = false
+        end
+        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, lIg)
+        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, rIg)
+    end
+
+
+end
+
+function Scabbard:SwordOnGrab(a, g)
+    local swordCols = self.su.ib:GetCols()
+    if self.isConnect then
+        local handIdx = a.attachedHand:GetHandIndex()
+        CL.Scheduler.Create(self,
+            function(sche, t, s)
+                if handIdx == 0 then
+                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
+                else
+                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
+                end
+                CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
+            end
+        , 0, 0, 0.51)
+    else
+        if not g then
+            CL.Scheduler.Create(self,
+            function(sche, t, s)
+                CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, false)
+                CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, false)
+                CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, false)
+            end
+            , 0, 0, 0.51)
+        end
+    end
+end
+
+
+function Scabbard:ScabbardOnGrab(a, g)
+    if self.isConnect then
+        local handIdx = a.attachedHand:GetHandIndex()
+        CL.Scheduler.Create(self,
+            function(sche, t, s)
+                local swordCols = self.su.ib:GetCols()
+                if g then
+                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
+                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
+                else
+                    if handIdx == 0 then
+                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
+                else
+                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
+                    end
+                end
+                CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
+            end
+        , 0, 0, 0.51)
+    end
+end
+
+function Scabbard:OnDestroy()
+
+end
+
+return Class(nil, nil, Scabbard)

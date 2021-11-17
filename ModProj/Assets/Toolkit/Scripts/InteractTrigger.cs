@@ -32,6 +32,9 @@ namespace CrossLink
         public string chargeEffect;
         public string chargeEndEffect;
 
+        public SoundEffectInfo chargeSound;
+        public SoundEffectInfo chargeEndSound;
+
         // activate
         [Tooltip("after charged, it'll be activated, this controls how long will it last")]
         public float activateTime = -1;
@@ -40,9 +43,17 @@ namespace CrossLink
         [Tooltip("don't tick this logic, better performance")]
         public bool dontNeedUpdate = true;
 
+        #region Weapon Color
         [Tooltip("which renders will turn colors")]
         public Renderer[] skillChangeColors;
         public string weaponColorField = "_EmissionColor";
+        public bool enableChargeColor = false;
+
+        static public Color YellowColor = new Color(0.943f, 0.952f, 0.588f);
+        [Tooltip("glove color when charge")]
+        public Color chargeColor = YellowColor;
+        #endregion
+
 
         protected void Reset()
         {

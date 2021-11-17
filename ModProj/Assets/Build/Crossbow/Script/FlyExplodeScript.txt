@@ -1,0 +1,47 @@
+local flyEx = {
+    -- explodeRange
+    -- explodeEffect
+}
+
+
+
+
+function flyEx:FlyStart(vel)
+    if self.explodeRange > 0 then
+        CL.EffectMgr.Instance:PlayEffect(self.explodeEffect, self.trans.position, self.trans.rotation)
+        
+        -- push player away
+        CL.InteractTrigger.HitScanAction = function(beHitPu, beHitCol, selfPu, rb, col, hitDir, hitterCamp)
+            local roleController = nil
+            if (beHitPu.unitType == CL.Tagger.Tag.PlayerRole) then
+                roleController = beHitPu.character
+--[[                
+            elseif (beHitPu.unitType == CL.Tagger.Tag.PlayerHand) then
+                player = beHitPu.logicHand.character
+]]                
+            elseif (beHitPu.unitType == CL.Tagger.Tag.InteractRole) then
+                roleController = beHitPu.controller
+            end
+            
+            if roleController then
+                --player:AddPushback()
+                local pushDir = roleController:GetCentrePos() - selfPu.trans.position
+                local force = pushDir.normalized * 15
+                -- this is for player only
+                if (beHitPu.unitType ~= CL.Tagger.Tag.InteractRole) then
+                    roleController:AddForce(force)
+                end
+                roleController:AddPushbackByForce(force, true)
+                --print("HitScanAction" .. tostring(roleController) .. " pushDir:" .. tostring(pushDir))
+            end
+        end
+        
+        CL.InteractTrigger.ApplyExplode(self.trans.position, self.explodeRange, self.host, self.host.rb, self.host.col, CL.AIProxy.CampNone)
+    end
+end
+
+
+
+
+
+return Class(nil, nil, flyEx)

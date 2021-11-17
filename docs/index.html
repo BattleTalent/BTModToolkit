@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Battle Talent: Welcome to the Scripting Document</title>
+<title>Battle Talent: Main Page</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -64,11 +64,61 @@ $(function() {
 
 <div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">Welcome to the Scripting Document </div>  </div>
+<div class="title">Battle Talent Documentation</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="md_Z__WorkSpace_ProjSAO_ProjSAO_Assets_Scripts_doc"></a> Hello, this is scripting document, you can query these API, then use them in lua, looking forward to what will everyone create. We will open more system in the future, currently we only export weapon related tools(in C#).</p>
-<h4><a class="anchor" id="autotoc_md1"></a>
+<div class="toc"><h3>Table of Contents</h3>
+<ul><li class="level1"><a href="#autotoc_md2">Welcome to the Scripting Document</a><ul><ul><ul><li class="level4"><a href="#autotoc_md3">Quick Start</a></li>
+<li class="level4"><a href="#autotoc_md4">Make your first weapon with BTModToolkit in 10 mintues</a></li>
+<li class="level4"><a href="#autotoc_md5">Mod Host Community</a></li>
+<li class="level4"><a href="#autotoc_md6">Before release your own mod</a></li>
+<li class="level4"><a href="#autotoc_md7">Workflow</a></li>
+<li class="level4"><a href="#autotoc_md8">Tips for scripting in lua:</a></li>
+<li class="level4"><a href="#autotoc_md9">ZeroBrane IDE auto-complete</a></li>
+<li class="level4"><a href="#autotoc_md10">Related Manual</a></li>
+<li class="level4"><a href="#autotoc_md11">TODO</a></li>
+</ul>
+</ul>
+</ul>
+</li>
+<li class="level1"><a href="#autotoc_md13">Basic Concept</a><ul><ul><ul><li class="level4"><a href="#autotoc_md14">check what we got by a collider or rigidbody</a></li>
+<li class="level4"><a href="#autotoc_md15">here&#39;s the enum and the class</a></li>
+<li class="level4"><a href="#autotoc_md16">layer settings</a></li>
+</ul>
+</ul>
+</ul>
+</li>
+<li class="level1"><a href="#autotoc_md18">Commonly used classes</a><ul><ul><ul><li class="level4"><a href="#autotoc_md19">Basic Classes</a></li>
+<li class="level4"><a href="#autotoc_md20">GamePlay Related Classes</a></li>
+<li class="level4"><a href="#autotoc_md21">Lua Host Classes</a></li>
+<li class="level4"><a href="#autotoc_md22">Built in CollisionEffect</a></li>
+<li class="level4"><a href="#autotoc_md23">Commonly used components</a></li>
+<li class="level4"><a href="#autotoc_md24">How to setup InteractTrigger</a></li>
+<li class="level4"><a href="#autotoc_md25">CollisionEffect</a></li>
+<li class="level4"><a href="#autotoc_md26">HitInfo</a></li>
+<li class="level4"><a href="#autotoc_md28">FlyObject</a></li>
+<li class="level4"><a href="#autotoc_md34">Damage Pipeline</a></li>
+</ul>
+</ul>
+</ul>
+</li>
+<li class="level1"><a href="#autotoc_md37">Tricks</a><ul><ul><ul><li class="level4"><a href="#autotoc_md38">A easier way to config addressables.</a></li>
+<li class="level4"><a href="#autotoc_md39">For HandAttach component, use HandPoseHelper to adject hand&#39;s position and rotation.</a></li>
+<li class="level4"><a href="#autotoc_md40">Background Knowledge</a></li>
+<li class="level4"><a href="#autotoc_md41">DebugTools</a></li>
+<li class="level4"><a href="#autotoc_md42">Shotcut</a></li>
+<li class="level4"><a href="#autotoc_md43">Log Path</a></li>
+</ul>
+</ul>
+</ul>
+</li>
+</ul>
+</div>
+<div class="textblock"><p><a class="anchor" id="md_C__Users_lauho_Documents_WorkSpace_ProjSAO_ProjSAO_Assets_Scripts_doc"></a></p>
+<h1><a class="anchor" id="autotoc_md2"></a>
+Welcome to the Scripting Document</h1>
+<p>Hello, this is the scripting document, you can query these API, then use them in lua. Looking forward to what everyone will create. We will open more systems in the future, currently we only export weapon related tools(in C#).</p>
+<h4><a class="anchor" id="autotoc_md3"></a>
 Quick Start</h4>
 <ol type="1">
 <li>install Unity 2019.4.12f(download <a href="https://unity3d.com/get-unity/download">UnityHub</a>, then download Engine via Hub)</li>
@@ -79,15 +129,20 @@ Quick Start</h4>
 <li>Quest: /sdcard/Android/data/com.CrossLink.SAO/files/Mods/</li>
 </ul>
 </li>
-<li>Done! (if something goes wrong, please open your cheat menu then tell us about your error messages)</li>
+<li>Done! (if something goes wrong, please open your cheat menu then tell us with your error messages)</li>
 </ol>
 <p>if you just want to try play this mod, you can download it from <a href="https://github.com/fonzieyang/BTModToolkit/releases/download/V0.0.1/ModProj.zip">HERE</a></p>
-<h4><a class="anchor" id="autotoc_md2"></a>
+<h4><a class="anchor" id="autotoc_md4"></a>
 Make your first weapon with BTModToolkit in 10 mintues</h4>
-<p>please check out this <a href="https://youtu.be/IqPl5KRgZ8Y">Weapon Modding Video</a>, for more details please check out this <a href="https://docs.google.com/spreadsheets/d/1z3dAbbIpCERFYRC-NOEZxo7R3kv008184Jws9MFz2NI/edit?usp=sharing">Weapon Modding Doc</a></p>
-<h4><a class="anchor" id="autotoc_md3"></a>
+<p>please check out this <a href="https://youtu.be/IqPl5KRgZ8Y">Weapon Modding Video</a></p>
+<h4><a class="anchor" id="autotoc_md5"></a>
+Mod Host Community</h4>
+<p>We host most of our mods on <a href="https://battletalent.mod.io/">Mod.io</a>. There are so many resources out there.</p>
+<p>As a thank you to the player community, the Battle Talent demo should be called community version, it'll be free and share the same code base with the official version(not release yet).</p>
+<p>Feel free to use Battle Talent as your VR coding playground and ask question on our <a href="https://discord.gg/f4dmSG9">discord</a>.</p>
+<h4><a class="anchor" id="autotoc_md6"></a>
 Before release your own mod</h4>
-<p>please make sure you've <em>cleared the project</em> and <em>renamed the product</em></p>
+<p>please make sure you've <b>cleared the project</b> and <b>renamed the product</b></p>
 <p>two ways to clear the example project:</p><ul>
 <li>remove the pre-added addressables(window-&gt;asset management-&gt;addressables-&gt;group)</li>
 <li>delete the Examples folder(Assets/Examples)</li>
@@ -95,7 +150,10 @@ Before release your own mod</h4>
 <p>the way to change product name:</p><ul>
 <li>Edit -&gt; Project Settings -&gt; Modify the Project Name</li>
 </ul>
-<h4><a class="anchor" id="autotoc_md4"></a>
+<h4><a class="anchor" id="autotoc_md7"></a>
+Workflow</h4>
+<p><img src="workflow.png" alt="" class="inline"/></p>
+<h4><a class="anchor" id="autotoc_md8"></a>
 Tips for scripting in lua:</h4>
 <ul>
 <li>namespace of CShape code is CS in lua</li>
@@ -104,16 +162,14 @@ Tips for scripting in lua:</h4>
 <li>calling a static function should use '.' instead of ':' in lua</li>
 <li>recommend using <a href="https://studio.zerobrane.com/">ZeroBrane Studio</a> as lua editor</li>
 </ul>
-<h4><a class="anchor" id="autotoc_md5"></a>
-TODO</h4>
-<ul>
-<li>lua grammar completion(ZeroBrane based)</li>
-<li>lua break point debug(ZeroBrane based)</li>
-<li>level modding</li>
-<li>npc modding</li>
-<li>player modding</li>
-</ul>
-<h4><a class="anchor" id="autotoc_md6"></a>
+<h4><a class="anchor" id="autotoc_md9"></a>
+ZeroBrane IDE auto-complete</h4>
+<ol type="1">
+<li>copy syntax.lua(ModProj/Assets/Resources/Tools/ZeroBraneAutoCompleteTool) to path ZeroBraneStudio/api/lua.</li>
+<li>open ZeroBrane Studio and click Edit-&gt;Preferances-&gt;Settings User to open user.lua.</li>
+<li>write "table.insert(api, 'syntax')" in user.lua.</li>
+</ol>
+<h4><a class="anchor" id="autotoc_md10"></a>
 Related Manual</h4>
 <ul>
 <li><a href="https://docs.unity3d.com/2019.4/Documentation/Manual/">Unity manual</a></li>
@@ -121,11 +177,18 @@ Related Manual</h4>
 <li><a href="https://github.com/Tencent/xLua/blob/master/README_EN.md">Xlua</a></li>
 <li><a href="https://docs.moodkie.com/easy-save-3/es3-api/es3-class/">EasySave3</a></li>
 </ul>
+<h4><a class="anchor" id="autotoc_md11"></a>
+TODO</h4>
+<ul>
+<li>player modding</li>
+<li>level modding</li>
+<li>npc modding</li>
+</ul>
 <hr  />
-<h1><a class="anchor" id="autotoc_md8"></a>
+<h1><a class="anchor" id="autotoc_md13"></a>
 Basic Concept</h1>
 <p>Battle Talent is fully driven by physics, so every collider in this game, we can find the logic object they belonged to(except environment).</p>
-<h4><a class="anchor" id="autotoc_md9"></a>
+<h4><a class="anchor" id="autotoc_md14"></a>
 check what we got by a collider or rigidbody</h4>
 <pre class="fragment">local pu = CL.PhysicsUnit.GetPhysicsUnit(collider)
 if (pu == nil || pu:IsScene()) then
@@ -134,13 +197,15 @@ else
     print(pu.unitType)
 end
 
-local puRB = CL.PhysicsUnit.GetPhysicsUnit(rigidbody.transform)
+-- by default, we use Bottom Up Method, which means, we may get the sub object of another object
+-- if we want to get the root object, then we should use GetPhysicsUnitTopDown instead
+local puRB = CL.PhysicsUnit.GetPhysicsUnitTopDown(rigidbody.transform)
 if (puRB == nil || puRB:IsScene()) then
     print("Env")
 else
     print(puRB.unitType)
 end
-</pre> <h4><a class="anchor" id="autotoc_md10"></a>
+</pre> <h4><a class="anchor" id="autotoc_md15"></a>
 here's the enum and the class</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -158,7 +223,7 @@ here's the enum and the class</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyLeft">PlayerHand   </td><td class="markdownTableBodyLeft"><a href="class_cross_link_1_1_physics_hand.html">PhysicsHand</a>   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md11"></a>
+<h4><a class="anchor" id="autotoc_md16"></a>
 layer settings</h4>
 <p>check out <a href="class_cross_link_1_1_layer_define.html">LayerDefine</a> to find all the layers we predefined</p>
 <table class="markdownTable">
@@ -172,9 +237,9 @@ layer settings</h4>
 <td class="markdownTableBodyLeft">InteractLayerMask   </td><td class="markdownTableBodyLeft">Weapon, Item, Part of BodyPart   </td></tr>
 </table>
 <hr  />
-<h1><a class="anchor" id="autotoc_md13"></a>
+<h1><a class="anchor" id="autotoc_md18"></a>
 Commonly used classes</h1>
-<h4><a class="anchor" id="autotoc_md14"></a>
+<h4><a class="anchor" id="autotoc_md19"></a>
 Basic Classes</h4>
 <ul>
 <li><a href="class_cross_link_1_1_scheduler.html">Scheduler</a></li>
@@ -185,7 +250,7 @@ Basic Classes</h4>
 <li><a href="class_cross_link_1_1_game_data_mgr.html">GameDataMgr</a></li>
 <li><a href="class_cross_link_1_1_x_lua_mgr.html">XLuaMgr</a></li>
 </ul>
-<h4><a class="anchor" id="autotoc_md15"></a>
+<h4><a class="anchor" id="autotoc_md20"></a>
 GamePlay Related Classes</h4>
 <ul>
 <li><a href="class_cross_link_1_1_hit_info_config.html">HitInfoConfig</a></li>
@@ -199,7 +264,7 @@ GamePlay Related Classes</h4>
 <li><a href="class_cross_link_1_1_player_data_mgr.html">PlayerDataMgr</a></li>
 <li><a href="class_cross_link_1_1_level_data_mgr.html">LevelDataMgr</a></li>
 </ul>
-<h4><a class="anchor" id="autotoc_md16"></a>
+<h4><a class="anchor" id="autotoc_md21"></a>
 Lua Host Classes</h4>
 <ul>
 <li><a href="class_cross_link_1_1_lua_behaviour.html">LuaBehaviour</a></li>
@@ -218,223 +283,359 @@ Lua Host Classes</h4>
 <td class="markdownTableBodyCenter">StartInit   </td><td class="markdownTableBodyCenter">Start   </td></tr>
 </table>
 <p>For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event instead of AwakeInit</p>
+<h4><a class="anchor" id="autotoc_md22"></a>
+Built in CollisionEffect</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Collision Material Name   </th><th class="markdownTableHeadNone">Used For    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Weapon   </td><td class="markdownTableBodyNone">Blade    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">WeaponBlunt   </td><td class="markdownTableBodyNone">Hammer, Metal, Handle    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Metal   </td><td class="markdownTableBodyNone">Environment    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Brick   </td><td class="markdownTableBodyNone">Environment    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Wood   </td><td class="markdownTableBodyNone">Environment or Wooden Weapon   </td></tr>
+</table>
+<h4><a class="anchor" id="autotoc_md23"></a>
+Commonly used components</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Basic Components   </th><th class="markdownTableHeadNone">Function    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">InteractWeapon   </td><td class="markdownTableBodyNone">represent the entity of weapon    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">InteractTrigger / InteractTriggerX   </td><td class="markdownTableBodyNone">define how weapon works when player pressing trigger button    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">StabObj   </td><td class="markdownTableBodyNone">define how your weapon penetrate others    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">RagdollHitInfoObj   </td><td class="markdownTableBodyNone">define how to calculate damage    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">RagdollHitInfoRef   </td><td class="markdownTableBodyNone">it'll define a group of RagdollHitInfoObj as a whole, so that they won't hit multiple times    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">RagdollInit   </td><td class="markdownTableBodyNone">define intertia tensor and center mass, if it's zero, then it'll not take effect on the rigidbody    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">CollisionEffect   </td><td class="markdownTableBodyNone">simulate physics collision effect    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">AttachLine / AttachPoint   </td><td class="markdownTableBodyNone">define how player grabs it    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Mount Point   </td><td class="markdownTableBodyNone">define how player put it in the pocket    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">FlyObj / FlyObjX   </td><td class="markdownTableBodyNone">attached on Fly Object, such as bullet, magic   </td></tr>
+</table>
+<h4><a class="anchor" id="autotoc_md24"></a>
+How to setup InteractTrigger</h4>
+<p>Here shows:</p><ul>
+<li>What will happen when you toggled those paramters on InteractTrigger component.</li>
+<li>How's the mana cost system work.</li>
+<li>What's the callback function we'll call when we pull the trigger.</li>
+</ul>
+<p>For more examples, please check out the Mod Toolkit</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">manaCost   </th><th class="markdownTableHeadNone"></th><th class="markdownTableHeadNone"></th><th class="markdownTableHeadNone"></th><th class="markdownTableHeadNone"></th><th class="markdownTableHeadNone"></th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">instantSkill   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">√   </td><td class="markdownTableBodyNone">√   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">skillChargeEndTime   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">√   </td><td class="markdownTableBodyNone">√   </td><td class="markdownTableBodyNone">√    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">activateTime   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">√   </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">example   </td><td class="markdownTableBodyNone">Continuous updated skill, such as telekinesis, sprint spear, slash katana   </td><td class="markdownTableBodyNone">one shot skill, such as gun   </td><td class="markdownTableBodyNone">can be shot and charged at the same time, such as storm pistol   </td><td class="markdownTableBodyNone">can be charged into special state, such as thunder spear   </td><td class="markdownTableBodyNone">Charged for an one shot release, such as fireball spell    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Real mana in calcuation   </td><td class="markdownTableBodyNone">manaCostOnCharge   </td><td class="markdownTableBodyNone">manaCost   </td><td class="markdownTableBodyNone">manaCost manaCostOnCharge   </td><td class="markdownTableBodyNone">manaCostOnCharge   </td><td class="markdownTableBodyNone">manaCostOnCharge    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">callback   </td><td class="markdownTableBodyNone">OpenSkill<br  />
+UpdateSkill<br  />
+CloseSkill   </td><td class="markdownTableBodyNone">UpdateSkill   </td><td class="markdownTableBodyNone">UpdateSkill <br  />
+OnChargeBegin<br  />
+OnChargeReady<br  />
+OnChargeUpdate<br  />
+OnChargeRelease <br  />
+OnChargeCancel   </td><td class="markdownTableBodyNone">OnActivateBegin <br  />
+OnActivateEnd <br  />
+OnActivateCancel   </td><td class="markdownTableBodyNone">OnChargeBegin-&gt;OnChargeReady-&gt;OnChargeUpdate-&gt;OnChargeRelease   </td></tr>
+</table>
+<h4><a class="anchor" id="autotoc_md25"></a>
+CollisionEffect</h4>
+<p>BuiltIn collision materials for weapon here, paste the name into CollisionEffect component, then the colliders under this will be identified as this material.</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Collision Material Name   </th><th class="markdownTableHeadNone">Used For    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Weapon   </td><td class="markdownTableBodyNone">Blade    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">WeaponBlunt   </td><td class="markdownTableBodyNone">Hammer, Metal, Handle    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Metal   </td><td class="markdownTableBodyNone">Environment    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Brick   </td><td class="markdownTableBodyNone">Environment    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Wood   </td><td class="markdownTableBodyNone">Environment or Wooden Weapon   </td></tr>
+</table>
+<h4><a class="anchor" id="autotoc_md26"></a>
+HitInfo</h4>
+<p>Builtin hit type, paste the name into RagdollHitInfoObj component, then the colliders under this will be identified as this hit type</p>
+<p>Notice that you may need to use RagdollHitInfoRef component to bind multiple RagdollHitInfoObj as one hit identity, otherwise it will cause multiple hits at a time.</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Name   </th><th class="markdownTableHeadNone">VelocityMlp   </th><th class="markdownTableHeadNone">DamageMlp   </th><th class="markdownTableHeadNone">DamageThrough   </th><th class="markdownTableHeadNone">DamageCrit   </th><th class="markdownTableHeadNone">StabMlp   </th><th class="markdownTableHeadNone">HitMlp   </th><th class="markdownTableHeadNone">HitRandom   </th><th class="markdownTableHeadNone">StabDamage   </th><th class="markdownTableHeadNone">BreakDefenceMlp   </th><th class="markdownTableHeadNone">HitBackMlp   </th><th class="markdownTableHeadNone">KnockoutFactor   </th><th class="markdownTableHeadNone">DizzyFactor   </th><th class="markdownTableHeadNone">StiffValue    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Sword   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">10   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.2   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">LightSaber   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">35   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">0.2   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Wood   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">125   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Brick   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">130   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Metal   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">7   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">125   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1.3   </td><td class="markdownTableBodyNone">112.5   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0.4   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Fist   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">4   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">125   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0.4   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Hammer   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">6   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">130   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">112.5   </td><td class="markdownTableBodyNone">0.4   </td><td class="markdownTableBodyNone">0.4   </td><td class="markdownTableBodyNone">3.6    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">SingleHammer   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">8   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">125   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">112.5   </td><td class="markdownTableBodyNone">0.45   </td><td class="markdownTableBodyNone">0.45   </td><td class="markdownTableBodyNone">3.6    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Axe   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">12   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.8   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">3.6    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Dagger   </td><td class="markdownTableBodyNone">1.3   </td><td class="markdownTableBodyNone">5   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">4.5   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.2   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">0.8   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1.6    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Katana   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">12   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">1.3   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.2   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1.6    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Rapier   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">8   </td><td class="markdownTableBodyNone">0.2   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">3   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Shield   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">8   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">125   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0.4   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Spear   </td><td class="markdownTableBodyNone">1.3   </td><td class="markdownTableBodyNone">7   </td><td class="markdownTableBodyNone">0.8   </td><td class="markdownTableBodyNone">1.8   </td><td class="markdownTableBodyNone">2.5   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1.4   </td><td class="markdownTableBodyNone">112.5   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Stick   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">6   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">125   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">0.6   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">SwordWind   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">12   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">SwordWind_Slash   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">20   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">112.5   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Wand   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">6   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">0.8   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">0.6   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Bullet   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">3   </td><td class="markdownTableBodyNone">0.4   </td><td class="markdownTableBodyNone">4.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Explode   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">40   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">400   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Arrow   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">6   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">6   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">MagicBall   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">12   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">4   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Flame   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">5   </td><td class="markdownTableBodyNone">0.6   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">112.5   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">IceSword   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">20   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.2   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Laser   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">15   </td><td class="markdownTableBodyNone">0.6   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">FlySlash   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">15   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1.3   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">FlyString   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">15   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1.3   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">FlyThunder   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">3   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1.3   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">140   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">FlyOriFire   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">15   </td><td class="markdownTableBodyNone">0.5   </td><td class="markdownTableBodyNone">4   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">TrackBall   </td><td class="markdownTableBodyNone">2.2   </td><td class="markdownTableBodyNone">10   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">1.3   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">90   </td><td class="markdownTableBodyNone">0.6   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Spike   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">112.5   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">SpikeSmall   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">3   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1.5   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">112.5   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Drone   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">22.5   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">0.1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">150   </td><td class="markdownTableBodyNone">0.3   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">DropObj   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">50   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">150   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">KO   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">20   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8   </td></tr>
+</table>
 <hr  />
-<h1><a class="anchor" id="autotoc_md18"></a>
-Coding Examples</h1>
-<h4><a class="anchor" id="autotoc_md19"></a>
-tick a function, update at 0.1 second intervals within 10 seconds, and execute after 0.2 seconds</h4>
-<pre class="fragment">local scheId = CL.Scheduler.Create(target,
-function(sche, t, s)
-    local progress = t/s
-    print("updating:" .. progress)
-    if (t&gt;=s) then
-        print("finished succ")
-    end
-end
-, 0.1, 10, 0.2)
-:SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
-:IgnoreTimeScale(true)
-:SetOnStop(function(sche)
-    print("on stop")
-end).actionId
-CL.Scheduler.RemoveScheduler(scheId)
-</pre> <h4><a class="anchor" id="autotoc_md20"></a>
-add store item</h4>
-<pre class="fragment">storeItem = CL.UnlockContentItem()
-storeItem.name = weaponName
-storeItem.dependItemName = dependWeapon
-storeItem.iconName = weaponName
-storeItem.contentType = CL.UnlockContentConfig.UnlockContentType.Weapon
-storeItem.unlockRequireCoinNum = 1
-CL.UnlockContentConfig.AddItem(storeItem)
-</pre> <h4><a class="anchor" id="autotoc_md21"></a>
-add a new hitinfo to the config file</h4>
-<pre class="fragment">HitInfoConfig = CL.GameDataMgr.GetData(typeof(CL.HitInfoConfig))
-local lightBladeHitInfo = CL.HitInfoConfig.HitInfoConfigItem()
-lightBladeHitInfo.Name = "WMD_LightBlade"
-lightBladeHitInfo.VelocityMlp = 1.5
-lightBladeHitInfo.DamageMlp = 30
-lightBladeHitInfo.DamageThrough = 1.5
-lightBladeHitInfo.DamageCrit = 1.5
-lightBladeHitInfo.StabMlp = 1.5
-lightBladeHitInfo.HitMlp = 120
-lightBladeHitInfo.HitRandom = 0.2
-lightBladeHitInfo.StabDamage = 120
-lightBladeHitInfo.BreakDefenceMlp = 1
-lightBladeHitInfo.HitBackMlp = 90
-lightBladeHitInfo.KnockoutFactor = 0.1
-lightBladeHitInfo.DizzyFactor = 0
-lightBladeHitInfo.StiffValue = 2.5
-HitInfoConfig:AddData(lightBladeHitInfo)
-</pre><h4><a class="anchor" id="autotoc_md22"></a>
-check npc's hp</h4>
-<pre class="fragment">if (pu.unitType == CL.Tagger.Tag.InteractRole) then
-    local fc = pu
-    print(fc.attr.HpBase)
-    // even change camp(from enemy to friend)
-    if (fc.attr.camp == "Bad") then
-        fc.attr:ChangeCamp()
-    end     
-end
-</pre><h4><a class="anchor" id="autotoc_md23"></a>
-apply hit scan(in C#), raycast then apply hitscan damage to target, and using specific hitinfo as damage source</h4>
-<pre class="fragment">if (Physics.SphereCast(interact.trans.position +
-        interact.trans.forward * slashDetectOffset, 0.2f,
-        interact.trans.forward,
-        out hitInfo, slashDis, slashLayer))
-{
-        InteractTrigger.SetOverrideHitInfo(rgHitInfo);
-        InteractTrigger.BeginScanDmg();
-        InteractTrigger.AddHitScanProtect();
-        InteractTrigger.ApplyHitScanDamage(hitInfo.collider, interact,
-                interact.rb, hitCol, interact.rb.velocity.normalized,
-                holdingCharacter.aiProxy.GetCamp());
-        InteractTrigger.EndHitScan();
-        InteractTrigger.SetOverrideHitInfo(null);
-        if (InteractTrigger.ScanHited)
-        {
-                windCutSound.Play(hitInfo.point);
-        }                
-}
-</pre><h4><a class="anchor" id="autotoc_md24"></a>
-search enemies around you(in C#), the value of camp is either "Good"(friend) or "Bad"(enemy)</h4>
-<pre class="fragment">static public AIProxy GetCloestTarget(Transform self, string camp, bool goodRelate = true, bool includeDown = false)
-{
-        AIProxy target = null;
-        float minDis = 10000;
-
-        var allChar = AIProxy.GetAroundAITarget();
-        var charIte = allChar.GetEnumerator();
-
-        while (charIte.MoveNext()){
-                var proxy = charIte.Current.Value;
-
-                if (includeDown == false &amp;&amp; proxy.IsDown())
-                        continue;
-
-                if (proxy.GetTransform() == self || proxy.gameObject.activeInHierarchy == false)
-                        continue;
-
-                var rela = SocietyMgr.GetSocietyInfo().GetCampRelationTo(camp, proxy.GetCamp());
-                if ((goodRelate &amp;&amp; rela &gt; 0)||
-                        (!goodRelate &amp;&amp; rela &lt; 0)){
-                        var dis = (proxy.GetTransform().position - self.position).sqrMagnitude;
-                        if (dis &lt; minDis){
-                                minDis = dis;
-                                target = proxy;
-                        }
-                }
-        }
-        return target;
-}
-</pre> <h4><a class="anchor" id="autotoc_md25"></a>
-xlua tips</h4>
-<pre class="fragment">// cast &amp; typeof example
-cast(castObj, typeof(CL.TestCastClass))
-
-// the way we implemented oop
-function Clone(t, cpFunc)
-    cpFunc = cpFunc or true
-    if type(t) ~= 'table' then return t end
-    local meta = getmetatable(t)
-    local target = {}
-    for k, v in pairs(t) do
-            if type(v) == 'table' then
-                    target[k] = Clone(v, cpFunc)
-            else
-                    if not cpFunc and type(v) == 'function' then
-                    else
-                            target[k] = v
-                    end            
-            end
-    end
-    setmetatable(target, meta)
-    return target
-end
-
-local getmetatable = getmetatable
-function Class(base,static,instance)
-
-    local mt = nil
-    if (base ~= nil) then
-            mt = getmetatable(base)
-    end
-
-    local class = static or {}
-
-    local callfunc
-    callfunc = function(cls, ...)
-                            local r = nil
-                            if (mt ~= nil) then
-                                    r = mt.__call(cls, ...)
-                            end
-                            local ret
-                            if instance ~= nil then
-                                    ret = Clone(instance, false)
-                            else
-                                    ret = {}
-                            end
-
-                            local ins_ret = setmetatable(
-                                    {
-                                            __base = r,
-                                    },
-
-                                    {
-                                            __index = function(t, k)
-                                                    local ret_field
-                                                    ret_field = rawget(t,k)
-                                                    if nil ~= ret_field then
-                                                            return ret_field
-                                                    end
-
-                                                    ret_field = ret[k]
-                                                    if nil == ret_field and r ~= nil then
-                                                            ret_field = r[k]
-                                                    end
-                                                    return ret_field
-                                            end,
-
-                                            __newindex = function(t,k,v)
-                                                    if r == nil or r[k] == nil then
-                                                            rawset(t,k,v)
-                                                    else
-                                                            r[k] = v
-                                                    end
-                                            end,
-                                    })
-
-                            if ret.ctor then
-                                    ins_ret:ctor(...)
-                            end
-
-                            return ins_ret
-                    end
-
-    setmetatable(class,
-            {
-                    __index = function(t, k)
-                                            if k == 'CreateFromClass' then
-                                                    return callfunc
-                                            end
-
-                                            if base ~= nil and base[k] ~= nil then
-                                                    return base[k]
-                                            end
-
-                                            if instance ~= nil and instance[k] ~= nil then
-                                                    return instance[k]
-                                            end                    
-                                        end,
-
-                    __call = callfunc,
-            }
-    )
-    return class
-end
-";
-</pre> <hr  />
- </div></div><!-- PageDoc -->
+<h4><a class="anchor" id="autotoc_md28"></a>
+FlyObject</h4>
+<p><a class="anchor" id="autotoc_md29"></a> </p><h5>Life Cycle</h5>
+<p>Once collision count meet with collisionCount or maxFlyTime is over, then flyobject will enter finish state</p>
+<p><img src="FlyObjLifeCycle.png" alt="" class="inline"/></p>
+<p><a class="anchor" id="autotoc_md30"></a> </p><h5>Fly Logic</h5>
+<p>In fly state, FlyObject can play trail and keep track of the trajectory</p>
+<p>Once collision count meet with collisionFlyCount, then flyobject will enter flystop state</p>
+<p><img src="FlyState.png" alt="" class="inline"/></p>
+<p><a class="anchor" id="autotoc_md31"></a> </p><h5>Collision Ignore Settings</h5>
+<p>You can setup the flyobject ignore specific type of objects.</p>
+<p>ignoreDamageList: you can ignore collision with specific type objs</p>
+<p>ignoreHolder: you can also ignore the role spawn this flyobj</p>
+<p><a class="anchor" id="autotoc_md32"></a> </p><h5>Collision Callback Functions:</h5>
+<p>Note: collision event will override the original functions in lua, so you need to call the OnCollisionUpdate manually to maintain the life cycle, please check out the FlySpellBaseScript.txt for example.</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone"></th><th class="markdownTableHeadNone">Collision   </th><th class="markdownTableHeadNone"></th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">PlayerHand   </td><td class="markdownTableBodyNone">OnCollisionWithPlayerHand   </td><td class="markdownTableBodyNone">OnTriggerWithPlayerHand    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Player   </td><td class="markdownTableBodyNone">OnCollisionWithPlayer   </td><td class="markdownTableBodyNone">OnTriggerWithPlayer    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">HitScan   </td><td class="markdownTableBodyNone">OnCollisionWithHitScan   </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Scene   </td><td class="markdownTableBodyNone">OnCollisionWithScene   </td><td class="markdownTableBodyNone">OnTriggerWithStaticScene    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Role   </td><td class="markdownTableBodyNone">OnCollisionWithRole   </td><td class="markdownTableBodyNone">OnTriggerWithRole    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">default   </td><td class="markdownTableBodyNone">OnCollision   </td><td class="markdownTableBodyNone">OnTrigger   </td></tr>
+</table>
+<hr  />
+<h4><a class="anchor" id="autotoc_md34"></a>
+Damage Pipeline</h4>
+<p>from now on, we can use modifier to modify each hit our weapon caused.</p>
+<p>here's the damage pipeline, and we'll inject our code to modify the data though to pipeline to get the result we want</p>
+<p><img src="DamagePipeline.png" alt="" class="inline"/></p>
+<p><a class="anchor" id="autotoc_md35"></a> </p><h5>How we register the phase event</h5>
+<p>for local event, such as for specific hit, you can get the RagdollHitInfo structure, then register the functions below </p><pre class="fragment">    OnInteractRoleHitPhase1Event // used for hit detetion, built-in function will fill those data here
+    OnInteractRoleHitPhase2Event // you can modify the damage effect here
+    OnInteractRoleHitPhase3Event // we can do extra stuff, such as recover hp from attack
+</pre><p>for global event, it's not opened to modder yet, we'll introduce it later</p>
+<p><a href="class_cross_link_1_1_damage_basic_data.html">DamageBasicData</a></p>
+<p>Basic collision data, contains collider, rigidbody, impact...</p>
+<p><a href="class_cross_link_1_1_damage_hit_data.html">DamageHitData</a></p>
+<p>Determines the damage calculation</p>
+<p><a href="class_cross_link_1_1_damage_effect_data.html">DamageEffectData</a></p>
+<p>Behaviour by this damage, such as knockdown, dizzy, floating...</p>
+<hr  />
+<h1><a class="anchor" id="autotoc_md37"></a>
+Tricks</h1>
+<h4><a class="anchor" id="autotoc_md38"></a>
+A easier way to config addressables.</h4>
+<ol type="1">
+<li><p class="startli">put you mod folder under the path: "Asset/Build". for anything doesn't need to be addressable, please put outside of this folder.</p>
+<p class="startli"><img src="addressable_1.png" alt="" class="inline"/></p>
+</li>
+<li>put you resources into the corresponding folder, such as Weapon, Audio, ICon</li>
+<li>add WeaponPaths in addressableConfig(Assets-&gt;Resources-&gt;AddressableConfig).</li>
+<li>define you prefix.</li>
+<li><p class="startli">click - <b>Create And Refresh Addressable Name</b>.</p>
+<p class="startli"><img src="addressable_3.png" alt="" class="inline"/></p>
+</li>
+<li><p class="startli">fill the old and new prefix, click invoke to modify. it will modify all perfabs and scripts at WeaponPaths.</p>
+<p class="startli"><img src="addressable_4.png" alt="" class="inline"/></p>
+</li>
+</ol>
+<h4><a class="anchor" id="autotoc_md39"></a>
+For HandAttach component, use HandPoseHelper to adject hand's position and rotation.</h4>
+<ol type="1">
+<li>add HandPoseHelper("Asset/Resources/Tools/HandPoseHelper") to you scene.</li>
+<li><p class="startli">select <b>HandAttach</b>.</p>
+<p class="startli"><img src="HandPoseHelper.png" alt="" class="inline"/></p>
+</li>
+<li>click AddDrawTool to draw hand.</li>
+<li>adject node <b>Bip002 R Hand</b> and <b>Bip002 L Hand</b> according to the hand.</li>
+<li>click RemoveDrawTool to remove tool, save your weapon's perfab, done.</li>
+</ol>
+<h4><a class="anchor" id="autotoc_md40"></a>
+Background Knowledge</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Term   </th><th class="markdownTableHeadNone">Explaination    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">addressables   </td><td class="markdownTableBodyNone">by pressing the addressable toggle box to build resource into addressable resource, then rename the path to make it get loaded correctly in game. once you filled in correct addressable resources, then the game will load it on start    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">resources path   </td><td class="markdownTableBodyNone">Weapon Path: Weapon/<br  />
+ Script Path: LuaScript/<br  />
+ ICon Path:ICon/<br  />
+ Effect Path:Effect/<br  />
+ Audio Path: Audio/Sound/<br  />
+ FlyObj Path: FlyObj/<br  />
+ any resource's addressable name in the path above, can be loaded by the system without path included. for example, if an effect's addressable name is Effect/explosion, can be create by EffectMgr.Instance:PlayEffect("explosion")    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">entry point   </td><td class="markdownTableBodyNone">any lua script's addressable name is Entry, will become the entry point of this mod    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">components end with X   </td><td class="markdownTableBodyNone">means it's scriptable, such as FlyObjectX, InteractTriggerX    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">coordinate   </td><td class="markdownTableBodyNone">z is forward, x is right, y is up   </td></tr>
+</table>
+<h4><a class="anchor" id="autotoc_md41"></a>
+DebugTools</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Dev Environment   </th><th class="markdownTableHeadNone">Pros   </th><th class="markdownTableHeadNone">Cons    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">edit in Editor + debug in Windows Simulator   </td><td class="markdownTableBodyNone">1. dosen't need a gaming PC<br  />
+ 2. iterate very fast, because you don't need to put on headset<br  />
+ 3. you can make use of shotcut to debug faster   </td><td class="markdownTableBodyNone">1. the feeling is different from in VR    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">edit in Editor + debug in SteamVR   </td><td class="markdownTableBodyNone">1. you can check the real size in headset<br  />
+ 2. you can make use of shotcut to debug faster   </td><td class="markdownTableBodyNone">1. need to install mod and put on headset everytime    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">edit in Editor + debug in Quest   </td><td class="markdownTableBodyNone">1. you can check the real size in headset   </td><td class="markdownTableBodyNone">1. need to install mod and put on headset everytime   </td></tr>
+</table>
+<h4><a class="anchor" id="autotoc_md42"></a>
+Shotcut</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Shotcut   </th><th class="markdownTableHeadNone">Function at Body Mode   </th><th class="markdownTableHeadNone">Function at Hand Mode    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">WASD   </td><td class="markdownTableBodyNone">walk   </td><td class="markdownTableBodyNone">walk    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Shift   </td><td class="markdownTableBodyNone">run   </td><td class="markdownTableBodyNone">hand rotation    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Alt   </td><td class="markdownTableBodyNone">switch to Hand Mode   </td><td class="markdownTableBodyNone">switch to Body Mode    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Tab   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">switch between your hand    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Mouse Movement   </td><td class="markdownTableBodyNone">body rotation   </td><td class="markdownTableBodyNone">hand movement    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Ctrl   </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">hand movement on Z axis   </td></tr>
+</table>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Shotcut   </th><th class="markdownTableHeadNone">Function    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">F12   </td><td class="markdownTableBodyNone">open or close MainMenu    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">F11   </td><td class="markdownTableBodyNone">open or close CheatMenu    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">F10   </td><td class="markdownTableBodyNone">reload mods(not working for now)    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">F9   </td><td class="markdownTableBodyNone">remove mods(not working for now)    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">F8   </td><td class="markdownTableBodyNone">jump to test scene    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">F4   </td><td class="markdownTableBodyNone">hide mouse    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">PageDown   </td><td class="markdownTableBodyNone">select next target    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">U   </td><td class="markdownTableBodyNone">kill target    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Y   </td><td class="markdownTableBodyNone">stun target    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">PadNum   </td><td class="markdownTableBodyNone">target attacks    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Home   </td><td class="markdownTableBodyNone">enable target's AI    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">End   </td><td class="markdownTableBodyNone">disable target's AI    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">K   </td><td class="markdownTableBodyNone">kill all    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Space   </td><td class="markdownTableBodyNone">jump    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">G   </td><td class="markdownTableBodyNone">jump(no cooldown)    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">V   </td><td class="markdownTableBodyNone">dash(no cooldown)   </td></tr>
+</table>
+<h4><a class="anchor" id="autotoc_md43"></a>
+Log Path</h4>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">Log   </th><th class="markdownTableHeadNone">Log Path    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">Windows   </td><td class="markdownTableBodyNone"><a href="https://docs.unity3d.com/Manual/LogFiles.html">https://docs.unity3d.com/Manual/LogFiles.html</a>    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Quest   </td><td class="markdownTableBodyNone">read it on <b>in-game console</b> or using <b>adb log command</b> or using <b>sidequest's adb window</b>   </td></tr>
+</table>
+</div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

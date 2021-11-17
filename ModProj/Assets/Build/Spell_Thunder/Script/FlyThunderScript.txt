@@ -1,0 +1,96 @@
+
+local flyThunder = {
+    thunderRadius = 5,
+    autoTrack = true,
+    thunderHz = CL.FramerateController(CL.PhysicsHelper.FPS01Sec),
+    lastCheckNextFCTime = 0,
+}
+
+function flyThunder:OnSpawn(ow, dir, vel)
+    CL.Scheduler.RemoveSchedule(self.lifeTimeId)
+    self.lifeTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            self:Update()
+        end,
+    0, -1).actionId
+end
+
+function flyThunder:ResetState()
+    self.nextFC = nil
+    self.lifeTimeId = CL.Scheduler.RemoveSchedule(self.lifeTimeId)
+end
+
+function flyThunder:OnCollisionWithScene(col)
+    self.host:OnImpact(col)
+    self.host:CollisionCountUpdate()
+    self.host:PlaySceneImpactEffect(col:GetContact(0).point, col:GetContact(0).normal)
+    
+    self.host:OnFinish()
+end
+
+function flyThunder:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if string.find(mu.muscleName, CL.RagdollBoneInfo.Weapon) then
+        return
+    end
+    
+    self.host:CollisionCountUpdate()
+    self:SetNextFC(self:FindNextFC(fc))
+end
+
+function flyThunder:SetNextFC(fc)
+    if IsNullOrDestroyed(fc) then
+        return
+    end
+    self.nextFC = fc
+    self.lastCheckNextFCTime = UE.Time.time
+end
+
+function flyThunder:FindNextFC(workingFC)
+    local targets = CL.AIProxy.GetTargetInRange(self.host.trans.position, self.thunderRadius, CL.AIProxy.CampBad, true)
+    for i = 0, targets.Count - 1 do
+        if not (workingFC ~= nil and workingFC.ai == targets[i]) then
+            
+            local ai = targets[i]:GetComponent(typeof(CL.AIController))
+            if not(IsNullOrDestroyed(ai) or ai.fc:IsDead()) then
+                return ai.fc
+            end
+            
+        end
+    end
+    return workingFC
+end
+
+
+function flyThunder:Update()
+    if self.autoTrack then
+        local needCheckFC = UE.Time.time - self.lastCheckNextFCTime > 0.3 and (IsNullOrDestroyed(self.nextFC) or self.nextFC:IsDead())
+        if needCheckFC then
+            self.lastCheckNextFCTime = UE.Time.time
+            self:SetNextFC(self:FindNextFC(self.nextFC))
+        elseif not IsNullOrDestroyed(self.nextFC) then
+            self.thunderHz:TickToZero(UE.Time.deltaTime)
+            
+            local targetPos = self.nextFC.ra:GetRoot().rbTrans.position
+            if self.thunderHz.limitUpdateFrequency then
+                targetPos = targetPos + UE.Random.insideUnitSphere
+            end
+            local offset = targetPos - self.host.trans.position
+            self.host.rb.velocity = offset.normalized * self.host.force
+        end
+    end
+end
+
+function flyThunder:OnTriggerWithRole(fc, col)
+    self.host:CollisionCountUpdate()
+    
+    self.host.rb.isKinematic = false 
+    self.host.trans.parent = nil
+    
+    local dir = fc.trans.position - self.host.trans.position
+    self.host:FlyStart(dir.normalized)
+    self.host.col.isTrigger = false
+    
+    self:SetNextFC(self:FindNextFC(fc))
+end
+
+return Class(Require("LuaScript/WMD_FlySpellBaseScript"),nil,flyThunder)

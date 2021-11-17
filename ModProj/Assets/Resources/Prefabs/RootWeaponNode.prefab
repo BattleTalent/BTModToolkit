@@ -76,7 +76,9 @@ MonoBehaviour:
   twoHandSpeed: 1
   allowSecondHand: 0
   beAbleToShowGrab: 1
+  enableAutoTickTwoHand: 0
   attachList: []
+  gaze: {fileID: 0}
   grabDistanceLimit: 0
   itemTypes:
   - 
@@ -130,8 +132,24 @@ MonoBehaviour:
   skillChargeEndTime: -1
   chargeEffect: 
   chargeEndEffect: 
+  chargeSound:
+    templateName: 
+    soundNames: []
+    vol: 0.5
+    volRandomRange: 0
+    pitchMax: -1
+    pitchMin: 0.8
+  chargeEndSound:
+    templateName: 
+    soundNames: []
+    vol: 0.5
+    volRandomRange: 0
+    pitchMax: -1
+    pitchMin: 0.8
   activateTime: -1
   activateEffect: 
   dontNeedUpdate: 1
   skillChangeColors: []
   weaponColorField: _EmissionColor
+  enableChargeColor: 0
+  chargeColor: {r: 0.943, g: 0.952, b: 0.588, a: 1}

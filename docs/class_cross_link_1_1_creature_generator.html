@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -80,10 +80,13 @@ $(function() {
 
 <p>Inherits MonoBehaviour.</p>
 
-<p>Inherited by <a class="el" href="class_cross_link_1_1_elf_generator.html">CrossLink.ElfGenerator</a>, and <a class="el" href="class_cross_link_1_1_skel_generator.html">CrossLink.SkelGenerator</a>.</p>
+<p>Inherited by <a class="el" href="class_cross_link_1_1_elf_generator.html">CrossLink.ElfGenerator</a>, <a class="el" href="class_cross_link_1_1_elf_rogue_generator.html">CrossLink.ElfRogueGenerator</a>, and <a class="el" href="class_cross_link_1_1_skel_generator.html">CrossLink.SkelGenerator</a>.</p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a425a49792516657c21563f5814d2759e"><td class="memItemLeft" align="right" valign="top"><a id="a425a49792516657c21563f5814d2759e"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetCreatureName</b> ()</td></tr>
+<tr class="separator:a425a49792516657c21563f5814d2759e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a47deceb3e58cef872a2c318e5ac682d7"><td class="memItemLeft" align="right" valign="top"><a id="a47deceb3e58cef872a2c318e5ac682d7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>FillReact</b> (<a class="el" href="class_cross_link_1_1_ragdoll_react_animation.html">RagdollReactAnimation</a> react, <a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a> interact)</td></tr>
 <tr class="separator:a47deceb3e58cef872a2c318e5ac682d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -183,9 +186,6 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>checkTuantPob</b> = 
 <tr class="memitem:acf7ca1e7a6f8170493b79c0866bf8985"><td class="memItemLeft" align="right" valign="top"><a id="acf7ca1e7a6f8170493b79c0866bf8985"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>bestAtkDistance</b> = 4f</td></tr>
 <tr class="separator:acf7ca1e7a6f8170493b79c0866bf8985"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30bd6a9bdb03310d13aef7b4dd75532a"><td class="memItemLeft" align="right" valign="top"><a id="a30bd6a9bdb03310d13aef7b4dd75532a"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreBreakWeaponIK</b> = false</td></tr>
-<tr class="separator:a30bd6a9bdb03310d13aef7b4dd75532a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a69457dff603808280054b7672fa32b94"><td class="memItemLeft" align="right" valign="top"><a id="a69457dff603808280054b7672fa32b94"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>blockHitFactor</b> = 0</td></tr>
 <tr class="separator:a69457dff603808280054b7672fa32b94"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -210,15 +210,21 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>switchActionPob</b> 
 <tr class="memitem:a02eed1f2bb5340b4a32f6c5c1b9b31c6"><td class="memItemLeft" align="right" valign="top"><a id="a02eed1f2bb5340b4a32f6c5c1b9b31c6"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>switchActionInterval</b> = 5</td></tr>
 <tr class="separator:a02eed1f2bb5340b4a32f6c5c1b9b31c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a148c2cf5950c3e1ddd882a49625392ef"><td class="memItemLeft" align="right" valign="top"><a id="a148c2cf5950c3e1ddd882a49625392ef"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>dynamicAtkSpeed</b> = -1</td></tr>
+<tr class="separator:a148c2cf5950c3e1ddd882a49625392ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6be85d0f767a22cebec7923c0470cf9f"><td class="memItemLeft" align="right" valign="top"><a id="a6be85d0f767a22cebec7923c0470cf9f"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>dynamicAtkSpeedRange</b> = -1</td></tr>
+<tr class="separator:a6be85d0f767a22cebec7923c0470cf9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a47218b900f44ee6f9602ffe07609112a"><td class="memItemLeft" align="right" valign="top"><a id="a47218b900f44ee6f9602ffe07609112a"></a>
 ActionData[]&#160;</td><td class="memItemRight" valign="bottom"><b>aiActions</b></td></tr>
 <tr class="separator:a47218b900f44ee6f9602ffe07609112a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0eaa2c42f78fbd1be6b2990666a3c6a"><td class="memItemLeft" align="right" valign="top"><a id="af0eaa2c42f78fbd1be6b2990666a3c6a"></a>
-ActionData[]&#160;</td><td class="memItemRight" valign="bottom"><b>healActions</b></td></tr>
-<tr class="separator:af0eaa2c42f78fbd1be6b2990666a3c6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ada05c6d09fc46308895875ee3e646567"><td class="memItemLeft" align="right" valign="top"><a id="ada05c6d09fc46308895875ee3e646567"></a>
 ActionData[]&#160;</td><td class="memItemRight" valign="bottom"><b>dodgeActions</b></td></tr>
 <tr class="separator:ada05c6d09fc46308895875ee3e646567"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adcb0a3e458a78383879510ebf6b6f6eb"><td class="memItemLeft" align="right" valign="top"><a id="adcb0a3e458a78383879510ebf6b6f6eb"></a>
+<a class="el" href="class_cross_link_1_1_cooldown_slot.html">CooldownSlot</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>cooldownSlots</b></td></tr>
+<tr class="separator:adcb0a3e458a78383879510ebf6b6f6eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab5b447ea200a64eaf2dc4c6498903071"><td class="memItemLeft" align="right" valign="top"><a id="ab5b447ea200a64eaf2dc4c6498903071"></a>
 RuntimeAnimatorController&#160;</td><td class="memItemRight" valign="bottom"><b>animSet</b></td></tr>
 <tr class="separator:ab5b447ea200a64eaf2dc4c6498903071"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -255,9 +261,6 @@ Renderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>changeMatRender
 <tr class="memitem:a76ea20429f375b6e374bb2d0255ad768"><td class="memItemLeft" align="right" valign="top"><a id="a76ea20429f375b6e374bb2d0255ad768"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>hasEyeTrails</b> = false</td></tr>
 <tr class="separator:a76ea20429f375b6e374bb2d0255ad768"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2cce0c0adca3ceb5297afa99168db57f"><td class="memItemLeft" align="right" valign="top"><a id="a2cce0c0adca3ceb5297afa99168db57f"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>coundHaveStiffEffect</b> = true</td></tr>
-<tr class="separator:a2cce0c0adca3ceb5297afa99168db57f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7dd564dee4c867d08e3c6a8062a96bdc"><td class="memItemLeft" align="right" valign="top"><a id="a7dd564dee4c867d08e3c6a8062a96bdc"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>disableMotionFeature</b> = false</td></tr>
 <tr class="separator:a7dd564dee4c867d08e3c6a8062a96bdc"><td class="memSeparator" colspan="2">&#160;</td></tr>

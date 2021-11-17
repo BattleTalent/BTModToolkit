@@ -1,0 +1,59 @@
+
+local spellThrowScript = {
+    --flyObjName(string) = "FlyFireBallX"
+}
+
+
+
+
+
+
+
+function spellThrowScript:OnChargeBegin()    
+    --print("OnChargeBegin")
+    self:SpawnSpellOnHand(self.flyObjName, self.createPoint)    
+    
+    self:SetHandPose(true)
+    -- you can access base function in this way:
+    -- self.__base.StartVelSample(self)    
+    self:StartVelSample()
+end
+
+
+
+function spellThrowScript:OnChargeReady()
+    self:PrepareSpellOnHand()
+end
+
+
+
+
+function spellThrowScript:OnChargeCancel()
+    --print("OnChargeCancel")
+
+    self:ReleaseSpell()
+    
+    self:SetHandPose(false)
+    self:StopVelSample()
+end
+
+
+
+
+function spellThrowScript:OnChargeRelease()
+    --print("OnChargeRelease:" .. tostring(self.isReadyToThrow))
+    
+    --throw
+    if self:IsReadyToThrow() then
+        self:TryThrow()
+    else
+        self:ReleaseSpell()
+    end
+    
+    self:SetHandPose(false)
+    self:StopVelSample()
+
+end
+
+
+return Class(Require("LuaScript/WMD_SpellBaseScript"), nil, spellThrowScript)

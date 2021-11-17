@@ -1,0 +1,79 @@
+
+local Crossbow = {
+    intensity = 50,
+    recoilRandomBias = 7,
+    recoilRotate = 60,
+    }
+
+function Crossbow:Awake()
+end
+
+function Crossbow:OnGrab(a, g)
+    if (g) then
+        self.bowList = {}
+    else
+    end
+end
+
+function Crossbow:OnChargeReady()
+    self.onCharge = true
+    
+    --Ignite
+    self:IgniteAllBow()
+end
+
+function Crossbow:CloseSkill()
+    if self.onCharge then
+        self.onCharge = false
+    else
+        self:Shoot()
+    end
+end
+
+function Crossbow:IgniteAllBow()
+    local count = #self.bowList
+    if count <= 0 then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.IgniteActId)
+    self.IgniteActId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            local arrow = self.bowList[1]
+                if arrow and not IsNullOrDestroyed(arrow.host) then
+                    arrow:Reset()
+                    arrow:DelayExpode(0.2)
+                end
+                count = count - 1
+                if count <= 0 then
+                    CL.Scheduler.RemoveSchedule(self.IgniteActId)
+                end
+                
+                table.remove(self.bowList, 1)
+        end,
+    0.1, -1).actionId
+end
+
+function Crossbow:Shoot()
+    local obj = CL.PrefabPool.SpawnPrefab("WMD_ExplodeArrow", "FlyObj/")
+    local iw = obj:GetComponent("InteractBase")
+    iw.trans.position = self.createPoint.position
+    iw:AddForce(self.createPoint.forward * self.intensity, UE.ForceMode.VelocityChange)
+    iw.trans.rotation = UE.Quaternion.LookRotation(self.createPoint.forward)
+    
+    local scp = obj:GetComponent("InteractTriggerX").script
+    local lua = scp.self
+    table.insert(self.bowList, #self.bowList + 1, lua)
+    
+    self.host.interact.rb:AddForce(
+    -self.createPoint.forward * 25, 
+    UE.ForceMode.VelocityChange)
+
+    local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
+    self.host.interact.rb:AddRelativeTorque(
+    UE.Vector3(self.recoilRotate, bias, 0), 
+    UE.ForceMode.Impulse)
+end
+
+
+return Class(nil,nil,Crossbow)

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.7</span>
+   &#160;<span id="projectnumber">0.0.9</span>
    </div>
   </td>
  </tr>
@@ -88,6 +88,12 @@ override string&#160;</td><td class="memItemRight" valign="bottom"><b>GetCamp</b
 <tr class="memitem:aae9fac9c8fd30f0286029012ea9dc78e"><td class="memItemLeft" align="right" valign="top"><a id="aae9fac9c8fd30f0286029012ea9dc78e"></a>
 override Transform&#160;</td><td class="memItemRight" valign="bottom"><b>GetTransform</b> ()</td></tr>
 <tr class="separator:aae9fac9c8fd30f0286029012ea9dc78e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79e39ea6b3de11e6178e5bc28dac4f11"><td class="memItemLeft" align="right" valign="top"><a id="a79e39ea6b3de11e6178e5bc28dac4f11"></a>
+override RagdollAnim&#160;</td><td class="memItemRight" valign="bottom"><b>GetRagdoll</b> ()</td></tr>
+<tr class="separator:a79e39ea6b3de11e6178e5bc28dac4f11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a111fa738ce14a5ecc0be2417c8299e22"><td class="memItemLeft" align="right" valign="top"><a id="a111fa738ce14a5ecc0be2417c8299e22"></a>
+override <a class="el" href="class_cross_link_1_1_combat_attr.html">CombatAttr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetAttr</b> ()</td></tr>
+<tr class="separator:a111fa738ce14a5ecc0be2417c8299e22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a78e41f9754f7c7109f5e96984d84ee80"><td class="memItemLeft" align="right" valign="top"><a id="a78e41f9754f7c7109f5e96984d84ee80"></a>
 override <a class="el" href="class_cross_link_1_1_character_controller_base.html">CharacterControllerBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetControllerBase</b> ()</td></tr>
 <tr class="separator:a78e41f9754f7c7109f5e96984d84ee80"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -105,18 +111,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsIndependentAtkDesir
 <tr class="separator:ade6644c165cb4856703370192220fac7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a104657ed3078ded92a699153b7d01ea2"><td class="memItemLeft" align="right" valign="top">override void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_a_i_controller.html#a104657ed3078ded92a699153b7d01ea2">TickAI</a> ()</td></tr>
 <tr class="separator:a104657ed3078ded92a699153b7d01ea2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a18acc1ddcf528a2e6c50dc53b92f68dc"><td class="memItemLeft" align="right" valign="top"><a id="a18acc1ddcf528a2e6c50dc53b92f68dc"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>OnBlock</b> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fullChar, bool h)</td></tr>
-<tr class="separator:a18acc1ddcf528a2e6c50dc53b92f68dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2562a4d3fbd87698e82daa3902373092"><td class="memItemLeft" align="right" valign="top"><a id="a2562a4d3fbd87698e82daa3902373092"></a>
 override bool&#160;</td><td class="memItemRight" valign="bottom"><b>CanAimTarget</b> ()</td></tr>
 <tr class="separator:a2562a4d3fbd87698e82daa3902373092"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ef882d0b8c8d27e1c4fe0908082a143"><td class="memItemLeft" align="right" valign="top"><a id="a6ef882d0b8c8d27e1c4fe0908082a143"></a>
 override bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDown</b> ()</td></tr>
 <tr class="separator:a6ef882d0b8c8d27e1c4fe0908082a143"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aef8f7b868c8e62064de4d21aee578dad"><td class="memItemLeft" align="right" valign="top"><a id="aef8f7b868c8e62064de4d21aee578dad"></a>
-override bool&#160;</td><td class="memItemRight" valign="bottom"><b>InAction</b> ()</td></tr>
-<tr class="separator:aef8f7b868c8e62064de4d21aee578dad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75391f22f971acc5ff2812ba77bbaaac"><td class="memItemLeft" align="right" valign="top"><a id="a75391f22f971acc5ff2812ba77bbaaac"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>CancelAction</b> ()</td></tr>
 <tr class="separator:a75391f22f971acc5ff2812ba77bbaaac"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -150,16 +150,13 @@ ActionData&#160;</td><td class="memItemRight" valign="bottom"><b>GetSuitableActi
 <tr class="memitem:a988f899b04ab16dd7869fa71c27bcc84"><td class="memItemLeft" align="right" valign="top"><a id="a988f899b04ab16dd7869fa71c27bcc84"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PerformSpecificAction</b> (ActionData action)</td></tr>
 <tr class="separator:a988f899b04ab16dd7869fa71c27bcc84"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1df59292f027852781267229cca6c9f"><td class="memItemLeft" align="right" valign="top"><a id="aa1df59292f027852781267229cca6c9f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>PerformHealActionList</b> ()</td></tr>
-<tr class="separator:aa1df59292f027852781267229cca6c9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49ace527639987bd5474046ee79ec2b4"><td class="memItemLeft" align="right" valign="top"><a id="a49ace527639987bd5474046ee79ec2b4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PerformDodgeAction</b> ()</td></tr>
 <tr class="separator:a49ace527639987bd5474046ee79ec2b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_class_cross_link_1_1_a_i_proxy"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_cross_link_1_1_a_i_proxy')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_a_i_proxy.html">CrossLink.AIProxy</a></td></tr>
-<tr class="memitem:a7c3a546999f6051ffb6e690c1da0772f inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a7c3a546999f6051ffb6e690c1da0772f"></a>
-virtual <a class="el" href="class_cross_link_1_1_combat_attr.html">CombatAttr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetAttr</b> ()</td></tr>
-<tr class="separator:a7c3a546999f6051ffb6e690c1da0772f inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade6a2d140289c6f298a20c0a9d51bf41 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="ade6a2d140289c6f298a20c0a9d51bf41"></a>
+RagdollMuscle&#160;</td><td class="memItemRight" valign="bottom"><b>GetMuscle</b> (string name)</td></tr>
+<tr class="separator:ade6a2d140289c6f298a20c0a9d51bf41 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65675c15ff749a2b527d1e081c0bfd25 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a65675c15ff749a2b527d1e081c0bfd25"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnHitOtherSucc</b> ()</td></tr>
 <tr class="separator:a65675c15ff749a2b527d1e081c0bfd25 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -178,6 +175,12 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>SetSelected</
 <tr class="memitem:a9103a3c9eac3a1d373cc480134891122 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a9103a3c9eac3a1d373cc480134891122"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsSelected</b> ()</td></tr>
 <tr class="separator:a9103a3c9eac3a1d373cc480134891122 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91465933c9882c200a322fc575b131f9 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a91465933c9882c200a322fc575b131f9"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>InAction</b> ()</td></tr>
+<tr class="separator:a91465933c9882c200a322fc575b131f9 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a126d15b56d885a2dc5413ba51066d7e2 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a126d15b56d885a2dc5413ba51066d7e2"></a>
+<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetTarget</b> ()</td></tr>
+<tr class="separator:a126d15b56d885a2dc5413ba51066d7e2 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5540715533383a0ee8a4518a52bb44b4 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a5540715533383a0ee8a4518a52bb44b4"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>GetObsTrans</b> ()</td></tr>
 <tr class="separator:a5540715533383a0ee8a4518a52bb44b4 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -238,6 +241,12 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>switchActionInterval
 <tr class="memitem:aad90fc1c91166630890aba4a8b38c48c"><td class="memItemLeft" align="right" valign="top"><a id="aad90fc1c91166630890aba4a8b38c48c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>standstill</b> = false</td></tr>
 <tr class="separator:aad90fc1c91166630890aba4a8b38c48c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a654ce92db89d2a122051d17c5b85372c"><td class="memItemLeft" align="right" valign="top"><a id="a654ce92db89d2a122051d17c5b85372c"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>dynamicAtkSpeed</b> = -1</td></tr>
+<tr class="separator:a654ce92db89d2a122051d17c5b85372c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0e90c9d967d1abb103d4a24e57c2960"><td class="memItemLeft" align="right" valign="top"><a id="af0e90c9d967d1abb103d4a24e57c2960"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>dynamicAtkSpeedRange</b> = -1</td></tr>
+<tr class="separator:af0e90c9d967d1abb103d4a24e57c2960"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a21d91dc27e3f580ac25066083e095441"><td class="memItemLeft" align="right" valign="top"><a id="a21d91dc27e3f580ac25066083e095441"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isRangeUnit</b> = false</td></tr>
 <tr class="separator:a21d91dc27e3f580ac25066083e095441"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -262,18 +271,18 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>atkCooldown</b> = 0<
 <tr class="memitem:aaf11160541da76c3e0e0a4e822612840"><td class="memItemLeft" align="right" valign="top"><a id="aaf11160541da76c3e0e0a4e822612840"></a>
 ActionData[]&#160;</td><td class="memItemRight" valign="bottom"><b>aiActions</b></td></tr>
 <tr class="separator:aaf11160541da76c3e0e0a4e822612840"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf1124d3fda99b20bc91d914e7cf3c24"><td class="memItemLeft" align="right" valign="top"><a id="aaf1124d3fda99b20bc91d914e7cf3c24"></a>
-ActionData[]&#160;</td><td class="memItemRight" valign="bottom"><b>healActions</b></td></tr>
-<tr class="separator:aaf1124d3fda99b20bc91d914e7cf3c24"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a5f358df3691b968e3049c703767858"><td class="memItemLeft" align="right" valign="top"><a id="a3a5f358df3691b968e3049c703767858"></a>
 ActionData[]&#160;</td><td class="memItemRight" valign="bottom"><b>dodgeActions</b></td></tr>
 <tr class="separator:a3a5f358df3691b968e3049c703767858"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52b8f8c12736c5582fc1ec26c293870b"><td class="memItemLeft" align="right" valign="top"><a id="a52b8f8c12736c5582fc1ec26c293870b"></a>
-ActionData[]&#160;</td><td class="memItemRight" valign="bottom"><b>tauntActions</b></td></tr>
-<tr class="separator:a52b8f8c12736c5582fc1ec26c293870b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7437b1f4387c5950899d60b7ca2ceaf0"><td class="memItemLeft" align="right" valign="top"><a id="a7437b1f4387c5950899d60b7ca2ceaf0"></a>
+<a class="el" href="class_cross_link_1_1_cooldown_slot.html">CooldownSlot</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>cooldownSlots</b></td></tr>
+<tr class="separator:a7437b1f4387c5950899d60b7ca2ceaf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:ac80f378ead158b7236a903a715d7d35c"><td class="memItemLeft" align="right" valign="top"><a id="ac80f378ead158b7236a903a715d7d35c"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>GlobalDynamicSpeedMlp</b> = -1</td></tr>
+<tr class="separator:ac80f378ead158b7236a903a715d7d35c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abde376ad99ed11008f512e415f8ea62b"><td class="memItemLeft" align="right" valign="top"><a id="abde376ad99ed11008f512e415f8ea62b"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheatAtkDesire</b> = false</td></tr>
 <tr class="separator:abde376ad99ed11008f512e415f8ea62b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -317,6 +326,9 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>EnableGroupAI<
 <tr class="memitem:a889ad22ef3e81a38dc13aabba375a2ae inherit pub_static_attribs_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a889ad22ef3e81a38dc13aabba375a2ae"></a>
 static <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>atkAI</b></td></tr>
 <tr class="separator:a889ad22ef3e81a38dc13aabba375a2ae inherit pub_static_attribs_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6bb98ff0c7fe93d8a5407886b14d5fe inherit pub_static_attribs_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="aa6bb98ff0c7fe93d8a5407886b14d5fe"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>AIWaitTimeMlp</b> = 0.25f</td></tr>
+<tr class="separator:aa6bb98ff0c7fe93d8a5407886b14d5fe inherit pub_static_attribs_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>

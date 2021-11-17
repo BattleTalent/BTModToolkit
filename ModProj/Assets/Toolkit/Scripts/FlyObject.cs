@@ -4,6 +4,30 @@ using UnityEngine;
 
 namespace CrossLink
 {
+    public class Tagger : MonoBehaviour
+    {
+        public enum Tag
+        {
+            // the stability, we're better to specific the enum value
+            None,
+            Env = 100,
+            EnvGround = 101,
+
+            SceneObject = 210,
+
+            FlyObject = 200,
+
+            InteractRole = 220,
+
+            InteractObj = 230,
+            InteractWeapon = 240,
+
+            PlayerRole = 300,
+            PlayerHand = 301,
+        }
+
+        public Tag tt;
+    }
     public class FlyObject : PhysicsUnit
     {
         [Header("Fly Logic")]
@@ -23,6 +47,13 @@ namespace CrossLink
         public int collisionCount = 1;
         [Tooltip("max fly collision count, then it will stop the fly state and stop control the forward")]
         public int collisionFlyCount = 1;
+        [Tooltip("fly at spawn")]
+        public bool flyAtSpawn = true;
+        
+        [Header("delay")]
+        public float delayToAcc = -1;
+        public SoundEffectInfo delaySound;
+        protected int delayActId = -1;
 
         [Header("Effect")]
         public string shootEffect;
@@ -30,10 +61,13 @@ namespace CrossLink
         public string impactEffect;// = "BulletImpact";
         public string impactSceneDecal;// = "BulletImpactDecal";        
         public SoundEffectInfo impactSound;
+        public string tailEffect;
+
         public TrailRenderer trail;
         public ParticleSystem[] resetParticles;
         public bool playImpactOnTimeout = false;
 
+        public Tagger.Tag[] ignoreDamageList;
         protected void Reset()
         {
             col = GetComponentInChildren<Collider>();

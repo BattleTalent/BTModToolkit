@@ -1,0 +1,49 @@
+
+local flySpell = {
+    
+}
+
+
+
+
+
+function flySpell:OnFinish()
+    --print("OnFinish:" .. self.host.name)
+    -- delay finish    
+    CL.Scheduler.RemoveSchedule(self.delayActId)    
+    self.delayActId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            local scale = UE.Mathf.Clamp01(1-t/s)
+            self.trans.localScale = UE.Vector3(scale, scale, scale)
+            if t >= s then
+                self.host:DoFinish()
+            end
+        end,
+    0, 0.2).actionId
+end
+
+function flySpell:ResetState()
+    self.delayActId = CL.Scheduler.RemoveSchedule(self.delayActId)
+    self.trans.localScale = UE.Vector3.one
+end
+
+
+-- play impact could create another flyobj, such as explode
+function flySpell:OnTrigger(pu, col)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
+
+function flySpell:OnTriggerWithStaticScene(col)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
+
+function flySpell:OnTriggerWithRole(fc, col)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
+
+
+
+return Class(nil,nil,flySpell)

@@ -1,0 +1,104 @@
+
+local table = {}
+
+
+function table:Awake()
+    self.initLocalScale = self.blade.localScale
+    self.blade.localScale = UE.Vector3.zero
+    self.blade.gameObject:SetActive(false)
+    self.host.interact:SetAsNoTrail()
+    self.scaleActId = -1
+    self.lightUp = false
+    self.soundPlayTime = 0
+    self.delayScaleAct = -1
+end
+
+
+function table:DoScale(scaleUp)
+    self.lightUp = scaleUp
+    local so = self.host.interact:GetStabObject()
+    local blade = self.blade
+    local startScale = blade.localScale
+    
+    --local endScale = scaleUp ? initLocalScale : Vector3.zero;
+    local endScale = UE.Vector3.zero
+    if (scaleUp) then
+        endScale = self.initLocalScale
+    end
+        
+    if (scaleUp) then
+        blade.gameObject:SetActive(true)
+        so.scalingForward = true
+    else     
+        so:BreakAllStab()
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.scaleActId)
+    self.scaleActId = CL.Scheduler.Create(self.host, 
+        function (sche, t, s)
+            self.blade.localScale = UE.Vector3.Lerp(startScale, endScale, CL.EasingEquations.QuadEaseInOut(t, 0, 1, s))
+            if (t>=s) then
+                so.scalingForward = false
+                if (scaleUp == false) then
+                    self.blade.gameObject:SetActive(false)                   
+                    so:BreakAllStab()
+                end
+            end
+        end
+    , 0, 0.1):
+    SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+
+--[[
+function table:UpdateSkill()
+{
+    base.UpdateSkill();
+
+    lightUp = !lightUp;
+    DoScale(lightUp);
+}
+]]
+
+
+
+function table:OpenSkill(attach)
+    local stillLighting = self.lightUp or CL.Scheduler.GetSchedule(scaleActId) ~= nil
+    if (stillLighting == false) then
+        if (UE.Time.time - self.soundPlayTime > 1) then        
+            self.saberBeginSound:PlaySound()
+        end
+    end
+
+    self:DoScale(true)
+
+    self.delayScaleAct = CL.Scheduler.RemoveSchedule(self.delayScaleAct)
+    self.trail:Activate()
+    self.host.interact.rb.centerOfMass = UE.Vector3(0, 0, 0.5)
+    self.host.interact.rb.mass = 12
+end
+
+
+function table:CloseSkill()
+    if (lightUp == false) then
+        return
+    end
+
+    self.host.interact.rb.centerOfMass = UE.Vector3(0, 0, 0)
+    self.host.interact.rb.mass = 6
+
+    CL.Scheduler.RemoveSchedule(self.delayScaleAct)
+    self.delayScaleAct = CL.Scheduler.Create(self.host, 
+        function (sche, t, s) 
+            self.saberEndSound:PlaySound()
+            self.soundPlayTime = UE.Time.time
+            self.trail:StopSmoothly(0.1)
+            self:DoScale(false)               
+        end
+    , 0, 0, 1).actionId   
+end
+
+
+
+return Class(nil,nil,table)

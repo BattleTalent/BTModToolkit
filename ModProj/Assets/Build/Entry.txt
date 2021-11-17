@@ -1,0 +1,148 @@
+
+
+
+
+
+-- these are built-in global funtion you can call directly
+--[[
+-- check this: https://github.com/Tencent/xLua/blob/master/Assets/XLua/Doc/Faq_EN.md
+function IsNullOrDestroyed(obj)
+    return obj == nil or obj:IsNull()
+end
+
+-- some physicsunits is pooled, such as flyobj(bullet/fireball...)
+function IsNullOrRecycled(pu)
+    return pu == nil or pu:IsNull() or pu.gameObject.activeSelf == false
+end
+
+-- scheduler is pooled, so if you're referencing an instance which is finished
+-- then you need check it's being reuse by others or not
+-- I recommend just taking the id of scheduler, so that you'll never encounter this issue
+function IsNullOrOwnerChanged(scher, owner)
+    return scher == nil or scher.owner ~= owner
+end
+
+function ResetTransform(trans)
+    trans.localPosition = UE.Vector3.zero
+    trans.localRotation = UE.Quaternion.identity
+    trans.localScale = UE.Vector3.one
+end
+]]
+
+
+-- you can receive notification of Enable, if you want
+--[[
+local function OnEnable(isEnable)
+    if isEnable then
+        print("OnEnable")
+    else
+        print("OnDisable")
+    end
+end
+
+CL.ModManager.SaveLuaEnableFunc(OnEnable)
+]]
+
+
+
+
+HitInfoConfig = CL.GameDataMgr.GetData(typeof(CL.HitInfoConfig))
+TextConfig = CL.GameDataMgr.GetData(typeof(CL.TextConfig)) 
+
+local function AddTextItem(name, array)
+    local newItem = CL.TextConfig.TextConfigItem()
+    newItem.Name = name
+    --newItem.Text = {"Test"}
+    defaultLang = array[1] or ""
+    for i=1,CL.LanguageMgr.SupportLanguages.Length,1 do
+        if array[i] == nil then
+            array[i] = arrayZero
+            --print("Set" .. i, defaultLang)
+        end
+    end
+    newItem.Text = array
+    TextConfig:AddData(newItem)
+end
+
+local function AddStoreItemTemplate(weaponName, dependWeapon, name, desc)
+    AddTextItem(weaponName, {name})
+    AddTextItem(weaponName .. "_Desc", {desc})
+
+    storeItem = CL.UnlockContentItem()
+    storeItem.name = weaponName
+    storeItem.dependItemName = dependWeapon
+    storeItem.iconName = weaponName
+    storeItem.contentType = CL.UnlockContentConfig.UnlockContentType.Weapon
+    storeItem.unlockRequireCoinNum = 1
+    CL.UnlockContentConfig.AddItem(storeItem)
+end
+
+
+
+-- Light Blade
+local lightBladeHitInfo = CL.HitInfoConfig.HitInfoConfigItem()
+lightBladeHitInfo.Name = "WMD_LightBlade"
+lightBladeHitInfo.VelocityMlp = 1.5
+lightBladeHitInfo.DamageMlp = 30
+lightBladeHitInfo.DamageThrough = 1.5
+lightBladeHitInfo.DamageCrit = 1.5
+lightBladeHitInfo.StabMlp = 1.5
+lightBladeHitInfo.HitMlp = 120
+lightBladeHitInfo.HitRandom = 0.2
+lightBladeHitInfo.StabDamage = 120
+lightBladeHitInfo.BreakDefenceMlp = 1
+lightBladeHitInfo.HitBackMlp = 90
+lightBladeHitInfo.KnockoutFactor = 0.1
+lightBladeHitInfo.DizzyFactor = 0
+lightBladeHitInfo.StiffValue = 2.5
+HitInfoConfig:AddData(lightBladeHitInfo)
+
+local giantSwordHitINfo = CL.HitInfoConfig.HitInfoConfigItem()
+giantSwordHitINfo.Name = "WMD_GiantSword"
+giantSwordHitINfo.VelocityMlp = 2
+giantSwordHitINfo.DamageMlp = 20
+giantSwordHitINfo.DamageThrough = 3
+giantSwordHitINfo.DamageCrit = 1.5
+giantSwordHitINfo.StabMlp = 1.5
+giantSwordHitINfo.HitMlp = 120
+giantSwordHitINfo.HitRandom = 0.1
+giantSwordHitINfo.StabDamage = 120
+giantSwordHitINfo.BreakDefenceMlp = 1
+giantSwordHitINfo.HitBackMlp = 140
+giantSwordHitINfo.KnockoutFactor = 0.3
+giantSwordHitINfo.DizzyFactor = 0.3
+giantSwordHitINfo.StiffValue = 4.5
+HitInfoConfig:AddData(giantSwordHitINfo)
+
+
+-- WMD_ is the prefix of this pack, so that we can avoid naming conflict with others
+-- you can change these prefixes inside Editor with one click, checkout AddressableConfig 
+AddStoreItemTemplate("WMD_SwordLightBlade", "WMD_Stick", "LightBlade", "I'm LightBlade, Hummmmmmm, model is provided by kevvy")
+
+AddStoreItemTemplate("WMD_Stick", nil, "Stick", "I'm Stick")
+
+AddStoreItemTemplate("WMD_GunAK47", nil, "AK47", "I'm AK47")
+
+AddStoreItemTemplate("WMD_SwordMultiBlade", nil, "MultiBlade", "I'm MultiBlade")
+
+AddStoreItemTemplate("WMD_SwordGiant", nil, "GiantSword", "I'm GiantSword, model is provided by Kevvy")
+
+AddStoreItemTemplate("WMD_Scythe", nil, "Scythe", "I'm Scythe, model is provided by Xytill")
+
+AddStoreItemTemplate("WMD_Spell_Thunder", nil, "Spell_Thunder", "I'm Spell Thunder")
+
+AddStoreItemTemplate("WMD_Spell_Telekinetic", nil, "Spell_Telekinetic", "I'm Spell Telekinetic")
+
+AddStoreItemTemplate("WMD_Spell_FireBall", nil, "Spell_FireBall", "I'm Spell FireBall")
+
+AddStoreItemTemplate("WMD_Tower_Turret", nil, "Turret", "I'm Turret")
+
+AddStoreItemTemplate("WMD_Crossbow", nil, "Crossbow", "I'm Crossbow")
+
+AddStoreItemTemplate("WMD_Scabbard", nil, "Scabbard", "I'm Scabbard")
+
+AddStoreItemTemplate("WMD_ScabbardSword", nil, "ScabbardSword", "I'm ScabbardSword")
+
+
+
+

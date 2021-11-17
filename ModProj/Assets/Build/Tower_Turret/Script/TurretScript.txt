@@ -1,0 +1,140 @@
+
+local Turret = {
+    searchTime = 4,
+    shootTime = 2,
+    muzzleRotSpeed = 3,
+    bodyRotSpeed = 1, 
+    gunRotSpeed = 1,
+    gearRotSpeed = 0.5,
+
+    gunMaxRot = 10,
+    gunMinRot = -45,
+    force = 10,
+    
+    range = 15,
+    halfWidth = 0.75,
+    }
+local lifeTime = 45
+
+function Turret:OnGrab(a, g)
+    if (g) then
+        
+        self.player = a.attachedHand.character
+        if IsNullOrDestroyed(self.player) then
+            return
+        end
+    else
+        if self.isActive then
+            self.host.interact.mountAttachs[0].gameObject:SetActive(false)
+            self:TryTransformation()
+        end
+    end
+end
+
+
+function Turret:OnChargeReady()
+    self.isActive = true
+end
+
+function Turret:StartUpdate()
+    self.updateTimerId = CL.Scheduler.RemoveSchedule(self.updateTimerId)
+    local lastSearchTime = 0
+    local searchPoint = nil
+    
+    local lastShootTime = 0
+    local muzzleRotAngle = 0
+    self.updateTimerId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.targetTrans) or UE.Vector3.Distance(self.targetTrans.position, self.createPoint.position ) > self.range then
+                if UE.Time.time - lastSearchTime > self.searchTime then
+                    lastSearchTime = UE.Time.time
+                    searchPoint =  self.bodyTrans.position + UE.Random.insideUnitSphere
+                end
+                self:BodyRotateTo(self.bodyTrans, searchPoint, self.bodyRotSpeed)
+                self:GunRotateTo(self.gunTrans, searchPoint, self.gunRotSpeed, self.gunMaxRot, self.gunMinRot)
+                                
+                self.targetTrans = self:SearchTarget()
+            else
+                muzzleRotAngle = muzzleRotAngle + self.muzzleRotSpeed
+                if muzzleRotAngle < 90 then
+                    self:RotateMuzzle(self.muzzleRotSpeed)                
+                end
+                
+                self:BodyRotateTo(self.bodyTrans, self.targetTrans.position, self.bodyRotSpeed)
+                local angle = self:CalculateAngle(self.targetTrans.position)
+                local dir = UE.Quaternion.AngleAxis(-angle, self.bodyTrans.right) * self.bodyTrans.forward
+                local point = self.muzzleTrans.position + dir
+                self:GunRotateTo(self.gunTrans, point, self.gunRotSpeed, self.gunMaxRot, self.gunMinRot)
+                
+                
+                if UE.Time.time - lastShootTime >= self.shootTime then
+                    local curAngle = UE.Vector3.Angle(dir, self.createPoint.forward)
+                    if curAngle < 5 then
+                        lastShootTime = UE.Time.time
+                        muzzleRotAngle = 0
+                        
+                        local speed = self:CalculateInitialSpeed(self.targetTrans.position, angle)
+
+                        self:Shoot(speed)
+                    end
+                end
+            end
+        end
+    , UE.Time.unscaledDeltaTime, lifeTime)
+    :SetOnStop(
+        function()
+            self:UndoTransformation()
+        end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function Turret:Shoot(vel)
+    local explode = self.host:CreateFlyObj(self.flyObjName, self.createPoint.position, self.createPoint.forward, vel)
+end
+
+
+function Turret:OnBodyRotate()
+    self.gearBigTrans:Rotate(0, 0, self.gearRotSpeed)
+    self.gearSmallTrans:Rotate(0, 0, - self.gearRotSpeed * 1.75)
+end
+
+function Turret:RotateMuzzle(angle)
+    self.muzzleTrans:Rotate(angle, 0, 0)
+end
+
+function Turret:Reset()
+    self.timerId = CL.Scheduler.RemoveSchedule(self.timerId)
+    self.isActive = false
+    self.isReady = false
+end
+
+
+function Turret:CalculateAngle(endPoint)
+    local startPoint = self.createPoint.position
+    local dis = UE.Vector3.Distance(startPoint, endPoint)
+    local angle = 45
+    if dis <= self.range then
+        angle = 45 * dis/self.range
+    end
+    return angle
+end
+
+function Turret:CalculateInitialSpeed(endPoint, angle)
+    local startPoint = self.createPoint.position
+    
+    local s_x = UE.Vector2.Distance(UE.Vector2(startPoint.x, startPoint.z), UE.Vector2(endPoint.x, endPoint.z))
+    local g = UE.Physics.gravity.magnitude
+    local sin = UE.Mathf.Sin(angle * UE.Mathf.Deg2Rad)
+    local value1 = s_x * g * sin
+    local cos = UE.Mathf.Cos(angle * UE.Mathf.Deg2Rad)
+    local value2 = 2 * cos
+    local v_y = UE.Mathf.Sqrt(value1 / value2)
+    local v = v_y / sin
+    return v
+end
+
+function Turret:OnDestroy()
+    self.updateTimerId = CL.Scheduler.RemoveSchedule(self.updateTimerId)
+end
+
+return Class(Require("LuaScript/WMD_TowerBaseScript"), nil, Turret)

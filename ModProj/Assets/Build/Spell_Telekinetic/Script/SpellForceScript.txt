@@ -1,0 +1,302 @@
+
+local forceSpell = {}
+
+local EnableParticleEffect = true
+local MaxDis = 10
+local BreakMaxDis = MaxDis * 1.5
+local MaxDisSqrt = BreakMaxDis * BreakMaxDis
+local PerForce = 3000
+local ParticleSpeed = 10
+local DragSpeed = 10
+local CurveMaker = CL.Bezier(30)
+local MassSpringFactor = 500
+local SpringMin = 1000
+
+
+function forceSpell:GrabSpell(a)
+    self.hand = a.attachedHand --player.hands[a.attachedHand:GetHandIndex()]
+    if self.joint == nil then
+        self.joint = self.hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint.autoConfigureConnectedAnchor = false
+        self.limitPoint = self.joint.gameObject.transform:InverseTransformPoint(self.createPoint.position + self.hand:GetGrabDir() * MaxDis)
+    end
+end
+
+function forceSpell:UnGrabSpell(a)
+    if self.joint ~= nil then
+        UE.Object.Destroy(self.joint)
+        self.joint = nil
+    end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--[[Skill Update]]
+function forceSpell:OpenSkill()
+    if EnableParticleEffect then
+        --self.pathFlow:Play()
+    end
+    self:SetHandPose(true)
+    self.chargeAU = CL.SoundTable.PlaySound("ForceCharge", self.host.interact.trans.position, true)
+    self.chargeAU.ao.trans.parent = self.hand.trans
+end
+
+function forceSpell:UpdateSkill()
+    --self.lineRenderer:SetPosition(0, self.createPoint.position)
+        
+    if EnableParticleEffect then
+        if IsNullOrDestroyed(self.connectRb) then
+            local targetPos = self.hand:GetGrabDir()
+                * MaxDis + self.createPoint.position
+            self:UpdateParticle(targetPos, false)
+        else
+            --self:UpdateParticle(self.connectRb.position, true)
+            local cp = self.dragRBTrans:TransformPoint(self.joint.connectedAnchor)
+            self:UpdateParticle(cp, true)
+            if ((cp - self.createPoint.position).sqrMagnitude > MaxDisSqrt) then
+                self.host:CloseSkill()
+                return
+            end
+        end
+    end
+    
+
+
+    if IsNullOrRecycled(self.pu) then
+        if self.connectionBuilt then
+            self.host:CloseSkill()
+            return
+        end
+             
+        self:RayDetect()
+    else
+        self:AxisPush()
+        if self.resistFC and CL.Time.time > self.resistTime then
+            self.resistFC.motion:Knockout()
+            self.resistFC = nil
+        end
+    end
+    
+end
+
+function forceSpell:CloseSkill()    
+    self:BreakConnect()
+    self:SetHandPose(false)    
+end
+
+--[[ end of Skill Update]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function forceSpell:AxisPush()
+    local v = self.hand.inputs[CL.VRTKInputButton.ButtonType.Touchpad].Axis
+    if v.y ~= 0 then
+        local curAnchor = self.joint.anchor
+        local point = curAnchor + v.y * curAnchor.normalized * DragSpeed * UE.Time.deltaTime
+        
+        
+        if (self.limitPoint.x > 0 and (point.x > self.limitPoint.x or point.x < 0)) or (self.limitPoint.x < 0 and (point.x < self.limitPoint.x or point.x > 0)) then
+            return
+        elseif (self.limitPoint.y > 0 and (point.y > self.limitPoint.y or point.y < 0)) or (self.limitPoint.y < 0 and (point.y < self.limitPoint.y or point.y > 0)) then
+            return
+        elseif (self.limitPoint.z > 0 and (point.z > self.limitPoint.z or point.z < 0)) or (self.limitPoint.z < 0 and (point.z < self.limitPoint.z or point.z > 0)) then
+        end
+    
+        self.joint.anchor = point --self.joint.anchor + v.y * self.joint.anchor.normalized * DragSpeed * UE.Time.deltaTime
+    end
+end
+
+
+function forceSpell:RayDetect()    
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.createPoint.position, 0.15, 
+        self.hand:GetGrabDir(), --self.createPoint.up, 
+        MaxDis, CL.LayerDefine.BodyMask.value)
+
+    if isHit then        
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(raycastHit.transform)
+        if (pu == nil             
+            or pu.unitType == CL.Tagger.Tag.PlayerRole
+            or pu.unitType == CL.Tagger.Tag.PlayerHand
+            or pu:IsStaticScene()) then
+            return 
+        end
+        
+        --local obj = raycastHit.transform.root.gameObject
+        --print("hit obj ----------------:"..raycastHit.transform.name .."root:"..obj.name)        
+        self.dragRB = raycastHit.rigidbody
+        self.dragCol = raycastHit.collider
+        if (self.dragCol.isTrigger or self.dragRB.isKinematic) then
+            return
+        end
+        
+        local mass = 0
+        self.pu = pu
+        
+        
+
+        if pu.unitType == CL.Tagger.Tag.InteractRole then
+            local fc = pu--CL.CharacterMgr.Instance:GetFullCharacterByChild(rbTrans) --obj:GetComponent("FullCharacterControl")
+            if fc then
+                
+                if fc.motion:Standing() then
+                    self.resistFc = fc                        
+                    self.resistTime = UE.Time.time + fc.attr.hp.BaseValue / 100
+                    fc.muscleState:DoStiff(1)
+                end                
+                
+                if fc.muscleState:IsPowerfulCharacter() then
+                    mass = 0.01
+                else
+                    --mass = 60                    
+                    local mu = fc.ra:GetMuscle(self.dragRB.transform)
+                    if mu then
+                        local mus = fc.bone:GetTemporaryListMuscleChain(mu.muscleName)
+                        for i = 0, mus.Count - 1 do
+                            local rm = fc.ra:GetMuscle(mus[i])
+                            if rm then
+                                mass = mass + rm.rb.mass
+                                --print("name:"..boneList[i].. " mass:"..rm.rb.mass)                
+                            end
+                        end                    
+                    else
+                        mass = self.dragRB.mass
+                    end                                    
+                end     
+            end   
+        else
+            mass = pu:GetTotalMass()
+        end
+
+        local spring = MassSpringFactor * mass
+        if spring < SpringMin then
+            spring = SpringMin
+        end        
+
+        --print("total mass--------------", mass)        
+        self:BuildConnect(pu, spring, raycastHit.point)        
+    end
+end
+
+function forceSpell:BuildConnect(pu, spring, point)
+    self.connectionBuilt = true
+    self.connectRb = self.dragRB
+    point = self.dragCol:ClosestPoint(point)
+    
+    self.grabPoint = self.joint.gameObject.transform:InverseTransformPoint(point)--rb.transform.position)    
+        
+    --joint Contect
+    self.joint.connectedBody = self.dragRB
+    self.dragRBTrans = self.dragRB.transform
+    self.joint.anchor = self.grabPoint
+    self.joint.connectedAnchor = self.dragRB.transform:InverseTransformPoint(point)--UE.Vector3.zero
+        
+    pu:OnAttachBuild(self.hand.physicsHand, self.joint, self.dragRB)
+    
+    local damper = spring * 0.5
+    local ld = self.joint.xDrive        
+    ld.positionSpring = spring
+    ld.positionDamper = damper
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = spring * 0.005
+    sd.positionDamper = damper * 0.002
+    self.joint.slerpDrive = sd
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    
+    self.chargeAU.audio.pitch = self.chargeAU.audio.pitch + 0.5
+end
+
+function forceSpell:BreakConnect()
+    self.connectionBuilt = false
+    if IsNullOrDestroyed(self.pu) == false then
+        self.pu:OnAttachBreak(self.hand.physicsHand, self.joint, self.dragRB)  
+        
+        local needForce = (self.pu.unitType == CL.Tagger.Tag.InteractRole 
+            and self.pu.motion:IsKnockoutDown() == false) == false
+        
+        if needForce then
+            local vel = self.hand.velocityEstimator:GetVelocityEstimateLocal()                    
+            if vel.sqrMagnitude > 1.4*1.4 then            
+                CL.SoundTable.PlaySound("ForceThrow")
+                self.pu:AddForceOnPart(self.dragRB, (vel) * 10, UE.ForceMode.VelocityChange)
+            end
+        end                    
+    end 
+    self.pu = nil
+
+    CL.SoundTable.GiveBack(self.chargeAU)
+    self.chargeAU = nil
+
+    self.connectRb = nil
+    --self.lineRenderer.enabled = false
+    if self.joint then
+        self.joint.connectedBody = nil
+        local ld = self.joint.xDrive
+        ld.positionSpring = 0
+        ld.positionDamper = 0
+        self.joint.xDrive = ld
+        self.joint.yDrive = ld
+        self.joint.zDrive = ld
+        local sd = self.joint.slerpDrive
+        sd.positionSpring = 0
+        sd.positionDamper = 0
+        self.joint.slerpDrive = sd
+    end
+
+    self.resistFC = nil
+    self.dragRB = nil
+    --UE.Object.Destroy(self.joint)
+    --self.joint = nil
+    if EnableParticleEffect then
+        --self.pathFlow:Stop()
+    end
+end
+
+
+function forceSpell:UpdateParticle(target, curve)
+    --local time = UE.Vector3.Distance(self.createPoint.position, target)/ParticleSpeed
+    ----local middle = UE.Vector3.Lerp(time/2 * self.createPoint.up * ParticleSpeed + self.createPoint.position, target, 0.5)
+    --local middle
+    --if curve then
+    --    middle = (time/2 * self.createPoint.up * ParticleSpeed + self.createPoint.position + target) * 0.5
+    --else
+    --    middle = (self.createPoint.position + target) * 0.5
+    --end
+    --self.particlePath:SetPath(CurveMaker:GetQuadraticCurvePoints(self.createPoint.position, middle, target), 
+    --    -- -self.hand:GetPalmDir()--UE.Vector3.up
+    --    self.createPoint.up
+    --    )
+    --self.pathFlow:DoEmitAtPath()
+end
+
+
+
+
+return Class(Require("LuaScript/WMD_SpellBaseScript"), nil, forceSpell)

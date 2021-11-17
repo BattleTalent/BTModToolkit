@@ -1,0 +1,10 @@
+
+local ScabbardUser = {
+    isScabbardUser = true,
+}
+
+function ScabbardUser:GetSwordType()
+    return self.swordType
+end
+
+return Class(nil, nil, ScabbardUser)
