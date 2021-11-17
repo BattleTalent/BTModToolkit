@@ -277,27 +277,20 @@ function spellBase:Awake()
 end
 
 function spellBase:InitLightPillar()
-    self.hzLightUpdate = CL.FramerateController(CL.PhysicsHelper.FPS10Sec)
-    self.lastLightTime = 0
-    
+    self.lastLightTime = 0    
     
     CL.Scheduler.RemoveSchedule(self.lightPillarId)
     self.lightPillarId = CL.Scheduler.Create(self.host.interact, 
         function(sche, t, s)
             if self.lightPillar ~= nil then
-                self.lightPillar.trans.rotation = UE.Quaternion.identity
+                --self.lightPillar.trans.rotation = UE.Quaternion.identity
                 if self.host.interact.rb.velocity.sqrMagnitude > 1 then
                     self:SetLightPillar(false)
                     self.lastLightTime = UE.Time.time
                     return
                 end
             end
-            
-            self.hzLightUpdate:TickToZero(UE.Time.deltaTime)    
-            if self.hzLightUpdate.limitUpdateFrequency == false then
-                return
-            end
-            
+
             if self.host.interact:CheckGrounded(1) then
                 if UE.Time.time - self.lastLightTime > 3 then
                     self:SetLightPillar(true)
@@ -306,13 +299,17 @@ function spellBase:InitLightPillar()
                 self:SetLightPillar(false)
             end
         end,
-    UE.Time.unscaledDeltaTime, -1).actionId
+    0.15, -1).actionId
 end
 
 function spellBase:SetLightPillar(isPlay)
     if isPlay then
         if IsNullOrDestroyed(self.lightPillar) then
+            -- LightPillar is a built-in resource
             self.lightPillar = CL.EffectMgr.Instance:PlayEffect("LightPillar", self.host.interact.trans.position, UE.Quaternion.identity)
+            if self.lightPillar == nil then
+                return
+            end
             self.lightPillar.trans.parent = self.host.interact.trans
             
             local color = self.host.chargeColor or UE.Color.yellow
