@@ -91,23 +91,22 @@ $(function() {
 <li class="level1"><a href="#autotoc_md18">Commonly used classes</a><ul><ul><ul><li class="level4"><a href="#autotoc_md19">Basic Classes</a></li>
 <li class="level4"><a href="#autotoc_md20">GamePlay Related Classes</a></li>
 <li class="level4"><a href="#autotoc_md21">Lua Host Classes</a></li>
-<li class="level4"><a href="#autotoc_md22">Built in CollisionEffect</a></li>
-<li class="level4"><a href="#autotoc_md23">Commonly used components</a></li>
-<li class="level4"><a href="#autotoc_md24">How to setup InteractTrigger</a></li>
-<li class="level4"><a href="#autotoc_md25">CollisionEffect</a></li>
-<li class="level4"><a href="#autotoc_md26">HitInfo</a></li>
-<li class="level4"><a href="#autotoc_md28">FlyObject</a></li>
-<li class="level4"><a href="#autotoc_md34">Damage Pipeline</a></li>
+<li class="level4"><a href="#autotoc_md22">Commonly used components</a></li>
+<li class="level4"><a href="#autotoc_md23">InteractTrigger component</a></li>
+<li class="level4"><a href="#autotoc_md24">CollisionEffect component</a></li>
+<li class="level4"><a href="#autotoc_md25">HitInfo component</a></li>
+<li class="level4"><a href="#autotoc_md27">FlyObject component</a></li>
+<li class="level4"><a href="#autotoc_md33">Damage Pipeline</a></li>
 </ul>
 </ul>
 </ul>
 </li>
-<li class="level1"><a href="#autotoc_md37">Tricks</a><ul><ul><ul><li class="level4"><a href="#autotoc_md38">A easier way to config addressables.</a></li>
-<li class="level4"><a href="#autotoc_md39">For HandAttach component, use HandPoseHelper to adject hand&#39;s position and rotation.</a></li>
-<li class="level4"><a href="#autotoc_md40">Background Knowledge</a></li>
-<li class="level4"><a href="#autotoc_md41">DebugTools</a></li>
-<li class="level4"><a href="#autotoc_md42">Shotcut</a></li>
-<li class="level4"><a href="#autotoc_md43">Log Path</a></li>
+<li class="level1"><a href="#autotoc_md36">Tricks</a><ul><ul><ul><li class="level4"><a href="#autotoc_md37">A easier way to config addressables.</a></li>
+<li class="level4"><a href="#autotoc_md38">For HandAttach component, use HandPoseHelper to adject hand&#39;s position and rotation.</a></li>
+<li class="level4"><a href="#autotoc_md39">Background Knowledge</a></li>
+<li class="level4"><a href="#autotoc_md40">DebugTools</a></li>
+<li class="level4"><a href="#autotoc_md41">Shotcut</a></li>
+<li class="level4"><a href="#autotoc_md42">Log Path</a></li>
 </ul>
 </ul>
 </ul>
@@ -161,6 +160,7 @@ Tips for scripting in lua:</h4>
 <li>namespace UnityEngine is UE in lua, UE == CS.UnityEngine</li>
 <li>calling a static function should use '.' instead of ':' in lua</li>
 <li>recommend using <a href="https://studio.zerobrane.com/">ZeroBrane Studio</a> as lua editor</li>
+<li>use IsNullOrDestroyed for null checking</li>
 </ul>
 <h4><a class="anchor" id="autotoc_md9"></a>
 ZeroBrane IDE auto-complete</h4>
@@ -284,22 +284,6 @@ Lua Host Classes</h4>
 </table>
 <p>For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event instead of AwakeInit</p>
 <h4><a class="anchor" id="autotoc_md22"></a>
-Built in CollisionEffect</h4>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Collision Material Name   </th><th class="markdownTableHeadNone">Used For    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Weapon   </td><td class="markdownTableBodyNone">Blade    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">WeaponBlunt   </td><td class="markdownTableBodyNone">Hammer, Metal, Handle    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Metal   </td><td class="markdownTableBodyNone">Environment    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">Brick   </td><td class="markdownTableBodyNone">Environment    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Wood   </td><td class="markdownTableBodyNone">Environment or Wooden Weapon   </td></tr>
-</table>
-<h4><a class="anchor" id="autotoc_md23"></a>
 Commonly used components</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -325,8 +309,8 @@ Commonly used components</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">FlyObj / FlyObjX   </td><td class="markdownTableBodyNone">attached on Fly Object, such as bullet, magic   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md24"></a>
-How to setup InteractTrigger</h4>
+<h4><a class="anchor" id="autotoc_md23"></a>
+InteractTrigger component</h4>
 <p>Here shows:</p><ul>
 <li>What will happen when you toggled those paramters on InteractTrigger component.</li>
 <li>How's the mana cost system work.</li>
@@ -360,8 +344,8 @@ OnChargeCancel   </td><td class="markdownTableBodyNone">OnActivateBegin <br  />
 OnActivateEnd <br  />
 OnActivateCancel   </td><td class="markdownTableBodyNone">OnChargeBegin-&gt;OnChargeReady-&gt;OnChargeUpdate-&gt;OnChargeRelease   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md25"></a>
-CollisionEffect</h4>
+<h4><a class="anchor" id="autotoc_md24"></a>
+CollisionEffect component</h4>
 <p>BuiltIn collision materials for weapon here, paste the name into CollisionEffect component, then the colliders under this will be identified as this material.</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -377,8 +361,8 @@ CollisionEffect</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">Wood   </td><td class="markdownTableBodyNone">Environment or Wooden Weapon   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md26"></a>
-HitInfo</h4>
+<h4><a class="anchor" id="autotoc_md25"></a>
+HitInfo component</h4>
 <p>Builtin hit type, paste the name into RagdollHitInfoObj component, then the colliders under this will be identified as this hit type</p>
 <p>Notice that you may need to use RagdollHitInfoRef component to bind multiple RagdollHitInfoObj as one hit identity, otherwise it will cause multiple hits at a time.</p>
 <table class="markdownTable">
@@ -456,20 +440,20 @@ HitInfo</h4>
 <td class="markdownTableBodyNone">KO   </td><td class="markdownTableBodyNone">1.2   </td><td class="markdownTableBodyNone">20   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">115   </td><td class="markdownTableBodyNone">2   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">120   </td><td class="markdownTableBodyNone">1   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">2.8   </td></tr>
 </table>
 <hr  />
-<h4><a class="anchor" id="autotoc_md28"></a>
-FlyObject</h4>
-<p><a class="anchor" id="autotoc_md29"></a> </p><h5>Life Cycle</h5>
+<h4><a class="anchor" id="autotoc_md27"></a>
+FlyObject component</h4>
+<p><a class="anchor" id="autotoc_md28"></a> </p><h5>Life Cycle</h5>
 <p>Once collision count meet with collisionCount or maxFlyTime is over, then flyobject will enter finish state</p>
 <p><img src="FlyObjLifeCycle.png" alt="" class="inline"/></p>
-<p><a class="anchor" id="autotoc_md30"></a> </p><h5>Fly Logic</h5>
+<p><a class="anchor" id="autotoc_md29"></a> </p><h5>Fly Logic</h5>
 <p>In fly state, FlyObject can play trail and keep track of the trajectory</p>
 <p>Once collision count meet with collisionFlyCount, then flyobject will enter flystop state</p>
 <p><img src="FlyState.png" alt="" class="inline"/></p>
-<p><a class="anchor" id="autotoc_md31"></a> </p><h5>Collision Ignore Settings</h5>
+<p><a class="anchor" id="autotoc_md30"></a> </p><h5>Collision Ignore Settings</h5>
 <p>You can setup the flyobject ignore specific type of objects.</p>
 <p>ignoreDamageList: you can ignore collision with specific type objs</p>
 <p>ignoreHolder: you can also ignore the role spawn this flyobj</p>
-<p><a class="anchor" id="autotoc_md32"></a> </p><h5>Collision Callback Functions:</h5>
+<p><a class="anchor" id="autotoc_md31"></a> </p><h5>Collision Callback Functions:</h5>
 <p>Note: collision event will override the original functions in lua, so you need to call the OnCollisionUpdate manually to maintain the life cycle, please check out the FlySpellBaseScript.txt for example.</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -488,12 +472,12 @@ FlyObject</h4>
 <td class="markdownTableBodyNone">default   </td><td class="markdownTableBodyNone">OnCollision   </td><td class="markdownTableBodyNone">OnTrigger   </td></tr>
 </table>
 <hr  />
-<h4><a class="anchor" id="autotoc_md34"></a>
+<h4><a class="anchor" id="autotoc_md33"></a>
 Damage Pipeline</h4>
 <p>from now on, we can use modifier to modify each hit our weapon caused.</p>
 <p>here's the damage pipeline, and we'll inject our code to modify the data though to pipeline to get the result we want</p>
 <p><img src="DamagePipeline.png" alt="" class="inline"/></p>
-<p><a class="anchor" id="autotoc_md35"></a> </p><h5>How we register the phase event</h5>
+<p><a class="anchor" id="autotoc_md34"></a> </p><h5>How we register the phase event</h5>
 <p>for local event, such as for specific hit, you can get the RagdollHitInfo structure, then register the functions below </p><pre class="fragment">    OnInteractRoleHitPhase1Event // used for hit detetion, built-in function will fill those data here
     OnInteractRoleHitPhase2Event // you can modify the damage effect here
     OnInteractRoleHitPhase3Event // we can do extra stuff, such as recover hp from attack
@@ -505,9 +489,9 @@ Damage Pipeline</h4>
 <p><a href="class_cross_link_1_1_damage_effect_data.html">DamageEffectData</a></p>
 <p>Behaviour by this damage, such as knockdown, dizzy, floating...</p>
 <hr  />
-<h1><a class="anchor" id="autotoc_md37"></a>
+<h1><a class="anchor" id="autotoc_md36"></a>
 Tricks</h1>
-<h4><a class="anchor" id="autotoc_md38"></a>
+<h4><a class="anchor" id="autotoc_md37"></a>
 A easier way to config addressables.</h4>
 <ol type="1">
 <li><p class="startli">put you mod folder under the path: "Asset/Build". for anything doesn't need to be addressable, please put outside of this folder.</p>
@@ -523,7 +507,7 @@ A easier way to config addressables.</h4>
 <p class="startli"><img src="addressable_4.png" alt="" class="inline"/></p>
 </li>
 </ol>
-<h4><a class="anchor" id="autotoc_md39"></a>
+<h4><a class="anchor" id="autotoc_md38"></a>
 For HandAttach component, use HandPoseHelper to adject hand's position and rotation.</h4>
 <ol type="1">
 <li>add HandPoseHelper("Asset/Resources/Tools/HandPoseHelper") to you scene.</li>
@@ -534,7 +518,7 @@ For HandAttach component, use HandPoseHelper to adject hand's position and rotat
 <li>adject node <b>Bip002 R Hand</b> and <b>Bip002 L Hand</b> according to the hand.</li>
 <li>click RemoveDrawTool to remove tool, save your weapon's perfab, done.</li>
 </ol>
-<h4><a class="anchor" id="autotoc_md40"></a>
+<h4><a class="anchor" id="autotoc_md39"></a>
 Background Knowledge</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -556,7 +540,7 @@ Background Knowledge</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">coordinate   </td><td class="markdownTableBodyNone">z is forward, x is right, y is up   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md41"></a>
+<h4><a class="anchor" id="autotoc_md40"></a>
 DebugTools</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -571,7 +555,7 @@ DebugTools</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">edit in Editor + debug in Quest   </td><td class="markdownTableBodyNone">1. you can check the real size in headset   </td><td class="markdownTableBodyNone">1. need to install mod and put on headset everytime   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md42"></a>
+<h4><a class="anchor" id="autotoc_md41"></a>
 Shotcut</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -625,7 +609,7 @@ Shotcut</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">V   </td><td class="markdownTableBodyNone">dash(no cooldown)   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md43"></a>
+<h4><a class="anchor" id="autotoc_md42"></a>
 Log Path</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">

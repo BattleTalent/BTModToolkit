@@ -59,6 +59,7 @@ the way to change product name:
 * namespace UnityEngine is UE in lua, UE == CS.UnityEngine
 * calling a static function should use '.' instead of ':' in lua
 * recommend using [ZeroBrane Studio](https://studio.zerobrane.com/) as lua editor
+* use IsNullOrDestroyed for null checking
 
 #### ZeroBrane IDE auto-complete
 
@@ -192,15 +193,7 @@ For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event in
 
 
 
-#### Built in CollisionEffect
 
-| Collision Material Name | Used For                     |
-| ----------------------- | ---------------------------- |
-| Weapon                  | Blade                        |
-| WeaponBlunt             | Hammer, Metal, Handle        |
-| Metal                   | Environment                  |
-| Brick                   | Environment                  |
-| Wood                    | Environment or Wooden Weapon |
 
 #### Commonly used components
 
@@ -221,7 +214,7 @@ For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event in
 
 
  
-#### How to setup InteractTrigger
+#### InteractTrigger component
 
 
 Here shows: 
@@ -243,7 +236,7 @@ For more examples, please check out the Mod Toolkit
 | callback                | OpenSkill<br />UpdateSkill<br />CloseSkill                   | UpdateSkill                 | UpdateSkill    <br />OnChargeBegin<br />OnChargeReady<br />OnChargeUpdate<br />OnChargeRelease    <br />OnChargeCancel | OnActivateBegin  <br />OnActivateEnd  <br />OnActivateCancel | OnChargeBegin->OnChargeReady->OnChargeUpdate->OnChargeRelease |
 
 
-#### CollisionEffect
+#### CollisionEffect component
 
 BuiltIn collision materials for weapon here, paste the name into CollisionEffect component, then the colliders under this will be identified as this material.
 
@@ -258,7 +251,7 @@ BuiltIn collision materials for weapon here, paste the name into CollisionEffect
 
 
 
-#### HitInfo
+#### HitInfo component
 
 Builtin hit type, paste the name into RagdollHitInfoObj component, then the colliders under this will be identified as this hit type
 
@@ -311,7 +304,7 @@ Notice that you may need to use RagdollHitInfoRef component to bind multiple Rag
 
 ---
 
-#### FlyObject
+#### FlyObject component
 
 
 ##### Life Cycle
