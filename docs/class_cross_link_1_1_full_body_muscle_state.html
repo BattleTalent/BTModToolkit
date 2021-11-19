@@ -314,6 +314,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyDamageEffect</b>
 <tr class="memitem:a77dd9326be61a5b221c45f8d1f27dabe"><td class="memItemLeft" align="right" valign="top"><a id="a77dd9326be61a5b221c45f8d1f27dabe"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyDamageHit</b> (<a class="el" href="class_cross_link_1_1_damage_hit_data.html">DamageHitData</a> dmgHitData)</td></tr>
 <tr class="separator:a77dd9326be61a5b221c45f8d1f27dabe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9db5d36b90ed9bfe6dfb299fb844e544"><td class="memItemLeft" align="right" valign="top"><a id="a9db5d36b90ed9bfe6dfb299fb844e544"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RecordHitInfo</b> (<a class="el" href="class_cross_link_1_1_ragdoll_hit_info.html">RagdollHitInfo</a> hi)</td></tr>
+<tr class="separator:a9db5d36b90ed9bfe6dfb299fb844e544"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab420deb0d447f80ae500ea07183616c9"><td class="memItemLeft" align="right" valign="top"><a id="ab420deb0d447f80ae500ea07183616c9"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>GetRecordHitInfoCount</b> (<a class="el" href="class_cross_link_1_1_ragdoll_hit_info.html">RagdollHitInfo</a> hi)</td></tr>
+<tr class="separator:ab420deb0d447f80ae500ea07183616c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -338,6 +344,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>BuildInGeneral
 <tr class="memitem:a581a7ca5446b47eaf4149027d1de01dc"><td class="memItemLeft" align="right" valign="top"><a id="a581a7ca5446b47eaf4149027d1de01dc"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>BuildInEnvModifier</b> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fc, RagdollMuscle mu, Collider thisCol, Rigidbody otherRB, Collider otherCol, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
 <tr class="separator:a581a7ca5446b47eaf4149027d1de01dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ee14520319d715c10d3932ba772b43b"><td class="memItemLeft" align="right" valign="top"><a id="a3ee14520319d715c10d3932ba772b43b"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayContactSound</b> (Vector3 pos)</td></tr>
+<tr class="separator:a3ee14520319d715c10d3932ba772b43b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -423,7 +432,7 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>AccFactorFaste
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>AccFactorFastestSqrt</b> = AccFactorFastest * AccFactorFastest</td></tr>
 <tr class="separator:a4f52409497d4b0e9273aaf9d06b236d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa42f16853fb03be0ec0ae87ca05a33eb"><td class="memItemLeft" align="right" valign="top"><a id="aa42f16853fb03be0ec0ae87ca05a33eb"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>SWING_SPEED_FAST</b> = 2f</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>SWING_SPEED_FAST</b> = 8f</td></tr>
 <tr class="separator:aa42f16853fb03be0ec0ae87ca05a33eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61ba76a7796b328e023107b17a27450a"><td class="memItemLeft" align="right" valign="top"><a id="a61ba76a7796b328e023107b17a27450a"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>SWING_SPEED_FAST_SQRT</b> = SWING_SPEED_FAST * SWING_SPEED_FAST</td></tr>
@@ -433,6 +442,12 @@ static string&#160;</td><td class="memItemRight" valign="bottom"><b>deadEffect</
 <tr class="separator:acfb5b19290b5544196a45a40c327eab8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60cbafb2a0eedd1b9cf3714eeb010d17"><td class="memItemLeft" align="right" valign="top">static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>deadEffectSounds</b></td></tr>
 <tr class="separator:a60cbafb2a0eedd1b9cf3714eeb010d17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0012d843f2b01036d214a76ec2c66b73"><td class="memItemLeft" align="right" valign="top"><a id="a0012d843f2b01036d214a76ec2c66b73"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>StiffSecMax</b> = 4</td></tr>
+<tr class="separator:a0012d843f2b01036d214a76ec2c66b73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a309f66137d6c5fb209de0b412f88949f"><td class="memItemLeft" align="right" valign="top"><a id="a309f66137d6c5fb209de0b412f88949f"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>StiffSecMin</b> = 0.2f</td></tr>
+<tr class="separator:a309f66137d6c5fb209de0b412f88949f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa71782ce8264c50fed8c5a63ab46e52"><td class="memItemLeft" align="right" valign="top"><a id="afa71782ce8264c50fed8c5a63ab46e52"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>StayDmg</b> = false</td></tr>
 <tr class="separator:afa71782ce8264c50fed8c5a63ab46e52"><td class="memSeparator" colspan="2">&#160;</td></tr>

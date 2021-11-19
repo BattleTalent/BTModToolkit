@@ -28,9 +28,7 @@ please check out this [Weapon Modding Video](https://youtu.be/IqPl5KRgZ8Y)
 
 We host most of our mods on [Mod.io](https://battletalent.mod.io/). There are so many resources out there.
 
-As a thank you to the player community, the Battle Talent demo should be called community version, it'll be free and share the same code base with the official version(not release yet). 
-
-Feel free to use Battle Talent as your VR coding playground and ask question on our [discord](https://discord.gg/f4dmSG9).
+We'll keep updating the free demo. Feel free to use Battle Talent as your VR coding playground and ask question on our [discord](https://discord.gg/f4dmSG9).
 
 
 #### Before release your own mod
