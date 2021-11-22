@@ -46,7 +46,7 @@ the way to change product name:
 
 #### Workflow
 
- <img src="workflow.png">
+ <img src="doc/workflow.png">
 
 
 
