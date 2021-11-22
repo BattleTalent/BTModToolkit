@@ -427,7 +427,7 @@ Behaviour by this damage, such as knockdown, dizzy, floating...
 
 2. select **HandAttach**.
 
- <img src="docs/HandPoseHelper.png">
+ <img src="docs/handPoseHelper.png">
 
 3. click AddDrawTool to draw hand.
 
