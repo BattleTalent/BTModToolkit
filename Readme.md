@@ -309,7 +309,7 @@ Notice that you may need to use RagdollHitInfoRef component to bind multiple Rag
 
 Once collision count meet with collisionCount or maxFlyTime is over, then flyobject will enter finish state
 
- <img src="FlyObjLifeCycle.png">
+ <img src="docs/FlyObjLifeCycle.png">
 
 
 
@@ -320,7 +320,7 @@ In fly state, FlyObject can play trail and keep track of the trajectory
 
 Once collision count meet with collisionFlyCount, then flyobject will enter flystop state
 
- <img src="FlyState.png">
+ <img src="docs/FlyState.png">
 
 
 
@@ -359,7 +359,7 @@ from now on, we can use modifier to modify each hit our weapon caused.
 
 here's the damage pipeline, and we'll inject our code to modify the data though to pipeline to get the result we want
 
- <img src="DamagePipeline.png">
+ <img src="docs/DamagePipeline.png">
 
 
 ##### How we register the phase event
@@ -405,7 +405,7 @@ Behaviour by this damage, such as knockdown, dizzy, floating...
 
 1. put you mod folder under the path: "Asset/Build". for anything doesn't need to be addressable, please put outside of this folder.
 
- <img src="addressable_1.png">
+ <img src="docs/addressable_1.png">
 
 2. put you resources into the corresponding folder, such as Weapon, Audio, ICon
 
@@ -415,11 +415,11 @@ Behaviour by this damage, such as knockdown, dizzy, floating...
 
 5. click - **Create And Refresh Addressable Name**.
 
- <img src="addressable_3.png">
+ <img src="docs/addressable_3.png">
 
 6. fill the old and new prefix, click invoke to modify. it will modify all perfabs and scripts at WeaponPaths.
 
- <img src="addressable_4.png">
+ <img src="docs/addressable_4.png">
 
 #### For HandAttach component, use HandPoseHelper to adject hand's position and rotation.
 
@@ -427,7 +427,7 @@ Behaviour by this damage, such as knockdown, dizzy, floating...
 
 2. select **HandAttach**.
 
- <img src="HandPoseHelper.png">
+ <img src="docs/HandPoseHelper.png">
 
 3. click AddDrawTool to draw hand.
 
