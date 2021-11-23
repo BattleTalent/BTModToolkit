@@ -62,7 +62,7 @@ the way to change product name:
 #### ZeroBrane IDE auto-complete
 
 
-1. copy syntax.lua(ModProj/Assets/Resources/Tools/ZeroBraneAutoCompleteTool) to path ZeroBraneStudio/api/lua.
+1. copy syntax.lua(ModProj/Assets/Toolkit/Tools/ZeroBraneAutoCompleteTool) to path ZeroBraneStudio/api/lua.
 2. open ZeroBrane Studio and click Edit->Preferances->Settings User to open user.lua.
 3. write "table.insert(api, 'syntax')" in user.lua.
 
