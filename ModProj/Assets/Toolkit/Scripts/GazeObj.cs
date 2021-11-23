@@ -29,19 +29,6 @@ namespace CrossLink
         public string showName;
         public string showInfo;
         public GazeMgr.GazeType gazeType = GazeMgr.GazeType.NormalGaze;
-
-#if UNITY_EDITOR
-        [Button]
-        void PullGazeNameFromGameObject()
-        {
-            showName = gameObject.name;
-            showInfo = showName + "_Desc";
-            var ib = GetComponent<InteractBase>();
-            ib.gaze = this;
-            //enabled = false;
-            EditorUtility.SetDirty(gameObject);
-        }
-#endif
     }
 
 }
