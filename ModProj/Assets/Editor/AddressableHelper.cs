@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -137,7 +137,13 @@ public class AddressableHelper : MonoBehaviour
 
             GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
 
-            foreach(var fo in root.GetComponentsInChildren<FlyObjectX>())
+            foreach (var fo in root.GetComponentsInChildren<GazeObj>())
+            {
+                fo.showInfo = fo.showInfo.Replace(oldPrefix, curPrefix);
+                fo.showName = fo.showName.Replace(oldPrefix, curPrefix);
+            }
+
+            foreach (var fo in root.GetComponentsInChildren<FlyObjectX>())
             {
                 LuaScript ls = fo.script;
                 string name = ls.GetLuaScript();
