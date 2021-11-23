@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -8,6 +8,7 @@ public class AddressableConfig : ScriptableObject
 {
     static AddressableConfig config;
 
+    [Header("Modify prefix in addressables")]
     public string prefix;
 
     [Tooltip("need addressable's weapons path")]
@@ -51,11 +52,11 @@ public class AddressableConfig : ScriptableObject
 
 
     [EasyButtons.Button]
-    void ModifyPrefix(string oldPrefix, string newPrefix)
+    void ModifyPrefixInPathsPrefabsAndScripts(string oldPrefix, string newPrefix)
     {
         //RefreshPath
         AddressableHelper.RefreshAddressables();
-        //RefreshPerfab
+        //RefreshPrefab
         AddressableHelper.RefreshAssetPrefix(oldPrefix, newPrefix);
         //RefreshScript
         AddressableHelper.RefreshScriptPrefix(oldPrefix, newPrefix);
