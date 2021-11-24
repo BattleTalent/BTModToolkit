@@ -10,6 +10,10 @@ namespace CrossLink
     {
         public AttachPoint handAttach;
 
+        [Header("Fit Offsets")]
+        public GameObject fitOffset_l_prefab;
+        public GameObject fitOffset_r_prefab;
+
         private GameObject fitOffset_l;
         private GameObject fitOffset_r;
 
@@ -43,7 +47,7 @@ namespace CrossLink
                 bip_l_trans.localPosition = Vector3.zero;
                 bip_l_trans.localRotation = Quaternion.identity;
 
-                fitOffset_l = Object.Instantiate(Resources.Load("Tools/HandPoseHelper/support/fitOffset_l"), bip_l_trans) as GameObject;
+                fitOffset_l = Object.Instantiate(fitOffset_l_prefab, bip_l_trans) as GameObject;
                 qt_l = fitOffset_l.transform.localRotation;
             }
             else
@@ -61,7 +65,7 @@ namespace CrossLink
                 bip_r_trans.localPosition = Vector3.zero;
                 bip_r_trans.localRotation = Quaternion.identity;
 
-                fitOffset_r = Object.Instantiate(Resources.Load("Tools/HandPoseHelper/support/fitOffset_r"), bip_r_trans) as GameObject;
+                fitOffset_r = Object.Instantiate(fitOffset_r_prefab, bip_r_trans) as GameObject;
                 qt_r = fitOffset_r.transform.localRotation;
             }
             else
