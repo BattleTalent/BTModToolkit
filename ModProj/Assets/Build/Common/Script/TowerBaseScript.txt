@@ -53,7 +53,7 @@ function TowerBase:Transformation()
     local rb = self.host.gameObject:GetComponent("Rigidbody")
     rb.constraints = UE.RigidbodyConstraints.FreezeRotation
     
-    CL.TransformHelper.SetLayerAll(self.host.interact.trans, CL.LayerDefine.EnvLayer.value)
+    SetLayerAll(self.host.interact.trans, CL.LayerDefine.EnvLayer.value)
     self.animTimerId = CL.Scheduler.Create(self.host.interact,
         function(sche, t, s)
             local scale = CL.EasingEquations.EaseOutElastic(0, 1, t)
@@ -92,7 +92,7 @@ function TowerBase:UndoTransformation()
             self.modelTrans.gameObject:SetActive(false)
             self.dModelTrans.gameObject:SetActive(true)
             
-            CL.TransformHelper.SetLayerAll(self.host.interact.trans, CL.LayerDefine.InteractLayer.value)
+            SetLayerAll(self.host.interact.trans, CL.LayerDefine.InteractLayer.value)
             self:Reset()
             
             self.host.interact:AddForce(3 * UE.Vector3.up, UE.ForceMode.VelocityChange)

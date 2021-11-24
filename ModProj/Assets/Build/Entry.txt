@@ -45,6 +45,19 @@ CL.ModManager.SaveLuaEnableFunc(OnEnable)
 
 
 
+-- exmpale: SetLayerAll(transform, CL.LayerDefine.EnvLayer.value)
+function SetLayerAll(trans, layer)
+    if trans == nil then
+        return
+    end
+    trans.gameObject.layer = layer
+    for i=0, trans.childCount-1, 1 do
+        SetLayerAll(trans:GetChild(i), layer)
+    end
+end
+
+
+
 
 HitInfoConfig = CL.GameDataMgr.GetData(typeof(CL.HitInfoConfig))
 TextConfig = CL.GameDataMgr.GetData(typeof(CL.TextConfig)) 
