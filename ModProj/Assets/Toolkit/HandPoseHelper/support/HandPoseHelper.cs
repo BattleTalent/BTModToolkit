@@ -22,6 +22,7 @@ namespace CrossLink
         [EasyButtons.Button]
         void AddDrawTool()
         {
+            HandPoses handPoses = GetComponentInChildren<HandPoses>();
             RemoveDrawTool();
 
             if (handAttach == null)
@@ -43,7 +44,7 @@ namespace CrossLink
                 bip_l_trans.localPosition = Vector3.zero;
                 bip_l_trans.localRotation = Quaternion.identity;
 
-                fitOffset_l = Object.Instantiate(Resources.Load("Tools/HandPoseHelper/support/fitOffset_l"), bip_l_trans) as GameObject;
+                fitOffset_l = Object.Instantiate(handPoses.fitOffset_l, bip_l_trans) as GameObject;
                 qt_l = fitOffset_l.transform.localRotation;
             }
             else
@@ -61,7 +62,7 @@ namespace CrossLink
                 bip_r_trans.localPosition = Vector3.zero;
                 bip_r_trans.localRotation = Quaternion.identity;
 
-                fitOffset_r = Object.Instantiate(Resources.Load("Tools/HandPoseHelper/support/fitOffset_r"), bip_r_trans) as GameObject;
+                fitOffset_r = Object.Instantiate(handPoses.fitOffset_r, bip_r_trans) as GameObject;
                 qt_r = fitOffset_r.transform.localRotation;
             }
             else
@@ -126,14 +127,19 @@ namespace CrossLink
 
         private HandPosePreset handPoseConfig;
 
-        private Dictionary<string, string> handPoseDic = new Dictionary<string, string>(){ 
-            { "DefaultPose", "Open" },
-            { "GrabPosePose", "Open" },
-            { "GunPose", "Gun" },
-            { "HoldPose", "Hold" },
-            { "GlovePose", "Glove" },
+        private HandPosePreset GetHandPose(string handPose)
+        {
+            HandPoses handPoses = GetComponentInChildren<HandPoses>();
+            foreach (Pose pose in handPoses.poses)
+            {
+                if(pose.id == handPose)
+                {
+                    return pose.asset;
+                }
+            }
 
-        };
+            return handPoses.defaultPose;
+        }
 
         [EasyButtons.Button]
         private void RefleshHandPose()
@@ -142,7 +148,7 @@ namespace CrossLink
             if (handPose == null)
                 return;
 
-            handPoseConfig = Resources.Load("Tools/HandPoseHelper/support/HandPose/" + handPoseDic[handPose]) as HandPosePreset;
+            handPoseConfig = GetHandPose(handPose);
             if (handPoseConfig == null)
                 return;
             hpc_l = fitOffset_l.GetComponentInChildren<HandPoseControl>();
