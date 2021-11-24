@@ -126,14 +126,19 @@ namespace CrossLink
 
         private HandPosePreset handPoseConfig;
 
-        private Dictionary<string, string> handPoseDic = new Dictionary<string, string>(){ 
-            { "DefaultPose", "Open" },
-            { "GrabPosePose", "Open" },
-            { "GunPose", "Gun" },
-            { "HoldPose", "Hold" },
-            { "GlovePose", "Glove" },
+        private HandPosePreset GetHandPose(string handPose)
+        {
+            HandPoses handPoses = GetComponentInChildren<HandPoses>();
+            foreach (Pose pose in handPoses.poses)
+            {
+                if(pose.id == handPose)
+                {
+                    return pose.asset;
+                }
+            }
 
-        };
+            return handPoses.defaultPose;
+        }
 
         [EasyButtons.Button]
         private void RefleshHandPose()
@@ -142,7 +147,7 @@ namespace CrossLink
             if (handPose == null)
                 return;
 
-            handPoseConfig = Resources.Load("Tools/HandPoseHelper/support/HandPose/" + handPoseDic[handPose]) as HandPosePreset;
+            handPoseConfig = GetHandPose(handPose);
             if (handPoseConfig == null)
                 return;
             hpc_l = fitOffset_l.GetComponentInChildren<HandPoseControl>();
