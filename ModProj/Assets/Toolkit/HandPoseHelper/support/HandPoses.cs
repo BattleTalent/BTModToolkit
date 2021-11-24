@@ -14,7 +14,12 @@ namespace CrossLink
 
     public class HandPoses : MonoBehaviour
     {
+        [Header("Poses")]
         public HandPosePreset defaultPose;
         public Pose[] poses;
+
+        [Header("Fit Offsets")]
+        public GameObject fitOffset_l;
+        public GameObject fitOffset_r;
     }
 }
