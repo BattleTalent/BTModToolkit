@@ -20,13 +20,16 @@ function ScabbardInteract:OnGrab(a, g)
             return
         end
         
-        if not IsNullOrDestroyed(lastPlayer) and self.player ~= lastPlayer then
-            for i = 0, lastPlayer.bodySlots.Length - 1 do
-                lastPlayer.bodySlots[i]:PutInEvent("-", self.putCb)
+        if not IsNullOrDestroyed(lastPlayer) then
+            if self.player ~= lastPlayer then
+                for i = 0, lastPlayer.bodySlots.Length - 1 do
+                    lastPlayer.bodySlots[i]:PutInEvent("-", self.putCb)
+                end
             end
-        end
-        for i = 0, self.player.bodySlots.Length - 1 do
-            self.player.bodySlots[i]:PutInEvent("+", self.putCb)
+        else
+            for i = 0, self.player.bodySlots.Length - 1 do
+                self.player.bodySlots[i]:PutInEvent("+", self.putCb)
+            end
         end
     end
 end

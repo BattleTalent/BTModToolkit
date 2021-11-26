@@ -30,8 +30,6 @@ function Scabbard:Awake()
     self.z_t = self.detectPoint.localPosition.z
     
     self.scabbardCols = self.ib:GetCols()
-    self.lHandCols = CL.InteractCharacter.PlayerInstance.hands[1].physicsHand.colliders
-    self.rHandCols = CL.InteractCharacter.PlayerInstance.hands[0].physicsHand.colliders
 end
 
 function Scabbard:OnTriggerStay(other)
@@ -43,15 +41,16 @@ function Scabbard:OnTriggerStay(other)
     if itx and itx.script then
         local lua = itx.script.self
         if lua.isScabbardUser and lua:GetSwordType() == self.swordType then
-            self.sword = other.transform.root.gameObject
+            local sword = other.transform.root.gameObject
             
-            local angle = UE.Vector3.Angle(self.host.transform.forward, self.sword.transform.forward)
+            local angle = UE.Vector3.Angle(self.host.transform.forward, sword.transform.forward)
             local dis = UE.Vector3.Distance(lua.peakPoint.position, self.detectPoint.position)
             if angle <= self.maxAngle and dis <= self.maxConnectDis then
                 
                 self.leftOffset = UE.Vector3(self.jointXOffset, 0, -self.jointZOffset)
                 self.rightOffset = UE.Vector3(-self.jointXOffset, 0, -self.jointZOffset)
                 
+                self.sword = sword
                 self.su = lua
                 self.peakPoint = self.su.peakPoint
                 self.rootPoint = self.su.rootPoint
@@ -87,6 +86,10 @@ function Scabbard:ConnectUpdate()
         return
     end
     
+    if IsNullOrDestroyed(self.sword) then
+        self.isConnect = false
+        return
+    end
     local localPos = self.host.transform:InverseTransformPoint(self.peakPoint.position)
     local z_p = localPos.z
     
@@ -215,11 +218,13 @@ function Scabbard:BuildConnect(rb)
     end
     
     local swordCols = self.su.ib:GetCols()
+    if not swordCols then
+        return
+    end
     CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, true)
     CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, true)
     CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, true)
     CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
-    
 end
 
 function Scabbard:LockJoint()
@@ -264,7 +269,9 @@ function Scabbard:Disconnect()
     local pHand = self.su.ib:GetPrimaryHand();
     local sHand = self.su.ib:GetSecondaryHand();
     local swordCols = self.su.ib:GetCols()
-    
+    if not swordCols then
+        return
+    end
     CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, false)
         
     if IsNullOrDestroyed(pHand) and IsNullOrDestroyed(sHand) then
@@ -286,6 +293,9 @@ end
 
 function Scabbard:SwordOnGrab(a, g)
     local swordCols = self.su.ib:GetCols()
+    if not swordCols then
+        return
+    end
     if self.isConnect then
         local handIdx = a.attachedHand:GetHandIndex()
         CL.Scheduler.Create(self,
@@ -313,11 +323,20 @@ end
 
 
 function Scabbard:ScabbardOnGrab(a, g)
+    if g then
+        self.player = a.attachedHand.character
+        self.lHandCols = self.player.hands[1].physicsHand.colliders
+        self.rHandCols = self.player.hands[0].physicsHand.colliders
+    end
+    
     if self.isConnect then
         local handIdx = a.attachedHand:GetHandIndex()
         CL.Scheduler.Create(self,
             function(sche, t, s)
                 local swordCols = self.su.ib:GetCols()
+                if not swordCols then
+                    return
+                end
                 if g then
                     CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
                     CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
@@ -335,7 +354,7 @@ function Scabbard:ScabbardOnGrab(a, g)
 end
 
 function Scabbard:OnDestroy()
-
+    self.ib:GrabEvent("-", self.scabbardGrabCb)
 end
 
 return Class(nil, nil, Scabbard)
