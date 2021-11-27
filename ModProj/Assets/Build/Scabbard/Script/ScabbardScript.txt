@@ -221,9 +221,11 @@ function Scabbard:BuildConnect(rb)
     if not swordCols then
         return
     end
+    if not IsNullOrDestroyed(self.player) then
+        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, true)
+        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, true)
+    end
     CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, true)
-    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, true)
-    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, true)
     CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
 end
 
@@ -275,17 +277,21 @@ function Scabbard:Disconnect()
     CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, false)
         
     if IsNullOrDestroyed(pHand) and IsNullOrDestroyed(sHand) then
-        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, false)
-        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, false)
+        if not IsNullOrDestroyed(self.player) then
+            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, false)
+            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, false)
+        end
     else
-        local rIg, lIg = true
+        local rIg, lIg = true, true
         if (not IsNullOrDestroyed(pHand) and pHand:GetHandIndex() == 0) or (not IsNullOrDestroyed(sHand) and sHand:GetHandIndex() == 0) then
             lIg = false
         elseif (not IsNullOrDestroyed(pHand) and pHand:GetHandIndex() == 1) or (not IsNullOrDestroyed(sHand) and sHand:GetHandIndex() == 1) then
             rIg = false
         end
-        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, lIg)
-        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, rIg)
+        if not IsNullOrDestroyed(self.player) then
+            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, lIg)
+            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, rIg)
+        end
     end
 
 
@@ -293,17 +299,16 @@ end
 
 function Scabbard:SwordOnGrab(a, g)
     local swordCols = self.su.ib:GetCols()
-    if not swordCols then
-        return
-    end
     if self.isConnect then
         local handIdx = a.attachedHand:GetHandIndex()
         CL.Scheduler.Create(self,
             function(sche, t, s)
-                if handIdx == 0 then
-                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
-                else
-                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
+                if not IsNullOrDestroyed(self.player) then
+                    if handIdx == 0 then
+                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
+                    else
+                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
+                    end
                 end
                 CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
             end
@@ -312,8 +317,10 @@ function Scabbard:SwordOnGrab(a, g)
         if not g then
             CL.Scheduler.Create(self,
             function(sche, t, s)
-                CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, false)
-                CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, false)
+                if not IsNullOrDestroyed(self.player) then
+                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, false)
+                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, false)
+                end
                 CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, false)
             end
             , 0, 0, 0.51)
@@ -338,13 +345,17 @@ function Scabbard:ScabbardOnGrab(a, g)
                     return
                 end
                 if g then
-                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
-                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
-                else
-                    if handIdx == 0 then
+                    if not IsNullOrDestroyed(self.player) then
                         CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
-                else
                         CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
+                    end
+                else
+                    if not IsNullOrDestroyed(self.player) then
+                        if handIdx == 0 then
+                            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
+                        else
+                            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
+                        end
                     end
                 end
                 CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
