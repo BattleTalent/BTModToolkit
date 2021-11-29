@@ -133,7 +133,7 @@ function Turret:CalculateInitialSpeed(endPoint, angle)
     return v
 end
 
-function Turret:OnDestroy()
+function Turret:OnTowerDestroy()
     self.updateTimerId = CL.Scheduler.RemoveSchedule(self.updateTimerId)
 end
 

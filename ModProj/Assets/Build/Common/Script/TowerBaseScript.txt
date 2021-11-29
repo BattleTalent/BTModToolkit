@@ -71,7 +71,8 @@ end
 
 function TowerBase:OnTransformation()
     local rb = self.host.gameObject:GetComponent("Rigidbody")
-    rb.mass = 60
+    rb.mass = 800    
+    rb.drag = 5
 end
 
 function TowerBase:UndoTransformation()
@@ -103,6 +104,7 @@ end
 function TowerBase:OnUndoTransformation()
     local rb = self.host.gameObject:GetComponent("Rigidbody")
     rb.mass = 5
+    rb.drag = 0.5
 end
 
 function TowerBase:StartUpdate()
@@ -183,6 +185,18 @@ function TowerBase:GunRotateTo(gunTrans, position, rotSpeed, maxAngle, minAngle)
     end
     
     gunTrans.localEulerAngles = UE.Vector3(euler.x, localEuler.y, localEuler.z)
+end
+
+function TowerBase:OnDestroy()
+    self.timerId = CL.Scheduler.RemoveSchedule(self.timerId)
+    self.animTimerId = CL.Scheduler.RemoveSchedule(self.animTimerId)
+    self.undoTimerId = CL.Scheduler.RemoveSchedule(self.undoTimerId)
+    
+    self:OnTowerDestroy()
+end
+
+function TowerBase:OnTowerDestroy()
+
 end
 
 return Class(nil,nil,TowerBase)
