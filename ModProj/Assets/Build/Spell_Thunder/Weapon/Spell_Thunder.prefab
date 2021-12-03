@@ -188,7 +188,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6845852282262428349}
   - component: {fileID: 6845852282262428348}
-  - component: {fileID: 6845852282262428351}
   - component: {fileID: 8216959072572271350}
   - component: {fileID: 6308027893532948688}
   - component: {fileID: 1581336778960507262}
@@ -236,27 +235,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 3
---- !u!114 &6845852282262428351
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6845852282262428324}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6e7e140fe4ebe43a2d7550640f6f84, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  soundInfo:
-    templateName: 
-    soundNames:
-    - WMD_akshot
-    vol: 0.1
-    volRandomRange: 0
-    pitchMax: 1.1
-    pitchMin: 0.8
-  loop: 0
 --- !u!114 &8216959072572271350
 MonoBehaviour:
   m_ObjectHideFlags: 0
