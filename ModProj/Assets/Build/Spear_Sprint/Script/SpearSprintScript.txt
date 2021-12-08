@@ -1,0 +1,67 @@
+
+local SpearSprint = {
+    startTime = 0,
+}
+
+function SpearSprint:Start()
+    self.hitInfo = self.host.interact:GetRagdollHitInfo()
+    self.stab = self.host.interact:GetStabObject()
+    
+    self.stabHandler = function(si)
+        self:OnStabEnter(si)
+    end
+    self.stab:StabEnterEvent("+", self.stabHandler)
+end
+
+function SpearSprint:OnGrab(a, g)
+    if (g) then
+        self.holdingCharacter = a.attachedHand.character
+    end
+end
+
+function SpearSprint:OnStabEnter(si)
+    if not self:IsSecondPhase() then
+        return
+    end
+    local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+    if not fc then
+        return
+    end
+    
+    fc.motion:Knockout()
+    
+    if not fc.motion:Standing() then
+        self.stab:ProtectStabForAWhile()
+    end
+end
+
+function SpearSprint:IsSecondPhase()
+    return self.host:IsOpeningSkill() and UE.Time.unscaledTime - self.startTime > self.secondPhaseTime
+end
+
+function SpearSprint:UpdateSkill()
+    if self.holdingCharacter then
+        local forward = self.host.transform.forward
+        forward.y = 0
+        
+        local force = self:IsSecondPhase() and self.springForceSecondPhase or self.springForce
+        if force > 0 then
+            self.holdingCharacter:PanPush(forward * force * UE.Time.deltaTime)
+        end
+        
+        self.hitInfo.velocityMlp = self.holdingCharacter.capsuleRB.velocity.magnitude * 0.2
+    end
+end
+
+function SpearSprint:OpenSkill(attach)
+    self.startTime = UE.Time.unscaledTime
+    self.holdingCharacter:SetMovementEnable(false)
+end
+
+function SpearSprint:CloseSkill()
+    self.hitInfo:ResetTemplate()
+    CL.BuffMgr.Instance:ReInstallBuff(self.hitInfo)
+    self.holdingCharacter:SetMovementEnable(true)
+end
+
+return Class(nil, nil, SpearSprint)

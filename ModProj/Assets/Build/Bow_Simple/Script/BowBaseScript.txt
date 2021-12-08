@@ -1,0 +1,185 @@
+local BowBase = {
+    --ArrowPuller puller
+    --string arrowPrefab
+    --AimWidget aimWidget
+    --shootWeaponSpeed
+    ignoreWeaponColActId = -1,
+    }
+
+function BowBase:Start()
+    --self.OnPutWeapon = function(weapon)
+    --    self.putedWeapon = weapon
+    --end
+    --
+    --self.OnPutHandler = function(a)
+    --    self:OnPut(a)
+    --end
+    --
+    --self.OnReleaseHandler = function(a, shootFactor)
+    --    self:OnRelease(a, shootFactor)
+    --end
+    --
+    --self.OnCancelHandler = function()
+    --    self:OnCancel()
+    --end
+    --self.puller:PutWeaponEvent("+", self.OnPutWeapon)
+    --self.puller:PutEvent("+", self.OnPutHandler)
+    --self.puller:ReleaseEvent("+", self.OnReleaseHandler)
+    --self.puller:CancelEvent("+", self.OnCancelHandler)
+    self.pullerScript.gameObject:SetActive(false)
+    self.puller = self.pullerScript:GetSelf()
+end
+
+function BowBase:OnPut(a)
+    local hand = self.puller:GetPullingHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    if IsNullOrDestroyed(self.putedWeapon) then
+        local arrowGO = CL.PrefabPool.SpawnPrefab(self.arrowPrefab, CL.InteractTrigger.WeaponPath)
+        self.putedWeapon = arrowGO:GetComponent(typeof(CL.InteractTrigger)).interact
+        
+        self.putedArrow = arrowGO:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    end
+    
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        local stab = self.putedWeapon:GetStabObject()
+        if not IsNullOrDestroyed(stab) then
+            stab:ProtectStabForAWhile()
+        end
+        
+        self.putedWeapon.transform.parent = a.transform
+        self.putedWeapon.transform.localPosition = UE.Vector3.zero
+        
+        local holdHand = self.host.interact:GetPrimaryHand()
+        local palmDir = holdHand:GetPalmDir()
+        self.putedWeapon.transform.position = self.putedWeapon.transform.position + palmDir * -0.025
+        
+        self.putedWeapon.transform.forward = self.puller.trans.forward
+        
+        if self.lastReleaseWeapon == self.putedWeapon then
+            self.ignoreWeaponColActId = CL.Scheduler.RemoveSchedule(self.ignoreWeaponColActId)
+        end
+        self.lastReleaseWeapon = nil
+        CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), self.putedWeapon:GetCols(), true)
+        CL.InteractCharacter.AIPlayerInstance.ra:SetCollisionIgnoreWith(self.putedWeapon:GetCols(), true)
+        
+        self.putedWeapon:SetKinematic(true)
+        self.putedWeapon:SetRBCols(false)
+    end
+    
+    if self.putedArrow then
+        self.putedArrow:OnPut(self)
+    end
+end
+
+function BowBase:OnPutedWeapon(weapon)
+    self.putedWeapon = weapon
+end
+
+function BowBase:OnMove(a, shootFactor)
+end
+
+function BowBase:OnShootWeapon(weapon)
+    local force = self.puller.trans.forward * self.shootWeaponSpeed
+    local stab = weapon:GetStabObject()
+    
+    if not IsNullOrDestroyed(stab) then
+        stab:AddStabTargetForce(force)
+    end
+    weapon.rb.velocity = force
+end
+
+function BowBase:OnRelease(a, shootFactor)
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self.putedWeapon.transform.parent = nil
+        self.putedWeapon:SetKinematic(false)
+        self.putedWeapon:SetRBCols(true)
+        
+        self:OnShootWeapon(self.putedWeapon)
+        
+        self.putedWeapon:SetHolderCollision(self.holdingCharacter, true, true, true, true)
+        self.putedWeapon:SetHolderCollision(self.holdingCharacter, true, true, true, false, 0.5)
+        
+        self.lastReleaseWeapon = self.putedWeapon
+        local ignoreWeapon = self.putedWeapon
+        self.ignoreWeaponColActId = CL.Scheduler.RemoveSchedule(self.ignoreWeaponColActId)
+        self.ignoreWeaponColActId = CL.Scheduler.Create(self.host, 
+            function(sche, t, s)
+                if IsNullOrDestroyed(self.interact) or IsNullOrDestroyed(ignoreWeapon) then
+                    return
+                end
+                CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), ignoreWeapon:GetCols(), false)
+                --CL.InteractCharacter.AIPlayerInstance.ra:SetCollisionIgnoreWith(ignoreWeapon:GetCols(), false)
+            end,
+        0, 0, 0.5).actionId
+    
+        self.putedWeapon:MarkThrowAssist(1)
+        if self.putedArrow then
+            self.putedWeapon:OnDrop(true)
+        end
+        self.putedWeapon = nil
+    end
+    
+    if self.putedArrow then
+        self.putedArrow:OnShoot(self)
+        self.putedArrow.ib:MarkThrowAssist(1)
+        self.putedArrow = nil
+        self.host.interact:CostDurability()
+    end
+end
+
+function BowBase:OnCancel()
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self.putedWeapon.transform.parent = nil
+        self.putedWeapon:SetKinematic(false)
+        self.putedWeapon:SetRBCols(true)
+        
+        CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), self.putedWeapon:GetCols(), false)
+        CL.InteractCharacter.AIPlayerInstance.ra:SetCollisionIgnoreWith(self.putedWeapon:GetCols(), false)
+        if not self.putedArrow then
+            self.putedWeapon:OnDrop(true)
+        end
+        
+        self.putedWeapon = nil
+    end
+    
+    if self.putedArrow then
+        self.putedArrow:OnCancel(self)
+        self.putedArrow = nil
+    end
+end
+
+function BowBase:OnPutWeaponEvent(weapon)
+    self.putedWeapon = weapon
+end
+
+function BowBase:Destroy()
+    --self.puller:PutWeaponEvent("-", self.OnPutWeaponEvent)
+    --self.puller:PutEvent("-", self.OnPut)
+    --self.puller:ReleaseEvent("-", self.OnRelease)
+    --self.puller:CancelEvent("-", self.OnCancel)
+end
+
+function BowBase:OnGrab(attach, t)
+    self.pullerScript.gameObject:SetActive(t)
+    --self.aimWidget.gameObject:SetActive(t)
+    --if t and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+    --    self.aimWidget.enabled = true
+    --else
+    --    self.aimWidget.enabled = false
+    --end
+    
+    if t == false and CL.InteractCharacter.PlayerInstance ~= nil then
+        for i = 0, CL.RagdollBoneInfo.HAND_NUM - 1 do
+            CL.InteractCharacter.PlayerInstance.hands[i]:Ban(false)
+        end
+    end
+    
+    if t then
+        self.holdingCharacter = attach.attachedHand.character
+    end
+end
+
+return Class(nil, nil, BowBase)

@@ -1,0 +1,75 @@
+
+local SwordIce = {
+}
+
+function SwordIce:Awake()
+    local so = self.host.interact:GetStabObject()
+    
+    self.stabEnterHandler = function(si)
+        self:OnStab(si)
+    end
+    
+    self.stabExitHandler = function(si)
+        self:OnStabExit(si)
+    end
+    
+    self.onHitHandler = function(fc)
+        self:OnHit(fc)
+    end
+    so:StabEnterEvent("+", self.stabEnterHandler)
+        so:StabExitEvent("+", self.stabExitHandler)
+end
+
+function SwordIce:OnStab(si)
+    local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+    if not fc then
+        return
+    end
+    
+    fc.muscleState:BeHittedEvent("+", self.onHitHandler)
+    fc.muscleState:EnableFreeze(true)
+    fc.muscleState:AddFreezeSource(true)
+    self:AutoBreak(fc)
+end
+
+function SwordIce:OnStabExit(si)
+    local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+    if not fc then
+        return
+    end
+    
+    fc.muscleState:BeHittedEvent("-", self.onHitHandler)
+    fc.muscleState:AddFreezeSource(false)
+    
+    if fc.muscleState:IsNoFreezeSource() then
+        fc.muscleState:EnableFreeze(false)
+        fc.motion:Knockout()
+    end
+    self:UnAutoBreak(fc)
+end
+
+function SwordIce:OnHit(fc)
+    if CL.FullBodyMuscleState.dmgBasicData.hitInfo == self.host.interact:GetRagdollHitInfo() then
+        return
+    end
+    
+    if not fc.muscleState:IsFreezeRecently() then
+        fc.muscleState:BeHittedEvent("-", self.onHitHandler)
+        self.host.interact:GetStabObject():BreakAllStab()
+    end
+end
+
+function SwordIce:AutoBreak(fc)
+    self.breakActId = CL.Scheduler.RemoveSchedule(self.breakActId)
+    self.breakActId = CL.Scheduler.Create(self.host.interact,
+    function(sche, t, s)
+        self.host.interact:GetStabObject():BreakAllStab()
+    end
+    , 0, 0, 40).actionId
+end
+
+function SwordIce:UnAutoBreak(fc)
+    self.breakActId = CL.Scheduler.RemoveSchedule(self.breakActId)
+end
+
+return Class(nil, nil, SwordIce)

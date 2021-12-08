@@ -1,0 +1,76 @@
+
+local MaceCollision = {
+}
+
+function MaceCollision:Awake()
+    self.legalCols = {}
+    self.legalCols[1] = self.col1
+    self.legalCols[2] = self.col2
+    
+end
+
+function MaceCollision:OnColliderEnter(collision)
+    if not self.interactTrigger:IsOpeningSkill() then
+        return
+    end
+    
+    if collision.collider.gameObject.layer ~= CL.LayerDefine.EnvLayer.value then
+        return
+    end
+    
+    local relaVel = collision.relativeVelocity
+    local relaVelY = UE.Mathf.Abs(relaVel.y)
+    if relaVelY < 8 then
+        return
+    end
+    
+    local ct = collision:GetContact(0)
+    local pass = false
+    for i = 1, #self.legalCols do
+        if self.legalCols[i] == ct.thisCollider then
+            pass = true
+            break
+        end
+    end
+    if not pass then
+        return
+    end
+    
+    local dot = UE.Vector3.Dot(ct.normal, UE.Vector3.up)
+    if dot < 0.5 then
+        return
+    end
+    
+    local pos = collision.collider:ClosestPoint(ct.point)
+    local force = UE.Vector3.up * UE.Mathf.Min((self.hitFlyMlp * relaVelY), 150)
+    
+    pos.y = pos.y + 0.05
+    CL.EffectMgr.Instance:PlayEffect(self.hitGroundEffect, pos, UE.Quaternion.identity)
+    local targets = CL.AIProxy.GetTargetInRange(pos, self.hitGroundRadius, CL.AIProxy.CampBad, true)
+    local hitInfo = self.interactTrigger.interact:GetRagdollHitInfo()
+    
+    for i = 0, targets.Count - 1 do
+        local ai = targets[i]
+        cast(ai, typeof(CL.AIController))
+        if ai then
+            ai.fc.attr:AddHp(hitInfo.damageMlp)
+            ai.fc.muscleState:ClearAllStab()
+            ai.fc.motion:Knockout()
+            if ai.fc.motion:IsKnockout() then
+                ai.fc.ra:AddForce(force, UE.ForceMode.Impulse)
+            end
+        end
+    end
+    
+    local ibList = CL.InteractMgr.Instance:QueryInteractInRange(pos, self.hitGroundRadius)
+    for i = 0, ibList.Count - 1 do
+        local wp = ibList[i]:GetInteractTrigger()
+        if wp then
+            ibList[i]:AddForce(force, UE.ForceMode.Impulse)
+        end
+    end
+    
+    self.interactTrigger:CloseSkill()
+end
+
+return Class(nil, nil, MaceCollision)

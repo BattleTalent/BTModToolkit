@@ -1,0 +1,128 @@
+
+local WandIce = {
+    spawnedSword = nil,
+}
+
+function WandIce:Awake()
+    self.manaCostSpawn = self.host.manaCost
+    
+    self.onGrabHandler = function(a, g)
+        self:OnGrabSpawnWeapon(a, g)
+    end
+    
+    self.onWeaponDeadHandler = function(pu)
+        self:OnWeaponDead(pu)
+    end
+    
+    self.onStabHandler = function(si)
+        self:OnStab(si)
+    end
+end
+
+function WandIce:OnDestroy()
+    if self.spawnedSword ~= nil and not IsNullOrDestroyed(self.spawnedSword) then
+        self.spawnedSword:GrabEvent("-", self.onGrabHandler)
+        self.spawnedSword:DeadEvent("-", self.onWeaponDeadHandler)
+    end
+    self.spawnedSword = nil
+    
+    if self.delay ~= nil and not IsNullOrDestroyed(self.delay) then
+        UE.Object.Destroy(self.delay.gameObject)
+    end
+end
+
+function WandIce:UpdateSkill()
+    if self.spawnedSword == nil or IsNullOrDestroyed(self.spawnedSword) then
+        if CL.Scheduler.GetSchedule(self.spawnActId) ~= nil then
+            return
+        end
+        
+        if self.pf == nil or IsNullOrDestroyed(self.pf) then
+            local go = UE.GameObject("WandDelay")
+            self.delay = go:AddComponent(typeof(CL.TransformDelay))
+            local delayPoint = self.delay.trans
+            self.delay.target = self.spawnPoint
+            self.delay.rotLerp = 0.6
+            self.delay.vecLerp = 0.4
+            self.delay:Reset()
+            
+            self.pf = self.host.gameObject:AddComponent(typeof(CL.PhysicsFollow))
+            self.pf.target = self.spawnPoint
+            self.pf.rotationTarget = delayPoint
+            self.pf.maxDistanceDelta = 4
+            self.pf.maxRotateDelta = 10
+        end
+        
+        CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, self.spawnPoint.position, self.spawnPoint.rotation)
+        self.spawnSound.soundInfo:Play(self.spawnPoint.position)
+        
+        self.host.manaCost = 0
+        
+        self.host.interact:GetCollisionEffect().enabled = false
+        self.spawnActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            self:Spawn()
+        end
+        , 0, 0, self.delayToSpawn).actionId
+    else
+        self.spawnedSword.rb:AddForce(self.spawnedSword.trans.forward * self.shootForce, UE.ForceMode.Impulse)
+        self.shootSound.soundInfo:Play(self.spawnedSword.trans.position)
+        self.spawnedSword:MarkThrowAssist()
+        self:BreakConnection()
+    end
+end
+
+function WandIce:Spawn()
+    local ice = CL.ResourceMgr.Instantiate(self.iceSword)
+    self.spawnedSword = ice:GetComponent(typeof(CL.InteractWeapon))
+    self.spawnedSword.durability = 10
+    self.spawnedSword.trans.position = self.spawnPoint.position
+    self.spawnedSword.trans.rotation = self.spawnPoint.rotation
+    
+    self.pf.follower = self.spawnedSword.rb
+    self.pf.enabled = true
+    
+    self.delay.gameObject:SetActive(true)
+    self.delay:Reset()
+    
+    self.spawnedSword:GrabEvent("+", self.onGrabHandler)
+    self.spawnedSword:DeadEvent("+", self.onWeaponDeadHandler)
+    self.spawnedSword:GetStabObject():StabEnterEvent("+", self.onStabHandler)
+    
+    self.host.interact:CostDurability()
+end
+
+function WandIce:BreakConnection()
+    self.pf.enabled = false
+    if not IsNullOrDestroyed(self.spawnedSword) then
+        self.spawnedSword:GrabEvent("-", self.onGrabHandler)
+        self.spawnedSword:DeadEvent("-", self.onWeaponDeadHandler)
+        self.spawnedSword:GetStabObject():StabEnterEvent("-", self.onStabHandler)
+        
+        self.spawnedSword:OnDrop(true)
+    end
+    
+    self.spawnedSword = nil
+    self.delay.gameObject:SetActive(false)
+    
+    self.host.interact:GetCollisionEffect().enabled = true
+    
+    self.host.manaCost = self.manaCostSpawn
+end
+
+function WandIce:OnWeaponDead(pu)
+    self:BreakConnection()
+end
+
+function WandIce:OnGrabSpawnWeapon(a, g)
+    if self.spawnedSword ~= nil and not IsNullOrDestroyed(self.spawnedSword) then
+        self:BreakConnection()
+    end
+end
+
+function WandIce:OnStab(si)
+    if self.spawnedSword ~= nil and not IsNullOrDestroyed(self.spawnedSword) then
+        self:BreakConnection()
+    end
+end
+return Class(nil, nil, WandIce)

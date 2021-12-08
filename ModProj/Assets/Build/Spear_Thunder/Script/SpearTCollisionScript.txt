@@ -1,0 +1,56 @@
+
+local SpearTCollision = {
+    colTime = 0,
+    flyObjName = "WMD_FlyThunderX",
+}
+
+function SpearTCollision:OnColliderEnter(collision)
+    if not self.interactTrigger:IsActivating() then
+        return
+    end
+    
+    if UE.Time.unscaledTime - self.colTime < 0.2 then
+        return
+    end
+    
+    local otherIB = CL.InteractMgr.Instance:GetInteractByCollider(collision.collider)
+    if not otherIB then
+        return
+    end
+    
+    if not otherIB:IsHeldByNpc() then
+        return
+    end
+    
+    local otherFC = CL.CharacterMgr.Instance:GetFullCharacterByChild(otherIB.trans)
+    if not otherFC or otherFC.ai:GetCamp() == CL.AIProxy.CampGood
+    or not otherFC.actor:IsAttacking() then
+        return
+    end
+    
+    if UE.Random.value < 0.35 then
+        local targets = CL.AIProxy.GetTargetInRange(self.interactTrigger.interact.trans.position, 5, CL.AIProxy.CampBad, true)
+        if targets.Count == 0 then
+            return
+        end
+        
+        for i = 0, targets.Count - 1 do
+            local aic = targets[i]
+            cast(aic, typeof(CL.AIController))
+            if aic then
+                local thun = self.interactTrigger:CreateFlyObj(self.flyObjName, self.interactTrigger.interact.trans.position, UE.Vector3.up)
+                
+                local fo = thun.gameObject:GetComponent(typeof(CL.FlyObjectX))
+                if fo then
+                    fo.script.self:OnSpawn()
+                    fo.script.self:SetNextFC(aic.fc)
+                end
+                
+                self.colTime = UE.Time.unscaledTime
+                break
+            end
+        end
+    end
+end
+
+return Class(nil, nil, SpearTCollision)

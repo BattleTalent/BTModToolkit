@@ -1,0 +1,47 @@
+
+local SwordSlash = {
+    lastSpeedRecord = 0,
+}
+
+function SwordSlash:CloseSkill()
+    if self.shootReady then
+        self.shootReady = false
+        
+        local slash = self.host:CreateFlyObj(self.flyObj, self.slashPos, self.slashDir)
+        slash.trans.rotation = UE.Quaternion.LookRotation(self.slashDir, self.slashUp)
+        self.host.interact:CostDurability()
+    end
+    self.lastSpeedRecord = 0
+end
+
+function SwordSlash:UpdateSkill()
+    local vel = self.host.interact:GetPrimaryHand().velocityEstimator:GetVelocityEstimateLocal()
+    local speedMag = self.host.interact.rb.angularVelocity.magnitude
+    
+    if speedMag > self.swingSpeed and speedMag > self.lastSpeedRecord then
+        if UE.Vector3.Dot(vel, self.host.interact.trans.right) < self.swingSpeed * 0.5 then
+            return
+        end
+        
+        self.lastSpeedRecord = speedMag
+        self.lastRecordTime = UE.Time.unscaledTime
+        self.slashPos = self.host.interact.trans.position + self.host.interact.trans.forward
+        self.slashDir = self.host.interact.trans.forward + self.host.interact:GetPrimaryHand().character:GetHeadset().forward
+        self.slashUp = self.host.interact.trans.up
+        
+        if not self.shootReady then
+            self.shootReady = true
+            self.slashSound.soundInfo:Play(self.slashPos)
+        end
+        return
+    end
+    
+    if not self.shootReady or (self.shootReady and UE.Time.unscaledTime - self.lastRecordTime < 0.1) then
+        return
+    end
+    
+    self.host:CloseSkill()
+    self.lastSpeedRecord = 0
+end
+
+return Class(nil, nil, SwordSlash)

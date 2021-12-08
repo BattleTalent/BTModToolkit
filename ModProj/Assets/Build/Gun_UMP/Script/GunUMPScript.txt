@@ -1,0 +1,26 @@
+
+local GunUMP = {
+    releaseBulletTime = 0.2,
+    releaseBulletNumber = 5,
+    
+    --shootVel = -1,
+    --recoilRotate = -15,
+    --recoilRandomBias = 3,
+    --releaseBulletTime = 0.2,
+    --releaseBulletNumber = 6,
+}
+
+function GunUMP:OnChargeRelease()
+    self.releaseBulletActId = CL.Scheduler.RemoveSchedule(self.releaseBulletActId)
+    self.releaseBulletActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            local bs = self:PlayShootAction()
+            local rh = bs:GetRagdollHitInfo()
+            rh.hitMlp = 101
+            rh.damageMlp = 1.5
+        end
+    ,self.releaseBulletTime/self.releaseBulletNumber, self.releaseBulletTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+return Class(Require("LuaScript/WMD_WeaponFlyObjBaseScript"), nil, GunUMP)

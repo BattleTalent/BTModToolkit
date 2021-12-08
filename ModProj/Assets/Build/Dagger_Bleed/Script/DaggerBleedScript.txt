@@ -1,0 +1,46 @@
+
+local DaggerBleed = {
+    buffList = {},
+}
+
+function DaggerBleed:Awake()
+    local so = self.host.interact:GetStabObject()
+    self.onStabEnterHandler = function(si)
+        self:OnStabEnter(si)
+    end
+    
+    self.OnStabExitHandler = function(si)
+        self:OnStabExit(si)
+    end
+    so:StabEnterEvent("+", self.onStabEnterHandler)
+    so:StabExitEvent("+", self.OnStabExitHandler)
+end
+
+function DaggerBleed:OnStabEnter(si)
+    local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+    if not fc then
+        return
+    end
+    
+    if self.buffList[fc] then
+        return
+    end
+    
+    local buff = CL.BuffMgr.Instance:AddBuff(fc.attr, "Role_Bleed")
+    self.buffList[fc] = buff
+end
+
+function DaggerBleed:OnStabExit(si)
+    local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+    if not fc then
+        return
+    end
+    
+    if not self.buffList[fc] then
+        return
+    end
+    CL.BuffMgr.Instance:RemoveBuff(fc.attr, self.buffList[fc])
+    self.buffList[fc] = nil
+end
+
+return Class(nil, nil, DaggerBleed)

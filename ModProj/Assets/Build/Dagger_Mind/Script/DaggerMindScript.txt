@@ -1,0 +1,78 @@
+
+local DaggerMind = {
+    controlList = {},
+}
+
+function DaggerMind:Awake()
+    self.onStabEnterHandler = function(si)
+        self:OnStabEnter(si)
+    end
+    
+    self.OnStabExitHandler = function(si)
+        self:OnStabExit(si)
+    end
+    self.stab:StabEnterEvent("+", self.onStabEnterHandler)
+    self.stab:StabExitEvent("+", self.OnStabExitHandler)
+end
+
+function DaggerMind:OnDestroy()
+    self.stab:StabEnterEvent("-", self.onStabEnterHandler)
+    self.stab:StabExitEvent("-", self.OnStabExitHandler)
+end
+
+function DaggerMind:OnStabEnter(si)
+    print("OnStabEnter")
+    if self.host:IsActivating() then
+        local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+        if not IsNullOrDestroyed(fc) then
+            if not self.controlList[fc] then
+                fc.attr:ChangeCamp()
+                self.controlList[fc] = fc
+            end
+        end
+    end
+end
+
+function DaggerMind:OnStabExit(si)
+    if self.host:IsActivating() then
+        return
+    end
+    
+    if not IsNullOrDestroyed(si.stabTarget) then
+        local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+        if not IsNullOrDestroyed(fc) then
+            if self.controlList[fc] then
+                fc.attr:ChangeCamp()
+                self.controlList[fc] = nil
+            end
+        end
+    end
+end
+
+function DaggerMind:OnActivateBegin()
+    local sm = self.stab:GetStabInfo()
+    local ite = sm:GetEnumerator()
+    while ite:MoveNext() do
+        local info = ite.Current.Value
+        if info ~= nil and IsNullOrDestroyed(info.stabTarget) then
+           local fc = CL.CharacterMgr.Instance:GetFullCharacter(info.stabTarget.root)
+           if not IsNullOrDestroyed(fc) then
+                if not self.controlList[fc] then
+                    fc.attr:ChangeCamp()
+                    self.controlList[fc] = fc
+                end
+            end
+        end
+    end
+end
+
+function DaggerMind:OnActivateEnd()
+    for k, v in pairs(self.controlList) do
+        if v then
+            v.attr:ChangeCamp()
+        end
+    end
+    self.controlList = {}
+end
+
+return Class(nil, nil, DaggerMind)

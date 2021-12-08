@@ -1,0 +1,22 @@
+
+local RapierLight = {
+    --shootVel = -1,
+    --recoilRotate = -15,
+    --recoilRandomBias = 3,
+    --releaseBulletTime = 0.2,
+    --releaseBulletNumber = 6,
+    
+    autoSetupBulletIgnore = true,
+}
+
+function RapierLight:OnUpdateSkill()
+    local stab = self.host.interact:GetStabObject()
+    if stab:GetStabingCount() > 0 then
+        local pushForce = self.host.interact.trans.forward * self.pushForward
+        pushForce.y = self.pushUpward
+        stab:AddStabTargetForce(pushForce)
+        stab:BreakAllStab()
+    end
+end
+
+return Class(Require("LuaScript/WMD_WeaponFlyObjBaseScript"), nil, RapierLight)

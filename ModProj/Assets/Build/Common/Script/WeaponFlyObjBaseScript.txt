@@ -1,0 +1,88 @@
+
+local WeaponFlyObj = {
+    recoilVector = UE.Vector3(0, 0.1, -0.3),
+    recoilCurve = UE.AnimationCurve(UE.Keyframe(0, 1000), UE.Keyframe(0.1, 0)),
+    
+    -- bool value: 0 -> false  1 -> true
+    dontShootOnInstant = false,   
+    shootOnCharge = true,         
+    shootOnActivateEnd = false,   
+    autoSetupBulletIgnore = false,
+    
+    flyObjName = "",
+    
+    shootVel = -1,
+    recoilRotate = -15,
+    recoilRandomBias = 3,
+    releaseBulletTime = 0.2,
+    releaseBulletNumber = 1,
+    
+    shootPosition = nil,
+}
+
+function WeaponFlyObj:PlayShootAction()
+    local ph = self.host.interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = self.shootPosition.forward
+    local bulletScript = self.host:CreateFlyObj(self.flyObjName, self.shootPosition.position,
+        aimDir, self.shootVel)
+    
+    if self.autoSetupBulletIgnore or self.autoSetupBulletIgnore == 1 then
+        CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), self.host.interact:GetCols(), true)
+        
+        CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(bulletScript) and not IsNullOrDestroyed(self.host.interact) then
+                CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), self.host.interact:GetCols(), false)
+            end
+        end
+        ,0, 0, 0.2)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+    
+    local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
+    self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
+    self.recoilActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            self.host.interact.rb:AddForce(self.shootPosition:TransformVector(self.recoilVector) *
+                self.recoilCurve:Evaluate(t), UE.ForceMode.Acceleration)
+            
+            self.host.interact.rb:AddRelativeTorque(UE.Vector3(self.recoilRotate, bias, 0), UE.ForceMode.Impulse)
+        end
+    ,0, self.recoilCurve.keys[self.recoilCurve.length - 1].time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self.host.interact:CostDurability()
+    
+    return bulletScript
+end
+
+
+function WeaponFlyObj:UpdateSkill()
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        self:PlayShootAction()
+    end
+    self:OnUpdateSkill()
+end
+
+function WeaponFlyObj:OnUpdateSkill()
+end
+
+function WeaponFlyObj:OnChargeRelease()
+    if self.shootOnCharge or self.shootOnCharge == 1 then
+        self:PlayShootAction()
+    end
+end
+
+function WeaponFlyObj:OnActivateEnd()
+    if self.shootOnActivateEnd or self.shootOnActivateEnd == 1 then
+        self:PlayShootAction()
+    end
+end
+
+
+return Class(nil, nil, WeaponFlyObj)

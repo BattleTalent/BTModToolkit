@@ -1,0 +1,44 @@
+
+local BladeCollision = {
+}
+
+function BladeCollision:Awake()
+end
+
+function BladeCollision:OnColliderEnter(collision)
+    if not self.interactTrigger:IsOpeningSkill() then
+        return
+    end
+    
+    --not collision with self
+    local hand = self.interactTrigger.interact:GetPrimaryHand()
+    if hand and collision.gameObject.transform.root == hand.character.trans.root then
+        return
+    end
+    
+    print(collision.relativeVelocity.sqrMagnitude)
+    if collision.relativeVelocity.sqrMagnitude < self.sqrSpeed then
+        return
+    end
+    
+    local ct = collision:GetContact(0)
+    local pass = false
+    local idx = 1
+    while self["col" .. idx] do
+        if self["col" .. idx] == ct.thisCollider then
+            pass = true
+            break
+        end
+        idx = idx + 1
+    end
+    if not pass then
+        return
+    end
+    
+    local pos = collision.collider:ClosestPoint(ct.point)
+
+    pos.y = pos.y + 0.05
+    CL.EffectMgr.Instance:PlayEffect(self.effectName, pos, UE.Quaternion.identity)
+end
+
+return Class(nil, nil, BladeCollision)

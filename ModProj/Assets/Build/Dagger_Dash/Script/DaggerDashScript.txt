@@ -1,0 +1,30 @@
+
+local DaggerDash = {
+}
+
+function DaggerDash:OnGrab(a, g)
+    if g then
+        if a then
+            self.character = a.attachedHand.character
+        end
+    else
+        self.character = nil
+    end
+end
+
+function DaggerDash:UpdateSkill()
+    local moveDir = self.character:GetHeadset().forward
+    local lh = self.character.hands[CL.RagdollBoneInfo.LEFT_HAND]
+    local inputDir = lh.inputs[CL.VRTKInputButton.ButtonType.Touchpad].Axis
+    
+    if inputDir ~= UE.Vector2.zero then
+        local localDir = UE.Vector3(inputDir.x, 0, inputDir.y)
+        moveDir = self.character:GetHeadset():TransformDirection(localDir)
+        moveDir.y = 0
+        moveDir:Normalize()
+    end
+    
+    self.character:DoDash(moveDir, true, true)
+end
+
+return Class(nil, nil, DaggerDash)

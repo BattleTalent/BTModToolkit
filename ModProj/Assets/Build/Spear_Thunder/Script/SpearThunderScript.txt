@@ -1,0 +1,54 @@
+
+local SpearThunder = {
+    flyObjName = "WMD_FlyThunderX"
+}
+
+function SpearThunder:Awake()
+    local so = self.host.interact:GetStabObject()
+    
+    self.onStabHandler = function(si)
+        self:OnStab(si)
+    end
+    if so then
+        so:StabEnterEvent("+", self.onStabHandler)
+    end
+end
+
+function SpearThunder:OnActivateBegin()
+    local so = self.host.interact:GetStabObject()
+    local stabInfo = so:GetStabInfo():GetEnumerator()
+    while stabInfo:MoveNext() do
+        local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(stabInfo.Current.Value.stabTarget)
+        if fc then
+            self:ApplyEffectOnFc(fc)
+        end
+    end
+end
+
+function SpearThunder:OnStab(si)
+    if not self.host:IsActivating() then
+        return
+    end
+    
+    local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+    if fc then
+        self:ApplyEffectOnFc(fc)
+    end
+    self.host:Deactivate()
+end
+
+function SpearThunder:ApplyEffectOnFc(fc)
+    local targets = CL.AIProxy.GetTargetInRange(fc.controller.trans.position, 5, fc.ai:GetCamp(), true)
+    local count = UE.Mathf.Min(targets.Count, 3)
+    for i = 0, count - 1 do
+        local thunPos = self.host.interact.trans.position + UE.Vector3.up
+        local thun = self.host:CreateFlyObj(self.flyObjName, thunPos, fc.ra:GetRoot().rbTrans.position - thunPos)
+        local fo = thun.gameObject:GetComponent(typeof(CL.FlyObjectX))
+        if fo then
+            fo.script.self:OnSpawn()
+            fo.script.self:SetNextFC(fc)
+        end
+    end
+end
+
+return Class(nil, nil, SpearThunder)

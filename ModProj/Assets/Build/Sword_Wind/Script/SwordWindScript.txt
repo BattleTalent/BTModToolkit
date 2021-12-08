@@ -1,0 +1,107 @@
+
+local SwordWind = {
+    slashLayer = UE.LayerMask.GetMask(
+        UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+            UE.LayerMask.LayerToName(CL.LayerDefine.RagdollFakeLayer.value),
+            UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)),
+    rgHitInfo = CL.RagdollHitInfo(),
+    hitedTime = 0,
+}
+
+function SwordWind:Awake()
+    self.rgHitInfo.templateName = "SwordWind_Slash"
+end
+
+function SwordWind:Start()
+    self.rgHitInfo:ResetTemplate()
+    
+    self.onWriteHandler = function(attr, v)
+        self:OnWriteValue(attr, v)
+    end
+    self.host.interact:GetRagdollHitInfo():WriteEvent("+", self.onWriteHandler)
+end
+
+function SwordWind:CloseSkill()
+    self.slashEffect:SetActive(false)
+end
+
+function SwordWind:OnGrab(a, g)
+    if g then
+        if a then
+            self.character = a.attachedHand.character
+        end
+    else
+        self.character = nil
+    end
+end
+
+function SwordWind:OnWriteValue(attr, v)
+    self.rgHitInfo:WriteValue(attr, v)
+end
+
+function SwordWind:UpdateSkill()
+    local speedMag = self.host.interact.rb.velocity.magnitude
+    local swingDot = UE.Vector3.Dot(self.host.interact.rb.velocity/speedMag, self.host.interact.trans.right)
+    
+    local wrongSwing = swingDot < 0.5 and swingDot > -0.5
+    
+    if wrongSwing or speedMag < self.minSpeed then
+        if not CL.Scheduler.GetSchedule(self.closeVfxId) then
+            return
+        end
+        self.closeVfxId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            self.slashEffect:SetActive(false)
+        end
+        , 0, 0, 0.2).actionId
+    else
+        self.closeVfxId = CL.Scheduler.RemoveSchedule(self.closeVfxId)
+        if not self.slashEffect.activeSelf then
+            self.slashEffect:SetActive(true)
+        end
+    end
+    
+    if not self.slashEffect.activeSelf then
+        return
+    end
+    if UE.Time.unscaledTime - self.hitedTime < 0.15 then
+        return
+    end
+    
+    local isHit, hitInfo = UE.Physics.SphereCast(self.host.interact.trans.position + self.host.interact.trans.forward
+        * self.slashDetectOffset, 0.2, self.host.interact.trans.forward, self.slashDis,
+        self.slashLayer)
+    if isHit then
+        CL.InteractTrigger.SetOverrideHitInfo(self.rgHitInfo)
+        CL.InteractTrigger.BeginScanDmg()
+        
+        CL.InteractTrigger.ApplyHitScanDamage(hitInfo.collider, self.host.interact, self.host.interact.rb, self.hitCol, 
+            self.host.interact.rb.velocity.normalized, self.character.aiProxy:GetCamp())
+        CL.InteractTrigger.EndHitScan()
+        CL.InteractTrigger.SetOverrideHitInfo(nil)
+        if CL.InteractTrigger.ScanHited then
+            self.windCutSound.soundInfo:Play(hitInfo.point)
+            self.hitedTime = UE.Time.unscaledTime
+        end
+    end
+end
+
+local function BitAND(a,b)--Bitwise and
+    local p,c=1,0
+    while a>0 and b>0 do
+        local ra,rb=a%2,b%2
+        if ra+rb>1 then c=c+p end
+        a,b,p=(a-ra)/2,(b-rb)/2,p*2
+    end
+    return c
+end
+
+local function lshift(x, by)
+  return x * 2 ^ by
+end
+
+local function rshift(x, by)
+  return math.floor(x / 2 ^ by)
+end
+
+return Class(nil, nil, SwordWind)
