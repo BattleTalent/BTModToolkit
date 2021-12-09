@@ -367,6 +367,7 @@ GameObject:
   - component: {fileID: 7018756396324408578}
   - component: {fileID: 6625649006482969360}
   - component: {fileID: 2352014792725182970}
+  - component: {fileID: 6483085576281863912}
   m_Layer: 15
   m_Name: SwordLightBlade
   m_TagString: Untagged
@@ -513,7 +514,8 @@ MonoBehaviour:
     stabDot: 0.4
     stabHandVelSqrtRequire: 10
     stabSlideFactor: 1000
-    cols: []
+    cols:
+    - {fileID: 1964237266050798041}
     subObj: {fileID: 0}
     sideGeo: -1
     noStabOut: 0
@@ -530,7 +532,8 @@ MonoBehaviour:
     stabDot: 0.2
     stabHandVelSqrtRequire: 8
     stabSlideFactor: 1000
-    cols: []
+    cols:
+    - {fileID: 1964237266050798041}
     subObj: {fileID: 0}
     sideGeo: 0
     noStabOut: 0
@@ -547,7 +550,8 @@ MonoBehaviour:
     stabDot: 0.2
     stabHandVelSqrtRequire: 8
     stabSlideFactor: 1000
-    cols: []
+    cols:
+    - {fileID: 1964237266050798041}
     subObj: {fileID: 0}
     sideGeo: 0
     noStabOut: 0
@@ -645,12 +649,35 @@ MonoBehaviour:
       value: {fileID: 1964237266050798041}
     - name: interactTrigger
       value: {fileID: 7018756396324408578}
+    - name: impactSound
+      value: {fileID: 6483085576281863912}
     numberList:
     - name: sqrSpeed
       value: 16
     stringList:
     - name: effectName
       value: WMD_SaberImpact
+--- !u!114 &6483085576281863912
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4016159020483625847}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c6e7e140fe4ebe43a2d7550640f6f84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  soundInfo:
+    templateName: 
+    soundNames:
+    - WMD_saberimpact
+    vol: 0.3
+    volRandomRange: 0.2
+    pitchMax: 1.5
+    pitchMin: 1
+  loop: 0
 --- !u!1 &4221787921611986346
 GameObject:
   m_ObjectHideFlags: 0
@@ -964,7 +991,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: a1a6428ec09fed847b37fad74842afe1, type: 2}
+      objectReference: {fileID: 2100000, guid: d21a0938930b09e45b36e00a9c89c366, type: 2}
     - target: {fileID: 8442443670243685327, guid: e117f52e71f1d0f4c916d6fe8238a84a,
         type: 3}
       propertyPath: m_Layer
@@ -977,9 +1004,9 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 8710a23671b32844d8dde1603d08f4fc, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e117f52e71f1d0f4c916d6fe8238a84a, type: 3}
---- !u!1 &87850354202943286 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1275782451304991413, guid: e117f52e71f1d0f4c916d6fe8238a84a,
+--- !u!4 &4968376083440225208 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6088675066090806843, guid: e117f52e71f1d0f4c916d6fe8238a84a,
     type: 3}
   m_PrefabInstance: {fileID: 1192440219431769475}
   m_PrefabAsset: {fileID: 0}
@@ -1007,9 +1034,9 @@ MeshRenderer:
     type: 3}
   m_PrefabInstance: {fileID: 1192440219431769475}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &4968376083440225208 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6088675066090806843, guid: e117f52e71f1d0f4c916d6fe8238a84a,
+--- !u!1 &87850354202943286 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1275782451304991413, guid: e117f52e71f1d0f4c916d6fe8238a84a,
     type: 3}
   m_PrefabInstance: {fileID: 1192440219431769475}
   m_PrefabAsset: {fileID: 0}

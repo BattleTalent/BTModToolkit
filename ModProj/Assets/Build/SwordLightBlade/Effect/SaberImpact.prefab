@@ -4750,7 +4750,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7618428739870396916}
   - component: {fileID: 6177141003137493434}
-  - component: {fileID: 8196793858007670041}
   m_Layer: 0
   m_Name: SaberImpact
   m_TagString: Untagged
@@ -4790,26 +4789,6 @@ MonoBehaviour:
   startPosition: 0
   particles:
   - {fileID: 6481503945527834605}
---- !u!114 &8196793858007670041
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7614627726734021208}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c6e7e140fe4ebe43a2d7550640f6f84, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  soundInfo:
-    templateName: impact
-    soundNames: []
-    vol: 0.5
-    volRandomRange: 0
-    pitchMax: 1.35
-    pitchMin: 1.2
-  loop: 0
 --- !u!1 &7931878604720866843
 GameObject:
   m_ObjectHideFlags: 0
@@ -9478,8 +9457,8 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: cfce2ba41fb548f46ba530ab1d8e11b2, type: 2}
-  - {fileID: 2100000, guid: cfce2ba41fb548f46ba530ab1d8e11b2, type: 2}
+  - {fileID: 2100000, guid: 07532c430f81c504db634240152455a2, type: 2}
+  - {fileID: 2100000, guid: 07532c430f81c504db634240152455a2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

@@ -16,7 +16,6 @@ function BladeCollision:OnColliderEnter(collision)
         return
     end
     
-    print(collision.relativeVelocity.sqrMagnitude)
     if collision.relativeVelocity.sqrMagnitude < self.sqrSpeed then
         return
     end
@@ -38,7 +37,13 @@ function BladeCollision:OnColliderEnter(collision)
     local pos = collision.collider:ClosestPoint(ct.point)
 
     pos.y = pos.y + 0.05
-    CL.EffectMgr.Instance:PlayEffect(self.effectName, pos, UE.Quaternion.identity)
+    if self.effectName then
+        CL.EffectMgr.Instance:PlayEffect(self.effectName, pos, UE.Quaternion.identity)
+    end
+    
+    if self.impactSound then
+        self.impactSound.soundInfo:Play(pos)
+    end
 end
 
 return Class(nil, nil, BladeCollision)
