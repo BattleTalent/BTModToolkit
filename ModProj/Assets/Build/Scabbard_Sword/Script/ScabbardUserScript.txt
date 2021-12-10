@@ -1,10 +1,15 @@
 
 local ScabbardUser = {
     isScabbardUser = true,
+    swordIsHeld = false,
 }
 
 function ScabbardUser:GetSwordType()
     return self.swordType
+end
+
+function ScabbardUser:OnGrab(a, g)
+    self.swordIsHeld = g
 end
 
 return Class(nil, nil, ScabbardUser)
