@@ -12,6 +12,8 @@ local Scabbard = {
     jointXOffset = 0.3,
     
     isConnect = false,
+
+    scabbardIsHeld = false,
 }
 
 -- entryPoint detectPoint
@@ -92,7 +94,10 @@ function Scabbard:ConnectUpdate()
     end
     local localPos = self.host.transform:InverseTransformPoint(self.peakPoint.position)
     local z_p = localPos.z
-    
+
+    local disToEntry = UE.Vector3.Distance(self.rootPoint.position, self.entryPoint.position)
+    self.shouldLockToBottom = self.isIn and disToEntry <= self.maxConnectDis
+
     if z_p > self.z_e then
         if not self.isLock then
             self:LockJoint()
@@ -169,6 +174,13 @@ function Scabbard:BuildConnect(rb)
     self.cJoint.connectedBody = rb
     self.cJoint.connectedAnchor = self.peakPoint.localPosition
     
+    self.bottomJoint = self.host.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.bottomJoint.autoConfigureConnectedAnchor = false
+    self.bottomJoint.connectedBody = rb
+    self.bottomJoint.connectedAnchor = self.rootPoint.localPosition
+
+    local bottomlCPoint = UE.Vector3(0, 0, self.entryPoint.localPosition.z)
+    self.bottomJoint.anchor = bottomlCPoint
     
     local lCPoint = UE.Vector3(0, 0, self.entryPoint.localPosition.z)
     self.cJoint.anchor = lCPoint
@@ -177,8 +189,9 @@ function Scabbard:BuildConnect(rb)
     local ll = self.cJoint.linearLimit
     ll.limit = self.swordLength
     self.cJoint.linearLimit = ll
-    
-    
+
+    self.bottomJoint.linearLimit = ll
+
     local leftPoint = lCPoint + self.leftOffset
     local rightPoint = lCPoint + self.rightOffset
     local wLlp = self.host.gameObject.transform:TransformPoint(leftPoint)
@@ -257,6 +270,34 @@ function Scabbard:UnlockJoint()
     self.rJoint.yMotion = UE.ConfigurableJointMotion.Free
 end
 
+function Scabbard:LockOrUnlockSwordToScabbard()
+    if not IsNullOrDestroyed(self.bottomJoint) and self.su then
+        if self.scabbardIsHeld and self.su.swordIsHeld then
+            self:UnlockSwordFromScabbard()
+        else
+            if self.shouldLockToBottom then
+                self:LockSwordToScabbard()
+            end
+        end
+    end
+end
+
+function Scabbard:LockSwordToScabbard()
+    self.bottomJoint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.bottomJoint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.bottomJoint.zMotion = UE.ConfigurableJointMotion.Locked
+
+    self.su.bladeColliders:SetActive(false)
+end
+
+function Scabbard:UnlockSwordFromScabbard()
+    self.bottomJoint.xMotion = UE.ConfigurableJointMotion.Free
+    self.bottomJoint.yMotion = UE.ConfigurableJointMotion.Free
+    self.bottomJoint.zMotion = UE.ConfigurableJointMotion.Free
+
+    self.su.bladeColliders:SetActive(true)
+end
+
 function Scabbard:Disconnect()
     if not IsNullOrDestroyed(self.cJoint) then
         UE.Object.Destroy(self.cJoint)
@@ -267,6 +308,11 @@ function Scabbard:Disconnect()
     if not IsNullOrDestroyed(self.rJoint) then
         UE.Object.Destroy(self.rJoint)
     end
+    if not IsNullOrDestroyed(self.bottomJoint) then
+        UE.Object.Destroy(self.bottomJoint)
+    end
+
+    self.su.bladeColliders:SetActive(true)
     
     local pHand = self.su.ib:GetPrimaryHand();
     local sHand = self.su.ib:GetSecondaryHand();
@@ -298,6 +344,9 @@ function Scabbard:Disconnect()
 end
 
 function Scabbard:SwordOnGrab(a, g)
+
+    self:LockOrUnlockSwordToScabbard()
+
     local swordCols = self.su.ib:GetCols()
     if self.isConnect then
         local handIdx = a.attachedHand:GetHandIndex()
@@ -330,11 +379,15 @@ end
 
 
 function Scabbard:ScabbardOnGrab(a, g)
+
+    self.scabbardIsHeld = g
+    self:LockOrUnlockSwordToScabbard()
+
     if g then
         self.player = a.attachedHand.character
         self.lHandCols = self.player.hands[1].physicsHand.colliders
         self.rHandCols = self.player.hands[0].physicsHand.colliders
-    end
+    end      
     
     if self.isConnect then
         local handIdx = a.attachedHand:GetHandIndex()
