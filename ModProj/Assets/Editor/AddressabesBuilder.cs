@@ -12,6 +12,28 @@ namespace CrossLink
     static public class AddressabesBuilder
     {
 
+        [MenuItem("Tools/Open PC Mod Folder %#t")]
+        static void OpenPCModFolder()
+        {
+            EditorUtility.RevealInFinder(GetPCModPath());
+        }
+        
+        static string GetPCModPath()
+        {
+            var targetpath = Application.persistentDataPath;
+
+            var splitedPath = targetpath.Split('/');
+            int len = splitedPath.Length;
+            targetpath = "";
+            for (int i = 0; i < len - 2; ++i)
+            {
+                targetpath += splitedPath[i] + "/";
+            }
+            targetpath += "CrossLink/BattleTalent/Mods";
+
+            return targetpath;
+        }
+
         [MenuItem("BuildTools/FastBuildAndInstallForWindows")]
         public static void FastBuildAndInstallForWindows()
         {
