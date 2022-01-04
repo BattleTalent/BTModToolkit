@@ -179,6 +179,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0.13}
     geoForward: {x: 0, y: 0, z: 1}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.05
     stabMax: -0.15
     stabTie: -0.06
@@ -197,6 +198,7 @@ MonoBehaviour:
     geoPoint: {x: -0.01, y: 0, z: 0.24}
     geoForward: {x: 1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 1}
     stabMin: -0.02
     stabMax: -0.04
     stabTie: -0.04
@@ -206,7 +208,7 @@ MonoBehaviour:
     cols:
     - {fileID: 4163673157819817686}
     subObj: {fileID: 0}
-    sideGeo: -1
+    sideGeo: 0
     noStabOut: 0
     isBlade: 1
   - geoFwdDis: 0.05
@@ -215,6 +217,7 @@ MonoBehaviour:
     geoPoint: {x: 0.01, y: 0, z: 0.24}
     geoForward: {x: -1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 1}
     stabMin: -0.02
     stabMax: -0.04
     stabTie: -0.04
@@ -224,7 +227,7 @@ MonoBehaviour:
     cols:
     - {fileID: 4163673157819817686}
     subObj: {fileID: 0}
-    sideGeo: -1
+    sideGeo: 0
     noStabOut: 0
     isBlade: 1
   ib: {fileID: 4407033463891465045}

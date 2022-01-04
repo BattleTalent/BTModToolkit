@@ -30,6 +30,8 @@ namespace CrossLink
             public Vector3 geoForward = Vector3.forward;
             [Tooltip("stab area thick dir based on sub obj or this obj")]
             public Vector3 geoThick = Vector3.up;
+            [Tooltip("slide direction of stab dir based on sub obj or this obj ")]
+            public Vector3 sliceDir = Vector3.zero;
             [Tooltip("stabbed slide distance, negative number, the smaller the deeper")]
             public float stabMin = -0.08f;
             [Tooltip("stabbed slide distance, negative number, the smaller the deeper")]
