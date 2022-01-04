@@ -358,6 +358,9 @@ MonoBehaviour:
   selfRB: {fileID: 8570964796610490038}
   dependAttachObj: {fileID: 0}
   handPose: HoldPose
+  handSide: 2
+  allowTrigger: 1
+  isClimbAttach: 0
   grabHandPose: []
   handOffset: []
 --- !u!1 &8570964796610490039
@@ -408,7 +411,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8570964796610490039}
   serializedVersion: 2
-  m_Mass: 4
+  m_Mass: 8
   m_Drag: 0.5
   m_AngularDrag: 1
   m_UseGravity: 1
@@ -428,17 +431,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6732c8568d1a624fb2fabf3bc10c587, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rb: {fileID: 8570964796610490038}
   autoDisappearWhenDurableLow: 1
   durability: 45
   interactType: 1
   guardPoints: []
-  linearForce: 10000
-  linearDamper: 100
-  angularForce: 12000
+  linearForce: 20000
+  linearDamper: 500
+  angularForce: 15000
   angularDamper: 500
-  singleHandSpeed: 1
-  twoHandSpeed: 0.3
+  singleHandSpeed: 0.45
+  twoHandSpeed: 0.8
   allowSecondHand: 0
   beAbleToShowGrab: 1
   enableAutoTickTwoHand: 0

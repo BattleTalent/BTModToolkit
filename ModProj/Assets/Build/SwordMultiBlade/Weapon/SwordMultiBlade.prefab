@@ -364,7 +364,7 @@ GameObject:
   - component: {fileID: 5713111893633910606}
   - component: {fileID: 8681744925746119469}
   m_Layer: 15
-  m_Name: WMD_SwordMultiBlade
+  m_Name: SwordMultiBlade
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -400,9 +400,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4598462860670489147}
   serializedVersion: 2
-  m_Mass: 6
-  m_Drag: 0.5
-  m_AngularDrag: 0.5
+  m_Mass: 10
+  m_Drag: 0.8
+  m_AngularDrag: 1.2
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
@@ -420,18 +420,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6732c8568d1a624fb2fabf3bc10c587, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rb: {fileID: 4948798559759108209}
   autoDisappearWhenDurableLow: 1
   durability: 50
   interactType: 0
   guardPoints:
   - {fileID: 5827734597355890281}
-  linearForce: 30000
+  linearForce: 20000
   linearDamper: 500
-  angularForce: 20000
+  angularForce: 12000
   angularDamper: 500
-  singleHandSpeed: 1
-  twoHandSpeed: 1
+  singleHandSpeed: 0.45
+  twoHandSpeed: 0.6
   allowSecondHand: 0
   beAbleToShowGrab: 1
   enableAutoTickTwoHand: 0
@@ -554,6 +553,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0}
     geoForward: {x: 1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.01
     stabMax: -0.05
     stabTie: -0.03
@@ -572,6 +572,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0}
     geoForward: {x: -1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.01
     stabMax: -0.05
     stabTie: -0.03
@@ -590,6 +591,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0}
     geoForward: {x: -1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.01
     stabMax: -0.05
     stabTie: -0.03
@@ -608,6 +610,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0}
     geoForward: {x: 1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.01
     stabMax: -0.05
     stabTie: -0.03
@@ -626,6 +629,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0}
     geoForward: {x: -1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.01
     stabMax: -0.05
     stabTie: -0.03
@@ -644,6 +648,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0}
     geoForward: {x: 1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.01
     stabMax: -0.05
     stabTie: -0.03
@@ -662,6 +667,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0}
     geoForward: {x: 1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.01
     stabMax: -0.05
     stabTie: -0.03
@@ -680,6 +686,7 @@ MonoBehaviour:
     geoPoint: {x: 0, y: 0, z: 0}
     geoForward: {x: -1, y: 0, z: 0}
     geoThick: {x: 0, y: 1, z: 0}
+    sliceDir: {x: 0, y: 0, z: 0}
     stabMin: -0.01
     stabMax: -0.05
     stabTie: -0.03
@@ -1527,6 +1534,9 @@ MonoBehaviour:
   selfRB: {fileID: 4948798559759108209}
   dependAttachObj: {fileID: 0}
   handPose: HoldPose
+  handSide: 2
+  allowTrigger: 1
+  isClimbAttach: 0
 --- !u!1001 &1151858429956918357
 PrefabInstance:
   m_ObjectHideFlags: 0

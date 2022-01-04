@@ -50,9 +50,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5235406736155852357}
   serializedVersion: 2
-  m_Mass: 10
-  m_Drag: 0.5
-  m_AngularDrag: 0.5
+  m_Mass: 14
+  m_Drag: 1.2
+  m_AngularDrag: 1.6
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
@@ -70,16 +70,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6732c8568d1a624fb2fabf3bc10c587, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rb: {fileID: 3736660831358608399}
   autoDisappearWhenDurableLow: 1
   durability: 50
   interactType: 0
   guardPoints: []
   linearForce: 30000
   linearDamper: 500
-  angularForce: 20000
+  angularForce: 13000
   angularDamper: 500
-  singleHandSpeed: 0.5
+  singleHandSpeed: 0.28
   twoHandSpeed: 0.8
   allowSecondHand: 1
   beAbleToShowGrab: 1
