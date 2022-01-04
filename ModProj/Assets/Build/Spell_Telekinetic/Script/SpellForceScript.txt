@@ -18,11 +18,34 @@ function forceSpell:GrabSpell(a)
     if self.joint == nil then
         self.joint = self.hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
         self.joint.autoConfigureConnectedAnchor = false
-        self.limitPoint = self.joint.gameObject.transform:InverseTransformPoint(self.createPoint.position + self.hand:GetGrabDir() * MaxDis)
+        self.limitPoint = self.joint.gameObject.transform:InverseTransformPoint(self.hand.trans.position + self.hand:GetGrabDir() * MaxDis)
     end
 end
 
 function forceSpell:UnGrabSpell(a)
+    if self.joint ~= nil then
+        UE.Object.Destroy(self.joint)
+        self.joint = nil
+    end
+end
+
+function forceSpell:SlotSpell(s)
+    
+    self.hand = s:GetAttachedHand()
+    
+    -- means this is not a slot for triggering skill, but you still can put it in this slot anyway
+    if self.hand == nil then
+        return
+    end
+    
+    if self.joint == nil then
+        self.joint = self.hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint.autoConfigureConnectedAnchor = false
+        self.limitPoint = self.joint.gameObject.transform:InverseTransformPoint(self.hand.trans.position + self.hand:GetGrabDir() * MaxDis)
+    end    
+end
+
+function forceSpell:UnSlotSpell(s)
     if self.joint ~= nil then
         UE.Object.Destroy(self.joint)
         self.joint = nil
@@ -43,11 +66,10 @@ end
 
 
 
-
 --[[Skill Update]]
 function forceSpell:OpenSkill()
     if EnableParticleEffect then
-        --self.pathFlow:Play()
+    --    self.pathFlow:Play()
     end
     self:SetHandPose(true)
     self.chargeAU = CL.SoundTable.PlaySound("ForceCharge", self.host.interact.trans.position, true)
@@ -60,13 +82,13 @@ function forceSpell:UpdateSkill()
     if EnableParticleEffect then
         if IsNullOrDestroyed(self.connectRb) then
             local targetPos = self.hand:GetGrabDir()
-                * MaxDis + self.createPoint.position
+                * MaxDis + self.hand.trans.position--self.createPoint.position
             self:UpdateParticle(targetPos, false)
         else
             --self:UpdateParticle(self.connectRb.position, true)
             local cp = self.dragRBTrans:TransformPoint(self.joint.connectedAnchor)
             self:UpdateParticle(cp, true)
-            if ((cp - self.createPoint.position).sqrMagnitude > MaxDisSqrt) then
+            if ((cp - self.hand.trans.position).sqrMagnitude > MaxDisSqrt) then
                 self.host:CloseSkill()
                 return
             end
@@ -133,7 +155,7 @@ end
 
 
 function forceSpell:RayDetect()    
-    local isHit, raycastHit  = UE.Physics.SphereCast(self.createPoint.position, 0.15, 
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.hand.trans.position, 0.15, 
         self.hand:GetGrabDir(), --self.createPoint.up, 
         MaxDis, CL.LayerDefine.BodyMask.value)
 
@@ -243,9 +265,27 @@ function forceSpell:BreakConnect()
         
         if needForce then
             local vel = self.hand.velocityEstimator:GetVelocityEstimateLocal()                    
-            if vel.sqrMagnitude > 1.4*1.4 then            
+            --local vel = self.hand.velocityEstimator:GetAvgVelocityLocal(5)
+            --if vel.sqrMagnitude > 1.4*1.4 then            
+            --print("force:" .. vel.magnitude)
+            
+            if vel.sqrMagnitude > 0.8*0.8 then
                 CL.SoundTable.PlaySound("ForceThrow")
-                self.pu:AddForceOnPart(self.dragRB, (vel) * 10, UE.ForceMode.VelocityChange)
+                --print("force:" .. vel.magnitude)
+                local forceFactor = 10
+                local limitVel = 40
+                if self.pu.unitType == CL.Tagger.Tag.InteractRole then
+                    self.pu.muscleState:ProtectRagdollCCDForAWhile(4) -- avoid passing though the walls
+                    forceFactor = 8
+                    limitVel = 30 -- 30 is already very large, since npc have multiple rigidbodies
+                end
+                
+                vel = self.hand.velocityEstimator:GetAvgVelocityLocal(8)
+                --CL.DebugDraw.DrawVector(self.dragRB.transform.position, vel, 0.1, 0.1, UE.Color.white, 2)
+                --self.pu:AddForceOnPart(self.dragRB, (vel) * forceFactor, UE.ForceMode.VelocityChange)
+                self.pu:AddForceOnPart(self.dragRB, CL.PhysicsHelper.LimitVelocityForce((vel) * forceFactor, 8, limitVel), UE.ForceMode.VelocityChange)
+                --self.pu:AddForceOnPart(self.dragRB, (vel) * forceFactor, UE.ForceMode.VelocityChange)                
+                --self.pu:AddForceOnPart(self.dragRB, (vel) * 100, UE.ForceMode.Impulse)                
             end
         end                    
     end 
@@ -275,23 +315,23 @@ function forceSpell:BreakConnect()
     --UE.Object.Destroy(self.joint)
     --self.joint = nil
     if EnableParticleEffect then
-        --self.pathFlow:Stop()
+    --    self.pathFlow:Stop()
     end
 end
 
 
 function forceSpell:UpdateParticle(target, curve)
-    --local time = UE.Vector3.Distance(self.createPoint.position, target)/ParticleSpeed
+    --local time = UE.Vector3.Distance(self.hand.trans.position, target)/ParticleSpeed
     ----local middle = UE.Vector3.Lerp(time/2 * self.createPoint.up * ParticleSpeed + self.createPoint.position, target, 0.5)
     --local middle
     --if curve then
-    --    middle = (time/2 * self.createPoint.up * ParticleSpeed + self.createPoint.position + target) * 0.5
+    --    middle = (time/2 * self.hand:GetPalmDir() * ParticleSpeed + self.hand.trans.position + target) * 0.5
     --else
-    --    middle = (self.createPoint.position + target) * 0.5
+    --    middle = (self.hand.trans.position + target) * 0.5
     --end
-    --self.particlePath:SetPath(CurveMaker:GetQuadraticCurvePoints(self.createPoint.position, middle, target), 
+    --self.particlePath:SetPath(CurveMaker:GetQuadraticCurvePoints(self.hand.trans.position, middle, target), 
     --    -- -self.hand:GetPalmDir()--UE.Vector3.up
-    --    self.createPoint.up
+    --    self.hand:GetPalmDir()
     --    )
     --self.pathFlow:DoEmitAtPath()
 end

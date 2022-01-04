@@ -28,42 +28,54 @@ end
 
 --[[ Hand Pose ]]
 function spellBase:ClearHandPose()
+    --[[
     if IsNullOrOwnerChanged(self.expTimer, self) == false then
         --print("expTimer:Stop Before")
         self.expTimer:Stop()
         self.expTimer = nil
         --print("expTimer:Stop After")
-    end    
+    end 
+    ]]
 end
 
 
 function spellBase:SetHandPose(isOnCharge)
-    self:ClearHandPose()
     
-    local ph = self.host.interact:GetPrimaryHand()
-    if ph == nil then
-        return
+    
+    local isEquip = self.host.interact:IsSlotEquiped()
+    local needFingerChange = false
+    
+    if isEquip then
+        needFingerChange = isOnCharge
+        local sh = self.host.interact:GetSlotHand()        
+        if sh ~= nil then
+            sh.handPoseControl:SetFingerFreeze(needFingerChange)
+        end     
+        self:ClearHandPose()
+    else
+        self:ClearHandPose()
+        needFingerChange = true
     end
     
+    --print("SetHandPose:" .. tostring(isOnCharge) .. " fingerChange:" .. tostring(needFingerChange) .. " isEquip:" .. tostring(isEquip))
     
-    local tarValue = isOnCharge and 0.2 or 0.5 
---[[
-    for i = 0, 4 do
-        local weight = UE.Mathf.Lerp(ph.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
-        ph.handPoseControl.fingers[i]:SetPose(weight)
-    end
-]]
-    
-
-    self.expTimer = CL.Scheduler.Create(self,
-        function(sche, t, s)
-            for i = 0, 4 do
-                local weight = UE.Mathf.Lerp(ph.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
-                ph.handPoseControl.fingers[i]:SetPose(weight)
+    if needFingerChange then    
+        local hand = self.host.interact:GetAssociatedHand()
+        local tarValue = isOnCharge and 0.2 or 0.5 
+        hand.handPoseControl:SubmitHandPose(tarValue, true)
+        
+        --[[ should not call SetPose directly
+        self.expTimer = CL.Scheduler.Create(self,
+            function(sche, t, s)
+                for i = 0, 4 do
+                    local weight = UE.Mathf.Lerp(hand.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
+                    hand.handPoseControl.fingers[i]:SetPose(weight)
+                end
             end
-        end
-    , 0, 0.2)
-    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+        , 0, 0.2)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+        ]]
+    end
 end
 
 
@@ -91,7 +103,14 @@ function spellBase:StartVelSample()
     self.minSpeed = 1
     self.velTimer = CL.Scheduler.Create(self,
         function(sche, t, s)
-            local realVol = self.host.interact:GetLocalVelocity()
+            --local realVol = self.host.interact:GetLocalVelocity()
+            local hand = self.host:GetTriggeringHand()
+            if hand == nil then
+                sche:Stop()
+                return
+            end
+            
+            local realVol = hand.velocityEstimator:GetVelocityEstimateLocal()
             local realSpeed = realVol.magnitude            
             
             if #self.velocityList >= 15 then
@@ -148,7 +167,7 @@ function spellBase:SpawnSpellOnHand(flyObjName, createTrans)
     fo.rb.isKinematic = true   
     
     
-    local hand = self.host.interact:GetPrimaryHand()    
+    local hand = self.host:GetTriggeringHand()  
     CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand.physicsHand:GetCols(), true)
     --CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand:GetAnotherHand().physicsHand:GetCols(), true)
     CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), self.host.interact:GetCols(), true)    
@@ -203,7 +222,7 @@ function spellBase:ReleaseSpell(attach)
     self:StopVelSample()    
     self:ClearHandPose()
     
-    --self:OnRelease(attach)
+    self:OnRelease(attach)
 
     
     if self.fo then
@@ -211,14 +230,63 @@ function spellBase:ReleaseSpell(attach)
     end    
 end
 
---[[function spellBase:OnRelease(attach)
---end
-]]
+function spellBase:OnRelease(attach)
+end
+
+
+function spellBase:SlotSpell(slot)
+end
+
+function spellBase:UnSlotSpell(slot)
+end
+
+function spellBase:OnSlot(slot, t)
+    if t then
+        self:SlotSpell(slot)
+    else
+        self:UnSlotSpell(slot)
+    end
+end
+
+
+
 function spellBase:GrabSpell(attach)
 end
 
 function spellBase:UnGrabSpell(attach)
 end
+
+--[[
+-- this is ready for magic combination
+-- by default, we'll just disable the slot one
+function spellBase:OnEquipmentOverlap(o)
+    if o then
+        local pos = self.modelTrans.localPosition
+        pos.z = pos.z - 0.002
+        pos.y = pos.y + 0.004
+        pos.x = pos.x + 0.004
+        self.modelTrans.localPosition = pos
+        
+        local hand = self.host.interact:GetAssociatedHand()
+        if hand ~= nil and hand.attachTo ~= nil then
+            local otherSpell = hand.attachTo.interact
+            if otherSpell ~= nil then
+                local otherSpellHost = otherSpell:GetInteractTrigger()
+                local otherSpellScript = otherSpellHost.script.self
+                local pos = otherSpellScript.modelTrans.localPosition
+                pos.z = pos.z + 0.002
+                pos.y = pos.y - 0.004
+                pos.x = pos.x - 0.004
+                otherSpellScript.modelTrans.localPosition = pos
+            end
+        end        
+    else
+        ResetTransform(self.modelTrans)
+    end    
+end
+]]
+
+
 
 function spellBase:OnGrab(attach, t)
     if t then
@@ -234,7 +302,7 @@ function spellBase:OnGrab(attach, t)
             self.modelTrans.localRotation = UE.Quaternion.Euler(-106.114, -9.051, 124.714)
         else
             --self.modelTrans.localPosition = UE.Vector3(-0.01835, -0.1146, -0.0181)
-            self.modelTrans.localPosition = UE.Vector3(-0.0024, -0.1056, -0.0192)--UE.Vector3(-0.01835, -0.1146, -0.0181)
+            self.modelTrans.localPosition = UE.Vector3(-0.0024-0.008, -0.1056-0.008, -0.0192-0.008)--UE.Vector3(-0.01835, -0.1146, -0.0181)
             self.modelTrans.localRotation = UE.Quaternion.Euler(117.242, -8.56, 39.17)
         end
         --]]
@@ -277,20 +345,27 @@ function spellBase:Awake()
 end
 
 function spellBase:InitLightPillar()
-    self.lastLightTime = 0    
+    self.hzLightUpdate = CL.FramerateController(CL.PhysicsHelper.FPS10Sec)
+    self.lastLightTime = 0
+    
     
     CL.Scheduler.RemoveSchedule(self.lightPillarId)
     self.lightPillarId = CL.Scheduler.Create(self.host.interact, 
         function(sche, t, s)
             if self.lightPillar ~= nil then
-                --self.lightPillar.trans.rotation = UE.Quaternion.identity
+                self.lightPillar.trans.rotation = UE.Quaternion.identity
                 if self.host.interact.rb.velocity.sqrMagnitude > 1 then
                     self:SetLightPillar(false)
                     self.lastLightTime = UE.Time.time
                     return
                 end
             end
-
+            
+            self.hzLightUpdate:TickToZero(UE.Time.deltaTime)    
+            if self.hzLightUpdate.limitUpdateFrequency == false then
+                return
+            end
+            
             if self.host.interact:CheckGrounded(1) then
                 if UE.Time.time - self.lastLightTime > 3 then
                     self:SetLightPillar(true)
@@ -299,17 +374,13 @@ function spellBase:InitLightPillar()
                 self:SetLightPillar(false)
             end
         end,
-    0.15, -1).actionId
+    UE.Time.unscaledDeltaTime, -1).actionId
 end
 
 function spellBase:SetLightPillar(isPlay)
     if isPlay then
         if IsNullOrDestroyed(self.lightPillar) then
-            -- LightPillar is a built-in resource
             self.lightPillar = CL.EffectMgr.Instance:PlayEffect("LightPillar", self.host.interact.trans.position, UE.Quaternion.identity)
-            if self.lightPillar == nil then
-                return
-            end
             self.lightPillar.trans.parent = self.host.interact.trans
             
             local color = self.host.chargeColor or UE.Color.yellow

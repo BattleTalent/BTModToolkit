@@ -28,7 +28,6 @@ function table:DoScale(scaleUp)
         
     if (scaleUp) then
         blade.gameObject:SetActive(true)
-        so.scalingForward = true
     else     
         so:BreakAllStab()
     end
@@ -38,7 +37,6 @@ function table:DoScale(scaleUp)
         function (sche, t, s)
             self.blade.localScale = UE.Vector3.Lerp(startScale, endScale, CL.EasingEquations.QuadEaseInOut(t, 0, 1, s))
             if (t>=s) then
-                so.scalingForward = false
                 if (scaleUp == false) then
                     self.blade.gameObject:SetActive(false)                   
                     so:BreakAllStab()
