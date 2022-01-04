@@ -24,7 +24,7 @@ public class AddressableHelper : MonoBehaviour
     private static Dictionary<string, string> GetPaths()
     {
         string curPath = Directory.GetCurrentDirectory();
-        var list = AddressableConfig.GetConfig().GetWeaponPaths();
+        var list = AddressableConfig.GetConfig().GetAddressablePaths();
         var ite = list.GetEnumerator();
 
         Dictionary<string, string> paths = new Dictionary<string, string>();

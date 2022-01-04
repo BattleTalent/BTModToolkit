@@ -39,7 +39,7 @@ public class AddressableConfig : ScriptableObject
     public string prefix;
 
     [Tooltip("need addressable's weapons path")]
-    public List<string> weaponPaths;
+    public List<string> addressablePaths;
 
 
     [MenuItem("Tools/Select Addressables Config %#e")]
@@ -53,9 +53,9 @@ public class AddressableConfig : ScriptableObject
         return prefix;
     }    
 
-    public List<string> GetWeaponPaths()
+    public List<string> GetAddressablePaths()
     {
-        return weaponPaths;
+        return addressablePaths;
     }
 
     static public AddressableConfig GetConfig()

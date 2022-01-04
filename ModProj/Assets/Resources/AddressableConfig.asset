@@ -12,19 +12,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9892082c8c482aa4e881982f5fe6c58d, type: 3}
   m_Name: AddressableConfig
   m_EditorClassIdentifier: 
+  tips: "\r\n    steps to make a mod:\r\n    1. make the prefab\r\n    2. make sure
+    your prefab are reference by the addressables (Window/AssetManagement/Addressables/Groups)\r\n   
+    3. make sure your Entry script will load your prefab at runtime\r\n    4. edit
+    your own product name and prefix\r\n    5. select build from BuildTools/\r\n\r\n   
+    shortcut:\r\n    ctrl-shift-e: select this config file\r\n    ctrl-shift-t: open
+    mod and log files on PC\r\n\r\n    how to use this tool:\r\n    1. put your resources
+    in the corresponding path: http://jjyy.guru/BTModToolkit/#autotoc_md39\r\n   
+    2. fill your path in the weapon paths\r\n    3. make your own prefix\r\n    4.
+    click CreateAndRefreshAddressableName\r\n\r\n    how to debug:\r\n    1. install
+    mod and run simulator\r\n    2. check out log error in Player.log (ctrl-shift-t)\r\n   
+    3. fix it then do it again\r\n\r\n    for more information, please check out
+    document and youtube tutorial\r\n    "
   prefix: WMD_
-  weaponPaths:
-  - Assets/Build/Spell_Telekinetic
-  - Assets/Build/Spell_FireBall
+  addressablePaths:
+  - Assets/Build/Common
+  - Assets/Build/Bow_Simple
   - Assets/Build/Crossbow
-  - Assets/Build/Spell_Thunder
-  - Assets/Build/SwordGiant
-  - Assets/Build/SwordLightBlade
-  - Assets/Build/Tower_Turret
+  - Assets/Build/Dagger_Bleed
+  - Assets/Build/Dagger_Explode
+  - Assets/Build/Dagger_Mind
+  - Assets/Build/Gun_UMP
+  - Assets/Build/GunAK47
+  - Assets/Build/Mace_Strong
+  - Assets/Build/Rapier_Light
   - Assets/Build/Scabbard
   - Assets/Build/Scabbard_Sword
   - Assets/Build/Scythe
-  - Assets/Build/SwordMultiBlade
+  - Assets/Build/Spear_Sprint
+  - Assets/Build/Spear_Thunder
+  - Assets/Build/Spell_FireBall
+  - Assets/Build/Spell_Telekinetic
+  - Assets/Build/Spell_Thunder
   - Assets/Build/Stick
-  - Assets/Build/GunAK47
-  - Assets/Build/Common
+  - Assets/Build/Sword_Ice
+  - Assets/Build/Sword_Slash
+  - Assets/Build/Sword_Wind
+  - Assets/Build/SwordGiant
+  - Assets/Build/SwordLightBlade
+  - Assets/Build/SwordMultiBlade
+  - Assets/Build/Tower_Turret
+  - Assets/Build/Wand_Fire
+  - Assets/Build/Wand_Ice
