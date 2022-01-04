@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if false
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -37,3 +38,4 @@ public class ClassTooltip : PropertyAttribute
         this.description = description;
     }
 }
+#endif

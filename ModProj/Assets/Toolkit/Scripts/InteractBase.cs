@@ -12,7 +12,6 @@ namespace CrossLink
     public class InteractBase : PhysicsUnit
     {
         #region Basic Info
-        public Rigidbody rb;
         public bool autoDisappearWhenDurableLow = true;
         public int durability = 25;
         public enum InteractType
@@ -30,15 +29,20 @@ namespace CrossLink
 
         #region Grab
         [Header("Grab")]
+        [Tooltip("linear grab spring force")]
         public float linearForce = 30000;
+        [Tooltip("linear grab damper")]
         public float linearDamper = 500;
+        [Tooltip("angular grab spring force")]
         public float angularForce = 20000;
+        [Tooltip("angular grab damper")]
         public float angularDamper = 500;
         [Tooltip("lerp speed when single hand")]
         public float singleHandSpeed = 0.2f;
         [Tooltip("lerp speed when two hand")]
         public float twoHandSpeed = 0.3f;
 
+        [Tooltip("if allow grabbed by two hands")]
         public bool allowSecondHand = false;
         [Tooltip("when toogle to false, this obj can not be grabbed")]
         public bool beAbleToShowGrab = true;
