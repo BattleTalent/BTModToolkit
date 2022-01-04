@@ -98,9 +98,9 @@ function ArrowPuller:Update()
 end
 
 function ArrowPuller:RefreshRope()
-    self.lineRenderer:SetPosition(0, self.startPoint.position)
-    self.lineRenderer:SetPosition(1, self.rope.position)
-    self.lineRenderer:SetPosition(2, self.endPoint.position)
+    self.lineRenderer:SetPosition(0, self.startPoint.localPosition)
+    self.lineRenderer:SetPosition(1, self.rope.localPosition)
+    self.lineRenderer:SetPosition(2, self.endPoint.localPosition)
 
 end
 
