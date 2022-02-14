@@ -14,6 +14,7 @@ namespace CrossLink
         #region Basic Info
         public Rigidbody rb;
         public bool autoDisappearWhenDurableLow = true;
+        public int enhanceLevel = -1;
         public int durability = 25;
         public enum InteractType
         {
