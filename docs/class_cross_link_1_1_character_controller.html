@@ -126,6 +126,9 @@ Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetCentrePos</b> (
 <tr class="memitem:aba5277de34e582e321932b3ba41fcc41 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aba5277de34e582e321932b3ba41fcc41"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetBodyHeight</b> (float height)</td></tr>
 <tr class="separator:aba5277de34e582e321932b3ba41fcc41 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af17107c1d1d4306386f35bc76f13884e inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="af17107c1d1d4306386f35bc76f13884e"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetBodyHeight</b> ()</td></tr>
+<tr class="separator:af17107c1d1d4306386f35bc76f13884e inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa2bc6122b93afbe5907b805fb94cb5b4 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aa2bc6122b93afbe5907b805fb94cb5b4"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetDefaultBodyWidth</b> ()</td></tr>
 <tr class="separator:aa2bc6122b93afbe5907b805fb94cb5b4 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -174,6 +177,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsMoving</b> ()</td><
 <tr class="memitem:aa3db07ddb0c5dcb751f072838fe2e89e inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aa3db07ddb0c5dcb751f072838fe2e89e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDisableMoveCommand</b> (bool s)</td></tr>
 <tr class="separator:aa3db07ddb0c5dcb751f072838fe2e89e inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1954375c6b2e40d125cda2b294b590ae inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a1954375c6b2e40d125cda2b294b590ae"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDisableMoveForAWhile</b> (bool dm, float sec)</td></tr>
+<tr class="separator:a1954375c6b2e40d125cda2b294b590ae inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea25e208cf81e86792cebb4d0380fc8d inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aea25e208cf81e86792cebb4d0380fc8d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PanMove</b> (Vector3 moveDir)</td></tr>
 <tr class="separator:aea25e208cf81e86792cebb4d0380fc8d inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -198,12 +204,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetRootMotion</b> (bo
 <tr class="memitem:a8022364fe092d6ce9a951c86353b961d inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a8022364fe092d6ce9a951c86353b961d"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>MovePosition</b> (Vector3 dest, bool forceAssist=false)</td></tr>
 <tr class="separator:a8022364fe092d6ce9a951c86353b961d inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ae5b38b4ea397e3fcfaa1ad70ab865b inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a0ae5b38b4ea397e3fcfaa1ad70ab865b"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsMovementEnable</b> ()</td></tr>
+<tr class="separator:a0ae5b38b4ea397e3fcfaa1ad70ab865b inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a251ce1565c71b090eb1f542ee6ef945f inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a251ce1565c71b090eb1f542ee6ef945f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetMovementEnable</b> (bool e)</td></tr>
+<tr class="separator:a251ce1565c71b090eb1f542ee6ef945f inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4be2d9e9280db7dec9f79788397752a inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ab4be2d9e9280db7dec9f79788397752a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetMovementForAWhile</b> (bool e, float sec=1)</td></tr>
+<tr class="separator:ab4be2d9e9280db7dec9f79788397752a inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a490fb86e083fbe9a51202d6178417810 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a490fb86e083fbe9a51202d6178417810"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetMovement</b> ()</td></tr>
 <tr class="separator:a490fb86e083fbe9a51202d6178417810 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5f4c377cce00ea639978fa5921d30ed inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ab5f4c377cce00ea639978fa5921d30ed"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableDrag</b> (bool dis)</td></tr>
-<tr class="separator:ab5f4c377cce00ea639978fa5921d30ed inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af7906aace3d6f4025094e01ef1154885 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="af7906aace3d6f4025094e01ef1154885"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LerpYSpeed</b> ()</td></tr>
 <tr class="separator:af7906aace3d6f4025094e01ef1154885 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -216,6 +228,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdatePos</b> (float 
 <tr class="memitem:ade3ae89348ff4613b749d63cbb0a10a1 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ade3ae89348ff4613b749d63cbb0a10a1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateStandStill</b> (float dt)</td></tr>
 <tr class="separator:ade3ae89348ff4613b749d63cbb0a10a1 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a347283b0c8da3cb10e1d25b93b60806b inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a347283b0c8da3cb10e1d25b93b60806b"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetOriginalDragPower</b> ()</td></tr>
+<tr class="separator:a347283b0c8da3cb10e1d25b93b60806b inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7722308e9ca64a92ce97b574e0565ac8 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a7722308e9ca64a92ce97b574e0565ac8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>InitDrag</b> ()</td></tr>
+<tr class="separator:a7722308e9ca64a92ce97b574e0565ac8 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7317eb2b0f2ed1d1c3299f3aadb7709c inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a7317eb2b0f2ed1d1c3299f3aadb7709c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDragPower</b> (float p)</td></tr>
+<tr class="separator:a7317eb2b0f2ed1d1c3299f3aadb7709c inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1474c46b11b708618c66fe23478ef30e inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a1474c46b11b708618c66fe23478ef30e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDragForAWhile</b> (float drag=0, float sec=0.2f)</td></tr>
+<tr class="separator:a1474c46b11b708618c66fe23478ef30e inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a953a3adec3b7a633e790b5c0de797eb9 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a953a3adec3b7a633e790b5c0de797eb9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableSecondJump</b> ()</td></tr>
 <tr class="separator:a953a3adec3b7a633e790b5c0de797eb9 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -228,6 +252,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStartJump</b> ()</t
 <tr class="memitem:aa3d02747d1054547966a87b8caf2d177 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aa3d02747d1054547966a87b8caf2d177"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsJumping</b> ()</td></tr>
 <tr class="separator:aa3d02747d1054547966a87b8caf2d177 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab766d4d6a69beac5926533c6ecf48a7a inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ab766d4d6a69beac5926533c6ecf48a7a"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetPushbackEnabled</b> ()</td></tr>
+<tr class="separator:ab766d4d6a69beac5926533c6ecf48a7a inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2375bcaca77e5c282e3acd53484c31c9 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a2375bcaca77e5c282e3acd53484c31c9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetPushbackEnabled</b> (bool e)</td></tr>
+<tr class="separator:a2375bcaca77e5c282e3acd53484c31c9 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b81acd33a64c6f451a82d6bc99443bc inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a0b81acd33a64c6f451a82d6bc99443bc"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPushbacking</b> ()</td></tr>
 <tr class="separator:a0b81acd33a64c6f451a82d6bc99443bc inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -267,6 +297,12 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>GetGroundDistance</b
 <tr class="memitem:aa9b3c085c66708c916c9b0ebb4b54871 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aa9b3c085c66708c916c9b0ebb4b54871"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetGroundPos</b> ()</td></tr>
 <tr class="separator:aa9b3c085c66708c916c9b0ebb4b54871 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0dae1b3bec557700b1d2bae3e7c36e82 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a0dae1b3bec557700b1d2bae3e7c36e82"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetGroundCollisionMaterial</b> ()</td></tr>
+<tr class="separator:a0dae1b3bec557700b1d2bae3e7c36e82 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2af307bbace619d8a1f07592652b8f0f inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a2af307bbace619d8a1f07592652b8f0f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayFootstepSound</b> (string footMat, float force)</td></tr>
+<tr class="separator:a2af307bbace619d8a1f07592652b8f0f inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab22ac4619554d37267b9c9b031738c6d inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ab22ac4619554d37267b9c9b031738c6d"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsGround</b> ()</td></tr>
 <tr class="separator:ab22ac4619554d37267b9c9b031738c6d inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -367,12 +403,21 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>rotateCommand</b> = f
 <tr class="memitem:a1a5773bfb7a4c65036c25529b52d30b9 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a1a5773bfb7a4c65036c25529b52d30b9"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isRootMotion</b> = false</td></tr>
 <tr class="separator:a1a5773bfb7a4c65036c25529b52d30b9 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88cd34d6d1341df2e952bdcfdabbf595 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a88cd34d6d1341df2e952bdcfdabbf595"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableMovement</b> = true</td></tr>
+<tr class="separator:a88cd34d6d1341df2e952bdcfdabbf595 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5611b42d01fa25f690ddbbadbe634698 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a5611b42d01fa25f690ddbbadbe634698"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>moveActId</b> = -1</td></tr>
+<tr class="separator:a5611b42d01fa25f690ddbbadbe634698 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac5227fbd3a89a96b6bc0bf3ecee424ca inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ac5227fbd3a89a96b6bc0bf3ecee424ca"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>jumpTime</b></td></tr>
 <tr class="separator:ac5227fbd3a89a96b6bc0bf3ecee424ca inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab9f23c791e824d855d4e86b247c5f380 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ab9f23c791e824d855d4e86b247c5f380"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>secondJump</b> = false</td></tr>
 <tr class="separator:ab9f23c791e824d855d4e86b247c5f380 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5de09fcebf0e7d8cf47c6603ba207f43 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a5de09fcebf0e7d8cf47c6603ba207f43"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>enablePushback</b> = true</td></tr>
+<tr class="separator:a5de09fcebf0e7d8cf47c6603ba207f43 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85ef997c5d4a58dd9e34d18480b60280 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a85ef997c5d4a58dd9e34d18480b60280"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>impluseTime</b></td></tr>
 <tr class="separator:a85ef997c5d4a58dd9e34d18480b60280 inherit pro_attribs_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -393,9 +438,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>ghostMode</b> = false
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>PushbackTime</b> = 0.1f</td></tr>
 <tr class="separator:ab015b73d2c93d5e532450d40ba5e5c24 inherit pro_static_attribs_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header events_class_cross_link_1_1_character_controller_base"><td colspan="2" onclick="javascript:toggleInherit('events_class_cross_link_1_1_character_controller_base')"><img src="closed.png" alt="-"/>&#160;Events inherited from <a class="el" href="class_cross_link_1_1_character_controller_base.html">CrossLink.CharacterControllerBase</a></td></tr>
-<tr class="memitem:aed81da611e40818e3fa5919a466fcc4e inherit events_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aed81da611e40818e3fa5919a466fcc4e"></a>
-System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>LandEvent</b></td></tr>
-<tr class="separator:aed81da611e40818e3fa5919a466fcc4e inherit events_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae61e7dfc75e2b9d92eacee2b5b551ea inherit events_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aae61e7dfc75e2b9d92eacee2b5b551ea"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_character_controller_base.html">CharacterControllerBase</a>, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GroundEvent</b></td></tr>
+<tr class="separator:aae61e7dfc75e2b9d92eacee2b5b551ea inherit events_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

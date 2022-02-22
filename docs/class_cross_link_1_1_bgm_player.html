@@ -68,6 +68,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
@@ -77,8 +78,20 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
+<p>all bgmplayers will register into a stack, the bgmplayer on top of stack can reponse for the battle music when bgmplayer disabled, it'll leave the stack  
+ <a href="class_cross_link_1_1_bgm_player.html#details">More...</a></p>
+
 <p>Inherits MonoBehaviour.</p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a06b8dd058a9684bf7b4e1de346f90cdb"><td class="memItemLeft" align="right" valign="top"><a id="a06b8dd058a9684bf7b4e1de346f90cdb"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>BGMType</b> { <b>Normal</b>
+, <b>Elite</b>
+, <b>Boss</b>
+, <b>End</b>
+ }</td></tr>
+<tr class="separator:a06b8dd058a9684bf7b4e1de346f90cdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ac00cb4b9bdaa91ef926c37246fd73b78"><td class="memItemLeft" align="right" valign="top"><a id="ac00cb4b9bdaa91ef926c37246fd73b78"></a>
@@ -108,29 +121,31 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:ab63d537bc68fcbf386125cd6a00e645a"><td class="memItemLeft" align="right" valign="top"><a id="ab63d537bc68fcbf386125cd6a00e645a"></a>
 AudioSource&#160;</td><td class="memItemRight" valign="bottom"><b>bgm</b></td></tr>
 <tr class="separator:ab63d537bc68fcbf386125cd6a00e645a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a54c43cae3edd7952617be1dfe77a366d"><td class="memItemLeft" align="right" valign="top"><a id="a54c43cae3edd7952617be1dfe77a366d"></a>
-AudioClip&#160;</td><td class="memItemRight" valign="bottom"><b>aoClip</b></td></tr>
-<tr class="separator:a54c43cae3edd7952617be1dfe77a366d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a124486f5a1cb4dd10c2a00285c431c6f"><td class="memItemLeft" align="right" valign="top"><a id="a124486f5a1cb4dd10c2a00285c431c6f"></a>
-AudioClip&#160;</td><td class="memItemRight" valign="bottom"><b>fightLoopStart</b></td></tr>
-<tr class="separator:a124486f5a1cb4dd10c2a00285c431c6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad288b31d06fdf09e060a9173ac5af2f5"><td class="memItemLeft" align="right" valign="top"><a id="ad288b31d06fdf09e060a9173ac5af2f5"></a>
-AudioClip&#160;</td><td class="memItemRight" valign="bottom"><b>fightLoopFinish</b></td></tr>
-<tr class="separator:ad288b31d06fdf09e060a9173ac5af2f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ea13d39aab8c438ce50ab0f728f202c"><td class="memItemLeft" align="right" valign="top"><a id="a7ea13d39aab8c438ce50ab0f728f202c"></a>
-AudioClip[]&#160;</td><td class="memItemRight" valign="bottom"><b>fightLoop</b></td></tr>
-<tr class="separator:a7ea13d39aab8c438ce50ab0f728f202c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a304c7c9a246c6f7e9a6ca204991855f6"><td class="memItemLeft" align="right" valign="top"><a id="a304c7c9a246c6f7e9a6ca204991855f6"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>fightLoopFinish</b></td></tr>
+<tr class="separator:a304c7c9a246c6f7e9a6ca204991855f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05b5cd94e65e02f97f1c891acaf4036a"><td class="memItemLeft" align="right" valign="top"><a id="a05b5cd94e65e02f97f1c891acaf4036a"></a>
+string[]&#160;</td><td class="memItemRight" valign="bottom"><b>fightLoop</b></td></tr>
+<tr class="separator:a05b5cd94e65e02f97f1c891acaf4036a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b6beafadf20f00453808a7d423ea3c4"><td class="memItemLeft" align="right" valign="top"><a id="a2b6beafadf20f00453808a7d423ea3c4"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>fadeout</b> = -1</td></tr>
 <tr class="separator:a2b6beafadf20f00453808a7d423ea3c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb289ddb9f9512204eaa347c93763c4c"><td class="memItemLeft" align="right" valign="top"><a id="afb289ddb9f9512204eaa347c93763c4c"></a>
+BGMType&#160;</td><td class="memItemRight" valign="bottom"><b>bgmType</b></td></tr>
+<tr class="separator:afb289ddb9f9512204eaa347c93763c4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:a1b28ca58a8d5a5b367bda5b6c8236ee1"><td class="memItemLeft" align="right" valign="top"><a id="a1b28ca58a8d5a5b367bda5b6c8236ee1"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_bgm_player.html">BgmPlayer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>BgmStack</b> = new List&lt;<a class="el" href="class_cross_link_1_1_bgm_player.html">BgmPlayer</a>&gt;()</td></tr>
 <tr class="separator:a1b28ca58a8d5a5b367bda5b6c8236ee1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac80d12043d4f103e32c14e6a73f63cde"><td class="memItemLeft" align="right" valign="top"><a id="ac80d12043d4f103e32c14e6a73f63cde"></a>
+static System.Action&lt; <a class="el" href="class_cross_link_1_1_bgm_player.html">BgmPlayer</a>, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>BGMPlayEvent</b></td></tr>
+<tr class="separator:ac80d12043d4f103e32c14e6a73f63cde"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-</div><!-- contents -->
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>all bgmplayers will register into a stack, the bgmplayer on top of stack can reponse for the battle music when bgmplayer disabled, it'll leave the stack </p>
+</div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1

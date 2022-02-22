@@ -211,12 +211,21 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>StartAtk</b> (
 <tr class="memitem:a8d072a1e34a01cea7dca49054132e4bd"><td class="memItemLeft" align="right" valign="top"><a id="a8d072a1e34a01cea7dca49054132e4bd"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>BreakAtk</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> src)</td></tr>
 <tr class="separator:a8d072a1e34a01cea7dca49054132e4bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa06f3828b14329ad1d0c9889cb9e070b"><td class="memItemLeft" align="right" valign="top"><a id="aa06f3828b14329ad1d0c9889cb9e070b"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsNoCampTargetArround</b> (string camp)</td></tr>
+<tr class="separator:aa06f3828b14329ad1d0c9889cb9e070b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ace42b2ee96791b1631045c17b5442253"><td class="memItemLeft" align="right" valign="top"><a id="ace42b2ee96791b1631045c17b5442253"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTarget</b> (string camp=null)</td></tr>
 <tr class="separator:ace42b2ee96791b1631045c17b5442253"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ac5fccb93636c95de6fc3e3e293da5e"><td class="memItemLeft" align="right" valign="top"><a id="a7ac5fccb93636c95de6fc3e3e293da5e"></a>
+static List&lt; <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTargetInRangeAndAngle</b> (Vector3 pos, float radius, Vector3 sdir, float dot, string camp=null, bool includeDown=false)</td></tr>
+<tr class="separator:a7ac5fccb93636c95de6fc3e3e293da5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a468d9362532c5b96d27a373b9a268d80"><td class="memItemLeft" align="right" valign="top"><a id="a468d9362532c5b96d27a373b9a268d80"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTargetInRange</b> (Vector3 pos, float radius, string camp=null, bool includeDown=false)</td></tr>
 <tr class="separator:a468d9362532c5b96d27a373b9a268d80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16b13a54fae04315a56aea1076ae7cdf"><td class="memItemLeft" align="right" valign="top"><a id="a16b13a54fae04315a56aea1076ae7cdf"></a>
+static <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetCloestAndAngleTarget</b> (Transform self, float dot, string camp, bool goodRelate=true, bool includeDown=false)</td></tr>
+<tr class="separator:a16b13a54fae04315a56aea1076ae7cdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae414a5d0f0a4a844fd355493865849e7"><td class="memItemLeft" align="right" valign="top"><a id="ae414a5d0f0a4a844fd355493865849e7"></a>
 static <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetCloestTarget</b> (Transform self, string camp, bool goodRelate=true, bool includeDown=false)</td></tr>
 <tr class="separator:ae414a5d0f0a4a844fd355493865849e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -263,7 +272,7 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>EnableGroupAI<
 static <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>atkAI</b></td></tr>
 <tr class="separator:a889ad22ef3e81a38dc13aabba375a2ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6bb98ff0c7fe93d8a5407886b14d5fe"><td class="memItemLeft" align="right" valign="top"><a id="aa6bb98ff0c7fe93d8a5407886b14d5fe"></a>
-static float&#160;</td><td class="memItemRight" valign="bottom"><b>AIWaitTimeMlp</b> = 0.25f</td></tr>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>AIWaitTimeMlp</b> = 0.5f</td></tr>
 <tr class="separator:aa6bb98ff0c7fe93d8a5407886b14d5fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>

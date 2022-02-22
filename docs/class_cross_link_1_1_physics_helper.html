@@ -84,9 +84,12 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>Pin</b> (Trans
 <tr class="memitem:af922f12514b4d35810607560388eb935"><td class="memItemLeft" align="right" valign="top"><a id="af922f12514b4d35810607560388eb935"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>AddForceLimit</b> (this Rigidbody rb, Vector3 force, float limit=350)</td></tr>
 <tr class="separator:af922f12514b4d35810607560388eb935"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab871ea00ac9db68c21b90495634c8b5a"><td class="memItemLeft" align="right" valign="top"><a id="ab871ea00ac9db68c21b90495634c8b5a"></a>
-static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>LimitVelocityForce</b> (Vector3 force, float limit=10)</td></tr>
-<tr class="separator:ab871ea00ac9db68c21b90495634c8b5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afcce6957e463d14b1a59a1ba8afba08e"><td class="memItemLeft" align="right" valign="top"><a id="afcce6957e463d14b1a59a1ba8afba08e"></a>
+static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>LimitVelocityForce</b> (Vector3 force, float limit)</td></tr>
+<tr class="separator:afcce6957e463d14b1a59a1ba8afba08e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e441db3201cdecfba7b974cc2a164f3"><td class="memItemLeft" align="right" valign="top"><a id="a1e441db3201cdecfba7b974cc2a164f3"></a>
+static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>LimitVelocityForce</b> (Vector3 force, float min, float max)</td></tr>
+<tr class="separator:a1e441db3201cdecfba7b974cc2a164f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0f628e041a7d51f5198a6854683ff92"><td class="memItemLeft" align="right" valign="top"><a id="af0f628e041a7d51f5198a6854683ff92"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>IgnoreCollisions</b> (Collider[] cols1, Collider[] cols2, bool ig)</td></tr>
 <tr class="separator:af0f628e041a7d51f5198a6854683ff92"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -102,6 +105,15 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheckRaycast</
 <tr class="memitem:a0eea98f23eba165bf3b12f5a29840a98"><td class="memItemLeft" align="right" valign="top"><a id="a0eea98f23eba165bf3b12f5a29840a98"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheckShortRaycast</b> (Vector3 pos, Vector3 dir, float dis)</td></tr>
 <tr class="separator:a0eea98f23eba165bf3b12f5a29840a98"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ed4c89078a5c3801be04799da0ede5c"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_helper.html#a2ed4c89078a5c3801be04799da0ede5c">Raycast</a> (Vector3 pos, Vector3 dir, out RaycastHit hitInfo, float dis, LayerMask mask)</td></tr>
+<tr class="memdesc:a2ed4c89078a5c3801be04799da0ede5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">replacement for lua version  <a href="class_cross_link_1_1_physics_helper.html#a2ed4c89078a5c3801be04799da0ede5c">More...</a><br /></td></tr>
+<tr class="separator:a2ed4c89078a5c3801be04799da0ede5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39a903215fe23c29882159fc10d02dec"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_helper.html#a39a903215fe23c29882159fc10d02dec">RaycastAll</a> (Vector3 pos, Vector3 dir, float dis, LayerMask mask)</td></tr>
+<tr class="memdesc:a39a903215fe23c29882159fc10d02dec"><td class="mdescLeft">&#160;</td><td class="mdescRight">replacement for lua version ,please call <a class="el" href="class_cross_link_1_1_physics_helper.html#ad6a317c0871d6cb47335065574c6fb70" title="replacement for lua version, please call PhysicsHelper.RaycastAll first">GetLatestHitResults()</a> to get the array this function will not cause gc, because we're reusing the same array so don't reference the array when you out of scope  <a href="class_cross_link_1_1_physics_helper.html#a39a903215fe23c29882159fc10d02dec">More...</a><br /></td></tr>
+<tr class="separator:a39a903215fe23c29882159fc10d02dec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6a317c0871d6cb47335065574c6fb70"><td class="memItemLeft" align="right" valign="top">static RaycastHit[]&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_helper.html#ad6a317c0871d6cb47335065574c6fb70">GetLatestHitResults</a> ()</td></tr>
+<tr class="memdesc:ad6a317c0871d6cb47335065574c6fb70"><td class="mdescLeft">&#160;</td><td class="mdescRight">replacement for lua version, please call <a class="el" href="class_cross_link_1_1_physics_helper.html#a39a903215fe23c29882159fc10d02dec" title="replacement for lua version ,please call GetLatestHitResults() to get the array this function will no...">PhysicsHelper.RaycastAll</a> first  <a href="class_cross_link_1_1_physics_helper.html#ad6a317c0871d6cb47335065574c6fb70">More...</a><br /></td></tr>
+<tr class="separator:ad6a317c0871d6cb47335065574c6fb70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ceb51494319a7d645b80bf13519b383"><td class="memItemLeft" align="right" valign="top"><a id="a4ceb51494319a7d645b80bf13519b383"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>InitSlowMo</b> ()</td></tr>
 <tr class="separator:a4ceb51494319a7d645b80bf13519b383"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -126,6 +138,9 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>FPS60Sec</b> =
 <tr class="memitem:a16120c4ba995f8460993da40f983c65b"><td class="memItemLeft" align="right" valign="top"><a id="a16120c4ba995f8460993da40f983c65b"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>FPS45Sec</b> = 1 / 45f</td></tr>
 <tr class="separator:a16120c4ba995f8460993da40f983c65b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5079a1dacf14be1db716fe7de0b828c"><td class="memItemLeft" align="right" valign="top"><a id="ac5079a1dacf14be1db716fe7de0b828c"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>FPS35Sec</b> = 1 / 35f</td></tr>
+<tr class="separator:ac5079a1dacf14be1db716fe7de0b828c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac34bc56419600148bed75cb26210122e"><td class="memItemLeft" align="right" valign="top"><a id="ac34bc56419600148bed75cb26210122e"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>FPS30Sec</b> = 1 / 30f</td></tr>
 <tr class="separator:ac34bc56419600148bed75cb26210122e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -178,12 +193,205 @@ static float&#160;</td><td class="memItemRight" valign="bottom"><b>OriginalFixed
 static float&#160;</td><td class="memItemRight" valign="bottom"><b>OriginalMaximumDeltaTime</b></td></tr>
 <tr class="separator:afcbd3ab2b912b92b008b15617d5609d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c0755148a36438bf87d22663131bbae"><td class="memItemLeft" align="right" valign="top"><a id="a2c0755148a36438bf87d22663131bbae"></a>
-static float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultTimeScale</b> = 1</td></tr>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultTimeScale</b> = 0.95f</td></tr>
 <tr class="separator:a2c0755148a36438bf87d22663131bbae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad57bf33b390c1c447d6291fc23438ce5"><td class="memItemLeft" align="right" valign="top"><a id="ad57bf33b390c1c447d6291fc23438ce5"></a>
-static float&#160;</td><td class="memItemRight" valign="bottom"><b>SlowTimeScale</b> = 0.5f</td></tr>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>SlowTimeScale</b> = 0.2f</td></tr>
 <tr class="separator:ad57bf33b390c1c447d6291fc23438ce5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a00eea6f7718a8530d652c0c6f7cc2d1e"><td class="memItemLeft" align="right" valign="top">static float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_helper.html#a00eea6f7718a8530d652c0c6f7cc2d1e">LogicTimeScale</a> = 1</td></tr>
+<tr class="memdesc:a00eea6f7718a8530d652c0c6f7cc2d1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">for fast access timescale, faster than Time.timescale  <a href="class_cross_link_1_1_physics_helper.html#a00eea6f7718a8530d652c0c6f7cc2d1e">More...</a><br /></td></tr>
+<tr class="separator:a00eea6f7718a8530d652c0c6f7cc2d1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b0be7a28a6d77616ead41d96642fc03"><td class="memItemLeft" align="right" valign="top"><a id="a6b0be7a28a6d77616ead41d96642fc03"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>LogicTimeScaleLerpOne</b> = 1</td></tr>
+<tr class="separator:a6b0be7a28a6d77616ead41d96642fc03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d651d87737528df9740e6946d9e1bc8"><td class="memItemLeft" align="right" valign="top"><a id="a6d651d87737528df9740e6946d9e1bc8"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>LogicTimeScaleReciprocal</b> = 1</td></tr>
+<tr class="separator:a6d651d87737528df9740e6946d9e1bc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d25489e1754207db46128723e94ce1e"><td class="memItemLeft" align="right" valign="top"><a id="a2d25489e1754207db46128723e94ce1e"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>LogicTimeScaleReciprocalSqr</b> = 1</td></tr>
+<tr class="separator:a2d25489e1754207db46128723e94ce1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ad6a317c0871d6cb47335065574c6fb70"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad6a317c0871d6cb47335065574c6fb70">&#9670;&nbsp;</a></span>GetLatestHitResults()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static RaycastHit [] CrossLink.PhysicsHelper.GetLatestHitResults </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>replacement for lua version, please call <a class="el" href="class_cross_link_1_1_physics_helper.html#a39a903215fe23c29882159fc10d02dec" title="replacement for lua version ,please call GetLatestHitResults() to get the array this function will no...">PhysicsHelper.RaycastAll</a> first </p>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a2ed4c89078a5c3801be04799da0ede5c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2ed4c89078a5c3801be04799da0ede5c">&#9670;&nbsp;</a></span>Raycast()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static bool CrossLink.PhysicsHelper.Raycast </td>
+          <td>(</td>
+          <td class="paramtype">Vector3&#160;</td>
+          <td class="paramname"><em>pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Vector3&#160;</td>
+          <td class="paramname"><em>dir</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">out RaycastHit&#160;</td>
+          <td class="paramname"><em>hitInfo</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>dis</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">LayerMask&#160;</td>
+          <td class="paramname"><em>mask</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>replacement for lua version </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">pos</td><td></td></tr>
+    <tr><td class="paramname">dir</td><td></td></tr>
+    <tr><td class="paramname">hitInfo</td><td></td></tr>
+    <tr><td class="paramname">dis</td><td></td></tr>
+    <tr><td class="paramname">mask</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a39a903215fe23c29882159fc10d02dec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39a903215fe23c29882159fc10d02dec">&#9670;&nbsp;</a></span>RaycastAll()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int CrossLink.PhysicsHelper.RaycastAll </td>
+          <td>(</td>
+          <td class="paramtype">Vector3&#160;</td>
+          <td class="paramname"><em>pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Vector3&#160;</td>
+          <td class="paramname"><em>dir</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>dis</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">LayerMask&#160;</td>
+          <td class="paramname"><em>mask</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>replacement for lua version ,please call <a class="el" href="class_cross_link_1_1_physics_helper.html#ad6a317c0871d6cb47335065574c6fb70" title="replacement for lua version, please call PhysicsHelper.RaycastAll first">GetLatestHitResults()</a> to get the array this function will not cause gc, because we're reusing the same array so don't reference the array when you out of scope </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">pos</td><td></td></tr>
+    <tr><td class="paramname">dir</td><td></td></tr>
+    <tr><td class="paramname">dis</td><td></td></tr>
+    <tr><td class="paramname">mask</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="a00eea6f7718a8530d652c0c6f7cc2d1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a00eea6f7718a8530d652c0c6f7cc2d1e">&#9670;&nbsp;</a></span>LogicTimeScale</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">float CrossLink.PhysicsHelper.LogicTimeScale = 1</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>for fast access timescale, faster than Time.timescale </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

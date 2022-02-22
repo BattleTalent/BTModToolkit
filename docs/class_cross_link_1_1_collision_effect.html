@@ -83,9 +83,18 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:aa87d51619b0ad0b03c932b04b300179e"><td class="memItemLeft" align="right" valign="top"><a id="aa87d51619b0ad0b03c932b04b300179e"></a>
+Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>GetRelateRB</b> ()</td></tr>
+<tr class="separator:aa87d51619b0ad0b03c932b04b300179e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b1ed7e6e6aa69b94a9e473e85e0e62b"><td class="memItemLeft" align="right" valign="top"><a id="a3b1ed7e6e6aa69b94a9e473e85e0e62b"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetRelaMass</b> ()</td></tr>
+<tr class="separator:a3b1ed7e6e6aa69b94a9e473e85e0e62b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3945c24f62d84ae92b5db67a99f05a64"><td class="memItemLeft" align="right" valign="top"><a id="a3945c24f62d84ae92b5db67a99f05a64"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsColLatly</b> (<a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a> other)</td></tr>
 <tr class="separator:a3945c24f62d84ae92b5db67a99f05a64"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae95f66007bc6fb90bca8afc9906a8fbb"><td class="memItemLeft" align="right" valign="top"><a id="ae95f66007bc6fb90bca8afc9906a8fbb"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsColLatly</b> (<a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a> other, float ct)</td></tr>
+<tr class="separator:ae95f66007bc6fb90bca8afc9906a8fbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a022a972251d43661083441f82454f024"><td class="memItemLeft" align="right" valign="top"><a id="a022a972251d43661083441f82454f024"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsColLatly</b> (<a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a> c1, <a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a> c2)</td></tr>
 <tr class="separator:a022a972251d43661083441f82454f024"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -98,9 +107,18 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsContactLatly</b> (f
 <tr class="memitem:a9eb8570650490431c6c6b6934466db70"><td class="memItemLeft" align="right" valign="top"><a id="a9eb8570650490431c6c6b6934466db70"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TapContact</b> ()</td></tr>
 <tr class="separator:a9eb8570650490431c6c6b6934466db70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84b67338265383bbcb310268e12779dc"><td class="memItemLeft" align="right" valign="top"><a id="a84b67338265383bbcb310268e12779dc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetPreciseMode</b> (bool p)</td></tr>
+<tr class="separator:a84b67338265383bbcb310268e12779dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a3574d82f39b761e6de98a98f208a7422"><td class="memItemLeft" align="right" valign="top"><a id="a3574d82f39b761e6de98a98f208a7422"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetCEIgnoreForAWhile</b> (<a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a> c1, <a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a> c2, float sec)</td></tr>
+<tr class="separator:a3574d82f39b761e6de98a98f208a7422"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9da6fae063ef71d161e541824ba1fbfb"><td class="memItemLeft" align="right" valign="top"><a id="a9da6fae063ef71d161e541824ba1fbfb"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetCESIgnoreForAWhile</b> (<a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a>[] c1, <a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a>[] c2, float sec)</td></tr>
+<tr class="separator:a9da6fae063ef71d161e541824ba1fbfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae46c7ab915fc044e4c2c4a488477ca1"><td class="memItemLeft" align="right" valign="top"><a id="aae46c7ab915fc044e4c2c4a488477ca1"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableGlobalContactForAWhild</b> (float sec)</td></tr>
 <tr class="separator:aae46c7ab915fc044e4c2c4a488477ca1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,6 +134,27 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>contactInterval</b> 
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:a02e79cf79ca95bb649deeb1eca3cde96"><td class="memItemLeft" align="right" valign="top"><a id="a02e79cf79ca95bb649deeb1eca3cde96"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>PitchOffMax</b> = 0.6f</td></tr>
+<tr class="separator:a02e79cf79ca95bb649deeb1eca3cde96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acad8eaa00142683561e60e5bf7802f11"><td class="memItemLeft" align="right" valign="top"><a id="acad8eaa00142683561e60e5bf7802f11"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>PitchOffMin</b> = 0.15f</td></tr>
+<tr class="separator:acad8eaa00142683561e60e5bf7802f11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ae9f249dadbdf4596879c99905422ce"><td class="memItemLeft" align="right" valign="top"><a id="a2ae9f249dadbdf4596879c99905422ce"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MassMax</b> = 20f</td></tr>
+<tr class="separator:a2ae9f249dadbdf4596879c99905422ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66439b3ba176a8e727e7f34663f14309"><td class="memItemLeft" align="right" valign="top"><a id="a66439b3ba176a8e727e7f34663f14309"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MassAvg</b> = 10f</td></tr>
+<tr class="separator:a66439b3ba176a8e727e7f34663f14309"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4358332dbeca99941a540823be165857"><td class="memItemLeft" align="right" valign="top"><a id="a4358332dbeca99941a540823be165857"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MassMin</b> = 4f</td></tr>
+<tr class="separator:a4358332dbeca99941a540823be165857"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c274ab564eabb1f7621bd7554b67bf5"><td class="memItemLeft" align="right" valign="top"><a id="a6c274ab564eabb1f7621bd7554b67bf5"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MassMaxCP</b> = MassMax+ MassMax</td></tr>
+<tr class="separator:a6c274ab564eabb1f7621bd7554b67bf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3dffbf815d8760f115ce02e2c5e23c12"><td class="memItemLeft" align="right" valign="top"><a id="a3dffbf815d8760f115ce02e2c5e23c12"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MassMinCP</b> = MassMin + MassMin</td></tr>
+<tr class="separator:a3dffbf815d8760f115ce02e2c5e23c12"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a69d3b221b392a6f45d20cccc97ea1bbe"><td class="memItemLeft" align="right" valign="top"><a id="a69d3b221b392a6f45d20cccc97ea1bbe"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>ContactIntervalSensitive</b> = 0.2f</td></tr>
 <tr class="separator:a69d3b221b392a6f45d20cccc97ea1bbe"><td class="memSeparator" colspan="2">&#160;</td></tr>

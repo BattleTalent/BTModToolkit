@@ -70,6 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_collision_effect_table-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.CollisionEffectTable Class Reference</div>  </div>
@@ -92,18 +93,27 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>SlidingSupport
 <tr class="memitem:abc2719e10e1165249ed2d7f2e39a8bd1"><td class="memItemLeft" align="right" valign="top"><a id="abc2719e10e1165249ed2d7f2e39a8bd1"></a>
 static <a class="el" href="class_cross_link_1_1_pair_collision_effect.html">PairCollisionEffect</a>&#160;</td><td class="memItemRight" valign="bottom"><b>QueryCollisionEffect</b> (string matA, string matB, bool checkDefault=true)</td></tr>
 <tr class="separator:abc2719e10e1165249ed2d7f2e39a8bd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e0da37c9e0f3e583967c35e98712267"><td class="memItemLeft" align="right" valign="top"><a id="a2e0da37c9e0f3e583967c35e98712267"></a>
+static <a class="el" href="class_cross_link_1_1_pair_collision_effect.html">PairCollisionEffect</a>&#160;</td><td class="memItemRight" valign="bottom"><b>QueryDefaultCollisionEffect</b> (string mat)</td></tr>
+<tr class="separator:a2e0da37c9e0f3e583967c35e98712267"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae8d2031bb9439bf07a113265450261c8"><td class="memItemLeft" align="right" valign="top"><a id="ae8d2031bb9439bf07a113265450261c8"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>BuildCollisionPair</b> (<a class="el" href="class_cross_link_1_1_collision_material_set.html">CollisionMaterialSet</a> data, bool forceUpdate=false)</td></tr>
 <tr class="separator:ae8d2031bb9439bf07a113265450261c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d249926fa22325a3472802a049f118f"><td class="memItemLeft" align="right" valign="top"><a id="a4d249926fa22325a3472802a049f118f"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayImpact</b> (string matA, string matB, Vector3 pos, Vector3 dir, float force, bool soundOnly=false)</td></tr>
 <tr class="separator:a4d249926fa22325a3472802a049f118f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a334cc3e70966ecd9deb5672261ede434"><td class="memItemLeft" align="right" valign="top"><a id="a334cc3e70966ecd9deb5672261ede434"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayFootstep</b> (string matA, string matB, Vector3 pos, float force)</td></tr>
+<tr class="separator:a334cc3e70966ecd9deb5672261ede434"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acfd947269f5dc43242cefa226e3bda99"><td class="memItemLeft" align="right" valign="top"><a id="acfd947269f5dc43242cefa226e3bda99"></a>
 static <a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>StartStab</b> (string matA, string matB, Vector3 pos, Vector3 dir, float force, bool soundOnly=false)</td></tr>
 <tr class="separator:acfd947269f5dc43242cefa226e3bda99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1cc8fb2549d0ef78d1660a238724b888"><td class="memItemLeft" align="right" valign="top"><a id="a1cc8fb2549d0ef78d1660a238724b888"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>StopStab</b> (string matA, string matB, Vector3 pos, float force)</td></tr>
 <tr class="separator:a1cc8fb2549d0ef78d1660a238724b888"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03adb004959c468a3010a423a7a68829"><td class="memItemLeft" align="right" valign="top"><a id="a03adb004959c468a3010a423a7a68829"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>Stabbing</b> (string matA, string matB, Vector3 pos, float force)</td></tr>
+<tr class="separator:a03adb004959c468a3010a423a7a68829"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2d1b8e73f6d72332cb866b7778b5bb26"><td class="memItemLeft" align="right" valign="top"><a id="a2d1b8e73f6d72332cb866b7778b5bb26"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsContinuousCollisionCommited</b> (Object owner)</td></tr>
 <tr class="separator:a2d1b8e73f6d72332cb866b7778b5bb26"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,6 +126,12 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>CloseContinuou
 <tr class="memitem:a5c6ef9a7633fe59a2310cb30eab955a7"><td class="memItemLeft" align="right" valign="top"><a id="a5c6ef9a7633fe59a2310cb30eab955a7"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>TickContinuousCollision</b> ()</td></tr>
 <tr class="separator:a5c6ef9a7633fe59a2310cb30eab955a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:ae343cb587bf6947c0840653637e3b465"><td class="memItemLeft" align="right" valign="top"><a id="ae343cb587bf6947c0840653637e3b465"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>PitchMlp</b> = 1</td></tr>
+<tr class="separator:ae343cb587bf6947c0840653637e3b465"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

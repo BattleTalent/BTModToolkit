@@ -70,6 +70,8 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_scabbard_user-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.ScabbardUser Class Reference</div>  </div>
@@ -83,6 +85,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a944ee9693ee0369c515d11294fa2fd81"><td class="memItemLeft" align="right" valign="top"><a id="a944ee9693ee0369c515d11294fa2fd81"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>GetSwordType</b> ()</td></tr>
 <tr class="separator:a944ee9693ee0369c515d11294fa2fd81"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7391427d4f6667decfe95fb93f93638"><td class="memItemLeft" align="right" valign="top"><a id="aa7391427d4f6667decfe95fb93f93638"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnSheath</b> (<a class="el" href="class_cross_link_1_1_scabbard.html">Scabbard</a> sb, bool isOn)</td></tr>
+<tr class="separator:aa7391427d4f6667decfe95fb93f93638"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -95,9 +100,30 @@ Transform&#160;</td><td class="memItemRight" valign="bottom"><b>peakPoint</b></t
 <tr class="memitem:a24bf081f7e0ad1428d2b7cdcca15a901"><td class="memItemLeft" align="right" valign="top"><a id="a24bf081f7e0ad1428d2b7cdcca15a901"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>rootPoint</b></td></tr>
 <tr class="separator:a24bf081f7e0ad1428d2b7cdcca15a901"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66894d98c669352a6b94c197556bfc8f"><td class="memItemLeft" align="right" valign="top"><a id="a66894d98c669352a6b94c197556bfc8f"></a>
+Collider&#160;</td><td class="memItemRight" valign="bottom"><b>targetCol</b></td></tr>
+<tr class="separator:a66894d98c669352a6b94c197556bfc8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e8f1146af4a910049bb053e69757931"><td class="memItemLeft" align="right" valign="top"><a id="a3e8f1146af4a910049bb053e69757931"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>spawnScabbard</b> = true</td></tr>
+<tr class="separator:a3e8f1146af4a910049bb053e69757931"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc9da585730186b9ed95a74452d0a746"><td class="memItemLeft" align="right" valign="top"><a id="adc9da585730186b9ed95a74452d0a746"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>swordType</b></td></tr>
 <tr class="separator:adc9da585730186b9ed95a74452d0a746"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4640fee5dd51b3f315d05e335f420cab"><td class="memItemLeft" align="right" valign="top"><a id="a4640fee5dd51b3f315d05e335f420cab"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>scabbardName</b></td></tr>
+<tr class="separator:a4640fee5dd51b3f315d05e335f420cab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a7adaca24f65eda394b050708ed0c049b"><td class="memItemLeft" align="right" valign="top"><a id="a7adaca24f65eda394b050708ed0c049b"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>path</b> = &quot;Weapon/&quot;</td></tr>
+<tr class="separator:a7adaca24f65eda394b050708ed0c049b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:a301bf562e43b1de588ee141ee8b53f14"><td class="memItemLeft" align="right" valign="top"><a id="a301bf562e43b1de588ee141ee8b53f14"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_scabbard.html">Scabbard</a>, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnSheathEvent</b></td></tr>
+<tr class="separator:a301bf562e43b1de588ee141ee8b53f14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

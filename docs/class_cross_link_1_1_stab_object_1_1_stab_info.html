@@ -89,9 +89,12 @@ Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetStabDir</b> ()<
 <tr class="memitem:a6eaf6f6302770c4ac42daa2984605b50"><td class="memItemLeft" align="right" valign="top"><a id="a6eaf6f6302770c4ac42daa2984605b50"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateStabSpring</b> (float stabberProjDis, float stabMin, float stabMax)</td></tr>
 <tr class="separator:a6eaf6f6302770c4ac42daa2984605b50"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa01917c00a7f36325d05bb8742ebb36b"><td class="memItemLeft" align="right" valign="top"><a id="aa01917c00a7f36325d05bb8742ebb36b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateStabPosEvent</b> (float curProjDis)</td></tr>
-<tr class="separator:aa01917c00a7f36325d05bb8742ebb36b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf4d13af68a6ac72293c5f2ef170527b"><td class="memItemLeft" align="right" valign="top"><a id="aaf4d13af68a6ac72293c5f2ef170527b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateStabPosEvent</b> (<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a> sinfo, float curProjDis)</td></tr>
+<tr class="separator:aaf4d13af68a6ac72293c5f2ef170527b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c535f07c684187b7d9a21ed9dfff657"><td class="memItemLeft" align="right" valign="top"><a id="a1c535f07c684187b7d9a21ed9dfff657"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateStabSidePosEvent</b> (<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a> sinfo, float curProjDis)</td></tr>
+<tr class="separator:a1c535f07c684187b7d9a21ed9dfff657"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -104,6 +107,9 @@ ConfigurableJoint&#160;</td><td class="memItemRight" valign="bottom"><b>joint</b
 <tr class="memitem:afb46e8f3604264c08e19cd7895335f90"><td class="memItemLeft" align="right" valign="top"><a id="afb46e8f3604264c08e19cd7895335f90"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>stabTarget</b></td></tr>
 <tr class="separator:afb46e8f3604264c08e19cd7895335f90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36fb531d799a691523f9b9f2e2b6af06"><td class="memItemLeft" align="right" valign="top"><a id="a36fb531d799a691523f9b9f2e2b6af06"></a>
+Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>stabTargetRB</b></td></tr>
+<tr class="separator:a36fb531d799a691523f9b9f2e2b6af06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af4fbcc2dc2a6d5dad67e071cd3d414e8"><td class="memItemLeft" align="right" valign="top"><a id="af4fbcc2dc2a6d5dad67e071cd3d414e8"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>stabberLocalPos</b></td></tr>
 <tr class="separator:af4fbcc2dc2a6d5dad67e071cd3d414e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -128,24 +134,42 @@ System.Action&lt; <a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_
 <tr class="memitem:a713c37b6d47c67f3f01202cefbf965ed"><td class="memItemLeft" align="right" valign="top"><a id="a713c37b6d47c67f3f01202cefbf965ed"></a>
 <a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>stabEffect</b></td></tr>
 <tr class="separator:a713c37b6d47c67f3f01202cefbf965ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae2790ea6fb452836d3a0549da1b197b4"><td class="memItemLeft" align="right" valign="top"><a id="ae2790ea6fb452836d3a0549da1b197b4"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>lastStabberProjDis</b> = -1</td></tr>
-<tr class="separator:ae2790ea6fb452836d3a0549da1b197b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a26cf7e54b19ee20bab692f808b51f9ff"><td class="memItemLeft" align="right" valign="top"><a id="a26cf7e54b19ee20bab692f808b51f9ff"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>bypassStabTie</b> = false</td></tr>
 <tr class="separator:a26cf7e54b19ee20bab692f808b51f9ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2790ea6fb452836d3a0549da1b197b4"><td class="memItemLeft" align="right" valign="top"><a id="ae2790ea6fb452836d3a0549da1b197b4"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>lastStabberProjDis</b> = -1</td></tr>
+<tr class="separator:ae2790ea6fb452836d3a0549da1b197b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73d496260afaae904d92591e46373445"><td class="memItemLeft" align="right" valign="top"><a id="a73d496260afaae904d92591e46373445"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isStabbingIn</b> = true</td></tr>
+<tr class="separator:a73d496260afaae904d92591e46373445"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a308b68320693c9a88c08eaa9bb43d599"><td class="memItemLeft" align="right" valign="top"><a id="a308b68320693c9a88c08eaa9bb43d599"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>lastSliceProjDis</b> = -1</td></tr>
+<tr class="separator:a308b68320693c9a88c08eaa9bb43d599"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:aa936caf4100444c4544ba5c50bda162f"><td class="memItemLeft" align="right" valign="top"><a id="aa936caf4100444c4544ba5c50bda162f"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisSpring</b> = 30000</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisSpring</b> = 3000</td></tr>
 <tr class="separator:aa936caf4100444c4544ba5c50bda162f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d31ca7b1478554ec3056c14804e39ba"><td class="memItemLeft" align="right" valign="top"><a id="a2d31ca7b1478554ec3056c14804e39ba"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisSpringSide</b> = 40000</td></tr>
+<tr class="separator:a2d31ca7b1478554ec3056c14804e39ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a494f98dfac2752a685c321e2d3578e9d"><td class="memItemLeft" align="right" valign="top"><a id="a494f98dfac2752a685c321e2d3578e9d"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisDamper</b> = 300</td></tr>
 <tr class="separator:a494f98dfac2752a685c321e2d3578e9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47bf84d46735d7a52607424a15d9c194"><td class="memItemLeft" align="right" valign="top"><a id="a47bf84d46735d7a52607424a15d9c194"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisSliceSpring</b> = 3000</td></tr>
+<tr class="separator:a47bf84d46735d7a52607424a15d9c194"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5b5fcdf02be4dffdae79a3278ae6b35"><td class="memItemLeft" align="right" valign="top"><a id="ad5b5fcdf02be4dffdae79a3278ae6b35"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisSliceDamper</b> = 30</td></tr>
+<tr class="separator:ad5b5fcdf02be4dffdae79a3278ae6b35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad536c42e013bc42402e9fa13f4d1059b"><td class="memItemLeft" align="right" valign="top"><a id="ad536c42e013bc42402e9fa13f4d1059b"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisRestSpring</b> = 100000</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisRestSpring</b> = 10000</td></tr>
 <tr class="separator:ad536c42e013bc42402e9fa13f4d1059b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad12a6034b45c5e4ee978fd6c063d912e"><td class="memItemLeft" align="right" valign="top"><a id="ad12a6034b45c5e4ee978fd6c063d912e"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisRestSpringSide</b> = 80000</td></tr>
+<tr class="separator:ad12a6034b45c5e4ee978fd6c063d912e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab583a210b5f1246d4185bdff9646885e"><td class="memItemLeft" align="right" valign="top"><a id="ab583a210b5f1246d4185bdff9646885e"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultAxisRestDamper</b> = 1000</td></tr>
 <tr class="separator:ab583a210b5f1246d4185bdff9646885e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -155,9 +179,9 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>StabPosUpdateI
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>
-<tr class="memitem:aa987152e49fdf94b9eb664b4e95675c7"><td class="memItemLeft" align="right" valign="top"><a id="aa987152e49fdf94b9eb664b4e95675c7"></a>
-System.Action&lt; float, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StabPosUpdateEvent</b></td></tr>
-<tr class="separator:aa987152e49fdf94b9eb664b4e95675c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac234d83078c377b2bd91201ecc972e46"><td class="memItemLeft" align="right" valign="top"><a id="ac234d83078c377b2bd91201ecc972e46"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a>, float, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StabPosUpdateEvent</b></td></tr>
+<tr class="separator:ac234d83078c377b2bd91201ecc972e46"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

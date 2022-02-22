@@ -79,8 +79,8 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab0d34b9682649ed9d6671c1eb8f3f6c5"><td class="memItemLeft" align="right" valign="top"><a id="ab0d34b9682649ed9d6671c1eb8f3f6c5"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetPose</b> (float weight)</td></tr>
+<tr class="memitem:ab0d34b9682649ed9d6671c1eb8f3f6c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_hand_finger.html#ab0d34b9682649ed9d6671c1eb8f3f6c5">SetPose</a> (float weight)</td></tr>
+<tr class="memdesc:ab0d34b9682649ed9d6671c1eb8f3f6c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">you should not call this directly, please check out SubmitFingerTarget api, the system will lerp to target for you  <a href="class_cross_link_1_1_hand_finger.html#ab0d34b9682649ed9d6671c1eb8f3f6c5">More...</a><br /></td></tr>
 <tr class="separator:ab0d34b9682649ed9d6671c1eb8f3f6c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a579cf4c0efe8d1586620339e26e4cafd"><td class="memItemLeft" align="right" valign="top"><a id="a579cf4c0efe8d1586620339e26e4cafd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SaveOpenPose</b> ()</td></tr>
@@ -97,9 +97,9 @@ Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>GetFingerSnapObj
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a13552a88215029f2101986d3e9983891"><td class="memItemLeft" align="right" valign="top"><a id="a13552a88215029f2101986d3e9983891"></a>
-static Collider&#160;</td><td class="memItemRight" valign="bottom"><b>SphereChecked</b> (Transform root, Vector3 pos, float radius)</td></tr>
-<tr class="separator:a13552a88215029f2101986d3e9983891"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a6393c022390c80e55b2944f476c4de"><td class="memItemLeft" align="right" valign="top"><a id="a1a6393c022390c80e55b2944f476c4de"></a>
+static Collider&#160;</td><td class="memItemRight" valign="bottom"><b>SphereChecked</b> (Transform root, Vector3 pos, float radius, System.Func&lt; Collider, bool &gt; fliter=null)</td></tr>
+<tr class="separator:a1a6393c022390c80e55b2944f476c4de"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -116,6 +116,33 @@ Transform[]&#160;</td><td class="memItemRight" valign="bottom"><b>fingerNodes</b
 float&#160;</td><td class="memItemRight" valign="bottom"><b>latestWeight</b></td></tr>
 <tr class="separator:aa6c7559c581d219fbe1c43a618d69233"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ab0d34b9682649ed9d6671c1eb8f3f6c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0d34b9682649ed9d6671c1eb8f3f6c5">&#9670;&nbsp;</a></span>SetPose()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.HandFinger.SetPose </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>weight</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>you should not call this directly, please check out SubmitFingerTarget api, the system will lerp to target for you </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">weight</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

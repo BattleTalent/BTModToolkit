@@ -68,10 +68,12 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_a_i_controller-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.AIController Class Reference</div>  </div>
@@ -80,6 +82,14 @@ $(function() {
 
 <p>Inherits <a class="el" href="class_cross_link_1_1_a_i_proxy.html">CrossLink.AIProxy</a>.</p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a1e080b38d48acd12978a6ad219129bc4"><td class="memItemLeft" align="right" valign="top"><a id="a1e080b38d48acd12978a6ad219129bc4"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>AIMode</b> { <b>Attack</b>
+, <b>Idle</b>
+, <b>None</b>
+ }</td></tr>
+<tr class="separator:a1e080b38d48acd12978a6ad219129bc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a95e0f8dd45b02a0a55a9c26163b3aceb"><td class="memItemLeft" align="right" valign="top"><a id="a95e0f8dd45b02a0a55a9c26163b3aceb"></a>
@@ -103,12 +113,36 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>EnterLodLv</
 <tr class="memitem:a67120036d24ba6c200669db094177f5b"><td class="memItemLeft" align="right" valign="top"><a id="a67120036d24ba6c200669db094177f5b"></a>
 override bool&#160;</td><td class="memItemRight" valign="bottom"><b>BeAbleToGazeByConfig</b> ()</td></tr>
 <tr class="separator:a67120036d24ba6c200669db094177f5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42857d368ce55e8880233c35c08fef5d"><td class="memItemLeft" align="right" valign="top"><a id="a42857d368ce55e8880233c35c08fef5d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>StopWeaponIKForAWhile</b> ()</td></tr>
-<tr class="separator:a42857d368ce55e8880233c35c08fef5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5649d3d949429caf6ea244fb8dbb145"><td class="memItemLeft" align="right" valign="top"><a id="ad5649d3d949429caf6ea244fb8dbb145"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StopWeaponIKForAWhile</b> (float extraSec=0)</td></tr>
+<tr class="separator:ad5649d3d949429caf6ea244fb8dbb145"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41b266960b542fc10b89f33ec973ec8d"><td class="memItemLeft" align="right" valign="top"><a id="a41b266960b542fc10b89f33ec973ec8d"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetCommandOrderedTime</b> ()</td></tr>
+<tr class="separator:a41b266960b542fc10b89f33ec973ec8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2fb641a88bd208a6e3d7de3347ba500"><td class="memItemLeft" align="right" valign="top"><a id="ae2fb641a88bd208a6e3d7de3347ba500"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAIState</b> (AIMode ai)</td></tr>
+<tr class="separator:ae2fb641a88bd208a6e3d7de3347ba500"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b31245246d1ebccf7b676dc0081cf38"><td class="memItemLeft" align="right" valign="top"><a id="a2b31245246d1ebccf7b676dc0081cf38"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StayCommand</b> ()</td></tr>
+<tr class="separator:a2b31245246d1ebccf7b676dc0081cf38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a176979073afcd9295c77c119b1a3d278"><td class="memItemLeft" align="right" valign="top"><a id="a176979073afcd9295c77c119b1a3d278"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>AttackCommand</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> target)</td></tr>
+<tr class="separator:a176979073afcd9295c77c119b1a3d278"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab620c9cb233451e2f669e1d090826444"><td class="memItemLeft" align="right" valign="top"><a id="ab620c9cb233451e2f669e1d090826444"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MoveCommand</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> target, float dis)</td></tr>
+<tr class="separator:ab620c9cb233451e2f669e1d090826444"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a97b1afd23358b958ef785f94e56851"><td class="memItemLeft" align="right" valign="top"><a id="a5a97b1afd23358b958ef785f94e56851"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MoveCommand</b> (Vector3 pos)</td></tr>
+<tr class="separator:a5a97b1afd23358b958ef785f94e56851"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f2307143db68bfdc0d44744e0e85a65"><td class="memItemLeft" align="right" valign="top"><a id="a5f2307143db68bfdc0d44744e0e85a65"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayActionCommand</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> target, ActionData ad)</td></tr>
+<tr class="separator:a5f2307143db68bfdc0d44744e0e85a65"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ade6644c165cb4856703370192220fac7"><td class="memItemLeft" align="right" valign="top"><a id="ade6644c165cb4856703370192220fac7"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsIndependentAtkDesire</b> ()</td></tr>
 <tr class="separator:ade6644c165cb4856703370192220fac7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a958473cddad47badb15a9cb0c87b6c0d"><td class="memItemLeft" align="right" valign="top"><a id="a958473cddad47badb15a9cb0c87b6c0d"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetBestDistance</b> ()</td></tr>
+<tr class="separator:a958473cddad47badb15a9cb0c87b6c0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a104657ed3078ded92a699153b7d01ea2"><td class="memItemLeft" align="right" valign="top">override void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_a_i_controller.html#a104657ed3078ded92a699153b7d01ea2">TickAI</a> ()</td></tr>
 <tr class="separator:a104657ed3078ded92a699153b7d01ea2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2562a4d3fbd87698e82daa3902373092"><td class="memItemLeft" align="right" valign="top"><a id="a2562a4d3fbd87698e82daa3902373092"></a>
@@ -247,6 +281,9 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>dynamicAtkSpeed</b> 
 <tr class="memitem:af0e90c9d967d1abb103d4a24e57c2960"><td class="memItemLeft" align="right" valign="top"><a id="af0e90c9d967d1abb103d4a24e57c2960"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>dynamicAtkSpeedRange</b> = -1</td></tr>
 <tr class="separator:af0e90c9d967d1abb103d4a24e57c2960"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a500b05024440bbc466b033caa5892e61"><td class="memItemLeft" align="right" valign="top"><a id="a500b05024440bbc466b033caa5892e61"></a>
+Transform&#160;</td><td class="memItemRight" valign="bottom"><b>headTrans</b></td></tr>
+<tr class="separator:a500b05024440bbc466b033caa5892e61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a21d91dc27e3f580ac25066083e095441"><td class="memItemLeft" align="right" valign="top"><a id="a21d91dc27e3f580ac25066083e095441"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isRangeUnit</b> = false</td></tr>
 <tr class="separator:a21d91dc27e3f580ac25066083e095441"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -327,7 +364,7 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>EnableGroupAI<
 static <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>atkAI</b></td></tr>
 <tr class="separator:a889ad22ef3e81a38dc13aabba375a2ae inherit pub_static_attribs_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6bb98ff0c7fe93d8a5407886b14d5fe inherit pub_static_attribs_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="aa6bb98ff0c7fe93d8a5407886b14d5fe"></a>
-static float&#160;</td><td class="memItemRight" valign="bottom"><b>AIWaitTimeMlp</b> = 0.25f</td></tr>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>AIWaitTimeMlp</b> = 0.5f</td></tr>
 <tr class="separator:aa6bb98ff0c7fe93d8a5407886b14d5fe inherit pub_static_attribs_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
@@ -360,6 +397,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnable</b> ()</td><
 <tr class="memitem:aa649696bc7ecb3a23ad2fab577833322 inherit pro_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="aa649696bc7ecb3a23ad2fab577833322"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnDisable</b> ()</td></tr>
 <tr class="separator:aa649696bc7ecb3a23ad2fab577833322 inherit pro_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:ae574cc674afd161e049cc097a7b21eb9"><td class="memItemLeft" align="right" valign="top"><a id="ae574cc674afd161e049cc097a7b21eb9"></a>
+System.Action&lt; AIMode &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>AIStateChangeEvent</b></td></tr>
+<tr class="separator:ae574cc674afd161e049cc097a7b21eb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bd3a823c635901d19f8538d0fa98fbb"><td class="memItemLeft" align="right" valign="top"><a id="a9bd3a823c635901d19f8538d0fa98fbb"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_a_i_controller.html">AIController</a>, <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>, ActionData &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>AttackEvent</b></td></tr>
+<tr class="separator:a9bd3a823c635901d19f8538d0fa98fbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -397,12 +443,21 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>StartAtk</b> (
 <tr class="memitem:a8d072a1e34a01cea7dca49054132e4bd inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a8d072a1e34a01cea7dca49054132e4bd"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>BreakAtk</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> src)</td></tr>
 <tr class="separator:a8d072a1e34a01cea7dca49054132e4bd inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa06f3828b14329ad1d0c9889cb9e070b inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="aa06f3828b14329ad1d0c9889cb9e070b"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsNoCampTargetArround</b> (string camp)</td></tr>
+<tr class="separator:aa06f3828b14329ad1d0c9889cb9e070b inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ace42b2ee96791b1631045c17b5442253 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="ace42b2ee96791b1631045c17b5442253"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTarget</b> (string camp=null)</td></tr>
 <tr class="separator:ace42b2ee96791b1631045c17b5442253 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ac5fccb93636c95de6fc3e3e293da5e inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a7ac5fccb93636c95de6fc3e3e293da5e"></a>
+static List&lt; <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTargetInRangeAndAngle</b> (Vector3 pos, float radius, Vector3 sdir, float dot, string camp=null, bool includeDown=false)</td></tr>
+<tr class="separator:a7ac5fccb93636c95de6fc3e3e293da5e inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a468d9362532c5b96d27a373b9a268d80 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a468d9362532c5b96d27a373b9a268d80"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTargetInRange</b> (Vector3 pos, float radius, string camp=null, bool includeDown=false)</td></tr>
 <tr class="separator:a468d9362532c5b96d27a373b9a268d80 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16b13a54fae04315a56aea1076ae7cdf inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a16b13a54fae04315a56aea1076ae7cdf"></a>
+static <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetCloestAndAngleTarget</b> (Transform self, float dot, string camp, bool goodRelate=true, bool includeDown=false)</td></tr>
+<tr class="separator:a16b13a54fae04315a56aea1076ae7cdf inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae414a5d0f0a4a844fd355493865849e7 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="ae414a5d0f0a4a844fd355493865849e7"></a>
 static <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetCloestTarget</b> (Transform self, string camp, bool goodRelate=true, bool includeDown=false)</td></tr>
 <tr class="separator:ae414a5d0f0a4a844fd355493865849e7 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>

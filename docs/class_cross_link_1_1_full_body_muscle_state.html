@@ -68,6 +68,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
@@ -95,21 +96,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Teleport</b> (Vector3
 <tr class="memitem:abf9a402378f2066304b2c1f5b453f4ec"><td class="memItemLeft" align="right" valign="top"><a id="abf9a402378f2066304b2c1f5b453f4ec"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ProtectRagdollCCDForAWhile</b> (float protectSec=0.5f)</td></tr>
 <tr class="separator:abf9a402378f2066304b2c1f5b453f4ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d9d8c32776cba496995d5924a468e08"><td class="memItemLeft" align="right" valign="top"><a id="a8d9d8c32776cba496995d5924a468e08"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DetectPassThroughWalls</b> (System.Action&lt; <a class="el" href="class_cross_link_1_1_full_body_muscle_state.html">FullBodyMuscleState</a>, Rigidbody &gt; onPassWall, float wallDis=10, float sec=4)</td></tr>
+<tr class="separator:a8d9d8c32776cba496995d5924a468e08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a162f987efae2c4e2b601a7e3732e14ff"><td class="memItemLeft" align="right" valign="top"><a id="a162f987efae2c4e2b601a7e3732e14ff"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsWeakPart</b> (string name)</td></tr>
 <tr class="separator:a162f987efae2c4e2b601a7e3732e14ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a395fd7a9fa8c3f7e464fb5c3fc44ee21"><td class="memItemLeft" align="right" valign="top"><a id="a395fd7a9fa8c3f7e464fb5c3fc44ee21"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>CloseWeakPoints</b> ()</td></tr>
 <tr class="separator:a395fd7a9fa8c3f7e464fb5c3fc44ee21"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c68f54093aba1c15a0737a0312d215f"><td class="memItemLeft" align="right" valign="top"><a id="a2c68f54093aba1c15a0737a0312d215f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>TickArmorDetect</b> ()</td></tr>
-<tr class="separator:a2c68f54093aba1c15a0737a0312d215f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2ffa13cc3ae8a4e72b80b2d05125ec8c"><td class="memItemLeft" align="right" valign="top"><a id="a2ffa13cc3ae8a4e72b80b2d05125ec8c"></a>
 <a class="el" href="class_cross_link_1_1_muscle_armor.html">MuscleArmor</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetArmor</b> (string muName)</td></tr>
 <tr class="separator:a2ffa13cc3ae8a4e72b80b2d05125ec8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a040550cfd59ec4f2c7337341b4d2139a"><td class="memItemLeft" align="right" valign="top"><a id="a040550cfd59ec4f2c7337341b4d2139a"></a>
 Dictionary&lt; string, <a class="el" href="class_cross_link_1_1_muscle_armor.html">MuscleArmor</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetArmors</b> ()</td></tr>
 <tr class="separator:a040550cfd59ec4f2c7337341b4d2139a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85b9367293afe7f121f6b733654e7960"><td class="memItemLeft" align="right" valign="top"><a id="a85b9367293afe7f121f6b733654e7960"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>HasArmor</b> (<a class="el" href="class_cross_link_1_1_muscle_state.html">MuscleState</a> state)</td></tr>
+<tr class="separator:a85b9367293afe7f121f6b733654e7960"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac2d65f0f207c0fddc9f76d2e79392c40"><td class="memItemLeft" align="right" valign="top"><a id="ac2d65f0f207c0fddc9f76d2e79392c40"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsArmor</b> (<a class="el" href="class_cross_link_1_1_muscle_state.html">MuscleState</a> state, Collider col)</td></tr>
 <tr class="separator:ac2d65f0f207c0fddc9f76d2e79392c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -137,15 +141,21 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayTauntAnim</b> ()<
 <tr class="memitem:a052b85c56985813e304ab4ffe4c0944c"><td class="memItemLeft" align="right" valign="top"><a id="a052b85c56985813e304ab4ffe4c0944c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPlayingKO</b> ()</td></tr>
 <tr class="separator:a052b85c56985813e304ab4ffe4c0944c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14c4a284f7edeb1bfd841c9caa9a216b"><td class="memItemLeft" align="right" valign="top"><a id="a14c4a284f7edeb1bfd841c9caa9a216b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>DoKnockoutReact</b> (Vector3 force, RagdollMuscle mu, bool stab=false)</td></tr>
-<tr class="separator:a14c4a284f7edeb1bfd841c9caa9a216b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8bf6945e5b7f2c591ff3a59b44910dbe"><td class="memItemLeft" align="right" valign="top"><a id="a8bf6945e5b7f2c591ff3a59b44910dbe"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>KnockoutWithAnim</b> (Vector3 force, RagdollMuscle mu, bool stab=false)</td></tr>
-<tr class="separator:a8bf6945e5b7f2c591ff3a59b44910dbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6f473135ee0a4eed5340b036dc8ac60"><td class="memItemLeft" align="right" valign="top"><a id="aa6f473135ee0a4eed5340b036dc8ac60"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>KeepKnocking</b> (Vector3 force, RagdollMuscle mu)</td></tr>
-<tr class="separator:aa6f473135ee0a4eed5340b036dc8ac60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ced1920ab2d26683b673f94a3c69758"><td class="memItemLeft" align="right" valign="top"><a id="a7ced1920ab2d26683b673f94a3c69758"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DoKnockout</b> ()</td></tr>
+<tr class="separator:a7ced1920ab2d26683b673f94a3c69758"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e7e72e1d47d42a4e004c2d8350617dd"><td class="memItemLeft" align="right" valign="top"><a id="a3e7e72e1d47d42a4e004c2d8350617dd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DoKnockout</b> (RagdollMuscle mu, Vector3 force)</td></tr>
+<tr class="separator:a3e7e72e1d47d42a4e004c2d8350617dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a58f82463c8e2b4a02cc4340c93077c95"><td class="memItemLeft" align="right" valign="top"><a id="a58f82463c8e2b4a02cc4340c93077c95"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DoKnockoutReact</b> (RagdollMuscle mu, Vector3 force, bool stab=false)</td></tr>
+<tr class="separator:a58f82463c8e2b4a02cc4340c93077c95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a507b0d2b533c85366c34e9fc8aefff18"><td class="memItemLeft" align="right" valign="top"><a id="a507b0d2b533c85366c34e9fc8aefff18"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>KnockoutWithAnim</b> (RagdollMuscle mu, Vector3 force, bool stab=false)</td></tr>
+<tr class="separator:a507b0d2b533c85366c34e9fc8aefff18"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76324ae4b871d3bdf4f2ad49ef04f567"><td class="memItemLeft" align="right" valign="top"><a id="a76324ae4b871d3bdf4f2ad49ef04f567"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>KeepKnocking</b> (RagdollMuscle mu, Vector3 force)</td></tr>
+<tr class="separator:a76324ae4b871d3bdf4f2ad49ef04f567"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7304790b2e9cd42f794f5c768084c5a9"><td class="memItemLeft" align="right" valign="top"><a id="a7304790b2e9cd42f794f5c768084c5a9"></a>
 <a class="el" href="class_cross_link_1_1_muscle_state.html">MuscleState</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetMuscleStateFromProfile</b> (string name)</td></tr>
 <tr class="separator:a7304790b2e9cd42f794f5c768084c5a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -185,6 +195,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DizzyToKnockout</b> (
 <tr class="memitem:a89cf8f30fd3ac8c76666d3222924bee6"><td class="memItemLeft" align="right" valign="top"><a id="a89cf8f30fd3ac8c76666d3222924bee6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateDizzyInCombat</b> ()</td></tr>
 <tr class="separator:a89cf8f30fd3ac8c76666d3222924bee6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bcbb386e6c6124135f37f006ea099ab"><td class="memItemLeft" align="right" valign="top"><a id="a1bcbb386e6c6124135f37f006ea099ab"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsThrown</b> ()</td></tr>
+<tr class="separator:a1bcbb386e6c6124135f37f006ea099ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02f4c37e15c5ee6bdfad12f7634f4e27"><td class="memItemLeft" align="right" valign="top"><a id="a02f4c37e15c5ee6bdfad12f7634f4e27"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DoThrowing</b> (float sec=2)</td></tr>
+<tr class="separator:a02f4c37e15c5ee6bdfad12f7634f4e27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9aeca04dad011c4a3752efc8c82c8e39"><td class="memItemLeft" align="right" valign="top"><a id="a9aeca04dad011c4a3752efc8c82c8e39"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StopThrowing</b> ()</td></tr>
+<tr class="separator:a9aeca04dad011c4a3752efc8c82c8e39"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af41e44ffbf88b1ff12c3cedd56efbe51"><td class="memItemLeft" align="right" valign="top"><a id="af41e44ffbf88b1ff12c3cedd56efbe51"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsNoFreezeSource</b> ()</td></tr>
 <tr class="separator:af41e44ffbf88b1ff12c3cedd56efbe51"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -224,6 +243,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStabed</b> ()</td><
 <tr class="memitem:ac77fe7ca0c6aaacc64b48cfef2943c25"><td class="memItemLeft" align="right" valign="top"><a id="ac77fe7ca0c6aaacc64b48cfef2943c25"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStabedAsGrab</b> ()</td></tr>
 <tr class="separator:ac77fe7ca0c6aaacc64b48cfef2943c25"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa0b34f91d5712df2ac574dba5d988668"><td class="memItemLeft" align="right" valign="top"><a id="aa0b34f91d5712df2ac574dba5d988668"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStabbedBy</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu)</td></tr>
+<tr class="separator:aa0b34f91d5712df2ac574dba5d988668"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a661d15cde6988971e7d5f2c3b78e1bec"><td class="memItemLeft" align="right" valign="top"><a id="a661d15cde6988971e7d5f2c3b78e1bec"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsCuted</b> ()</td></tr>
 <tr class="separator:a661d15cde6988971e7d5f2c3b78e1bec"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -281,6 +303,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>TightWrist</b> (bool 
 <tr class="memitem:a1571ea51915802a6cb6505f6e2549185"><td class="memItemLeft" align="right" valign="top"><a id="a1571ea51915802a6cb6505f6e2549185"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsBeingGrabed</b> ()</td></tr>
 <tr class="separator:a1571ea51915802a6cb6505f6e2549185"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab62c78bb9ee518a4f56875f245c009dd"><td class="memItemLeft" align="right" valign="top"><a id="ab62c78bb9ee518a4f56875f245c009dd"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>CalcFastestRelatedHandSpeed</b> (out <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> fh)</td></tr>
+<tr class="separator:ab62c78bb9ee518a4f56875f245c009dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0108c331539d5a546dd214a076332faf"><td class="memItemLeft" align="right" valign="top"><a id="a0108c331539d5a546dd214a076332faf"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDoingAction</b> ()</td></tr>
 <tr class="separator:a0108c331539d5a546dd214a076332faf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -296,6 +321,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ProtectForAWhile</b> 
 <tr class="memitem:ac31cab87fad518031474d52347cd75fd"><td class="memItemLeft" align="right" valign="top"><a id="ac31cab87fad518031474d52347cd75fd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ProtectUntilGrounded</b> (float sec=3f)</td></tr>
 <tr class="separator:ac31cab87fad518031474d52347cd75fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd3599313a526393d8c691f1a8dd9097"><td class="memItemLeft" align="right" valign="top"><a id="acd3599313a526393d8c691f1a8dd9097"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TickCollisionRecord</b> ()</td></tr>
+<tr class="separator:acd3599313a526393d8c691f1a8dd9097"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9537dc885ba0628aa13c0c16746ef10a"><td class="memItemLeft" align="right" valign="top"><a id="a9537dc885ba0628aa13c0c16746ef10a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TickStayCollision</b> (float ct)</td></tr>
 <tr class="separator:a9537dc885ba0628aa13c0c16746ef10a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -314,12 +342,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyDamageEffect</b>
 <tr class="memitem:a77dd9326be61a5b221c45f8d1f27dabe"><td class="memItemLeft" align="right" valign="top"><a id="a77dd9326be61a5b221c45f8d1f27dabe"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyDamageHit</b> (<a class="el" href="class_cross_link_1_1_damage_hit_data.html">DamageHitData</a> dmgHitData)</td></tr>
 <tr class="separator:a77dd9326be61a5b221c45f8d1f27dabe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9db5d36b90ed9bfe6dfb299fb844e544"><td class="memItemLeft" align="right" valign="top"><a id="a9db5d36b90ed9bfe6dfb299fb844e544"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>RecordHitInfo</b> (<a class="el" href="class_cross_link_1_1_ragdoll_hit_info.html">RagdollHitInfo</a> hi)</td></tr>
-<tr class="separator:a9db5d36b90ed9bfe6dfb299fb844e544"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab420deb0d447f80ae500ea07183616c9"><td class="memItemLeft" align="right" valign="top"><a id="ab420deb0d447f80ae500ea07183616c9"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>GetRecordHitInfoCount</b> (<a class="el" href="class_cross_link_1_1_ragdoll_hit_info.html">RagdollHitInfo</a> hi)</td></tr>
-<tr class="separator:ab420deb0d447f80ae500ea07183616c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -344,9 +366,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>BuildInGeneral
 <tr class="memitem:a581a7ca5446b47eaf4149027d1de01dc"><td class="memItemLeft" align="right" valign="top"><a id="a581a7ca5446b47eaf4149027d1de01dc"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>BuildInEnvModifier</b> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fc, RagdollMuscle mu, Collider thisCol, Rigidbody otherRB, Collider otherCol, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
 <tr class="separator:a581a7ca5446b47eaf4149027d1de01dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3ee14520319d715c10d3932ba772b43b"><td class="memItemLeft" align="right" valign="top"><a id="a3ee14520319d715c10d3932ba772b43b"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayContactSound</b> (Vector3 pos)</td></tr>
-<tr class="separator:a3ee14520319d715c10d3932ba772b43b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b4aadc3938fdd66fa1444dbace4322f"><td class="memItemLeft" align="right" valign="top"><a id="a7b4aadc3938fdd66fa1444dbace4322f"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayContactSound</b> (Vector3 pos, float force)</td></tr>
+<tr class="separator:a7b4aadc3938fdd66fa1444dbace4322f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -431,8 +453,14 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>AccFactorFaste
 <tr class="memitem:a4f52409497d4b0e9273aaf9d06b236d4"><td class="memItemLeft" align="right" valign="top"><a id="a4f52409497d4b0e9273aaf9d06b236d4"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>AccFactorFastestSqrt</b> = AccFactorFastest * AccFactorFastest</td></tr>
 <tr class="separator:a4f52409497d4b0e9273aaf9d06b236d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab7903f3c8c38c90c4e5248486c31f5e5"><td class="memItemLeft" align="right" valign="top"><a id="ab7903f3c8c38c90c4e5248486c31f5e5"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>AffectConDis</b> = 0.16f</td></tr>
+<tr class="separator:ab7903f3c8c38c90c4e5248486c31f5e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad15244221c538b9a1e32146e79e8fcfd"><td class="memItemLeft" align="right" valign="top"><a id="ad15244221c538b9a1e32146e79e8fcfd"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>StaticConDis</b> = 0.04f</td></tr>
+<tr class="separator:ad15244221c538b9a1e32146e79e8fcfd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa42f16853fb03be0ec0ae87ca05a33eb"><td class="memItemLeft" align="right" valign="top"><a id="aa42f16853fb03be0ec0ae87ca05a33eb"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>SWING_SPEED_FAST</b> = 8f</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>SWING_SPEED_FAST</b> = 6f</td></tr>
 <tr class="separator:aa42f16853fb03be0ec0ae87ca05a33eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61ba76a7796b328e023107b17a27450a"><td class="memItemLeft" align="right" valign="top"><a id="a61ba76a7796b328e023107b17a27450a"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>SWING_SPEED_FAST_SQRT</b> = SWING_SPEED_FAST * SWING_SPEED_FAST</td></tr>
@@ -443,7 +471,7 @@ static string&#160;</td><td class="memItemRight" valign="bottom"><b>deadEffect</
 <tr class="memitem:a60cbafb2a0eedd1b9cf3714eeb010d17"><td class="memItemLeft" align="right" valign="top">static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>deadEffectSounds</b></td></tr>
 <tr class="separator:a60cbafb2a0eedd1b9cf3714eeb010d17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0012d843f2b01036d214a76ec2c66b73"><td class="memItemLeft" align="right" valign="top"><a id="a0012d843f2b01036d214a76ec2c66b73"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>StiffSecMax</b> = 4</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>StiffSecMax</b> = 5</td></tr>
 <tr class="separator:a0012d843f2b01036d214a76ec2c66b73"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a309f66137d6c5fb209de0b412f88949f"><td class="memItemLeft" align="right" valign="top"><a id="a309f66137d6c5fb209de0b412f88949f"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>StiffSecMin</b> = 0.2f</td></tr>
@@ -481,6 +509,9 @@ Events</h2></td></tr>
 <tr class="memitem:ac31c45bcb52ae4ea99e4d7da8209dd66"><td class="memItemLeft" align="right" valign="top"><a id="ac31c45bcb52ae4ea99e4d7da8209dd66"></a>
 System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>CutEvent</b></td></tr>
 <tr class="separator:ac31c45bcb52ae4ea99e4d7da8209dd66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a633dbf36a1fa8cc90621feb0c29745fb"><td class="memItemLeft" align="right" valign="top"><a id="a633dbf36a1fa8cc90621feb0c29745fb"></a>
+System.Action&lt; RagdollMuscle &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GrabMuscleEvent</b></td></tr>
+<tr class="separator:a633dbf36a1fa8cc90621feb0c29745fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5af0dc21d9d0e59452e1c672b3bba33"><td class="memItemLeft" align="right" valign="top"><a id="ad5af0dc21d9d0e59452e1c672b3bba33"></a>
 System.Action&lt; <a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>BeHittedEvent</b></td></tr>
 <tr class="separator:ad5af0dc21d9d0e59452e1c672b3bba33"><td class="memSeparator" colspan="2">&#160;</td></tr>

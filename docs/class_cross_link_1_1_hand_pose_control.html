@@ -84,36 +84,36 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3b9edea5eba5e4eb2dbc2d3a7924f652"><td class="memItemLeft" align="right" valign="top"><a id="a3b9edea5eba5e4eb2dbc2d3a7924f652"></a>
 Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>GetFingerGrabRB</b> ()</td></tr>
 <tr class="separator:a3b9edea5eba5e4eb2dbc2d3a7924f652"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee3c78dea94041d3ade75819b9f7f25c"><td class="memItemLeft" align="right" valign="top"><a id="aee3c78dea94041d3ade75819b9f7f25c"></a>
-Collider&#160;</td><td class="memItemRight" valign="bottom"><b>CheckFingerGrabBoardPhase</b> ()</td></tr>
-<tr class="separator:aee3c78dea94041d3ade75819b9f7f25c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c84084f82e607ae541d0371e5218ce2"><td class="memItemLeft" align="right" valign="top"><a id="a4c84084f82e607ae541d0371e5218ce2"></a>
+Collider&#160;</td><td class="memItemRight" valign="bottom"><b>CheckFingerGrabBoardPhase</b> (System.Func&lt; Collider, bool &gt; fliter=null)</td></tr>
+<tr class="separator:a4c84084f82e607ae541d0371e5218ce2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a351a0ff8035bc8f6527f5a4e4f6687d3"><td class="memItemLeft" align="right" valign="top"><a id="a351a0ff8035bc8f6527f5a4e4f6687d3"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>DoFingerGrab</b> ()</td></tr>
 <tr class="separator:a351a0ff8035bc8f6527f5a4e4f6687d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aead3a397a2ce095dc4c2eca31af1c273"><td class="memItemLeft" align="right" valign="top"><a id="aead3a397a2ce095dc4c2eca31af1c273"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFingerFollowSpeed</b> (float weightPerSec)</td></tr>
 <tr class="separator:aead3a397a2ce095dc4c2eca31af1c273"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaebf27fed5dfdb4f8c7662bbc9a2935b"><td class="memItemLeft" align="right" valign="top"><a id="aaebf27fed5dfdb4f8c7662bbc9a2935b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SubmitFingerTarget</b> (int index, float weight, bool ignoreFreeze=false)</td></tr>
+<tr class="memitem:aaebf27fed5dfdb4f8c7662bbc9a2935b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_hand_pose_control.html#aaebf27fed5dfdb4f8c7662bbc9a2935b">SubmitFingerTarget</a> (int index, float weight, bool ignoreFreeze=false)</td></tr>
+<tr class="memdesc:aaebf27fed5dfdb4f8c7662bbc9a2935b"><td class="mdescLeft">&#160;</td><td class="mdescRight">set specific finger to the weight position, then the system will lerp to that position for you  <a href="class_cross_link_1_1_hand_pose_control.html#aaebf27fed5dfdb4f8c7662bbc9a2935b">More...</a><br /></td></tr>
 <tr class="separator:aaebf27fed5dfdb4f8c7662bbc9a2935b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaae549e06d8cdba35d45ff8a1ae1bcbb"><td class="memItemLeft" align="right" valign="top"><a id="aaae549e06d8cdba35d45ff8a1ae1bcbb"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFreeze</b> ()</td></tr>
 <tr class="separator:aaae549e06d8cdba35d45ff8a1ae1bcbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a16d06f858cba719fdc0bd71f25ed2385"><td class="memItemLeft" align="right" valign="top"><a id="a16d06f858cba719fdc0bd71f25ed2385"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFingerFreeze</b> (bool f)</td></tr>
+<tr class="memitem:a16d06f858cba719fdc0bd71f25ed2385"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_hand_pose_control.html#a16d06f858cba719fdc0bd71f25ed2385">SetFingerFreeze</a> (bool f)</td></tr>
+<tr class="memdesc:a16d06f858cba719fdc0bd71f25ed2385"><td class="mdescLeft">&#160;</td><td class="mdescRight">lock finger pose, so that other system can not change the finger even they call SubmitFingerTarget you should call SubmitFingerTarget first, then set it to freeze, system will still update the animation for a while  <a href="class_cross_link_1_1_hand_pose_control.html#a16d06f858cba719fdc0bd71f25ed2385">More...</a><br /></td></tr>
 <tr class="separator:a16d06f858cba719fdc0bd71f25ed2385"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a35b0e79e912b1d73487980db49dd229d"><td class="memItemLeft" align="right" valign="top"><a id="a35b0e79e912b1d73487980db49dd229d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>TickUpdate</b> ()</td></tr>
+<tr class="memitem:a35b0e79e912b1d73487980db49dd229d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_hand_pose_control.html#a35b0e79e912b1d73487980db49dd229d">TickUpdate</a> ()</td></tr>
+<tr class="memdesc:a35b0e79e912b1d73487980db49dd229d"><td class="mdescLeft">&#160;</td><td class="mdescRight">should not be called outside  <a href="class_cross_link_1_1_hand_pose_control.html#a35b0e79e912b1d73487980db49dd229d">More...</a><br /></td></tr>
 <tr class="separator:a35b0e79e912b1d73487980db49dd229d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a64b6159591e152e4a525042b3ad59e3d"><td class="memItemLeft" align="right" valign="top"><a id="a64b6159591e152e4a525042b3ad59e3d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPose</b> (<a class="el" href="class_cross_link_1_1_hand_pose_preset.html">HandPosePreset</a> preset, float weight, bool ignoreFreeze=false)</td></tr>
 <tr class="separator:a64b6159591e152e4a525042b3ad59e3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad6a185a47132af4aa0611fe5c0029a80"><td class="memItemLeft" align="right" valign="top"><a id="ad6a185a47132af4aa0611fe5c0029a80"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPose</b> (List&lt; float &gt; fingerWeights, float weight=1, bool ignoreFreeze=false)</td></tr>
-<tr class="separator:ad6a185a47132af4aa0611fe5c0029a80"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4fdb394d8671d3e83bb23847936de675"><td class="memItemLeft" align="right" valign="top"><a id="a4fdb394d8671d3e83bb23847936de675"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPose</b> (float weight)</td></tr>
-<tr class="separator:a4fdb394d8671d3e83bb23847936de675"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9d333c3dfa5d6cfdbee09de6992ed43"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_hand_pose_control.html#ae9d333c3dfa5d6cfdbee09de6992ed43">SubmitHandPose</a> (List&lt; float &gt; fingerWeights, float weight=1, bool ignoreFreeze=false)</td></tr>
+<tr class="memdesc:ae9d333c3dfa5d6cfdbee09de6992ed43"><td class="mdescLeft">&#160;</td><td class="mdescRight">this is used with SetHandPose(HandPosePreset preset...)  <a href="class_cross_link_1_1_hand_pose_control.html#ae9d333c3dfa5d6cfdbee09de6992ed43">More...</a><br /></td></tr>
+<tr class="separator:ae9d333c3dfa5d6cfdbee09de6992ed43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac205351e016b23efe3cf1e55f162b91c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_hand_pose_control.html#ac205351e016b23efe3cf1e55f162b91c">SubmitHandPose</a> (float weight=1, bool ignoreFreeze=false)</td></tr>
+<tr class="memdesc:ac205351e016b23efe3cf1e55f162b91c"><td class="mdescLeft">&#160;</td><td class="mdescRight">set specific finger pose to the weight position, then the system will lerp to that position for you you can lock the finger pose by using SetFreeze and you can still bypass the freeze using ignoreFreeze == true  <a href="class_cross_link_1_1_hand_pose_control.html#ac205351e016b23efe3cf1e55f162b91c">More...</a><br /></td></tr>
+<tr class="separator:ac205351e016b23efe3cf1e55f162b91c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -151,6 +151,178 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>NormalWeightSp
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>SlowWeightSpeed</b> = 2f</td></tr>
 <tr class="separator:a9af61acab6c30d6e1a35a62f0b12fd63"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a16d06f858cba719fdc0bd71f25ed2385"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a16d06f858cba719fdc0bd71f25ed2385">&#9670;&nbsp;</a></span>SetFingerFreeze()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.HandPoseControl.SetFingerFreeze </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>f</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>lock finger pose, so that other system can not change the finger even they call SubmitFingerTarget you should call SubmitFingerTarget first, then set it to freeze, system will still update the animation for a while </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">f</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aaebf27fed5dfdb4f8c7662bbc9a2935b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaebf27fed5dfdb4f8c7662bbc9a2935b">&#9670;&nbsp;</a></span>SubmitFingerTarget()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.HandPoseControl.SubmitFingerTarget </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>index</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>weight</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>ignoreFreeze</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>set specific finger to the weight position, then the system will lerp to that position for you </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">index</td><td></td></tr>
+    <tr><td class="paramname">weight</td><td></td></tr>
+    <tr><td class="paramname">ignoreFreeze</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ac205351e016b23efe3cf1e55f162b91c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac205351e016b23efe3cf1e55f162b91c">&#9670;&nbsp;</a></span>SubmitHandPose() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.HandPoseControl.SubmitHandPose </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>weight</em> = <code>1</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>ignoreFreeze</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>set specific finger pose to the weight position, then the system will lerp to that position for you you can lock the finger pose by using SetFreeze and you can still bypass the freeze using ignoreFreeze == true </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">fingerWeights</td><td></td></tr>
+    <tr><td class="paramname">weight</td><td></td></tr>
+    <tr><td class="paramname">ignoreFreeze</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ae9d333c3dfa5d6cfdbee09de6992ed43"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae9d333c3dfa5d6cfdbee09de6992ed43">&#9670;&nbsp;</a></span>SubmitHandPose() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.HandPoseControl.SubmitHandPose </td>
+          <td>(</td>
+          <td class="paramtype">List&lt; float &gt;&#160;</td>
+          <td class="paramname"><em>fingerWeights</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>weight</em> = <code>1</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>ignoreFreeze</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>this is used with SetHandPose(HandPosePreset preset...) </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">fingerWeights</td><td></td></tr>
+    <tr><td class="paramname">weight</td><td></td></tr>
+    <tr><td class="paramname">ignoreFreeze</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a35b0e79e912b1d73487980db49dd229d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35b0e79e912b1d73487980db49dd229d">&#9670;&nbsp;</a></span>TickUpdate()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.HandPoseControl.TickUpdate </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>should not be called outside </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

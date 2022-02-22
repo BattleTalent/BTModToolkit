@@ -81,6 +81,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a5840b79d8ed274cbd3a34fadeb313cb0"><td class="memItemLeft" align="right" valign="top"><a id="a5840b79d8ed274cbd3a34fadeb313cb0"></a>
+override Transform&#160;</td><td class="memItemRight" valign="bottom"><b>GetPositionTransform</b> ()</td></tr>
+<tr class="separator:a5840b79d8ed274cbd3a34fadeb313cb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac21f48d8422c8b515aff238445de8e06"><td class="memItemLeft" align="right" valign="top"><a id="ac21f48d8422c8b515aff238445de8e06"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>DoCull</b> (<a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> tile)</td></tr>
 <tr class="separator:ac21f48d8422c8b515aff238445de8e06"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -94,6 +97,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStaticScene</b> ()<
 <tr class="memitem:a8c604fb48dbc89bcd2b1146b966e0f71 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a8c604fb48dbc89bcd2b1146b966e0f71"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsScene</b> ()</td></tr>
 <tr class="separator:a8c604fb48dbc89bcd2b1146b966e0f71 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a583e1388ce16f0f64c266cea4a46f52f inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a583e1388ce16f0f64c266cea4a46f52f"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAttachable</b> (bool b)</td></tr>
+<tr class="separator:a583e1388ce16f0f64c266cea4a46f52f inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a240aa6d528acb9444fabe8099422f9af inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a240aa6d528acb9444fabe8099422f9af"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>CanBeAttached</b> ()</td></tr>
+<tr class="separator:a240aa6d528acb9444fabe8099422f9af inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af348cc3a857bec22b96f0902d649352d inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="af348cc3a857bec22b96f0902d649352d"></a>
 List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetAttachedList</b> ()</td></tr>
 <tr class="separator:af348cc3a857bec22b96f0902d649352d inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -154,9 +163,18 @@ Collider[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetCols</b> (bo
 <tr class="memitem:a68706b959ea19de69b9782e57a0d66a2 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a68706b959ea19de69b9782e57a0d66a2"></a>
 <a class="el" href="class_cross_link_1_1_collision_effect.html">CollisionEffect</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetCollisionEffects</b> ()</td></tr>
 <tr class="separator:a68706b959ea19de69b9782e57a0d66a2 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab56f277acb624375bb25653e938fccf8 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ab56f277acb624375bb25653e938fccf8"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetNameWithoutClone</b> ()</td></tr>
+<tr class="separator:ab56f277acb624375bb25653e938fccf8 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a00b4c91ae5e7d59c2e8cd5f834f0be2e inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a00b4c91ae5e7d59c2e8cd5f834f0be2e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableCollisionEffectSensitive</b> (bool s)</td></tr>
 <tr class="separator:a00b4c91ae5e7d59c2e8cd5f834f0be2e inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa75b411b9a646bdefd14e310fcadfb33 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aa75b411b9a646bdefd14e310fcadfb33"></a>
+<a class="el" href="class_cross_link_1_1_ragdoll_hit_info_ref.html">RagdollHitInfoRef</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetRagdollHitInfoRef</b> ()</td></tr>
+<tr class="separator:aa75b411b9a646bdefd14e310fcadfb33 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fb42c809ea294e7d5eb042474b473f1 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a5fb42c809ea294e7d5eb042474b473f1"></a>
+<a class="el" href="class_cross_link_1_1_ragdoll_hit_info_obj.html">RagdollHitInfoObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetRagdollHitInfoObj</b> ()</td></tr>
+<tr class="separator:a5fb42c809ea294e7d5eb042474b473f1 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4c123cee271da2340b30c33bc94634a6 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a4c123cee271da2340b30c33bc94634a6"></a>
 <a class="el" href="class_cross_link_1_1_ragdoll_hit_info.html">RagdollHitInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetRagdollHitInfo</b> ()</td></tr>
 <tr class="separator:a4c123cee271da2340b30c33bc94634a6 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -229,9 +247,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnDead</b> ()
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_static_methods_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
-<tr class="memitem:ac0abd9eb8056a517069dd34bb6538046 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ac0abd9eb8056a517069dd34bb6538046"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>Clear</b> ()</td></tr>
-<tr class="separator:ac0abd9eb8056a517069dd34bb6538046 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adcc833c53fa77804b605550772efcf18 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="adcc833c53fa77804b605550772efcf18"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearRecordData</b> ()</td></tr>
+<tr class="separator:adcc833c53fa77804b605550772efcf18 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad172086813d71932a8cfced202e18a59 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ad172086813d71932a8cfced202e18a59"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTagedPhysicsUnit</b> (Tagger.Tag t)</td></tr>
 <tr class="separator:ad172086813d71932a8cfced202e18a59 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -278,6 +296,9 @@ static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">Phys
 static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>QueryLogicTargetInRadiusTemp</b> (Vector3 pos, float radius)</td></tr>
 <tr class="separator:a9d0ee445833af97b9e3b29c89924dc1d inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
+<tr class="memitem:a48f6c24512eb824b2af11237b90ad404 inherit pro_attribs_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a48f6c24512eb824b2af11237b90ad404"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>attachable</b> = true</td></tr>
+<tr class="separator:a48f6c24512eb824b2af11237b90ad404 inherit pro_attribs_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea6900eb72854de140bc9529f70784d7 inherit pro_attribs_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aea6900eb72854de140bc9529f70784d7"></a>
 List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>attachedPuList</b> = new List&lt;<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a>&gt;()</td></tr>
 <tr class="separator:aea6900eb72854de140bc9529f70784d7 inherit pro_attribs_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>

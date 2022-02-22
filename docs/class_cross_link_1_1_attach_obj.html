@@ -85,6 +85,15 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:afe8f149223c060e8d11fbbfb806a7a84"><td class="memItemLeft" align="right" valign="top"><a id="afe8f149223c060e8d11fbbfb806a7a84"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFlyControlEnabled</b> (bool f)</td></tr>
+<tr class="separator:afe8f149223c060e8d11fbbfb806a7a84"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa790f89026945cca1cf77f79681a251f"><td class="memItemLeft" align="right" valign="top"><a id="aa790f89026945cca1cf77f79681a251f"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetCallbackSpeedMlp</b> ()</td></tr>
+<tr class="separator:aa790f89026945cca1cf77f79681a251f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afeb7aaaf1dc948c09f8e05138554c9c7"><td class="memItemLeft" align="right" valign="top"><a id="afeb7aaaf1dc948c09f8e05138554c9c7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetCallbackSpeedMlp</b> (float sm)</td></tr>
+<tr class="separator:afeb7aaaf1dc948c09f8e05138554c9c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac730b6fad7aa3083d8e7ca76de253c12"><td class="memItemLeft" align="right" valign="top"><a id="ac730b6fad7aa3083d8e7ca76de253c12"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Reset</b> ()</td></tr>
 <tr class="separator:ac730b6fad7aa3083d8e7ca76de253c12"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -127,6 +136,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Grab</b> (<a class="e
 <tr class="memitem:a982ed1ebb3a05db59fb11a657e2ef37f"><td class="memItemLeft" align="right" valign="top"><a id="a982ed1ebb3a05db59fb11a657e2ef37f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UnGrab</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
 <tr class="separator:a982ed1ebb3a05db59fb11a657e2ef37f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c603145b04e0906b96de57ad80bb28b"><td class="memItemLeft" align="right" valign="top"><a id="a7c603145b04e0906b96de57ad80bb28b"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>CalcGrabPosOffset</b> ()</td></tr>
+<tr class="separator:a7c603145b04e0906b96de57ad80bb28b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad4c1fe13cd325bd521791ecc5893821a"><td class="memItemLeft" align="right" valign="top"><a id="ad4c1fe13cd325bd521791ecc5893821a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>BeginFlyTo</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
 <tr class="separator:ad4c1fe13cd325bd521791ecc5893821a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -229,6 +241,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>UnLinkJoint</b> (Conf
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
+<tr class="memitem:a6747b6b4ecfc4b6284733f2987113805"><td class="memItemLeft" align="right" valign="top"><a id="a6747b6b4ecfc4b6284733f2987113805"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>flyControlEnabled</b> = true</td></tr>
+<tr class="separator:a6747b6b4ecfc4b6284733f2987113805"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65ecfcdc3852c7774f2352dca5519876"><td class="memItemLeft" align="right" valign="top"><a id="a65ecfcdc3852c7774f2352dca5519876"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>callbackSpeedMlp</b> = 1</td></tr>
+<tr class="separator:a65ecfcdc3852c7774f2352dca5519876"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae4229ede7df22b8de8f0b9cbcdc62f41"><td class="memItemLeft" align="right" valign="top"><a id="ae4229ede7df22b8de8f0b9cbcdc62f41"></a>
 Transform[]&#160;</td><td class="memItemRight" valign="bottom"><b>panelPoints</b> = new Transform[RagdollBoneInfo.HAND_NUM]</td></tr>
 <tr class="separator:ae4229ede7df22b8de8f0b9cbcdc62f41"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -248,7 +266,7 @@ static Quaternion&#160;</td><td class="memItemRight" valign="bottom"><b>leftFixe
 static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>rightOffset</b> = new Vector3(0, 0, 0)</td></tr>
 <tr class="separator:ac1c81e5dbed36b420db240f2a0e55bfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a413c076b1749875a52d49c8f32caac05"><td class="memItemLeft" align="right" valign="top"><a id="a413c076b1749875a52d49c8f32caac05"></a>
-static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>leftOffset</b> = new Vector3(0.0176f, -0.0023f, -0.002f)</td></tr>
+static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>leftOffset</b> = new Vector3(0.0176f - 0.008f, -0.0023f - 0.008f, -0.002f - 0.008f)</td></tr>
 <tr class="separator:a413c076b1749875a52d49c8f32caac05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->

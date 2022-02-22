@@ -84,6 +84,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab0691a67394febfd1fb561424d62b3ce"><td class="memItemLeft" align="right" valign="top"><a id="ab0691a67394febfd1fb561424d62b3ce"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Disconnect</b> ()</td></tr>
 <tr class="separator:ab0691a67394febfd1fb561424d62b3ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f41c306675d35ec676f5120aa25af20"><td class="memItemLeft" align="right" valign="top"><a id="a2f41c306675d35ec676f5120aa25af20"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ConnectWithSword</b> (<a class="el" href="class_cross_link_1_1_scabbard_user.html">ScabbardUser</a> user)</td></tr>
+<tr class="separator:a2f41c306675d35ec676f5120aa25af20"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -108,12 +111,21 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>pForce</b> = 10000</
 <tr class="memitem:abdd70df8b807e6f2014cdf4be9265bc7"><td class="memItemLeft" align="right" valign="top"><a id="abdd70df8b807e6f2014cdf4be9265bc7"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>eForce</b> = 10000</td></tr>
 <tr class="separator:abdd70df8b807e6f2014cdf4be9265bc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a637c3a665333e3790ad2344d8de558cb"><td class="memItemLeft" align="right" valign="top"><a id="a637c3a665333e3790ad2344d8de558cb"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>scrollForce</b> = 500</td></tr>
-<tr class="separator:a637c3a665333e3790ad2344d8de558cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44073cb9178c54bdaeeccc87a3e5369d"><td class="memItemLeft" align="right" valign="top"><a id="a44073cb9178c54bdaeeccc87a3e5369d"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>maxScrollForce</b> = 10000</td></tr>
+<tr class="separator:a44073cb9178c54bdaeeccc87a3e5369d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f3e30b86ed9e9eaaf89749d91d6070e"><td class="memItemLeft" align="right" valign="top"><a id="a5f3e30b86ed9e9eaaf89749d91d6070e"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>scrollForceOnSlot</b> = 15000</td></tr>
+<tr class="separator:a5f3e30b86ed9e9eaaf89749d91d6070e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf50656fee3c83bf5fe4e92fe6c1de75"><td class="memItemLeft" align="right" valign="top"><a id="aaf50656fee3c83bf5fe4e92fe6c1de75"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>breakForce</b> = 3000</td></tr>
+<tr class="separator:aaf50656fee3c83bf5fe4e92fe6c1de75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a812c431d21784d969fddb8c0a38e986c"><td class="memItemLeft" align="right" valign="top"><a id="a812c431d21784d969fddb8c0a38e986c"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>dragLength</b> = 0.1f</td></tr>
 <tr class="separator:a812c431d21784d969fddb8c0a38e986c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af6832274b57aed33caf8317a5927e082"><td class="memItemLeft" align="right" valign="top"><a id="af6832274b57aed33caf8317a5927e082"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>correctLength</b> = 0.6f</td></tr>
+<tr class="separator:af6832274b57aed33caf8317a5927e082"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b22cd3d794b2bda1a4881d4aecf5a6a"><td class="memItemLeft" align="right" valign="top"><a id="a6b22cd3d794b2bda1a4881d4aecf5a6a"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>maxAngle</b> = 30</td></tr>
 <tr class="separator:a6b22cd3d794b2bda1a4881d4aecf5a6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -123,6 +135,18 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>jointZOffset</b> = 0
 <tr class="memitem:a00f249c896c52612f8dff8f67cf5e8f7"><td class="memItemLeft" align="right" valign="top"><a id="a00f249c896c52612f8dff8f67cf5e8f7"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>jointXOffset</b> = 0.3f</td></tr>
 <tr class="separator:a00f249c896c52612f8dff8f67cf5e8f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e65cf0841344f295c2072f263b44f76"><td class="memItemLeft" align="right" valign="top"><a id="a2e65cf0841344f295c2072f263b44f76"></a>
+<a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>outScabbardSound</b></td></tr>
+<tr class="separator:a2e65cf0841344f295c2072f263b44f76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb6f056676daa8efcb7d0a6c8f9be5e8"><td class="memItemLeft" align="right" valign="top"><a id="abb6f056676daa8efcb7d0a6c8f9be5e8"></a>
+<a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>slideSound</b></td></tr>
+<tr class="separator:abb6f056676daa8efcb7d0a6c8f9be5e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af66b161b793e9176aab0cf7d05b0cb33"><td class="memItemLeft" align="right" valign="top"><a id="af66b161b793e9176aab0cf7d05b0cb33"></a>
+<a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>metalSound</b></td></tr>
+<tr class="separator:af66b161b793e9176aab0cf7d05b0cb33"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d2e7da87fb3c6f5bd2183e1314b3f7a"><td class="memItemLeft" align="right" valign="top"><a id="a8d2e7da87fb3c6f5bd2183e1314b3f7a"></a>
+<a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>onSheathSound</b></td></tr>
+<tr class="separator:a8d2e7da87fb3c6f5bd2183e1314b3f7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
