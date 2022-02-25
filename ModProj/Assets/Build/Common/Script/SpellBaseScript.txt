@@ -18,13 +18,23 @@ local spellBase = {
 
 
 function spellBase:Awake()
+    self:InitLightPillar()
     self.fistCol.gameObject:SetActive(true)
     self.host.interact:GetCols(true)
     self.fistCol.gameObject:SetActive(false)
+    
+    self:AllowTrigger(false)
+    self:OnAwake()
 end
 
+function spellBase:OnAwake()
+end
 
-
+function spellBase:AllowTrigger(isAllow)
+    for i = 0, self.host.interact.attachList.Length - 1 do
+        self.host.interact.attachList[i].allowTrigger = isAllow
+    end
+end
 
 --[[ Hand Pose ]]
 function spellBase:ClearHandPose()
@@ -61,6 +71,9 @@ function spellBase:SetHandPose(isOnCharge)
     
     if needFingerChange then    
         local hand = self.host.interact:GetAssociatedHand()
+        if hand == nil then
+            return
+        end
         local tarValue = isOnCharge and 0.2 or 0.5 
         hand.handPoseControl:SubmitHandPose(tarValue, true)
         
@@ -104,7 +117,7 @@ function spellBase:StartVelSample()
     self.velTimer = CL.Scheduler.Create(self,
         function(sche, t, s)
             --local realVol = self.host.interact:GetLocalVelocity()
-            local hand = self.host:GetTriggeringHand()
+            local hand = self:GetSpellHand()
             if hand == nil then
                 sche:Stop()
                 return
@@ -133,6 +146,10 @@ function spellBase:StartVelSample()
         end
     , 0, -1)
     :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)    
+end
+
+function spellBase:GetSpellHand()
+    return self.slotHand
 end
 
 function spellBase:StopVelSample()
@@ -167,8 +184,9 @@ function spellBase:SpawnSpellOnHand(flyObjName, createTrans)
     fo.rb.isKinematic = true   
     
     
-    local hand = self.host:GetTriggeringHand()  
-    CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand.physicsHand:GetCols(), true)
+    local hand = self:GetSpellHand()
+    
+    CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand.physicsHand.colliders, true)
     --CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand:GetAnotherHand().physicsHand:GetCols(), true)
     CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), self.host.interact:GetCols(), true)    
     
@@ -204,14 +222,17 @@ function spellBase:TryThrow()
     self.fo:FlyStart(dir.normalized * self.intensity)
     
     self.fo.col.isTrigger = false
-    --[[
+    
+
     CL.Scheduler.RemoveSchedule(self.setupTriggerActId)
     self.setupTriggerActId = CL.Scheduler.Create(self, 
         function(sche, t, s)
-            self.fo.col.isTrigger = false
+            --self.fo.col.isTrigger = false
+            if self.slotHand and not IsNullOrDestroyed(self.fo) then
+                CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), self.slotHand.physicsHand.colliders, false)
+            end
         end,
-    0, 0, 0.05).actionId    
-    ]]
+    0, 0, 0.05).actionId
 end
 
 function spellBase:ReleaseSpell(attach)
@@ -230,6 +251,10 @@ function spellBase:ReleaseSpell(attach)
     end    
 end
 
+function spellBase:ControlFlyObj(fo, dir, speed, value)
+    fo.rb.velocity = UE.Vector3.Lerp(fo.rb.velocity, dir * speed, value)
+end
+
 function spellBase:OnRelease(attach)
 end
 
@@ -242,12 +267,32 @@ end
 
 function spellBase:OnSlot(slot, t)
     if t then
+        if self:IsGemSlot(slot) then
+            self:AllowTrigger(true)
+            
+            self.slotHand = slot.body.hands[slot.attachedHandIndex]
+        end
         self:SlotSpell(slot)
     else
+        self:AllowTrigger(false)
+        self.slotHand = nil
+        
         self:UnSlotSpell(slot)
     end
 end
 
+function spellBase:GetSlotHand()
+    return self.slotHand
+end
+
+function spellBase:IsGemSlot(slot)
+    for i = 0, slot.slotTypes.Length - 1 do
+        if slot.slotTypes[i] == "Gem" then
+            return true
+        end
+    end
+    return false
+end
 
 
 function spellBase:GrabSpell(attach)
@@ -297,13 +342,15 @@ function spellBase:OnGrab(attach, t)
         --self.modelTrans.position = attach.attachedHand.gemTrans.position
         --self.modelTrans.rotation = attach.attachedHand.gemTrans.rotation
         ----[[
+        
+        
         if attach.attachedHand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND then
-            self.modelTrans.localPosition = UE.Vector3(-0.02688, 0.0961, -0.02539)
-            self.modelTrans.localRotation = UE.Quaternion.Euler(-106.114, -9.051, 124.714)
+            self.modelTrans.localPosition = UE.Vector3(0.0018, 0.0047, -0.0034)
+            self.modelTrans.localRotation = UE.Quaternion.Euler(81.383, 82.763, 35.038)
         else
             --self.modelTrans.localPosition = UE.Vector3(-0.01835, -0.1146, -0.0181)
-            self.modelTrans.localPosition = UE.Vector3(-0.0024-0.008, -0.1056-0.008, -0.0192-0.008)--UE.Vector3(-0.01835, -0.1146, -0.0181)
-            self.modelTrans.localRotation = UE.Quaternion.Euler(117.242, -8.56, 39.17)
+            self.modelTrans.localPosition = UE.Vector3(-0.006, -0.0027, 0.0063)--UE.Vector3(-0.01835, -0.1146, -0.0181)
+            self.modelTrans.localRotation = UE.Quaternion.Euler(-81.439, 13.757, 33.331)
         end
         --]]
         self:GrabSpell(attach)
@@ -340,9 +387,7 @@ function spellBase:OnGrab(attach, t)
     end
 end
 
-function spellBase:Awake()
-    self:InitLightPillar()
-end
+
 
 function spellBase:InitLightPillar()
     self.hzLightUpdate = CL.FramerateController(CL.PhysicsHelper.FPS10Sec)
@@ -416,20 +461,29 @@ function spellBase:SetEffect(name, position, rotation, isPlay, trans)
 end
 --[[ end of Effect ]]
 ---------------------------------------------------------------------------------------------------------
-function spellBase:MotionDetectByDir(worldDir, speed, progressCb, reachCb)
-    local startPos = self.host.interact.trans.localPosition
+function spellBase:MotionDetectByDir(dir, speed, checkfunc, progressCb, reachCb, isLocal)
     self:StopMotionDetect()
+    
+    local slotHand = self:GetSlotHand()
+    local volocity = 0
+    local realSpeed = 0
+    
+    local curPos = 0
+    local angle = 0
+    local curDir = nil
     self.dtTimer = CL.Scheduler.Create(self,
         function(sche, t, s)
-            local realVol = self.host.interact:GetLocalVelocity()
-            local realSpeed = realVol.magnitude            
+            volocity = slotHand.velocityEstimator:GetVelocityEstimateLocal()
+            realSpeed = volocity.magnitude            
             if progressCb then
                 progressCb((realSpeed / speed) % 1)
             end
-            if realSpeed >= speed then
-                local curPos = self.host.interact.localPosition
-                local curDir = self.host.interact.trans:TransformDirection(curPos - startPos)
-                local angle = UE.Vector3.Angle(worldDir, curDir)
+            if realSpeed >= speed and checkfunc() then
+                if isLocal then
+                    angle = UE.Vector3.Angle(self.host.interact.trans:TransformDirection(dir), volocity)
+                else
+                    angle = UE.Vector3.Angle(dir, volocity)
+                end
                 if angle <= 15 then
                     if reachCb then
                         reachCb()
@@ -448,7 +502,5 @@ function spellBase:StopMotionDetect()
         self.dtTimer = nil
     end
 end
-
-
 
 return Class(nil,nil,spellBase)
