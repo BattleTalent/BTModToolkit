@@ -58,9 +58,6 @@ namespace CrossLink
             
             DiscoverMods();
             LoadMods();
-
-
-            //SetPlayerSettings(companyName, productName);
         }
 
         public bool IsReadyToLoadAgain()
@@ -148,11 +145,7 @@ namespace CrossLink
         }
 #endif
 
-        public void SetProjectInfo(string companyName, string productName)
-        {
-            PlayerSettings.companyName = companyName;
-            PlayerSettings.productName = productName;
-        }
+
 
         // find all folders that contain mod files
         public void DiscoverMods()
@@ -348,9 +341,12 @@ namespace CrossLink
         }
 
 
-        public List<ModInfo> GetModsList()
+        public void SetProjectInfo(string companyName, string productName)
         {
-            return mods;
+#if UNITY_EDITOR
+            PlayerSettings.companyName = companyName;
+            PlayerSettings.productName = productName;
+#endif
         }
     }
 
