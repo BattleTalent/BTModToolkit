@@ -15,6 +15,10 @@ namespace CrossLink
             foreach(var data in mcDic)
             {
                 CopyReferenceVariable(data.Key, data.Value, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public);
+            }
+
+            foreach (var data in mcDic)
+            {
                 Object.DestroyImmediate(data.Key);
             }
         }
@@ -61,7 +65,7 @@ namespace CrossLink
 
             for (int i = 0; i < fields.Length; i++)
             {
-                Debug.Log("field Type:" + fields[i]);
+                //Debug.Log("field Type:" + fields[i]);
                 //base type is Monobehaviour
                 if (typeof(MonoBehaviour).IsAssignableFrom(fields[i].FieldType))
                 {

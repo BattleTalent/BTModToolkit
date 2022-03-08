@@ -150,7 +150,14 @@ namespace CrossLink
             {
                 Directory.CreateDirectory(path);
             }
-            UnityEditor.PrefabUtility.SaveAsPrefabAsset(obj, path + "/" + obj.name + ".prefab");
+            try
+            {
+                UnityEditor.PrefabUtility.SaveAsPrefabAsset(obj, path + "/" + obj.name + ".prefab");
+            }
+            catch (System.Exception e)
+            {
+                //Debug.Log(e);
+            }
 #endif
         }
         #endregion
