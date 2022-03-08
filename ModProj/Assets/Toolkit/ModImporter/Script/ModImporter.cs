@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 namespace CrossLink
 {
@@ -8,7 +9,10 @@ namespace CrossLink
     {
         public static ModImporter Instance = new ModImporter();
 
+        public string prefabPath = "Assets/Resources/GenPrefab";
+
         public static ModPanel modPanel;
+
         void Start()
         {
             modPanel = GetComponentInChildren<ModPanel>();

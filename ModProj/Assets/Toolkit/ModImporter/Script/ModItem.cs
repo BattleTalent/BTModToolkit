@@ -1,12 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 using UnityEngine.UI;
 namespace CrossLink
 {
     public class ModItem : MonoBehaviour
     {
-        public Text name;
+        public Text nameText;
         public Image image;
         private ModPanel mp;
 
@@ -22,19 +23,19 @@ namespace CrossLink
             maxCount = modInfo.scripts.Count;
 
             itemIdx = idx;
-
-            RefleshName(modInfo.path);
+            name = GetNameFromModPath(modInfo.path);
+            nameText.text = name;
         }
 
-        void RefleshName(string path)
+        string GetNameFromModPath(string path)
         {
             int idx = path.LastIndexOf("\\Mods\\");
             path = path.Substring(idx, path.Length - idx);
-            path = path.Replace("\\Mods\\" ,"");
+            path = path.Replace("\\Mods\\", "");
             idx = path.IndexOf("\\");
             path = path.Substring(0, idx);
 
-            name.text = path;
+            return path;
         }
 
         private void ShowScripts()
@@ -87,20 +88,25 @@ namespace CrossLink
         [EasyButtons.Button]
         public void SpawnMods()
         {
-            foreach(string path in modInfo.gos)
+            foreach (string path in modInfo.gos)
             {
-                var weaponGO = ResourceMgr.Instantiate(path) as GameObject;
+                var go = ResourceMgr.Instantiate(path) as GameObject;
 
-                if (weaponGO == null)
-                    return;
-
-                weaponGO.transform.position = Vector3.zero;
+                if (go != null)
+                {
+                    go.transform.position = Vector3.zero;
+                }
+                else
+                {
+                    Debug.Log("Spawn fail:" + path);
+                }
             }
 
 
             ShowScripts();
 
             OnItemClick();
+
         }
 
         private int itemIdx;
@@ -113,5 +119,40 @@ namespace CrossLink
         {
             image.gameObject.SetActive(isSelect);
         }
+
+
+        #region Save
+        [EasyButtons.Button]
+        public void SaveAsPrefabs()
+        {
+            foreach (string path in modInfo.gos)
+            {
+                var go = ResourceMgr.Instantiate(path) as GameObject;
+
+                if (go != null)
+                {
+                    ScriptHelper.RefleshScripts(go);
+                    CreatePrefabObj(go, ModImporter.Instance.prefabPath + "/" + name);
+                }
+                else
+                {
+                    Debug.Log("Save fail:" + path);
+                }
+            }
+            //GameObject[] gos = SpawnMods();
+            //ModDataMgr.Instance.CacheData(modInfo.path, gos);
+        }
+
+        private void CreatePrefabObj(GameObject obj, string path)
+        {
+#if UNITY_EDITOR
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            UnityEditor.PrefabUtility.SaveAsPrefabAsset(obj, path + "/" + obj.name + ".prefab");
+#endif
+        }
+        #endregion
     }
 }
