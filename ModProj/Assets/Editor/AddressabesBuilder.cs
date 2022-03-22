@@ -34,25 +34,6 @@ namespace CrossLink
             return targetpath;
         }
 
-        [MenuItem("BuildTools/FastBuildAndInstallForWindows")]
-        public static void FastBuildAndInstallForWindows()
-        {
-            ClearOldFiles();
-
-            BuildWithProfile(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows);
-            
-            InstallModOnWindows();
-        }
-
-        [MenuItem("BuildTools/FastBuildAndInstallForAndroid")]
-        public static void FastBuildAndInstallForAndroid()
-        {
-            ClearOldFiles();
-
-            BuildWithProfile(BuildTargetGroup.Android, BuildTarget.Android);
-
-            InstallModOnAndroid();
-        }
 #if false
         [MenuItem("BuildTools/BuildAndroid")]
         public static void BuildAndroid()
@@ -66,7 +47,7 @@ namespace CrossLink
         }
 #endif
 
-        [MenuItem("BuildTools/BuildAllBundles")]
+        [MenuItem("BuildTools/BuildAllBundles", false, 0)]
         public static void BuildAll()
         {
             ClearOldFiles();
@@ -78,7 +59,7 @@ namespace CrossLink
         }
 
 
-        [MenuItem("BuildTools/ClearOldFiles")]
+        [MenuItem("BuildTools/ClearOldFiles", false, 0)]
         static void ClearOldFiles()
         {
             var buildPath = Application.dataPath + "/Mods/";
@@ -90,7 +71,7 @@ namespace CrossLink
             Debug.Log("ClearOldFiles");
         }
 
-        [MenuItem("BuildTools/InstallModOnWindows")]
+        [MenuItem("BuildTools/InstallModOnWindows", false, 11)]
         static void InstallModOnWindows()
         {
             var targetpath = Application.persistentDataPath;
@@ -120,7 +101,7 @@ namespace CrossLink
 
 
         
-        [MenuItem("BuildTools/InstallModOnAndroid")]
+        [MenuItem("BuildTools/InstallModOnAndroid", false, 11)]
         static void InstallModOnAndroid()
         {
 
@@ -203,6 +184,26 @@ namespace CrossLink
                 System.Diagnostics.Process.Start(startInfo);
             }
 #endif
+        }
+
+        [MenuItem("BuildTools/Advanced/FastBuildAndInstallForWindows")]
+        public static void FastBuildAndInstallForWindows()
+        {
+            ClearOldFiles();
+
+            BuildWithProfile(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows);
+
+            InstallModOnWindows();
+        }
+
+        [MenuItem("BuildTools/Advanced/FastBuildAndInstallForAndroid")]
+        public static void FastBuildAndInstallForAndroid()
+        {
+            ClearOldFiles();
+
+            BuildWithProfile(BuildTargetGroup.Android, BuildTarget.Android);
+
+            InstallModOnAndroid();
         }
 
         static void BuildWithProfile(BuildTargetGroup buildGroup, BuildTarget buildTarget)
