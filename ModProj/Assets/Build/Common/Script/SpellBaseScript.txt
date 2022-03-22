@@ -10,8 +10,7 @@ local spellBase = {
     setupTriggerActId = -1,
     --modelTrans(Transform) model 
     --creation(Transform) mount point of magic ball
-    --intensity(float)
-    --fistCol(BoxCollider)    
+    --intensity(float)  
     motionVelList = {},
 }
 
@@ -19,9 +18,7 @@ local spellBase = {
 
 function spellBase:Awake()
     self:InitLightPillar()
-    self.fistCol.gameObject:SetActive(true)
     self.host.interact:GetCols(true)
-    self.fistCol.gameObject:SetActive(false)
     
     self:AllowTrigger(false)
     self:OnAwake()
@@ -343,29 +340,16 @@ function spellBase:OnGrab(attach, t)
         --self.modelTrans.rotation = attach.attachedHand.gemTrans.rotation
         ----[[
         
-        
         if attach.attachedHand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND then
-            self.modelTrans.localPosition = UE.Vector3(0.0018, 0.0047, -0.0034)
-            self.modelTrans.localRotation = UE.Quaternion.Euler(81.383, 82.763, 35.038)
+            self.modelTrans.localPosition = UE.Vector3(-0.0234, 0.042, -0.0183)
+            self.modelTrans.localRotation = UE.Quaternion.Euler(72.005, -12.213, -25.02)
         else
-            --self.modelTrans.localPosition = UE.Vector3(-0.01835, -0.1146, -0.0181)
-            self.modelTrans.localPosition = UE.Vector3(-0.006, -0.0027, 0.0063)--UE.Vector3(-0.01835, -0.1146, -0.0181)
-            self.modelTrans.localRotation = UE.Quaternion.Euler(-81.439, 13.757, 33.331)
+            self.modelTrans.localPosition = UE.Vector3(-0.0146, -0.0581, -0.0118)
+            self.modelTrans.localRotation = UE.Quaternion.Euler(-71.136, 24.748, 5.225)
         end
         --]]
         self:GrabSpell(attach)
-        
-        
-        self.fistCol.gameObject:SetActive(true)
-        local center = self.fistCol.center
-        if attach.attachedHand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND then
-            if center.y < 0 then center.y = center.y * -1 end        
-        else
-            if center.y > 0 then center.y = center.y * -1 end
-        end
-        self.fistCol.center = center
     else
-        self.fistCol.gameObject:SetActive(false)
         self:UnGrabSpell(attach)
         local gemTrans = attach.attachedHand.gemTrans
         --self.host.interact.trans.position = self.modelTrans.position
