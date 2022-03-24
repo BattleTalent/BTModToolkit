@@ -145,6 +145,7 @@ namespace CrossLink
 
         private void CreatePrefabObj(GameObject obj, string path)
         {
+            Debug.Log(obj.name + " saved to: " + path);
 #if UNITY_EDITOR
             if (!Directory.Exists(path))
             {
