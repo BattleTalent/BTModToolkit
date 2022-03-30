@@ -18,6 +18,7 @@ public class AddressableHelper : MonoBehaviour
         { "Effect", "Effect/" },
         { "FlyObj", "FlyObj/" },
         { "Audio", "Audio/Sound/" },
+        { "Config", "Config/" },
     };
 
 
