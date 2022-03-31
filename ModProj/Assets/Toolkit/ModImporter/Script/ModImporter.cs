@@ -11,7 +11,7 @@ namespace CrossLink
 
         public string prefabPath = "Assets/Resources/GenPrefab";
 
-        public string loadModPath = "Assets/Resources/Mods";
+        public string loadModPath;
 
         public static ModPanel modPanel;
 
