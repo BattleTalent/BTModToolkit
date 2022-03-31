@@ -11,6 +11,8 @@ namespace CrossLink
 
         public string prefabPath = "Assets/Resources/GenPrefab";
 
+        public string loadModPath = "Assets/Resources/Mods";
+
         public static ModPanel modPanel;
 
         void Start()
@@ -21,6 +23,7 @@ namespace CrossLink
 
         public void ImportMods()
         {
+            ModManager.Instance.SetLoadModPath(loadModPath);
             ModManager.Instance.Init();
         }
 
@@ -29,6 +32,12 @@ namespace CrossLink
         public void RefleshView()
         {
             modPanel.UpdateScrollView(ModManager.Instance.mods);
+        }
+
+        [EasyButtons.Button]
+        public void ResetLoadModPath()
+        {
+            loadModPath = Application.persistentDataPath + "/Mods";
         }
     }
 }
