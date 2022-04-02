@@ -148,14 +148,14 @@ namespace CrossLink
 
         public void SetLoadModPath(string path)
         {
-            ModsPath = path + "/";
+            ModsPath = path;
         }
 
         // find all folders that contain mod files
         public void DiscoverMods()
         {
 
-            //ModsPath = Application.persistentDataPath + "/Mods/";
+            ModsPath = ModsPath == "" ? Application.persistentDataPath + "/Mods/" : ModsPath;
             //ModsPath = "Assets/Resources/Mods/";
             //ModsPath = Application.dataPath + "/Resources/Mods/";
 

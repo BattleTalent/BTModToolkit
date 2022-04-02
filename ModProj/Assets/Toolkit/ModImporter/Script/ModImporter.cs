@@ -15,6 +15,8 @@ namespace CrossLink
 
         public static ModPanel modPanel;
 
+        private string defaultPath = "C:/Users[username]/AppData/LocalLow/CrossLink/BattleTalent/Mods";
+
         void Start()
         {
             modPanel = GetComponentInChildren<ModPanel>();
@@ -23,7 +25,7 @@ namespace CrossLink
 
         public void ImportMods()
         {
-            ModManager.Instance.SetLoadModPath(loadModPath);
+            ModManager.Instance.SetLoadModPath(loadModPath == defaultPath ? "" : loadModPath);
             ModManager.Instance.Init();
         }
 
@@ -37,7 +39,8 @@ namespace CrossLink
         [EasyButtons.Button]
         public void ResetLoadModPath()
         {
-            loadModPath = Application.persistentDataPath + "/Mods";
+            loadModPath = defaultPath;
+            EditorUtility.SetDirty(this);
         }
     }
 }
