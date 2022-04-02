@@ -149,13 +149,14 @@ namespace CrossLink
         public void SetLoadModPath(string path)
         {
             ModsPath = path;
+            ModsPath = ModsPath.Replace("\\", "/");
         }
 
         // find all folders that contain mod files
         public void DiscoverMods()
         {
 
-            ModsPath = ModsPath == "" ? Application.persistentDataPath + "/Mods/" : ModsPath;
+            ModsPath = ModsPath == "" ? Application.persistentDataPath + "/Mods/" : ModsPath + "/";
             //ModsPath = "Assets/Resources/Mods/";
             //ModsPath = Application.dataPath + "/Resources/Mods/";
 
@@ -307,6 +308,7 @@ namespace CrossLink
             {
                 string path = location.InternalId;
                 string projModPath = Application.persistentDataPath + "/Mods/";
+                path = path.Replace("\\", "/");
                 if (path.Contains(projModPath))
                 {
                     path = path.Replace(projModPath, ModsPath);

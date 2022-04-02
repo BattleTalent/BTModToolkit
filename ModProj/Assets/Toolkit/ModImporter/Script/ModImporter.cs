@@ -40,7 +40,9 @@ namespace CrossLink
         public void ResetLoadModPath()
         {
             loadModPath = defaultPath;
+#if UNITY_EDITOR
             EditorUtility.SetDirty(this);
+#endif
         }
     }
 }
