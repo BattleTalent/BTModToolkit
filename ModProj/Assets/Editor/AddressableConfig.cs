@@ -90,6 +90,8 @@ public class AddressableConfig : ScriptableObject
         //RefreshPath
         AddressableHelper.RefreshAddressables();
         //RefreshPrefab
+        AddressableHelper.RefreshPrefabPrefix(oldPrefix, newPrefix);
+        //RefreshAsset
         AddressableHelper.RefreshAssetPrefix(oldPrefix, newPrefix);
         //RefreshScript
         AddressableHelper.RefreshScriptPrefix(oldPrefix, newPrefix);
