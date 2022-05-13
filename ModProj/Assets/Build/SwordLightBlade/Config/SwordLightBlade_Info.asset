@@ -10,25 +10,25 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f0360b0d473ef848b1017f1219d1ab5, type: 3}
-  m_Name: ItemInfoConfig
+  m_Name: SwordLightBlade_Info
   m_EditorClassIdentifier: 
   storeItemInfo:
-  - addStoreItemName: WMD_SwordGiant
-    dependItemName: 
-    name: GiantSword
-    desc: I'm GiantSword, model is provided by Kevvy
+  - addStoreItemName: WMD_SwordLightBlade
+    dependItemName: WMD_Stick
+    name: LightBlade
+    desc: I'm LightBlade, Hummmmmmm, model is provided by kevvy
   hitInfo:
-  - Name: WMD_GiantSword
-    VelocityMlp: 2
-    DamageMlp: 20
-    DamageThrough: 3
+  - Name: WMD_LightBlade
+    VelocityMlp: 1.5
+    DamageMlp: 30
+    DamageThrough: 1.5
     DamageCrit: 1.5
     StabMlp: 1.5
     HitMlp: 120
-    HitRandom: 0.1
+    HitRandom: 0.2
     StabDamage: 120
     BreakDefenceMlp: 1
-    HitBackMlp: 140
-    KnockoutFactor: 0.3
-    DizzyFactor: 0.3
-    StiffValue: 4.5
+    HitBackMlp: 90
+    KnockoutFactor: 0.1
+    DizzyFactor: 0
+    StiffValue: 2.5
