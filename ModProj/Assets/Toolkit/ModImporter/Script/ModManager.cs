@@ -34,6 +34,7 @@ namespace CrossLink
         public static ModManager Instance = new ModManager();
 
         static string ModsPath = "Mods/";
+
         public const string LuaKey = "LuaScript";
         public const string WeaponPath = "Weapon/";
 
@@ -145,13 +146,17 @@ namespace CrossLink
         }
 #endif
 
-
+        public void SetLoadModPath(string path)
+        {
+            ModsPath = path;
+            ModsPath = ModsPath.Replace("\\", "/");
+        }
 
         // find all folders that contain mod files
         public void DiscoverMods()
         {
 
-            ModsPath = Application.persistentDataPath + "/Mods/";
+            ModsPath = ModsPath == "" ? Application.persistentDataPath + "/Mods/" : ModsPath + "/";
             //ModsPath = "Assets/Resources/Mods/";
             //ModsPath = Application.dataPath + "/Resources/Mods/";
 
@@ -185,6 +190,8 @@ namespace CrossLink
         int loadCount = 0;
         public void LoadMods()
         {
+            Addressables.InternalIdTransformFunc = InternalIdTransformFunc;
+
             for (int i = 0; i < mods.Count; ++i)
             {
                 LoadAndInitMod(mods[i]);
@@ -292,6 +299,23 @@ namespace CrossLink
         public void GetLuaScript(Object obj)
         {
 
+        }
+
+
+        private string InternalIdTransformFunc(UnityEngine.ResourceManagement.ResourceLocations.IResourceLocation location)
+        {
+            if (location.Data is UnityEngine.ResourceManagement.ResourceProviders.AssetBundleRequestOptions)
+            {
+                string path = location.InternalId;
+                string projModPath = Application.persistentDataPath + "/Mods/";
+                path = path.Replace("\\", "/");
+                if (path.Contains(projModPath))
+                {
+                    path = path.Replace(projModPath, ModsPath);
+                    return path;
+                }
+            }
+            return location.InternalId;
         }
 
         private async Task<IResourceLocator> LoadCatalogAsync(string path)

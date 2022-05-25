@@ -18,6 +18,7 @@ public class AddressableHelper : MonoBehaviour
         { "Effect", "Effect/" },
         { "FlyObj", "FlyObj/" },
         { "Audio", "Audio/Sound/" },
+        { "Config", "Config/" },
     };
 
 
@@ -127,7 +128,7 @@ public class AddressableHelper : MonoBehaviour
 #endif
     }
 
-    public static void RefreshAssetPrefix(string oldPrefix, string curPrefix)
+    public static void RefreshPrefabPrefix(string oldPrefix, string curPrefix)
     {
         string[] guids = AssetDatabase.FindAssets(string.Format("t:{0}","GameObject"));
 
@@ -195,6 +196,32 @@ public class AddressableHelper : MonoBehaviour
                 Debug.LogWarning(e.Message);
             }
         }
+    }
+
+    public static void RefreshAssetPrefix(string oldPrefix, string curPrefix)
+    {
+        string[] guids = AssetDatabase.FindAssets(string.Format("t:{0}", "ItemInfoConfig"));
+
+        for (int i = 0; i < guids.Length; i++)
+        {
+            string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+
+            ItemInfoConfig info = AssetDatabase.LoadAssetAtPath<ItemInfoConfig>(assetPath);
+            
+            foreach (var item in info.storeItemInfo)
+            {
+                item.addStoreItemName = item.addStoreItemName.Replace(oldPrefix, curPrefix);
+                item.dependItemName = item.dependItemName.Replace(oldPrefix, curPrefix);
+                item.dependItemName = item.dependItemName.Replace(oldPrefix, curPrefix);
+            }
+
+            foreach (var item in info.hitInfo)
+            {
+                item.Name = item.Name.Replace(oldPrefix, curPrefix);
+            }
+        }
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
     }
 
     private static void SoundEffectReplacePrefix(SoundEffectInfo info, string old, string replace)

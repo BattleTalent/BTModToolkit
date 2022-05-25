@@ -11,7 +11,11 @@ namespace CrossLink
 
         public string prefabPath = "Assets/Resources/GenPrefab";
 
+        public string loadModPath;
+
         public static ModPanel modPanel;
+
+        private string defaultPath = "C:/Users[username]/AppData/LocalLow/CrossLink/BattleTalent/Mods";
 
         void Start()
         {
@@ -21,6 +25,7 @@ namespace CrossLink
 
         public void ImportMods()
         {
+            ModManager.Instance.SetLoadModPath(loadModPath == defaultPath ? "" : loadModPath);
             ModManager.Instance.Init();
         }
 
@@ -29,6 +34,15 @@ namespace CrossLink
         public void RefleshView()
         {
             modPanel.UpdateScrollView(ModManager.Instance.mods);
+        }
+
+        [EasyButtons.Button]
+        public void ResetLoadModPath()
+        {
+            loadModPath = defaultPath;
+#if UNITY_EDITOR
+            EditorUtility.SetDirty(this);
+#endif
         }
     }
 }
