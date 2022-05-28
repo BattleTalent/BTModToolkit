@@ -15,14 +15,18 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_Data:
     m_SerializedData: []
-  m_GUID: 24941cf4b429adf4a88237970d405a7b
+  m_GUID: dd8297f9c6bf8894f97c0185afe5a471
   m_SerializeEntries:
-  - m_GUID: 7a7d0922211a5164cacd9fd4e5ec6d80
-    m_Address: Entry
+  - m_GUID: cf63918ee35bdec4983173608921eeb2
+    m_Address: LuaScript/WMD_BulletScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: 3576ef4a941c6ce459ec7edab98b6502
     m_Address: LuaScript/WMD_FlySpellBaseScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 2623d6cc0169c4241891f6a73f6bbd23
+    m_Address: LuaScript/WMD_SpellBaseScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: 56abe59302184b74aa5fdd05d5d577b2
@@ -109,16 +113,52 @@ MonoBehaviour:
     m_Address: ICon/WMD_Dagger_Bleed
     m_ReadOnly: 0
     m_SerializedLabels: []
+  - m_GUID: c38977f74c38d8541b82b24596722281
+    m_Address: Weapon/WMD_Dagger_Explode
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 3b16173623c840c478f9fba47c21252f
+    m_Address: LuaScript/WMD_FlyExplodeScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 2388928f5537f2945a33a60945259824
+    m_Address: ICon/WMD_Dagger_Explode
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 4c8d5ee6ebccf1948812d2f5ab4d1402
+    m_Address: Effect/WMD_BigExplosion
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: fa6d7aaba0350054ab72058004782649
+    m_Address: Effect/WMD_Glow
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: ae75e48c3e4a2ab42a779642fe674d5e
+    m_Address: FlyObj/WMD_FlyExplodeX
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 6ece9eb03fea455429a7146de88829ca
+    m_Address: Audio/Sound/WMD_bomb
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: f7c9a2da4d0f0ba4ea3d33ef3b174b36
+    m_Address: Weapon/WMD_Dagger_Mind
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 5ef95312fbb2fbe48840885cc72d7b3e
+    m_Address: LuaScript/WMD_DaggerMindScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 9864eaa0a6b289f479efb2233be48399
+    m_Address: ICon/WMD_Dagger_Mind
+    m_ReadOnly: 0
+    m_SerializedLabels: []
   - m_GUID: f846718b5ce755240bfcd5e410ca5f04
     m_Address: Weapon/WMD_Gun_UMP
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: 1ec5417816bd4ad4c94792a0b43294b9
     m_Address: LuaScript/WMD_GunUMPScript
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: ac20fd76ff6f6b94d8a10284a25ff58f
-    m_Address: LuaScript/WMD_UMPBulletScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: e82cbc3a53235c4479dc47adc59d0e7f
@@ -147,10 +187,6 @@ MonoBehaviour:
     m_SerializedLabels: []
   - m_GUID: bf8081bc9cf4e4d41b28fea41950a511
     m_Address: Weapon/WMD_GunAK47
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: cf63918ee35bdec4983173608921eeb2
-    m_Address: LuaScript/WMD_BulletAKScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: c7b370d6c784c6a47a4e628830147b68
@@ -541,50 +577,6 @@ MonoBehaviour:
     m_Address: Effect/WMD_IceSpawn
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: c38977f74c38d8541b82b24596722281
-    m_Address: Weapon/WMD_Dagger_Explode
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 3b16173623c840c478f9fba47c21252f
-    m_Address: LuaScript/WMD_FlyExplodeScript
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 2388928f5537f2945a33a60945259824
-    m_Address: ICon/WMD_Dagger_Explode
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 4c8d5ee6ebccf1948812d2f5ab4d1402
-    m_Address: Effect/WMD_BigExplosion
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: fa6d7aaba0350054ab72058004782649
-    m_Address: Effect/WMD_Glow
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: ae75e48c3e4a2ab42a779642fe674d5e
-    m_Address: FlyObj/WMD_FlyExplodeX
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 6ece9eb03fea455429a7146de88829ca
-    m_Address: Audio/Sound/WMD_bomb
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: f7c9a2da4d0f0ba4ea3d33ef3b174b36
-    m_Address: Weapon/WMD_Dagger_Mind
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 5ef95312fbb2fbe48840885cc72d7b3e
-    m_Address: LuaScript/WMD_DaggerMindScript
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 9864eaa0a6b289f479efb2233be48399
-    m_Address: ICon/WMD_Dagger_Mind
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 2623d6cc0169c4241891f6a73f6bbd23
-    m_Address: LuaScript/WMD_SpellBaseScript
-    m_ReadOnly: 0
-    m_SerializedLabels: []
   - m_GUID: 60fbbd602d4648144be47a93e4168150
     m_Address: Weapon/WMD_Dagger_Dash
     m_ReadOnly: 0
@@ -595,6 +587,10 @@ MonoBehaviour:
     m_SerializedLabels: []
   - m_GUID: 8e7618cce3c7acc4f88a8f59cbc2103c
     m_Address: ICon/WMD_Dagger_Dash
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 7a7d0922211a5164cacd9fd4e5ec6d80
+    m_Address: Entry
     m_ReadOnly: 0
     m_SerializedLabels: []
   m_ReadOnly: 0
