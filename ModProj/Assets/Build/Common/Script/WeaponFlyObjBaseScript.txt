@@ -43,6 +43,10 @@ function WeaponFlyObj:PlayShootAction()
         ,0, 0, 0.2)
         :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
     end
+
+    if (self.shootSound ~= nil) then
+        self.shootSound:PlaySound()
+    end
     
     local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
     self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
