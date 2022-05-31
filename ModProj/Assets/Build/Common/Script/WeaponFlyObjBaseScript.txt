@@ -61,12 +61,19 @@ function WeaponFlyObj:PlayShootAction()
     :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
     
     self.host.interact:CostDurability()
+    self.shootTime = UE.Time.time
     
     return bulletScript
 end
 
 
 function WeaponFlyObj:UpdateSkill()
+    local shootInterval = self.shootInterval or 0.1
+	local st = self.shootTime or 0
+	local ct = UE.Time.time
+	if ct - st < shootInterval then
+		return
+	end	
     if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
         self:PlayShootAction()
     end
