@@ -19,7 +19,8 @@ namespace CrossLink
         [Tooltip("disable self, if depend attach is not being grabbed. usually using with two handed weapon")]
         public AttachObj dependAttachObj;
         public string handPose = "HoldPose";
-
+        [Tooltip("Auto update finger position to collider surface.")]
+        public bool autoUpdateHandPose = false;
         public HandSide handSide = HandSide.Both;
         public bool allowTrigger = true;
 
