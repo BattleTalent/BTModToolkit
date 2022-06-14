@@ -49,6 +49,12 @@ namespace CrossLink
         {
             ClearOldFiles();
 
+            if (!isBuiltAndroid)
+            {
+                SetPlayerSetting();
+                isBuiltAndroid = true;
+            }
+
             BuildWithProfile(BuildTargetGroup.Android, BuildTarget.Android);
 
             InstallModOnAndroid();
@@ -73,6 +79,12 @@ namespace CrossLink
             //BuildWithProfile("Windows");
             //BuildWithProfile("Android");                             
 
+            if (isBuiltAndroid)
+            {
+                SetPlayerSetting();
+                isBuiltAndroid = true;
+            }
+
             BuildWithProfile(BuildTargetGroup.Android, BuildTarget.Android);
             BuildWithProfile(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows);
         }
@@ -88,6 +100,13 @@ namespace CrossLink
             Directory.Delete(buildPath, true);
             AssetDatabase.Refresh();
             Debug.Log("ClearOldFiles");
+        }
+
+
+        static bool isBuiltAndroid = false;
+        static void SetPlayerSetting()
+        {
+            UnityEditor.EditorUserBuildSettings.androidBuildSubtarget = MobileTextureSubtarget.ASTC;
         }
 
         [MenuItem("BuildTools/InstallModOnWindows")]
