@@ -74,6 +74,10 @@ namespace CrossLink
         public bool canPaint = true;
         #endregion
 
+        #region Enhance
+        [Tooltip("level of enhance state")]
+        public int enhanceLevel = -1;
+        #endregion
     }
 }
 
