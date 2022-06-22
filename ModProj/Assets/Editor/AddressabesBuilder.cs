@@ -34,6 +34,32 @@ namespace CrossLink
             return targetpath;
         }
 
+
+        [MenuItem("BuildTools/FastBuildAndInstallForWindows")]
+        public static void FastBuildAndInstallForWindows()
+        {
+            ClearOldFiles();
+
+            BuildWithProfile(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows);
+            
+            InstallModOnWindows();
+        }
+
+        [MenuItem("BuildTools/FastBuildAndInstallForAndroid")]
+        public static void FastBuildAndInstallForAndroid()
+        {
+            ClearOldFiles();
+
+            if (!isBuiltAndroid)
+            {
+                SetPlayerSetting();
+                isBuiltAndroid = true;
+            }
+
+            BuildWithProfile(BuildTargetGroup.Android, BuildTarget.Android);
+
+            InstallModOnAndroid();
+        }
 #if false
         [MenuItem("BuildTools/BuildAndroid")]
         public static void BuildAndroid()
@@ -54,6 +80,12 @@ namespace CrossLink
             //BuildWithProfile("Windows");
             //BuildWithProfile("Android");                             
 
+            if (isBuiltAndroid)
+            {
+                SetPlayerSetting();
+                isBuiltAndroid = true;
+            }
+
             BuildWithProfile(BuildTargetGroup.Android, BuildTarget.Android);
             BuildWithProfile(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows);
         }
@@ -71,7 +103,14 @@ namespace CrossLink
             Debug.Log("ClearOldFiles");
         }
 
-        [MenuItem("BuildTools/InstallModOnWindows", false, 11)]
+
+        static bool isBuiltAndroid = false;
+        static void SetPlayerSetting()
+        {
+            UnityEditor.EditorUserBuildSettings.androidBuildSubtarget = MobileTextureSubtarget.ASTC;
+        }
+
+        [MenuItem("BuildTools/InstallModOnWindows")]
         static void InstallModOnWindows()
         {
             var targetpath = Application.persistentDataPath;
