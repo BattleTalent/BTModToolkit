@@ -25,7 +25,7 @@ namespace CrossLink
     [System.Serializable]
     public class StoreItemInfo
     {
-        [Tooltip("Add store's prefab name")]
+        [Tooltip("prefab name")]
         public string addStoreItemName;
 
         public string dependItemName;
@@ -42,6 +42,10 @@ namespace CrossLink
     [System.Serializable]
     public class ItemInfoConfig : ScriptableObject
     {
+        [SerializeField]
+        [Tooltip("if true, load this mod when it is spawn, otherwise, load this mod when it is install.")]
+        public bool loadOnSpawn = true;
+
         [SerializeField]
         public StoreItemInfo[] storeItemInfo;
 
