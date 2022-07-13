@@ -88,7 +88,11 @@ function ArrowPuller:Update()
         else
             if self.pullFactor > 0.5 then
                 self:EndPull()
-                self.shootArrowSound.soundInfo:Play(self.usingHand.trans.position)
+                
+                if self.shootArrowSound then
+                    self.shootArrowSound.soundInfo:Play(self.usingHand.trans.position)
+                end
+                
                 self.bow:OnRelease(self.attach, self.pullFactor)
             else
                 self:OnHandLeave()
@@ -109,7 +113,11 @@ function ArrowPuller:OnHandLeave()
         return
     end
     if self.isPulling then
-        self.cancelArrowSound.soundInfo:Play(self.usingHand.trans.position)
+        
+        if self.cancelArrowSound then
+            self.cancelArrowSound.soundInfo:Play(self.usingHand.trans.position)
+        end
+        
         self:EndPull()
     end
     
@@ -123,20 +131,22 @@ end
 
 function ArrowPuller:StartPull()
     if not IsNullOrDestroyed(self.usingHand.attachTo) then
-        local iw = self.usingHand.attachTo.interact
-        cast(iw, typeof(CL.InteractWeapon))
-        if iw then
+        local ib = self.usingHand.attachTo.interact
+        if ib.unitType == CL.Tagger.Tag.InteractWeapon then
             self.bow:OnPutedWeapon(self.usingHand.attachTo.interact)
         end
         self.usingHand:Grab(nil)
-        iw:OnDrop(false)
+        ib:OnDrop(false)
     end
     if IsNullOrDestroyed(self.usingHand) then
         return
     end
     self.isPulling = true
     
-    self.spawnArrowSound.soundInfo:Play(self.ib.trans.position)
+    if self.spawnArrowSound then
+        self.spawnArrowSound.soundInfo:Play(self.ib.trans.position)
+    end
+    
     self.startTime = UE.Time.time
     local ph = self.ib:GetPrimaryHand()
     self.attach:SetupHandPose(self.usingHand)
@@ -152,9 +162,9 @@ function ArrowPuller:StartPull()
         sd.positionSpring = self.holdHandRotSpring
         sd.positionDamper = self.holdHandRotDamper
         ph.grabJoint.slerpDrive = sd
+        self.handBowDot = UE.Vector3.Dot(ph.handDir.up, self.trans.up) > 0
     end
     
-    self.handBowDot = UE.Vector3.Dot(ph.handDir.up, self.trans.up) > 0
     self.bowSpace = UE.Quaternion.Inverse(self.trans.rotation) * self.ib.trans.rotation
     
     self.justPull = true
@@ -204,7 +214,11 @@ function ArrowPuller:UpdatePull()
         self.shootFactorDeltaAcc = self.shootFactorDeltaAcc + UE.Mathf.Abs(self.pullFactor - self.lastShootFactor)
         if self.shootFactorDeltaAcc > 0.2 then
             self.usingHand:HapticPulse(self.usingHand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
-            self.pullArrowSound.soundInfo:Play(handPos)
+            
+            if self.pullArrowSound then
+                self.pullArrowSound.soundInfo:Play(handPos)
+            end
+            
             self.shootFactorDeltaAcc = 0
         end
     end
@@ -212,6 +226,10 @@ function ArrowPuller:UpdatePull()
     self.lastShootFactor = self.pullFactor
     
     local ph = self.ib:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+    
     local handDir = ph.transform.position - self.usingHand.grabJoint.transform.position
     local bowUp = self.handBowDot and ph.trans.forward or -ph.trans.forward
     
