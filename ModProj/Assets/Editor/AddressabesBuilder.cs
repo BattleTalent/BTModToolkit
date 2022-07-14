@@ -110,7 +110,7 @@ namespace CrossLink
             UnityEditor.EditorUserBuildSettings.androidBuildSubtarget = MobileTextureSubtarget.ASTC;
         }
 
-        [MenuItem("BuildTools/InstallModOnWindows")]
+        [MenuItem("BuildTools/InstallModOnWindows", false, 11)]
         static void InstallModOnWindows()
         {
             var targetpath = Application.persistentDataPath;
