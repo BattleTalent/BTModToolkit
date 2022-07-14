@@ -3,6 +3,8 @@ local ArrowPuller = {
     pullFactor = 0,
     lastShootFactor = 0,
     shootFactorDeltaAcc = 0,
+    
+    onTrigger = false,
 }
 
 function ArrowPuller:Start()
@@ -34,6 +36,16 @@ function ArrowPuller:OnTriggerEnter(other)
     self.usingHand = hand
     self.triggerHand = hand
     
+
+    if not IsNullOrDestroyed(self.ib) and self.ib.CreateHint then
+        self.onTrigger = true
+        if IsNullOrDestroyed(self.hintPoint) then
+            self.hintPoint = self.ib:CreateHint(self.rope, UE.Vector3.zero)
+        else
+            self.ib:ShowHint(self.hintPoint)
+        end
+    end
+
     self.usingHand:Ban(true)
     hand:HapticPulse(hand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
 end
@@ -46,6 +58,11 @@ function ArrowPuller:OnTriggerExit(other)
     local hand = CL.InteractHand.GetHandByCollider(other)
     if IsNullOrDestroyed(hand) or hand ~= self.usingHand then
         return
+    end
+    
+    if not IsNullOrDestroyed(self.ib) and self.ib.HideHint then
+        self.onTrigger = false
+        self.ib:HideHint(self.hintPoint)
     end
     
     self.triggerHand = nil
@@ -76,6 +93,13 @@ function ArrowPuller:Update()
     if not self.isPulling then
         if self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressDown or
     self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressDown then
+        
+            if not IsNullOrDestroyed(self.ib) and self.ib.HideHint then
+                if self.hintPoint.gameObject.activeSelf then
+                    self.ib:HideHint(self.hintPoint)
+                end
+            end
+            
             self:StartPull()
             self.bow:OnPut(self.attach)
             
@@ -86,6 +110,16 @@ function ArrowPuller:Update()
     self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].IsPressed) then
             self:UpdatePull()
         else
+            if not IsNullOrDestroyed(self.ib) and self.ib.CreateHint then
+                if self.onTrigger then
+                    if IsNullOrDestroyed(self.hintPoint) then
+                        self.hintPoint = self.ib:CreateHint(self.rope, UE.Vector3.zero)
+                    else
+                        self.ib:ShowHint(self.hintPoint)
+                    end
+                end
+            end
+            
             if self.pullFactor > 0.5 then
                 self:EndPull()
                 
