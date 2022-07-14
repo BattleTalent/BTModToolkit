@@ -108,6 +108,19 @@ public class AddressableHelper : MonoBehaviour
         }
     }
 
+    public static void RemoveEntry()
+    {
+        AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressableAssetGroup group = settings.DefaultGroup;
+
+        var guid = AssetDatabase.AssetPathToGUID("Assets/Build/Entry.txt");
+        AddressableAssetEntry entry = settings.FindAssetEntry(guid);
+        if (entry != null)
+        {
+            group.RemoveAssetEntry(entry);
+        }
+    }
+
     public static void Clear()
     {
         AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;

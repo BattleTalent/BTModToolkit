@@ -115,10 +115,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   soundInfo:
     templateName: 
-    soundNames: []
-    vol: 0.5
+    soundNames:
+    - WMD_LongbowPullBack01
+    - WMD_LongbowPullBack02
+    - WMD_LongbowPullBack03
+    vol: 0.2
     volRandomRange: 0
-    pitchMax: 1
+    pitchMax: 1.2
     pitchMin: 0.8
   loop: 0
 --- !u!114 &7609208285964867784
@@ -135,10 +138,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   soundInfo:
     templateName: 
-    soundNames: []
-    vol: 0.5
+    soundNames:
+    - WMD_ArrowRelease01
+    - WMD_ArrowRelease02
+    - WMD_ArrowRelease03
+    vol: 1
     volRandomRange: 0
-    pitchMax: 1
+    pitchMax: 1.2
     pitchMin: 0.8
   loop: 0
 --- !u!114 &7804689503516453799
@@ -155,11 +161,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   soundInfo:
     templateName: 
-    soundNames: []
+    soundNames:
+    - WMD_ArrowNock01
+    - WMD_ArrowNock02
+    - WMD_ArrowNock03
     vol: 0.5
     volRandomRange: 0
-    pitchMax: 1
-    pitchMin: 0.8
+    pitchMax: 1.2
+    pitchMin: 1
   loop: 0
 --- !u!114 &4386492250184388478
 MonoBehaviour:
@@ -175,11 +184,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   soundInfo:
     templateName: 
-    soundNames: []
-    vol: 0.5
+    soundNames:
+    - WMD_ArrowNock01
+    - WMD_ArrowNock02
+    - WMD_ArrowNock03
+    vol: 0.1
     volRandomRange: 0
-    pitchMax: 1
-    pitchMin: 0.8
+    pitchMax: 0.9
+    pitchMin: 0.7
   loop: 0
 --- !u!1 &1680396542961012920
 GameObject:
@@ -448,6 +460,7 @@ MonoBehaviour:
   mountAttachs:
   - {fileID: 4789677128908935593}
   canPaint: 1
+  enhanceLevel: -1
 --- !u!1 &2763028745909595861
 GameObject:
   m_ObjectHideFlags: 0

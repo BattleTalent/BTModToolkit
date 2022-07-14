@@ -97,4 +97,10 @@ public class AddressableConfig : ScriptableObject
         AddressableHelper.RefreshScriptPrefix(oldPrefix, newPrefix);
         prefix = newPrefix;
     }
+
+    [EasyButtons.Button]
+    void RemoveEntry()
+    {
+        AddressableHelper.RemoveEntry();
+    }
 }
