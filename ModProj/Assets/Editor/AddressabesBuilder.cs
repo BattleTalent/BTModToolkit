@@ -225,25 +225,6 @@ namespace CrossLink
 #endif
         }
 
-        [MenuItem("BuildTools/Advanced/FastBuildAndInstallForWindows")]
-        public static void FastBuildAndInstallForWindows()
-        {
-            ClearOldFiles();
-
-            BuildWithProfile(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows);
-
-            InstallModOnWindows();
-        }
-
-        [MenuItem("BuildTools/Advanced/FastBuildAndInstallForAndroid")]
-        public static void FastBuildAndInstallForAndroid()
-        {
-            ClearOldFiles();
-
-            BuildWithProfile(BuildTargetGroup.Android, BuildTarget.Android);
-
-            InstallModOnAndroid();
-        }
 
         static void BuildWithProfile(BuildTargetGroup buildGroup, BuildTarget buildTarget)
         {
