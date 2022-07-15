@@ -108,6 +108,77 @@ public class AddressableHelper : MonoBehaviour
         }
     }
 
+    
+    public static void AutoCompleteGazeObj()
+    {
+        AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressableAssetGroup group = settings.DefaultGroup;
+        ItemInfoConfig info = null;
+
+        List<StoreItemInfo> storeItems = new List<StoreItemInfo>();
+
+        var eIte = group.entries.GetEnumerator();
+        while (eIte.MoveNext())
+        {
+            if (eIte.Current.address.Contains(pathToName["Config"])) {
+                info = AssetDatabase.LoadAssetAtPath<ItemInfoConfig>(eIte.Current.AssetPath);
+
+                if (info != null)
+                {
+                    for (int i = 0; i < info.storeItemInfo.Length; i++)
+                    {
+                        storeItems.Add(info.storeItemInfo[i]);
+                    }
+                }
+            }
+        }
+
+        var sIte = storeItems.GetEnumerator();
+        string name = "";
+        string str = "";
+        string path = pathToName["Weapon"];
+        GameObject go = null;
+        while (sIte.MoveNext())
+        {
+            name = sIte.Current.addStoreItemName;
+            eIte.Reset();
+            while (eIte.MoveNext())
+            {
+                str = eIte.Current.address.Replace(path, "");
+                if (name == str)
+                {
+                    go = AssetDatabase.LoadAssetAtPath<GameObject>(eIte.Current.AssetPath);
+                    if(go != null)
+                    {
+                        CompleteGazeObjByItemInfo(sIte.Current, go);
+                    }
+                }
+            }
+        }
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+    }
+
+    private static void CompleteGazeObjByItemInfo(StoreItemInfo info, GameObject go)
+    {
+        GazeObj[] gazes = null;
+        gazes = go.GetComponentsInChildren<GazeObj>();
+        if (gazes != null)
+        {
+            for (int i = 0; i < gazes.Length; i++)
+            {
+                if (gazes[i].showName == "")
+                {
+                    gazes[i].showName = info.addStoreItemName;
+                }
+                if (gazes[i].showInfo == "")
+                {
+                    gazes[i].showInfo = info.addStoreItemName + "_Desc";
+                }
+            }
+        }
+    }
+
     public static void RemoveEntry()
     {
         AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
