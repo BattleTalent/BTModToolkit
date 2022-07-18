@@ -97,6 +97,11 @@ public class AddressableConfig : ScriptableObject
     [EasyButtons.Button]
     void ModifyPrefixInPathsPrefabsAndScripts(string oldPrefix, string newPrefix)
     {
+        if(oldPrefix == null || newPrefix == null)
+        {
+            Debug.LogError("Please set the old prefix and the new prefix.");
+            return;
+        }
         //RefreshPath
         AddressableHelper.RefreshAddressables();
         //RefreshPrefab
