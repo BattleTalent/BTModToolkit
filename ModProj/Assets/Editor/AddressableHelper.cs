@@ -216,13 +216,19 @@ public class AddressableHelper : MonoBehaviour
 
     public static void RefreshPrefabPrefix(string oldPrefix, string curPrefix)
     {
-        string[] guids = AssetDatabase.FindAssets(string.Format("t:{0}","GameObject"));
+        AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressableAssetGroup group = settings.DefaultGroup;
 
-        for(int i = 0; i < guids.Length; i++)
+        var eIte = group.entries.GetEnumerator();
+        while (eIte.MoveNext())
         {
-            string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+            string assetPath = eIte.Current.AssetPath;
 
             GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            if(root == null)
+            {
+                continue;
+            }
 
             foreach (var fo in root.GetComponentsInChildren<GazeObj>())
             {
@@ -311,14 +317,20 @@ public class AddressableHelper : MonoBehaviour
 
     public static void RefreshAssetPrefix(string oldPrefix, string curPrefix)
     {
-        string[] guids = AssetDatabase.FindAssets(string.Format("t:{0}", "ItemInfoConfig"));
+        AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressableAssetGroup group = settings.DefaultGroup;
 
-        for (int i = 0; i < guids.Length; i++)
+        var eIte = group.entries.GetEnumerator();
+        while (eIte.MoveNext())
         {
-            string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+            string assetPath = eIte.Current.AssetPath;
 
             ItemInfoConfig info = AssetDatabase.LoadAssetAtPath<ItemInfoConfig>(assetPath);
-            
+            if (info == null)
+            {
+                continue;
+            }
+
             foreach (var item in info.storeItemInfo)
             {
                 item.addStoreItemName = item.addStoreItemName.Replace(oldPrefix, curPrefix);
@@ -347,14 +359,23 @@ public class AddressableHelper : MonoBehaviour
     public static void RefreshScriptPrefix(string oldPrefix, string curPrefix)
     {
         string curPath = Directory.GetCurrentDirectory();
-        string buildPath = Path.Combine(curPath, "Assets/build");
-        if (Directory.Exists(buildPath))
+        var list = AddressableConfig.GetConfig().GetAddressablePaths();
+        var ite = list.GetEnumerator();
+
+        string path = "";
+        while (ite.MoveNext())
         {
-            DirectoryInfo direction = new DirectoryInfo(buildPath);
-            FileInfo[] files = direction.GetFiles("*.txt", SearchOption.AllDirectories);
-            for (int i = 0; i < files.Length; i++)
+            path = Path.Combine(curPath, ite.Current);
+            path = Path.Combine(path, "Script");
+
+            if (Directory.Exists(path))
             {
-                ReplaceValue(files[i].FullName, oldPrefix, curPrefix);
+                DirectoryInfo direction = new DirectoryInfo(path);
+                FileInfo[] files = direction.GetFiles("*.txt", SearchOption.AllDirectories);
+                for (int i = 0; i < files.Length; i++)
+                {
+                    ReplaceValue(files[i].FullName, oldPrefix, curPrefix);
+                }
             }
         }
     }
