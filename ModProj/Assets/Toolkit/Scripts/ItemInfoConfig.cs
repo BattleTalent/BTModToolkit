@@ -25,12 +25,12 @@ namespace CrossLink
     [System.Serializable]
     public class StoreItemInfo
     {
-        [Tooltip("prefab name")]
+        [Tooltip("item id, should be the same as your icon and prefab, usually is [prefix][prefab name]")]
         public string addStoreItemName;
 
         public string dependItemName;
 
-        [Tooltip("the name displayed by store")]
+        [Tooltip("item name")]
         public string name;
 
         [Tooltip("item description")]
@@ -43,7 +43,7 @@ namespace CrossLink
     public class ItemInfoConfig : ScriptableObject
     {
         [SerializeField]
-        [Tooltip("if true, load this mod when it is spawn, otherwise, load this mod when it is install.")]
+        [Tooltip("if true, will load this mod on demand. otherwise, will load this mod when the game started. if this is an item without config file and you add it to the store via script, then we'll treat it as loading on demand as well.")]
         public bool loadOnSpawn = true;
 
         [SerializeField]

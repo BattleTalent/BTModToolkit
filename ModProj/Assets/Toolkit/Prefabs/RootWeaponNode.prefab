@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 4769957908685700421}
   - component: {fileID: 1691573789638411256}
   - component: {fileID: 1304595628115047477}
+  - component: {fileID: 1081616528493063011}
   m_Layer: 15
   m_Name: RootWeaponNode
   m_TagString: Untagged
@@ -63,7 +64,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6732c8568d1a624fb2fabf3bc10c587, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rb: {fileID: 8914521336005913515}
   autoDisappearWhenDurableLow: 1
   durability: 50
   interactType: 0
@@ -78,12 +78,13 @@ MonoBehaviour:
   beAbleToShowGrab: 1
   enableAutoTickTwoHand: 0
   attachList: []
-  gaze: {fileID: 0}
+  gaze: {fileID: 1081616528493063011}
   grabDistanceLimit: 0
   itemTypes:
   - 
   mountAttachs: []
   canPaint: 1
+  enhanceLevel: -1
 --- !u!114 &4769957908685700421
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -153,3 +154,18 @@ MonoBehaviour:
   weaponColorField: _EmissionColor
   enableChargeColor: 0
   chargeColor: {r: 0.943, g: 0.952, b: 0.588, a: 1}
+--- !u!114 &1081616528493063011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 56878178202464737}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db9e9100301fda046b049566c69f76d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showName: 
+  showInfo: 
+  gazeType: 0
