@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   tips: "\r\n    steps to make a mod:\r\n    1. make the prefab\r\n    2. make sure
     your prefab are reference by the addressables (Window/AssetManagement/Addressables/Groups)\r\n   
-    3. make sure your Entry script will load your prefab at runtime\r\n    4. edit
-    your own product name and prefix\r\n    5. select build from BuildTools/\r\n\r\n   
+    3. make sure your Config file and Entry script will load your prefab at runtime\r\n   
+    4. edit your own product name and prefix\r\n    5. select build from BuildTools/\r\n\r\n   
     shortcut:\r\n    ctrl-shift-e: select this config file\r\n    ctrl-shift-t: open
     mod and log files on PC\r\n\r\n    how to use this tool:\r\n    1. put your resources
-    in the corresponding path: http://jjyy.guru/BTModToolkit/#autotoc_md39\r\n   
+    in the corresponding path: https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/unity-addressable\n   
     2. fill your path in the weapon paths\r\n    3. make your own prefix\r\n    4.
     click CreateAndRefreshAddressableName\r\n\r\n    how to debug:\r\n    1. install
-    mod and run simulator\r\n    2. check out log error in Player.log (ctrl-shift-t)\r\n   
-    3. fix it then do it again\r\n\r\n    for more information, please check out
-    document and youtube tutorial\r\n    "
+    mod and run simulator\r\n    2. check out log error in Player.log (ctrl-shift-t)\r
+    or in-game console\n    3. fix it then do it again\r\n\r\n    for more information,
+    please check out document and youtube tutorial\r\n    "
   prefix: WMD_
   addressablePaths:
   - Assets/Build/Common
