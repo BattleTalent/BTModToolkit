@@ -75,18 +75,33 @@ public class AddressableConfig : ScriptableObject
     void CreateAndRefreshAddressableName()
     {
         AddressableHelper.CreateAndRefreshAddressables();
+
+
+        AddressableHelper.AutoCompleteGazeObj();
     }
 
     [EasyButtons.Button]
     void RefreshAddressableNameOnly()
     {
         AddressableHelper.RefreshAddressables();
+
+
+        AddressableHelper.AutoCompleteGazeObj();
     }
 
+    void AutoCompleteGazeObj()
+    {
+        AddressableHelper.AutoCompleteGazeObj();
+    }    
 
     [EasyButtons.Button]
     void ModifyPrefixInPathsPrefabsAndScripts(string oldPrefix, string newPrefix)
     {
+        if(oldPrefix == null || newPrefix == null)
+        {
+            Debug.LogError("Please set the old prefix and the new prefix.");
+            return;
+        }
         //RefreshPath
         AddressableHelper.RefreshAddressables();
         //RefreshPrefab

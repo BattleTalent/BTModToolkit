@@ -81,6 +81,7 @@ public class AddressableHelper : MonoBehaviour
         
     }
 
+
     [MenuItem("Tools/Refresh Addressables Only")]
     public static void RefreshAddressables()
     {
@@ -103,6 +104,78 @@ public class AddressableHelper : MonoBehaviour
                     int idx = name.LastIndexOf(".");
                     name = name.Remove(idx, name.Length - idx);
                     entry.address = item.Value + AddressableConfig.GetConfig().GetPrefix() + name;
+                }
+            }
+        }
+
+    }
+
+    
+    public static void AutoCompleteGazeObj()
+    {
+        AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressableAssetGroup group = settings.DefaultGroup;
+        ItemInfoConfig info = null;
+
+        List<StoreItemInfo> storeItems = new List<StoreItemInfo>();
+
+        var eIte = group.entries.GetEnumerator();
+        while (eIte.MoveNext())
+        {
+            if (eIte.Current.address.Contains(pathToName["Config"])) {
+                info = AssetDatabase.LoadAssetAtPath<ItemInfoConfig>(eIte.Current.AssetPath);
+
+                if (info != null)
+                {
+                    for (int i = 0; i < info.storeItemInfo.Length; i++)
+                    {
+                        storeItems.Add(info.storeItemInfo[i]);
+                    }
+                }
+            }
+        }
+
+        var sIte = storeItems.GetEnumerator();
+        string name = "";
+        string str = "";
+        string path = pathToName["Weapon"];
+        GameObject go = null;
+        while (sIte.MoveNext())
+        {
+            name = sIte.Current.addStoreItemName;
+            eIte.Reset();
+            while (eIte.MoveNext())
+            {
+                str = eIte.Current.address.Replace(path, "");
+                if (name == str)
+                {
+                    go = AssetDatabase.LoadAssetAtPath<GameObject>(eIte.Current.AssetPath);
+                    if(go != null)
+                    {
+                        CompleteGazeObjByItemInfo(sIte.Current, go);
+                    }
+                }
+            }
+        }
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+    }
+
+    private static void CompleteGazeObjByItemInfo(StoreItemInfo info, GameObject go)
+    {
+        GazeObj[] gazes = null;
+        gazes = go.GetComponentsInChildren<GazeObj>();
+        if (gazes != null)
+        {
+            for (int i = 0; i < gazes.Length; i++)
+            {
+                if (gazes[i].showName == "")
+                {
+                    gazes[i].showName = info.addStoreItemName;
+                }
+                if (gazes[i].showInfo == "")
+                {
+                    gazes[i].showInfo = info.addStoreItemName + "_Desc";
                 }
             }
         }
@@ -157,6 +230,19 @@ public class AddressableHelper : MonoBehaviour
                 fo.showName = fo.showName.Replace(oldPrefix, curPrefix);
             }
 
+            foreach (var so in root.GetComponentsInChildren<SoundEffectPlayer>())
+            {
+                for (int j = 0; j < so.soundInfo.soundNames.Length; j ++)
+                {
+                    so.soundInfo.soundNames[j] = so.soundInfo.soundNames[j].Replace(oldPrefix, curPrefix);
+                }
+            }
+
+            foreach (var rg in root.GetComponentsInChildren<RagdollHitInfoObj>())
+            {
+                rg.hitInfo.templateName = rg.hitInfo.templateName.Replace(oldPrefix, curPrefix);
+            }
+
             foreach (var fo in root.GetComponentsInChildren<FlyObjectX>())
             {
                 LuaScript ls = fo.script;
@@ -167,17 +253,17 @@ public class AddressableHelper : MonoBehaviour
                 {
                     str.value = str.value.Replace(oldPrefix, curPrefix);
                 }
-
+            
                 fo.flyObjTobeCreatedOnImpact = fo.flyObjTobeCreatedOnImpact.Replace(oldPrefix, curPrefix);
                 SoundEffectReplacePrefix(fo.delaySound, oldPrefix, curPrefix);
-
+            
                 fo.shootEffect = fo.shootEffect.Replace(oldPrefix, curPrefix);
                 SoundEffectReplacePrefix(fo.shootSound, oldPrefix, curPrefix);
-
+            
                 fo.impactEffect = fo.impactEffect.Replace(oldPrefix, curPrefix);
                 fo.impactSceneDecal = fo.impactSceneDecal.Replace(oldPrefix, curPrefix);
                 SoundEffectReplacePrefix(fo.impactSound, oldPrefix, curPrefix);
-
+            
                 fo.tailEffect = fo.tailEffect.Replace(oldPrefix, curPrefix);
             }
             foreach (var it in root.GetComponentsInChildren<InteractTriggerX>())
@@ -190,14 +276,26 @@ public class AddressableHelper : MonoBehaviour
                 {
                     str.value = str.value.Replace(oldPrefix, curPrefix);
                 }
-
+            
                 it.chargeEffect = it.chargeEffect.Replace(oldPrefix, curPrefix);
                 it.chargeEndEffect = it.chargeEndEffect.Replace(oldPrefix, curPrefix);
-
+            
                 SoundEffectReplacePrefix(it.chargeSound, oldPrefix, curPrefix);
                 SoundEffectReplacePrefix(it.chargeEndSound, oldPrefix, curPrefix);
-
+            
                 it.activateEffect = it.activateEffect.Replace(oldPrefix, curPrefix);
+            }
+
+            foreach(var lb in root.GetComponentsInChildren<LuaBehaviour>())
+            {
+                LuaScript ls = lb.script;
+                string name = ls.GetLuaScript();
+                ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
+                var stringList = ls.GetStringList();
+                foreach (var str in stringList)
+                {
+                    str.value = str.value.Replace(oldPrefix, curPrefix);
+                }
             }
 
             try
