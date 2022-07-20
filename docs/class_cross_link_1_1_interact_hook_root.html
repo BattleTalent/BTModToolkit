@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -239,6 +239,9 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDead</b> ()
 <tr class="memitem:a1cc5b307a4485d48af7434e771f4b52a inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a1cc5b307a4485d48af7434e771f4b52a"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>Dead</b> (bool destroy=true)</td></tr>
 <tr class="separator:a1cc5b307a4485d48af7434e771f4b52a inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31bad3b235d63f22776785ea6f29952d inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a31bad3b235d63f22776785ea6f29952d"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionWithHitScan</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
+<tr class="separator:a31bad3b235d63f22776785ea6f29952d inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a50a26ea38e07c365d545b120a607a747 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a50a26ea38e07c365d545b120a607a747"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCull</b> (<a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> tile)</td></tr>
 <tr class="separator:a50a26ea38e07c365d545b120a607a747 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -309,6 +312,9 @@ static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">Phys
 <tr class="memitem:a9d0ee445833af97b9e3b29c89924dc1d inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a9d0ee445833af97b9e3b29c89924dc1d"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>QueryLogicTargetInRadiusTemp</b> (Vector3 pos, float radius)</td></tr>
 <tr class="separator:a9d0ee445833af97b9e3b29c89924dc1d inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad81db86987ffffc25b138229e702bce3 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ad81db86987ffffc25b138229e702bce3"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStaticScene</b> (GameObject go)</td></tr>
+<tr class="separator:ad81db86987ffffc25b138229e702bce3 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_class_cross_link_1_1_scene_obj"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_class_cross_link_1_1_scene_obj')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="class_cross_link_1_1_scene_obj.html">CrossLink.SceneObj</a></td></tr>
 <tr class="memitem:abcf967c45116851cce07a09a75e0a814 inherit pro_methods_class_cross_link_1_1_scene_obj"><td class="memItemLeft" align="right" valign="top"><a id="abcf967c45116851cce07a09a75e0a814"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Awake</b> ()</td></tr>
@@ -369,6 +375,9 @@ System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>HitEvent</b>
 <tr class="memitem:adb63aad0895a2a00f4a149fdb65d384a inherit events_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="adb63aad0895a2a00f4a149fdb65d384a"></a>
 System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>DeadEvent</b></td></tr>
 <tr class="separator:adb63aad0895a2a00f4a149fdb65d384a inherit events_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecd7cbdcf31d57911471954fe5dca94b inherit events_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aecd7cbdcf31d57911471954fe5dca94b"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a>, Rigidbody, Collider, Vector3, Vector3, Vector3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnHitScanEvent</b></td></tr>
+<tr class="separator:aecd7cbdcf31d57911471954fe5dca94b inherit events_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

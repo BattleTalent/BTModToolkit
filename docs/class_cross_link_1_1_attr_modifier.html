@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -70,6 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_attr_modifier-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.AttrModifier Class Reference</div>  </div>
@@ -78,12 +79,15 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac85d18cb53382d06d32e324ba718b011"><td class="memItemLeft" align="right" valign="top"><a id="ac85d18cb53382d06d32e324ba718b011"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetState</b> (string n, int i)</td></tr>
-<tr class="separator:ac85d18cb53382d06d32e324ba718b011"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4e72a1a4b43713668775a3670d03934"><td class="memItemLeft" align="right" valign="top"><a id="ad4e72a1a4b43713668775a3670d03934"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>GetState</b> (string n)</td></tr>
-<tr class="separator:ad4e72a1a4b43713668775a3670d03934"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0b8732a3706a203be466c04dec8a623"><td class="memItemLeft" align="right" valign="top"><a id="ae0b8732a3706a203be466c04dec8a623"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetState</b> (string n, float i)</td></tr>
+<tr class="separator:ae0b8732a3706a203be466c04dec8a623"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad853767d29126cc5ea8c37c507e2b651"><td class="memItemLeft" align="right" valign="top"><a id="ad853767d29126cc5ea8c37c507e2b651"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveState</b> (string n)</td></tr>
+<tr class="separator:ad853767d29126cc5ea8c37c507e2b651"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39540a530ce45616f92d5ca9bce4f9f4"><td class="memItemLeft" align="right" valign="top"><a id="a39540a530ce45616f92d5ca9bce4f9f4"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetState</b> (string n)</td></tr>
+<tr class="separator:a39540a530ce45616f92d5ca9bce4f9f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb54b520647df0a9c78dc7342eb8ed31"><td class="memItemLeft" align="right" valign="top"><a id="abb54b520647df0a9c78dc7342eb8ed31"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyModifier</b> (string attrName, <a class="el" href="class_cross_link_1_1_value_modifier.html">ValueModifier</a> valueMod, float target)</td></tr>
 <tr class="separator:abb54b520647df0a9c78dc7342eb8ed31"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -105,12 +109,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveModifier</b> (s
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a798c8128d223e8141fe72cd5adfa6238"><td class="memItemLeft" align="right" valign="top"><a id="a798c8128d223e8141fe72cd5adfa6238"></a>
-Dictionary&lt; string, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>attrState</b> = null</td></tr>
-<tr class="separator:a798c8128d223e8141fe72cd5adfa6238"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b688edb31ee1d4b135f741847e1cdef"><td class="memItemLeft" align="right" valign="top"><a id="a7b688edb31ee1d4b135f741847e1cdef"></a>
+Dictionary&lt; string, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>attrState</b> = null</td></tr>
+<tr class="separator:a7b688edb31ee1d4b135f741847e1cdef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b7e2d34c93502c7f63eb4ac7177d7c4"><td class="memItemLeft" align="right" valign="top"><a id="a3b7e2d34c93502c7f63eb4ac7177d7c4"></a>
 Dictionary&lt; string, List&lt; <a class="el" href="class_cross_link_1_1_value_modifier.html">ValueModifier</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>modiDict</b> = null</td></tr>
 <tr class="separator:a3b7e2d34c93502c7f63eb4ac7177d7c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a5808fdf25725f9a4b3e73d3678885d01"><td class="memItemLeft" align="right" valign="top"><a id="a5808fdf25725f9a4b3e73d3678885d01"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>INVALID_STATE</b> = -8888888</td></tr>
+<tr class="separator:a5808fdf25725f9a4b3e73d3678885d01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

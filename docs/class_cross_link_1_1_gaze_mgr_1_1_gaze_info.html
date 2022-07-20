@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -71,6 +71,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_gaze_mgr_1_1_gaze_info-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.GazeMgr.GazeInfo Class Reference</div>  </div>
@@ -79,6 +80,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a397e03e775c54f82f3dd40e2ffbf54ec"><td class="memItemLeft" align="right" valign="top"><a id="a397e03e775c54f82f3dd40e2ffbf54ec"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerGazeEvent</b> (bool g)</td></tr>
+<tr class="separator:a397e03e775c54f82f3dd40e2ffbf54ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a046c5d0c5962093876b60ecfc2cf7091"><td class="memItemLeft" align="right" valign="top"><a id="a046c5d0c5962093876b60ecfc2cf7091"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearGaze</b> ()</td></tr>
 <tr class="separator:a046c5d0c5962093876b60ecfc2cf7091"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -88,18 +92,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearGaze</b> ()</td>
 <tr class="memitem:aa908a661c0b498e035e8f18b3f29b3a0"><td class="memItemLeft" align="right" valign="top"><a id="aa908a661c0b498e035e8f18b3f29b3a0"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>KeepGaze</b> (bool k)</td></tr>
 <tr class="separator:aa908a661c0b498e035e8f18b3f29b3a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a32ea774b57c01a3d28963cfc34a9be1a"><td class="memItemLeft" align="right" valign="top"><a id="a32ea774b57c01a3d28963cfc34a9be1a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>KeepMostGaze</b> (bool popupTimeNormal=true)</td></tr>
-<tr class="separator:a32ea774b57c01a3d28963cfc34a9be1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a059767ee4961ec250aa69cf3ca806bf8"><td class="memItemLeft" align="right" valign="top"><a id="a059767ee4961ec250aa69cf3ca806bf8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>KeepMostGaze</b> ()</td></tr>
+<tr class="separator:a059767ee4961ec250aa69cf3ca806bf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8101053f74c58214d29edba6581df92e"><td class="memItemLeft" align="right" valign="top"><a id="a8101053f74c58214d29edba6581df92e"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsMostGaze</b> ()</td></tr>
 <tr class="separator:a8101053f74c58214d29edba6581df92e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abedeb9fe7091d7d854183e8727fce9c9"><td class="memItemLeft" align="right" valign="top"><a id="abedeb9fe7091d7d854183e8727fce9c9"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>NeedShowDetail</b> ()</td></tr>
 <tr class="separator:abedeb9fe7091d7d854183e8727fce9c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad820bd9a6e686e524b7c8a4cf5bb5d5c"><td class="memItemLeft" align="right" valign="top"><a id="ad820bd9a6e686e524b7c8a4cf5bb5d5c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowGazeInfo</b> (bool show, float showDelay)</td></tr>
-<tr class="separator:ad820bd9a6e686e524b7c8a4cf5bb5d5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab652f4da85c7f569c3d04389063ab6d3"><td class="memItemLeft" align="right" valign="top"><a id="ab652f4da85c7f569c3d04389063ab6d3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowGazeInfo</b> (bool show)</td></tr>
+<tr class="separator:ab652f4da85c7f569c3d04389063ab6d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9ce21d2af119ecd8a31d382ac4367d3"><td class="memItemLeft" align="right" valign="top"><a id="af9ce21d2af119ecd8a31d382ac4367d3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Showup</b> (bool s)</td></tr>
 <tr class="separator:af9ce21d2af119ecd8a31d382ac4367d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -145,6 +149,18 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>needWarning</b> = fal
 <tr class="memitem:afc98b733aab135a3c291f51d3a430744"><td class="memItemLeft" align="right" valign="top"><a id="afc98b733aab135a3c291f51d3a430744"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>warning</b> = false</td></tr>
 <tr class="separator:afc98b733aab135a3c291f51d3a430744"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:ad9e6ee457d711b47b85a6730fc5b7796"><td class="memItemLeft" align="right" valign="top"><a id="ad9e6ee457d711b47b85a6730fc5b7796"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_gaze_mgr_1_1_gaze_info.html">GazeInfo</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OpenGazeEvent</b></td></tr>
+<tr class="separator:ad9e6ee457d711b47b85a6730fc5b7796"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a956310021db88d59dd8f7f02bff1c094"><td class="memItemLeft" align="right" valign="top"><a id="a956310021db88d59dd8f7f02bff1c094"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_gaze_mgr_1_1_gaze_info.html">GazeInfo</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>CloseGazeEvent</b></td></tr>
+<tr class="separator:a956310021db88d59dd8f7f02bff1c094"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a634dfafdf6588980347fb2d410eb4572"><td class="memItemLeft" align="right" valign="top"><a id="a634dfafdf6588980347fb2d410eb4572"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_gaze_mgr_1_1_gaze_info.html">GazeInfo</a>, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ShowGazeEvent</b></td></tr>
+<tr class="separator:a634dfafdf6588980347fb2d410eb4572"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

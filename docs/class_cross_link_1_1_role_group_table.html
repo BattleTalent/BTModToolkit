@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -68,6 +68,8 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
@@ -79,6 +81,33 @@ $(function() {
 
 <p>Inherits Sirenix.OdinInspector.SerializedScriptableObject.</p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_role_group_table_1_1_role_meta_info.html">RoleMetaInfo</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_role_group_table_1_1_role_pack_desc.html">RolePackDesc</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_role_group_table_1_1_role_pack_info.html">RolePackInfo</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:acd0fe9a8e8bdcf39c3fd0ddf0dbe56d5"><td class="memItemLeft" align="right" valign="top"><a id="acd0fe9a8e8bdcf39c3fd0ddf0dbe56d5"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>RoleMeleeType</b> { <b>Melee</b>
+, <b>Range</b>
+, <b>Both</b>
+ }</td></tr>
+<tr class="separator:acd0fe9a8e8bdcf39c3fd0ddf0dbe56d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94ca0ccfd2e25e261e23bbd1a61520cc"><td class="memItemLeft" align="right" valign="top"><a id="a94ca0ccfd2e25e261e23bbd1a61520cc"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>RoleMeleeTypeSelection</b> { <br />
+&#160;&#160;<b>HasMelee</b>
+, <b>HasRange</b>
+, <b>Both</b>
+, <b>OnlyMelee</b>
+, <br />
+&#160;&#160;<b>OnlyRange</b>
+<br />
+ }</td></tr>
+<tr class="separator:a94ca0ccfd2e25e261e23bbd1a61520cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aebdfa3427899ed29a40792eebb026ef6"><td class="memItemLeft" align="right" valign="top"><a id="aebdfa3427899ed29a40792eebb026ef6"></a>
@@ -93,6 +122,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>GroupNameExist</b> (s
 <tr class="memitem:a3b1bd58606c52bd79cd86102ea7c752b"><td class="memItemLeft" align="right" valign="top"><a id="a3b1bd58606c52bd79cd86102ea7c752b"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>GetRandomRoleInGroup</b> (string group)</td></tr>
 <tr class="separator:a3b1bd58606c52bd79cd86102ea7c752b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0721738635a66b4cbd7e5f63161f1937"><td class="memItemLeft" align="right" valign="top"><a id="a0721738635a66b4cbd7e5f63161f1937"></a>
+string[]&#160;</td><td class="memItemRight" valign="bottom"><b>FindRoles</b> (string ra, int lv, RoleMeleeTypeSelection mt)</td></tr>
+<tr class="separator:a0721738635a66b4cbd7e5f63161f1937"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1138af7dba3755f0e13af1054ccf8d4"><td class="memItemLeft" align="right" valign="top"><a id="ad1138af7dba3755f0e13af1054ccf8d4"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsRoleExist</b> (string role)</td></tr>
+<tr class="separator:ad1138af7dba3755f0e13af1054ccf8d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -102,18 +137,24 @@ static <a class="el" href="class_cross_link_1_1_role_group_table.html">RoleGroup
 <tr class="memitem:a7a85e5916c314ec5d9b032be62ba4acd"><td class="memItemLeft" align="right" valign="top"><a id="a7a85e5916c314ec5d9b032be62ba4acd"></a>
 static string&#160;</td><td class="memItemRight" valign="bottom"><b>TryRandomPickRoleName</b> (string role)</td></tr>
 <tr class="separator:a7a85e5916c314ec5d9b032be62ba4acd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3f93a2c920a7bd38005075467ab0abb"><td class="memItemLeft" align="right" valign="top"><a id="af3f93a2c920a7bd38005075467ab0abb"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsSatisfied</b> (RoleMeleeTypeSelection requiredType, RoleMeleeType configType)</td></tr>
+<tr class="separator:af3f93a2c920a7bd38005075467ab0abb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:ab269ee95393c3795fc8d1c738ff0bfd0"><td class="memItemLeft" align="right" valign="top"><a id="ab269ee95393c3795fc8d1c738ff0bfd0"></a>
 <a class="el" href="class_cross_link_1_1_wave_group.html">WaveGroup</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>waveGroups</b></td></tr>
 <tr class="separator:ab269ee95393c3795fc8d1c738ff0bfd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a746db91d47c3788b2c3525c6cd944f34"><td class="memItemLeft" align="right" valign="top"><a id="a746db91d47c3788b2c3525c6cd944f34"></a>
-<a class="el" href="class_cross_link_1_1_role_group_table.html">RoleGroupTable</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>conbimeTables</b></td></tr>
-<tr class="separator:a746db91d47c3788b2c3525c6cd944f34"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1553f698dfe21132185d403ea4318d61"><td class="memItemLeft" align="right" valign="top"><a id="a1553f698dfe21132185d403ea4318d61"></a>
-Dictionary&lt; string, string[]&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>roleGroupMap</b></td></tr>
+Dictionary&lt; string, string[]&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>roleGroupMap</b> = new Dictionary&lt;string, string[]&gt;()</td></tr>
 <tr class="separator:a1553f698dfe21132185d403ea4318d61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73f2239754594ac8dced63a44ce84b1b"><td class="memItemLeft" align="right" valign="top"><a id="a73f2239754594ac8dced63a44ce84b1b"></a>
+Dictionary&lt; string, <a class="el" href="class_cross_link_1_1_role_group_table_1_1_role_meta_info.html">RoleMetaInfo</a>[]&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>raceMetaInfo</b> = new Dictionary&lt;string, <a class="el" href="class_cross_link_1_1_role_group_table_1_1_role_meta_info.html">RoleMetaInfo</a>[]&gt;()</td></tr>
+<tr class="separator:a73f2239754594ac8dced63a44ce84b1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7ca9d5af05bdc3ff09aff7cd161b5cd"><td class="memItemLeft" align="right" valign="top"><a id="aa7ca9d5af05bdc3ff09aff7cd161b5cd"></a>
+string[]&#160;</td><td class="memItemRight" valign="bottom"><b>roleList</b></td></tr>
+<tr class="separator:aa7ca9d5af05bdc3ff09aff7cd161b5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

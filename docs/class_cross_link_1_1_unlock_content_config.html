@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -85,6 +85,7 @@ Public Types</h2></td></tr>
 <tr class="memitem:a07d6abc90eccd7f197807c1f2323db64"><td class="memItemLeft" align="right" valign="top"><a id="a07d6abc90eccd7f197807c1f2323db64"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>UnlockContentType</b> { <b>Simple</b>
 , <b>Attribute</b>
 , <b>Weapon</b>
+, <b>Achievement</b>
  }</td></tr>
 <tr class="separator:a07d6abc90eccd7f197807c1f2323db64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -114,6 +115,9 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>PayItem</b> (s
 <tr class="memitem:a74d29277368e22aa1313c43381c5c06d"><td class="memItemLeft" align="right" valign="top"><a id="a74d29277368e22aa1313c43381c5c06d"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>ToggleItem</b> (string itemName)</td></tr>
 <tr class="separator:a74d29277368e22aa1313c43381c5c06d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8834eafd8d10090766bae2f8da3cf047"><td class="memItemLeft" align="right" valign="top"><a id="a8834eafd8d10090766bae2f8da3cf047"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsItemEnabled</b> (string itemName)</td></tr>
+<tr class="separator:a8834eafd8d10090766bae2f8da3cf047"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -123,12 +127,21 @@ Dictionary&lt; string, <a class="el" href="class_cross_link_1_1_unlock_content_i
 <tr class="memitem:a3536da570626e9c6ab7936eb860c45fb"><td class="memItemLeft" align="right" valign="top"><a id="a3536da570626e9c6ab7936eb860c45fb"></a>
 List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>unlockedWeaponList</b> = new List&lt;string&gt;()</td></tr>
 <tr class="separator:a3536da570626e9c6ab7936eb860c45fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7e97f084943804b0c3c1df7e5bd27e2"><td class="memItemLeft" align="right" valign="top"><a id="ac7e97f084943804b0c3c1df7e5bd27e2"></a>
+List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>weaponList</b> = new List&lt;string&gt;()</td></tr>
+<tr class="separator:ac7e97f084943804b0c3c1df7e5bd27e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:a8d21d34df285c3d8551e7b0dd90bebc4"><td class="memItemLeft" align="right" valign="top"><a id="a8d21d34df285c3d8551e7b0dd90bebc4"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>UnlockResPath</b> = &quot;Config/<a class="el" href="class_cross_link_1_1_unlock_content_config.html">UnlockContentConfig</a>&quot;</td></tr>
+<tr class="separator:a8d21d34df285c3d8551e7b0dd90bebc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fd6ed82d3390a00b7333999b2587e6b"><td class="memItemLeft" align="right" valign="top"><a id="a2fd6ed82d3390a00b7333999b2587e6b"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>UnexistItem</b> = &quot;U&quot;</td></tr>
 <tr class="separator:a2fd6ed82d3390a00b7333999b2587e6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e3b7e7e2eb27b440d51ae059f1d5b4e"><td class="memItemLeft" align="right" valign="top"><a id="a5e3b7e7e2eb27b440d51ae059f1d5b4e"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>UnexistInDemo</b> = &quot;UD&quot;</td></tr>
+<tr class="separator:a5e3b7e7e2eb27b440d51ae059f1d5b4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

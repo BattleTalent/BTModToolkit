@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -169,6 +169,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>FreeGrab</b> ()</td><
 <tr class="memitem:a05015cbfc69fd34a2b6797e77ad37d6d"><td class="memItemLeft" align="right" valign="top"><a id="a05015cbfc69fd34a2b6797e77ad37d6d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ReleaseFingerGrab</b> ()</td></tr>
 <tr class="separator:a05015cbfc69fd34a2b6797e77ad37d6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e54fde60364fdedd7f70d4c82850263"><td class="memItemLeft" align="right" valign="top"><a id="a9e54fde60364fdedd7f70d4c82850263"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateFingerPoseForAWhile</b> (float sec=0.3f, float interval=0.1f)</td></tr>
+<tr class="separator:a9e54fde60364fdedd7f70d4c82850263"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48e82230e7f8ba186529e70e0a037e23"><td class="memItemLeft" align="right" valign="top"><a id="a48e82230e7f8ba186529e70e0a037e23"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StopUpdateFingerPose</b> ()</td></tr>
+<tr class="separator:a48e82230e7f8ba186529e70e0a037e23"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a419fcb7895ae5a1a5b432bd9b4909178"><td class="memItemLeft" align="right" valign="top"><a id="a419fcb7895ae5a1a5b432bd9b4909178"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetThumbDir</b> ()</td></tr>
 <tr class="separator:a419fcb7895ae5a1a5b432bd9b4909178"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -214,6 +220,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetControlType</b> (S
 <tr class="memitem:a51e18c5350dcd529165cffedc2a05452"><td class="memItemLeft" align="right" valign="top"><a id="a51e18c5350dcd529165cffedc2a05452"></a>
 SDK_BaseController.ControllerType&#160;</td><td class="memItemRight" valign="bottom"><b>GetControlType</b> ()</td></tr>
 <tr class="separator:a51e18c5350dcd529165cffedc2a05452"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ad5ffae8a216391a60aecc0eb2a5ace"><td class="memItemLeft" align="right" valign="top"><a id="a4ad5ffae8a216391a60aecc0eb2a5ace"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetControlDeviceType</b> ()</td></tr>
+<tr class="separator:a4ad5ffae8a216391a60aecc0eb2a5ace"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcffd9d0e175623769ab001fd6aeef74"><td class="memItemLeft" align="right" valign="top"><a id="afcffd9d0e175623769ab001fd6aeef74"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsTouchGripBase</b> ()</td></tr>
 <tr class="separator:afcffd9d0e175623769ab001fd6aeef74"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -388,6 +397,21 @@ static int&#160;</td><td class="memItemRight" valign="bottom"><b>IsCheckUI</b> =
 <tr class="memitem:a8120e196952adf329db7f3f6d18d6a71"><td class="memItemLeft" align="right" valign="top"><a id="a8120e196952adf329db7f3f6d18d6a71"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>CallbackTime</b> = 0.3f</td></tr>
 <tr class="separator:a8120e196952adf329db7f3f6d18d6a71"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17e580b4bce6f0e38ca57064060f1ea3"><td class="memItemLeft" align="right" valign="top"><a id="a17e580b4bce6f0e38ca57064060f1ea3"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Knuckle</b> = &quot;Knuckle&quot;</td></tr>
+<tr class="separator:a17e580b4bce6f0e38ca57064060f1ea3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5504504eeb6eb20d292a35ea0b082a8e"><td class="memItemLeft" align="right" valign="top"><a id="a5504504eeb6eb20d292a35ea0b082a8e"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Oculus</b> = &quot;Oculus&quot;</td></tr>
+<tr class="separator:a5504504eeb6eb20d292a35ea0b082a8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66e97fe0693e0f5b338e45b16529397b"><td class="memItemLeft" align="right" valign="top"><a id="a66e97fe0693e0f5b338e45b16529397b"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_WMR</b> = &quot;WMR&quot;</td></tr>
+<tr class="separator:a66e97fe0693e0f5b338e45b16529397b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a010f181345845e1bedc6d3644e6431f4"><td class="memItemLeft" align="right" valign="top"><a id="a010f181345845e1bedc6d3644e6431f4"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Vive</b> = &quot;Vive&quot;</td></tr>
+<tr class="separator:a010f181345845e1bedc6d3644e6431f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3cab98e8f10e559259b08b6453d3d136"><td class="memItemLeft" align="right" valign="top"><a id="a3cab98e8f10e559259b08b6453d3d136"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Default</b> = ControlDevice_Vive</td></tr>
+<tr class="separator:a3cab98e8f10e559259b08b6453d3d136"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

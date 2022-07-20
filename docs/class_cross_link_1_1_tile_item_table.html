@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -86,6 +86,9 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a44357fcf33b087ab2b53e76960b3d7b9"><td class="memItemLeft" align="right" valign="top"><a id="a44357fcf33b087ab2b53e76960b3d7b9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PrepareForARun</b> ()</td></tr>
+<tr class="separator:a44357fcf33b087ab2b53e76960b3d7b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a13cf14752a7449cde896ccbf55216093"><td class="memItemLeft" align="right" valign="top"><a id="a13cf14752a7449cde896ccbf55216093"></a>
 List&lt; Object &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetItem</b> (string tileType)</td></tr>
 <tr class="separator:a13cf14752a7449cde896ccbf55216093"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -95,21 +98,6 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:aa3b6e022e64c5d597efda1693e6ab51f"><td class="memItemLeft" align="right" valign="top"><a id="aa3b6e022e64c5d597efda1693e6ab51f"></a>
 Dictionary&lt; string, List&lt; Object &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>styleList</b> = new Dictionary&lt;string, List&lt;Object&gt;&gt;()</td></tr>
 <tr class="separator:aa3b6e022e64c5d597efda1693e6ab51f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78a66619f5a3b28393cd8a87537c2de4"><td class="memItemLeft" align="right" valign="top"><a id="a78a66619f5a3b28393cd8a87537c2de4"></a>
-<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>waveListBridge</b></td></tr>
-<tr class="separator:a78a66619f5a3b28393cd8a87537c2de4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab635f822adf8bf27b7d73801a3bf1f7f"><td class="memItemLeft" align="right" valign="top"><a id="ab635f822adf8bf27b7d73801a3bf1f7f"></a>
-<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>waveListNormal</b></td></tr>
-<tr class="separator:ab635f822adf8bf27b7d73801a3bf1f7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52730cb3e9d728070492087a7cb6b8f3"><td class="memItemLeft" align="right" valign="top"><a id="a52730cb3e9d728070492087a7cb6b8f3"></a>
-<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>waveListBranch</b></td></tr>
-<tr class="separator:a52730cb3e9d728070492087a7cb6b8f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7520311cd552716ddb2b97e7361bdaba"><td class="memItemLeft" align="right" valign="top"><a id="a7520311cd552716ddb2b97e7361bdaba"></a>
-string[]&#160;</td><td class="memItemRight" valign="bottom"><b>boss</b></td></tr>
-<tr class="separator:a7520311cd552716ddb2b97e7361bdaba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8adfc769c5ddce046b3b07139cf9914d"><td class="memItemLeft" align="right" valign="top"><a id="a8adfc769c5ddce046b3b07139cf9914d"></a>
-string[]&#160;</td><td class="memItemRight" valign="bottom"><b>monsterPoolInBossFight</b></td></tr>
-<tr class="separator:a8adfc769c5ddce046b3b07139cf9914d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7abd2ed30f0c41ab03bbf9b8ded5a86d"><td class="memItemLeft" align="right" valign="top"><a id="a7abd2ed30f0c41ab03bbf9b8ded5a86d"></a>
 string[]&#160;</td><td class="memItemRight" valign="bottom"><b>weaponList</b></td></tr>
 <tr class="separator:a7abd2ed30f0c41ab03bbf9b8ded5a86d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,18 +113,39 @@ string[]&#160;</td><td class="memItemRight" valign="bottom"><b>curseBuffList</b>
 <tr class="memitem:a1600cb47822f854334a2e8b1e8126a4f"><td class="memItemLeft" align="right" valign="top"><a id="a1600cb47822f854334a2e8b1e8126a4f"></a>
 string[]&#160;</td><td class="memItemRight" valign="bottom"><b>curseDebuffList</b></td></tr>
 <tr class="separator:a1600cb47822f854334a2e8b1e8126a4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afef8b5f4512dd484256210fdb5df9403"><td class="memItemLeft" align="right" valign="top"><a id="afef8b5f4512dd484256210fdb5df9403"></a>
+string[]&#160;</td><td class="memItemRight" valign="bottom"><b>fallbackBuffList</b></td></tr>
+<tr class="separator:afef8b5f4512dd484256210fdb5df9403"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab321fcdf8eff870dd090fdcf7dfda150"><td class="memItemLeft" align="right" valign="top"><a id="ab321fcdf8eff870dd090fdcf7dfda150"></a>
+string[]&#160;</td><td class="memItemRight" valign="bottom"><b>buffPkgList</b></td></tr>
+<tr class="separator:ab321fcdf8eff870dd090fdcf7dfda150"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af82eebdd4342585d991030e959e98911"><td class="memItemLeft" align="right" valign="top"><a id="af82eebdd4342585d991030e959e98911"></a>
 string[]&#160;</td><td class="memItemRight" valign="bottom"><b>styleModList</b></td></tr>
 <tr class="separator:af82eebdd4342585d991030e959e98911"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89b23ae4ca16032b3c5d323e9f2f1666"><td class="memItemLeft" align="right" valign="top"><a id="a89b23ae4ca16032b3c5d323e9f2f1666"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>buffPkgPickNum</b> = 3</td></tr>
+<tr class="separator:a89b23ae4ca16032b3c5d323e9f2f1666"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a12b376c3eb434cf837b32d7bf10d2ceb"><td class="memItemLeft" align="right" valign="top"><a id="a12b376c3eb434cf837b32d7bf10d2ceb"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>hpMlp</b> = 1</td></tr>
 <tr class="separator:a12b376c3eb434cf837b32d7bf10d2ceb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0750a3881defb35a8a06f3e9ab1bf00e"><td class="memItemLeft" align="right" valign="top"><a id="a0750a3881defb35a8a06f3e9ab1bf00e"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>atkMlp</b> = 1</td></tr>
 <tr class="separator:a0750a3881defb35a8a06f3e9ab1bf00e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab87d97c16918bed636dfd574e7ef9b83"><td class="memItemLeft" align="right" valign="top"><a id="ab87d97c16918bed636dfd574e7ef9b83"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>mainPob</b> = 0.5f</td></tr>
-<tr class="separator:ab87d97c16918bed636dfd574e7ef9b83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7803ed3c44a3977dec2a01fc6cf864bf"><td class="memItemLeft" align="right" valign="top"><a id="a7803ed3c44a3977dec2a01fc6cf864bf"></a>
+<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>boss</b></td></tr>
+<tr class="separator:a7803ed3c44a3977dec2a01fc6cf864bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afbdc054099eda9ed1d37f09067d4f2b6"><td class="memItemLeft" align="right" valign="top"><a id="afbdc054099eda9ed1d37f09067d4f2b6"></a>
+<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>monsterPoolInBossFight</b></td></tr>
+<tr class="separator:afbdc054099eda9ed1d37f09067d4f2b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78a66619f5a3b28393cd8a87537c2de4"><td class="memItemLeft" align="right" valign="top"><a id="a78a66619f5a3b28393cd8a87537c2de4"></a>
+<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>waveListBridge</b></td></tr>
+<tr class="separator:a78a66619f5a3b28393cd8a87537c2de4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab635f822adf8bf27b7d73801a3bf1f7f"><td class="memItemLeft" align="right" valign="top"><a id="ab635f822adf8bf27b7d73801a3bf1f7f"></a>
+<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>waveListNormal</b></td></tr>
+<tr class="separator:ab635f822adf8bf27b7d73801a3bf1f7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52730cb3e9d728070492087a7cb6b8f3"><td class="memItemLeft" align="right" valign="top"><a id="a52730cb3e9d728070492087a7cb6b8f3"></a>
+<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>waveListBranch</b></td></tr>
+<tr class="separator:a52730cb3e9d728070492087a7cb6b8f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af97cb01d5fbb46d6967ef01d48c8624c"><td class="memItemLeft" align="right" valign="top"><a id="af97cb01d5fbb46d6967ef01d48c8624c"></a>
 <a class="el" href="class_cross_link_1_1_tile_item_table_1_1_gen_data.html">GenData</a>&#160;</td><td class="memItemRight" valign="bottom"><b>gen</b></td></tr>
 <tr class="separator:af97cb01d5fbb46d6967ef01d48c8624c"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -68,6 +68,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_unlock_content_item-members.html">List of all members</a>  </div>
@@ -76,6 +77,14 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:ad7fefbb2d44d60fa373a8fd163c1d1f6"><td class="memItemLeft" align="right" valign="top"><a id="ad7fefbb2d44d60fa373a8fd163c1d1f6"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>AchievementState</b> { <b>Unknown</b>
+, <b>Known</b>
+, <b>Loot</b>
+ }</td></tr>
+<tr class="separator:ad7fefbb2d44d60fa373a8fd163c1d1f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:af2ca76e6de078785f8b0f40bbcdbc9c8"><td class="memItemLeft" align="right" valign="top"><a id="af2ca76e6de078785f8b0f40bbcdbc9c8"></a>
@@ -84,6 +93,9 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>GetAttrbuteLevel</b>
 <tr class="memitem:a6f54a03c8246133a2f3512b86c6adef2"><td class="memItemLeft" align="right" valign="top"><a id="a6f54a03c8246133a2f3512b86c6adef2"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsExist</b> ()</td></tr>
 <tr class="separator:a6f54a03c8246133a2f3512b86c6adef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac57c27b408154e43c2ab417b4ba90bef"><td class="memItemLeft" align="right" valign="top"><a id="ac57c27b408154e43c2ab417b4ba90bef"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsShownInStore</b> ()</td></tr>
+<tr class="separator:ac57c27b408154e43c2ab417b4ba90bef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5404695d5b3e317ff326916c77e95557"><td class="memItemLeft" align="right" valign="top"><a id="a5404695d5b3e317ff326916c77e95557"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnlocked</b> ()</td></tr>
 <tr class="separator:a5404695d5b3e317ff326916c77e95557"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,6 +120,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>OnUnlock</b> (bool op
 <tr class="memitem:a140b5afa3c4b1246fa8b41ea7f2738dd"><td class="memItemLeft" align="right" valign="top"><a id="a140b5afa3c4b1246fa8b41ea7f2738dd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnToggle</b> ()</td></tr>
 <tr class="separator:a140b5afa3c4b1246fa8b41ea7f2738dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1ec461307a4f256ebfc03324742a959"><td class="memItemLeft" align="right" valign="top"><a id="ac1ec461307a4f256ebfc03324742a959"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDefaultItem</b> ()</td></tr>
+<tr class="separator:ac1ec461307a4f256ebfc03324742a959"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acad7ca67bc0dc8c84f07fcdcc89cd1f4"><td class="memItemLeft" align="right" valign="top"><a id="acad7ca67bc0dc8c84f07fcdcc89cd1f4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDefaultItem</b> (bool isDefault=true)</td></tr>
+<tr class="separator:acad7ca67bc0dc8c84f07fcdcc89cd1f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -135,6 +153,12 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>unlockState</b></td></
 <tr class="memitem:a3740c677f468aad479da3513b6b9538b"><td class="memItemLeft" align="right" valign="top"><a id="a3740c677f468aad479da3513b6b9538b"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>disabled</b> = false</td></tr>
 <tr class="separator:a3740c677f468aad479da3513b6b9538b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a686aa93aef7eb83ea7db6dfdaf6eae19"><td class="memItemLeft" align="right" valign="top"><a id="a686aa93aef7eb83ea7db6dfdaf6eae19"></a>
+AchievementState&#160;</td><td class="memItemRight" valign="bottom"><b>achState</b> = AchievementState.Known</td></tr>
+<tr class="separator:a686aa93aef7eb83ea7db6dfdaf6eae19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a911711562f967091224fd83d4a3665ee"><td class="memItemLeft" align="right" valign="top"><a id="a911711562f967091224fd83d4a3665ee"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>extraReward</b> = 0</td></tr>
+<tr class="separator:a911711562f967091224fd83d4a3665ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
