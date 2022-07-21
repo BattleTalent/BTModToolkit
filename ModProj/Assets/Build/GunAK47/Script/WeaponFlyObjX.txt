@@ -1,36 +1,20 @@
 
 local WeaponFlyObj = {
-    recoilVector = UE.Vector3(0, 0.1, -0.3),
-    recoilCurve = UE.AnimationCurve(UE.Keyframe(0, 1000), UE.Keyframe(0.1, 0)),
-    
-    dontShootOnInstant = 0,
-    shootOnCharge = 1,
-    shootOnActivateEnd = 0,
-    autoSetupBulletIgnore = 0,
-    
-    flyObjName = "",
-    
-    shootVel = -1,
-    recoilRotate = -15,
-    recoilRandomBias = 3,
-    
-    shootInterval = 0.1,
-    shootPosition = nil,
+    aimWidget = nil,
 }
 
 function WeaponFlyObj:PlayShootAction()
 	local interact = self.host.interact
     local ph = interact:GetPrimaryHand()
-	local aimWidget = self.aimWidget
     
     if not IsNullOrDestroyed(ph) then
         ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
     end
     
     local aimDir = self.shootPosition.forward
-    
-	if (aimWidget ~= nil and aimWidget:GetValidHitLatly()) then
-		local targetPos = aimWidget:GetValidHitPos();
+
+    if self.aimWidget ~= nil and self.aimWidget:GetValidHitLatly() then
+		local targetPos = self.aimWidget:GetValidHitPos();
 		aimDir = (targetPos - self.shootPosition.position).normalized
 	end
 
@@ -49,11 +33,11 @@ function WeaponFlyObj:PlayShootAction()
         :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
     end
 
-    if (self.shootSound ~= nil) then
+    if self.shootSound ~= nil then
         self.shootSound:PlaySound()
     end
 
-	if (self.shootAnim ~= nil) then
+    if self.shootAnim ~= nil then
 		self.shootAnim:Play("Shoot")
 	end
    
@@ -75,33 +59,6 @@ function WeaponFlyObj:PlayShootAction()
     self.shootTime = UE.Time.time
     
     return bulletScript
-end
-
-function WeaponFlyObj:UpdateSkill()
-    local st = self.shootTime or 0
-    local ct = UE.Time.time
-    if ct - st < self.shootInterval then
-        return
-    end
-    if self.dontShootOnInstant == 0 then
-        self:PlayShootAction()
-    end
-    self:OnUpdateSkill()
-end
-
-function WeaponFlyObj:OnUpdateSkill()
-end
-
-function WeaponFlyObj:OnChargeRelease()
-    if self.shootOnCharge == 1 then
-        self:PlayShootAction()
-    end
-end
-
-function WeaponFlyObj:OnActivateEnd()
-    if self.shootOnActivateEnd == 1 then
-        self:PlayShootAction()
-    end
 end
 
 function WeaponFlyObj:OnGrab(attach, isGrabbed)
