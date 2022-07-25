@@ -132,13 +132,16 @@ end
 
 function table:OnGrab(attach, isGrabbed)
 	if (self.aimWidget ~= nil) then
-		self.aimWidget.gameObject:SetActive(isGrabbed)
-		if (isGrabbed and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim")) then
-			self.aimWidget.enabled = true
-		else
-			self.aimWidget.enabled = false
-		end
-	end
+        if isGrabbed then
+            if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+                self.aimWidget.gameObject:SetActive(true)
+                self.aimWidget.enabled = true
+            end
+        else
+            self.aimWidget.enabled = false
+            self.aimWidget.gameObject:SetActive(false)
+        end
+    end
 end
 
 
