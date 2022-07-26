@@ -10,6 +10,22 @@ local GunUMP = {
     --releaseBulletNumber = 6,
 }
 
+function GunUMP:OnGrab(a, g)
+    if g then
+        if self.aimWidget then
+            if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+                self.aimWidget.gameObject:SetActive(true)
+                self.aimWidget.enabled = true
+            end
+        end
+    else
+        if self.aimWidget then
+            self.aimWidget.enabled = false
+            self.aimWidget.gameObject:SetActive(false)
+        end
+    end
+end
+
 function GunUMP:OnChargeRelease()
     self.releaseBulletActId = CL.Scheduler.RemoveSchedule(self.releaseBulletActId)
     self.releaseBulletActId = CL.Scheduler.Create(self.host.gameObject, 

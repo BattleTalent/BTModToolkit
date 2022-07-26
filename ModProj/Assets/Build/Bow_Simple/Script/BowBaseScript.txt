@@ -164,12 +164,16 @@ end
 
 function BowBase:OnGrab(attach, t)
     self.pullerScript.gameObject:SetActive(t)
-    --self.aimWidget.gameObject:SetActive(t)
-    --if t and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
-    --    self.aimWidget.enabled = true
-    --else
-    --    self.aimWidget.enabled = false
-    --end
+    
+    if t then
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self.aimWidget.gameObject:SetActive(true)
+            self.aimWidget.enabled = true
+        end
+    else
+        self.aimWidget.enabled = false
+        self.aimWidget.gameObject:SetActive(false)
+    end
     
     if t == false and CL.InteractCharacter.PlayerInstance ~= nil then
         for i = 0, CL.RagdollBoneInfo.HAND_NUM - 1 do
