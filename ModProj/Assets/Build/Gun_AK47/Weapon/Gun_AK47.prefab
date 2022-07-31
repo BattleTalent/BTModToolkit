@@ -246,7 +246,7 @@ MonoBehaviour:
   enableChargeColor: 0
   chargeColor: {r: 0.943, g: 0.952, b: 0.588, a: 1}
   script:
-    luaScript: WMD_WeaponFlyObjX
+    luaScript: WMD_GunAKScript
     objList:
     - name: shootPosition
       value: {fileID: 6958429009062656550}
@@ -258,7 +258,7 @@ MonoBehaviour:
     - name: autoSetupBulletIgnore
       value: 1
     stringList:
-    - name: bulletName
+    - name: flyObjName
       value: WMD_BulletAK
 --- !u!114 &8847624641646418764
 MonoBehaviour:
