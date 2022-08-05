@@ -336,7 +336,7 @@ MonoBehaviour:
   hp:
     BaseValue: 0
   faceToTileDoor: 0
-  hook: {fileID: 0}
+  hook: {fileID: 305608370030105377}
   hookJoint: {fileID: 9146286969062863441}
   roleJoint: {fileID: 3589203871100921424}
 --- !u!54 &3045258807918502295
@@ -715,7 +715,7 @@ SphereCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 3
+  m_Radius: 4
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &419944197370198677
 PrefabInstance:
@@ -799,6 +799,11 @@ PrefabInstance:
       propertyPath: selfRB
       value: 
       objectReference: {fileID: 2028188319027879390}
+    - target: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: thumbLimit
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5830968527570335278, guid: e5b98c5f705a399448efb529a8111bdd,
         type: 3}
       propertyPath: m_Name

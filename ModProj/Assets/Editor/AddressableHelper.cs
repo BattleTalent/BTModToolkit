@@ -19,6 +19,7 @@ public class AddressableHelper : MonoBehaviour
         { "FlyObj", "FlyObj/" },
         { "Audio", "Audio/Sound/" },
         { "Config", "Config/" },
+        { "Scene", "Scene/" },
     };
 
 
@@ -69,7 +70,11 @@ public class AddressableHelper : MonoBehaviour
                 string name = path.Replace(item.Key + "/", "");
                 int idx = name.LastIndexOf(".");
                 name = name.Remove(idx, name.Length - idx);
-                entry.address = item.Value + AddressableConfig.GetConfig().GetPrefix() + name;
+
+                if (item.Value == pathToName["Scene"])
+                    entry.address = AddressableConfig.GetConfig().GetPrefix() + name;
+                else
+                    entry.address = item.Value + AddressableConfig.GetConfig().GetPrefix() + name;
             }
         }
 
@@ -103,7 +108,11 @@ public class AddressableHelper : MonoBehaviour
                     string name = path.Replace(item.Key + "/", "");
                     int idx = name.LastIndexOf(".");
                     name = name.Remove(idx, name.Length - idx);
-                    entry.address = item.Value + AddressableConfig.GetConfig().GetPrefix() + name;
+
+                    if (item.Value == pathToName["Scene"])
+                        entry.address = AddressableConfig.GetConfig().GetPrefix() + name;
+                    else
+                        entry.address = item.Value + AddressableConfig.GetConfig().GetPrefix() + name;
                 }
             }
         }

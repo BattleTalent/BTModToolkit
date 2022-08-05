@@ -30,6 +30,9 @@ namespace CrossLink
 
         public string dependItemName;
 
+        [Tooltip("dependencies of item, prompt when installing")]
+        public string[] dependencies;
+
         [Tooltip("the name displayed by store")]
         public string name;
 
@@ -37,6 +40,18 @@ namespace CrossLink
         public string desc;
     }
 
+    [System.Serializable]
+    public class SceneModInfo
+    {
+        [Tooltip("scene name")]
+        public string sceneName;
+
+        [Tooltip("the name displayed on game")]
+        public string name;
+
+        [Tooltip("scene discription")]
+        public string desc;
+    }
 
     [CreateAssetMenu(fileName = "ItemInfoConfig", menuName = "ItemInfoConfig")]
     [System.Serializable]
@@ -48,6 +63,9 @@ namespace CrossLink
 
         [SerializeField]
         public StoreItemInfo[] storeItemInfo;
+
+        [SerializeField]
+        public SceneModInfo[] sceneModInfo;
 
         [SerializeField]
         public HitInfo[] hitInfo;
