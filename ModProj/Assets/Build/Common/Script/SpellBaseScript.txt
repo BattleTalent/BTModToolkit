@@ -11,7 +11,6 @@ local spellBase = {
     --modelTrans(Transform) model 
     --creation(Transform) mount point of magic ball
     --intensity(float)
-    --fistCol(BoxCollider)    
     motionVelList = {},
 }
 
@@ -19,9 +18,7 @@ local spellBase = {
 
 function spellBase:Awake()
     self:InitLightPillar()
-    self.fistCol.gameObject:SetActive(true)
     self.host.interact:GetCols(true)
-    self.fistCol.gameObject:SetActive(false)
     
     self:AllowTrigger(false)
     self:OnAwake()
@@ -356,16 +353,7 @@ function spellBase:OnGrab(attach, t)
         self:GrabSpell(attach)
         
         
-        self.fistCol.gameObject:SetActive(true)
-        local center = self.fistCol.center
-        if attach.attachedHand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND then
-            if center.y < 0 then center.y = center.y * -1 end        
-        else
-            if center.y > 0 then center.y = center.y * -1 end
-        end
-        self.fistCol.center = center
     else
-        self.fistCol.gameObject:SetActive(false)
         self:UnGrabSpell(attach)
         local gemTrans = attach.attachedHand.gemTrans
         --self.host.interact.trans.position = self.modelTrans.position

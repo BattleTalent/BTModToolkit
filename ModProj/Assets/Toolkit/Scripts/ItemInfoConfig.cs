@@ -25,29 +25,47 @@ namespace CrossLink
     [System.Serializable]
     public class StoreItemInfo
     {
-        [Tooltip("item id, should be the same as your icon and prefab, usually is [prefix][prefab name]")]
+        [Tooltip("prefab name")]
         public string addStoreItemName;
 
         public string dependItemName;
 
-        [Tooltip("item name")]
+        [Tooltip("dependencies of item, prompt when installing")]
+        public string[] dependencies;
+
+        [Tooltip("the name displayed by store")]
         public string name;
 
         [Tooltip("item description")]
         public string desc;
     }
 
+    [System.Serializable]
+    public class SceneModInfo
+    {
+        [Tooltip("scene name")]
+        public string sceneName;
+
+        [Tooltip("the name displayed on game")]
+        public string name;
+
+        [Tooltip("scene discription")]
+        public string desc;
+    }
 
     [CreateAssetMenu(fileName = "ItemInfoConfig", menuName = "ItemInfoConfig")]
     [System.Serializable]
     public class ItemInfoConfig : ScriptableObject
     {
         [SerializeField]
-        [Tooltip("if true, will load this mod on demand. otherwise, will load this mod when the game started. if this is an item without config file and you add it to the store via script, then we'll treat it as loading on demand as well.")]
+        [Tooltip("if true, load this mod when it is spawn, otherwise, load this mod when it is install.")]
         public bool loadOnSpawn = true;
 
         [SerializeField]
         public StoreItemInfo[] storeItemInfo;
+
+        [SerializeField]
+        public SceneModInfo[] sceneModInfo;
 
         [SerializeField]
         public HitInfo[] hitInfo;

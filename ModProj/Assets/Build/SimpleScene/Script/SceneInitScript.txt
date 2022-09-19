@@ -1,0 +1,38 @@
+
+local SceneInit = {
+    
+}
+
+function SceneInit:Awake()
+    self.spawnPointMgr.pointList = {}
+    
+    --character
+    self.characterObj = CL.ResourceMgr.Instantiate("Character/[VRTK_Scripts]")
+    self.characterObj.transform.position = self.characterPos.position
+    
+    --HUD
+    self.coreEntryObj = CL.ResourceMgr.Instantiate("Config/CoreEntry")
+    
+    --pathFinder
+    self.sceneCtl = CL.SceneModController()
+    self.sceneCtl:AddPathFinder(self.pathFinderNode)
+    
+    local boxCol = self.pathFinderNode:GetComponent(typeof(UE.BoxCollider))
+    if boxCol then
+        self.sceneCtl:InitPathFinder(boxCol.center, boxCol.size, self.pathFinderNode.rotation.eulerAngles)
+        boxCol.enabled = false
+    end
+    
+    UE.Profiling.Profiler.BeginSample("Scan")
+    UE.Profiling.Profiler.BeginSample("Init")
+    UE.Profiling.Profiler.EndSample()
+    UE.Profiling.Profiler.EndSample()
+    
+    
+    --deadZone
+    self.sceneInfo = self.deadZone.gameObject:AddComponent(typeof(CL.SceneInfo))
+    
+end
+
+
+return Class(nil, nil, SceneInit)
