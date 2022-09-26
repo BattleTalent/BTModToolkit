@@ -38,6 +38,9 @@ namespace CrossLink
 
         [Tooltip("item description")]
         public string desc;
+
+        [Tooltip("item type, Weapon,Music or other")]
+        public ItemInfoConfig.ItemType itemType;
     }
 
     [System.Serializable]
@@ -53,10 +56,34 @@ namespace CrossLink
         public string desc;
     }
 
+    [System.Serializable]
+    public class SkinInfo
+    {
+        [Tooltip("skin name")]
+        public string skinName;
+
+        [Tooltip("the name displayed on game")]
+        public string name;
+
+        [Tooltip("skin discription")]
+        public string desc;
+
+        [Tooltip("character of skin")]
+        public string characterName;
+    }
+
     [CreateAssetMenu(fileName = "ItemInfoConfig", menuName = "ItemInfoConfig")]
     [System.Serializable]
     public class ItemInfoConfig : ScriptableObject
     {
+        [SerializeField]
+        public enum ItemType
+        {
+            Weapon,
+            Music,
+            Other,
+        }
+
         [SerializeField]
         [Tooltip("if true, load this mod when it is spawn, otherwise, load this mod when it is install.")]
         public bool loadOnSpawn = true;
@@ -66,6 +93,9 @@ namespace CrossLink
 
         [SerializeField]
         public SceneModInfo[] sceneModInfo;
+
+        [SerializeField]
+        public SkinInfo[] skinInfo;
 
         [SerializeField]
         public HitInfo[] hitInfo;
