@@ -20,6 +20,7 @@ public class AddressableHelper : MonoBehaviour
         { "Audio", "Audio/Sound/" },
         { "Config", "Config/" },
         { "Scene", "Scene/" },
+        { "Skin", "Skin/" },
     };
 
 
