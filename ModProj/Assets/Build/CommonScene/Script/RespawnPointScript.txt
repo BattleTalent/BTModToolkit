@@ -1,0 +1,17 @@
+
+local RespawnPoint = {
+    
+}
+
+function RespawnPoint:OnTriggerEnter()
+    if not self.rp then
+        self.rp = self.trans.gameObject:AddComponent(typeof(CL.RespawnPoint))
+        self.rp:Apply()
+    else
+        if CL.SceneInfo.GetDeadZone() ~= self.rp:GetDeadZone() then
+            self.rp:Apply()
+        end
+    end
+end
+
+return Class(nil, nil, RespawnPoint)

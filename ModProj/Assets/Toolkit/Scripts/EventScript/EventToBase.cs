@@ -13,6 +13,8 @@ namespace CrossLink
     // use for execute actions
     public class EventToBase : MonoBehaviour
     {
+        public string eventName;
+
         //public string listenEvent;
         public bool actOnAwake = false;
         public float delayExecute = 0;

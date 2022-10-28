@@ -14,5 +14,15 @@ namespace CrossLink
         public Transform slideDirIndicator;
 
         public float width = 5;
+        public float centralHeigh = 1;
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            var heightSphere = transform.position;
+            heightSphere.y += centralHeigh;
+            Gizmos.DrawSphere(heightSphere, 0.05f);
+        }
+#endif
     }
 }
