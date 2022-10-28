@@ -78,6 +78,9 @@ public class AddressableConfig : ScriptableObject
 
 
         AddressableHelper.AutoCompleteGazeObj();
+
+
+        //AddressableHelper.ModelSetUp();
     }
 
     [EasyButtons.Button]
@@ -87,6 +90,9 @@ public class AddressableConfig : ScriptableObject
 
 
         AddressableHelper.AutoCompleteGazeObj();
+
+
+        //AddressableHelper.ModelSetUp();
     }
 
     void AutoCompleteGazeObj()

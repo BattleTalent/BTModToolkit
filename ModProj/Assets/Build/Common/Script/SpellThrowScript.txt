@@ -5,21 +5,27 @@ local spellThrowScript = {
 
 
 
+--[[
+function spellThrowScript:Awake()
+    self.__base.Awake(self)
+end
+]]
+
 
 
 
 
 function spellThrowScript:OnChargeBegin()    
     --print("OnChargeBegin")
-    self:SpawnSpellOnHand(self.flyObjName, self.createPoint)    
+    local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)
+    if self.host.interact:IsEnhance() then
+        fo.script.self:EnhanceSpell()
+        fo.script.self:SetOwner(self)
+    end
     
     self:SetHandPose(true)
     -- you can access base function in this way:
-    -- self.__base.StartVelSample(self)    
-    self:StartVelSample()
 end
-
-
 
 function spellThrowScript:OnChargeReady()
     self:PrepareSpellOnHand()
@@ -30,29 +36,34 @@ end
 
 function spellThrowScript:OnChargeCancel()
     --print("OnChargeCancel")
-
     self:ReleaseSpell()
     
     self:SetHandPose(false)
-    self:StopVelSample()
 end
 
 
 
 
-function spellThrowScript:OnChargeRelease()
-    --print("OnChargeRelease:" .. tostring(self.isReadyToThrow))
-    
+function spellThrowScript:OnChargeRelease()    
     --throw
-    if self:IsReadyToThrow() then
-        self:TryThrow()
-    else
+    if not self:TryThrow() then
+        local hand = self:GetSpellHand()
+        if not IsNullOrDestroyed(hand) then
+            hand.character.attr:AddMp(self.host:GetLastManaCost())
+        end
+        
         self:ReleaseSpell()
     end
     
     self:SetHandPose(false)
-    self:StopVelSample()
 
+end
+
+
+function spellThrowScript:OnFoDestroyed(fo)
+    if self.fo and self.fo.script.self == fo then
+        self.host:CloseSkill()
+    end
 end
 
 

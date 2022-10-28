@@ -4,14 +4,15 @@
 local DefaultScaleSize = 0.05
 
 local spellBase = {
-    isReadyToThrow = false,
-    velocityList = {},
     prepareActId = -1,
     setupTriggerActId = -1,
     --modelTrans(Transform) model 
     --creation(Transform) mount point of magic ball
-    --intensity(float)
-    motionVelList = {},
+    --intensity(float) 
+    
+    motionMinDot = 0.8,
+    
+    minSpeed = 0.1,
 }
 
 
@@ -107,10 +108,8 @@ end
 
 function spellBase:StartVelSample()
     self:StopVelSample()
-    for k,v in pairs(self.velocityList) do
-        self.velocityList[k] = nil
-    end
-    self.minSpeed = 1
+
+    self.minSpeed = 0.1
     self.velTimer = CL.Scheduler.Create(self,
         function(sche, t, s)
             --local realVol = self.host.interact:GetLocalVelocity()
@@ -123,11 +122,6 @@ function spellBase:StartVelSample()
             local realVol = hand.velocityEstimator:GetVelocityEstimateLocal()
             local realSpeed = realVol.magnitude            
             
-            if #self.velocityList >= 15 then
-                table.remove(self.velocityList, 1)
-            end
-            table.insert(self.velocityList, realVol)
-            
             --print(realSpeed)
             
             --record if velocity larger then minSpeed
@@ -138,7 +132,7 @@ function spellBase:StartVelSample()
                 self.lastRecordTime = UE.Time.time
                 self.lastMaxVol = realVol
                 self.minSpeed = realSpeed
-                self.isReadyToThrow = true
+                self.isReadyToThrow = true                
             end        
         end
     , 0, -1)
@@ -160,10 +154,8 @@ function spellBase:StopVelSample()
 end
 
 function spellBase:IsReadyToThrow()
-    return self.isReadyToThrow and (UE.Time.time - self.lastRecordTime < 0.2)
+    return self:GetSpellHand().velocityEstimator:GetAvgVelocityLocal(0.2).magnitude > self.minSpeed
 end
-
---[[ end of VelSample ]]
 
     
     
@@ -193,30 +185,47 @@ end
 function spellBase:PrepareSpellOnHand()
     self.fo.col.enabled = true
     CL.Scheduler.RemoveSchedule(self.prepareActId)
-    self.prepareActId = CL.Scheduler.Create(self, 
+    self.prepareActId = CL.Scheduler.Create(self.host, 
         function(sche, t, s)
-            local scale = t/s
+            local scale = t/0.2
             self.fo.trans.localScale = UE.Vector3(scale, scale, scale)
         end,
-    0, 0.2)
+    0, 0.2).actionId
 end
 
-
+function spellBase:GetSampleDir()
+    local hand = self:GetSpellHand()
+    local dir = hand ~= nil and hand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.1) or UE.Vector3.zero
+    return dir
+end
     
 function spellBase:TryThrow()    
     if not self.fo then
-        return
+        return false
     end
 
-    local dir = UE.Vector3.zero
-    for k, vol in ipairs(self.velocityList) do
-        dir = dir + vol
+    local hand = self:GetSpellHand()
+    if hand == nil then
+        return false
     end
+    
+    local curDir = hand.velocityEstimator:GetVelocityEstimateLocal()
+    if curDir.sqrMagnitude < 0.3*0.3 then
+        return false
+    end
+    
+    local dir = hand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.15)
+    local dirSqrt = dir.sqrMagnitude
+    if dirSqrt < 0.2*0.2 then
+        return false
+    end
+    
     --self.fireball:AddForce(dir.normalized * self.intensity, UE.ForceMode.VelocityChange)
     --print("TryThrow")
     self.fo.rb.isKinematic = false 
     self.fo.trans.parent = nil
-    self.fo:FlyStart(dir.normalized * self.intensity)
+    
+    self.fo:FlyStart((dirSqrt > 1 and dir.normalized or dir) * self.intensity)
     
     self.fo.col.isTrigger = false
     
@@ -230,6 +239,7 @@ function spellBase:TryThrow()
             end
         end,
     0, 0, 0.05).actionId
+    return true
 end
 
 function spellBase:ReleaseSpell(attach)
@@ -237,7 +247,6 @@ function spellBase:ReleaseSpell(attach)
     
     self.prepareActId = CL.Scheduler.RemoveSchedule(self.prepareActId)
     self.setupTriggerActId = CL.Scheduler.RemoveSchedule(self.setupTriggerActId)
-    self:StopVelSample()    
     self:ClearHandPose()
     
     self:OnRelease(attach)
@@ -270,6 +279,8 @@ function spellBase:OnSlot(slot, t)
             self.slotHand = slot.body.hands[slot.attachedHandIndex]
         end
         self:SlotSpell(slot)
+        
+        self:StopLightPillarTimer()
     else
         self:AllowTrigger(false)
         self.slotHand = nil
@@ -351,8 +362,7 @@ function spellBase:OnGrab(attach, t)
         end
         --]]
         self:GrabSpell(attach)
-        
-        
+        self:StopLightPillarTimer()
     else
         self:UnGrabSpell(attach)
         local gemTrans = attach.attachedHand.gemTrans
@@ -372,6 +382,8 @@ function spellBase:OnGrab(attach, t)
         
         self.lastLightTime = UE.Time.time
         self:SetLightPillar(false)
+        
+        self:InitLightPillar()
     end
 end
 
@@ -408,6 +420,10 @@ function spellBase:InitLightPillar()
             end
         end,
     UE.Time.unscaledDeltaTime, -1).actionId
+end
+
+function spellBase:StopLightPillarTimer()
+    CL.Scheduler.RemoveSchedule(self.lightPillarId)
 end
 
 function spellBase:SetLightPillar(isPlay)
@@ -452,27 +468,31 @@ end
 function spellBase:MotionDetectByDir(dir, speed, checkfunc, progressCb, reachCb, isLocal)
     self:StopMotionDetect()
     
+    dir = dir.normalized
     local slotHand = self:GetSlotHand()
-    local volocity = 0
+    local volocity = nil
+    local velDir = nil
     local realSpeed = 0
     
     local curPos = 0
-    local angle = 0
+    local dot = 0
     local curDir = nil
     self.dtTimer = CL.Scheduler.Create(self,
         function(sche, t, s)
             volocity = slotHand.velocityEstimator:GetVelocityEstimateLocal()
-            realSpeed = volocity.magnitude            
+            realSpeed = volocity.magnitude
             if progressCb then
                 progressCb((realSpeed / speed) % 1)
             end
+            velDir = volocity.normalized
             if realSpeed >= speed and checkfunc() then
                 if isLocal then
-                    angle = UE.Vector3.Angle(self.host.interact.trans:TransformDirection(dir), volocity)
+                    dot = UE.Vector3.Dot(self.host.interact.trans:TransformDirection(dir), velDir)
                 else
-                    angle = UE.Vector3.Angle(dir, volocity)
+                    dot = UE.Vector3.Dot(dir, velDir)
                 end
-                if angle <= 15 then
+                
+                if dot >= self.motionMinDot then
                     if reachCb then
                         reachCb()
                     end
@@ -490,5 +510,7 @@ function spellBase:StopMotionDetect()
         self.dtTimer = nil
     end
 end
+
+
 
 return Class(nil,nil,spellBase)

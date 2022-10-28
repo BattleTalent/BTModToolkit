@@ -1,65 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &3924414983508660839
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3945949667978412171}
-  - component: {fileID: 111219752684411322}
-  - component: {fileID: 4180174912038322684}
-  m_Layer: 15
-  m_Name: FistCol
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3945949667978412171
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3924414983508660839}
-  m_LocalRotation: {x: -0, y: 0.17364816, z: -0, w: 0.9848078}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 6845852282262428349}
-  m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 20, z: 0}
---- !u!65 &111219752684411322
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3924414983508660839}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 0.1, y: 0.05, z: 0.1}
-  m_Center: {x: -0.05, y: 0.05, z: 0}
---- !u!114 &4180174912038322684
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3924414983508660839}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ed02ad330bebe744b52781c925a08c0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hitInfo:
-    templateName: Fist
-    weightAmongMultiple: 1
 --- !u!1 &6845852281335711820
 GameObject:
   m_ObjectHideFlags: 0
@@ -92,92 +32,6 @@ Transform:
   m_Father: {fileID: 6845852282262428349}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6845852281593194234
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6845852281593194232}
-  - component: {fileID: 2966568864590629280}
-  m_Layer: 15
-  m_Name: GloveAttach
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6845852281593194232
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6845852281593194234}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children:
-  - {fileID: 6845852281689710646}
-  - {fileID: 6845852282718115183}
-  m_Father: {fileID: 6845852282262428349}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2966568864590629280
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6845852281593194234}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 252d89de64d287447ac8855f11ca7620, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  interact: {fileID: 6308027893532948688}
-  selfRB: {fileID: 6845852282262428348}
-  dependAttachObj: {fileID: 0}
-  handPose: GlovePose
-  handSide: 2
-  allowTrigger: 1
-  isClimbAttach: 0
-  grabHandPose:
-  - {fileID: 6845852281689710646}
-  - {fileID: 6845852282718115183}
-  handOffset: []
---- !u!1 &6845852281689710641
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6845852281689710646}
-  m_Layer: 15
-  m_Name: Bip002 R Hand
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6845852281689710646
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6845852281689710641}
-  m_LocalRotation: {x: -0.5036523, y: -0.25949717, z: 0.67040604, w: 0.47911522}
-  m_LocalPosition: {x: 0.03, y: 0.06, z: -0.04}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 6845852281593194232}
-  m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: -7.74, y: -68.821, z: 114.202}
 --- !u!1 &6845852282262428324
 GameObject:
   m_ObjectHideFlags: 0
@@ -213,9 +67,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 6845852281335711821}
-  - {fileID: 6845852281593194232}
   - {fileID: 6845852283283250723}
-  - {fileID: 3945949667978412171}
+  - {fileID: 1867084091868585935}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -276,7 +129,7 @@ MonoBehaviour:
   beAbleToShowGrab: 1
   enableAutoTickTwoHand: 0
   attachList:
-  - {fileID: 2966568864590629280}
+  - {fileID: 5713721608666072406}
   gaze: {fileID: 8216959072572271350}
   grabDistanceLimit: 0
   itemTypes:
@@ -285,6 +138,7 @@ MonoBehaviour:
   mountAttachs:
   - {fileID: 4289863024724543229}
   canPaint: 1
+  enhanceLevel: -1
 --- !u!114 &1581336778960507262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -376,44 +230,12 @@ MonoBehaviour:
       value: {fileID: 6845852282775895737}
     - name: modelTrans
       value: {fileID: 6845852281335711821}
-    - name: fistCol
-      value: {fileID: 111219752684411322}
     numberList:
     - name: intensity
       value: 30
     stringList:
     - name: flyObjName
       value: WMD_FlyThunderX
---- !u!1 &6845852282718115182
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6845852282718115183}
-  m_Layer: 15
-  m_Name: Bip002 L Hand
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6845852282718115183
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6845852282718115182}
-  m_LocalRotation: {x: -0.12593637, y: -0.4733805, z: 0.5027672, w: 0.71223325}
-  m_LocalPosition: {x: 0.03, y: -0.06, z: -0.04}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 6845852281593194232}
-  m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 17.254, y: -57.002, z: 61.018}
 --- !u!1 &6845852282775895736
 GameObject:
   m_ObjectHideFlags: 0
@@ -473,7 +295,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 6845852282262428349}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4289863024724543229
 MonoBehaviour:
@@ -491,11 +313,109 @@ MonoBehaviour:
   selfRB: {fileID: 6845852282262428348}
   dependAttachObj: {fileID: 0}
   handPose: HoldPose
+  autoUpdateHandPose: 0
   handSide: 2
   allowTrigger: 1
   isClimbAttach: 0
   grabHandPose: []
   handOffset: []
+--- !u!1001 &341714520064445332
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 6845852282262428349}
+    m_Modifications:
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5473338150045290178, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: interact
+      value: 
+      objectReference: {fileID: 6308027893532948688}
+    - target: {fileID: 5473338150045290178, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: selfRB
+      value: 
+      objectReference: {fileID: 6845852282262428348}
+    - target: {fileID: 7846267206081949107, guid: be0db77a8c253364786f293698273816,
+        type: 3}
+      propertyPath: m_Name
+      value: GloveHandAttach
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: be0db77a8c253364786f293698273816, type: 3}
+--- !u!4 &1867084091868585935 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2114216401044821083, guid: be0db77a8c253364786f293698273816,
+    type: 3}
+  m_PrefabInstance: {fileID: 341714520064445332}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5713721608666072406 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5473338150045290178, guid: be0db77a8c253364786f293698273816,
+    type: 3}
+  m_PrefabInstance: {fileID: 341714520064445332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 252d89de64d287447ac8855f11ca7620, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &7672583724718123548
 PrefabInstance:
   m_ObjectHideFlags: 0

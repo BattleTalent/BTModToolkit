@@ -21,6 +21,7 @@ public class AddressableHelper : MonoBehaviour
         { "Config", "Config/" },
         { "Scene", "Scene/" },
         { "Skin", "Skin/" },
+        { "Role", "Role/" },
     };
 
 
@@ -66,10 +67,13 @@ public class AddressableHelper : MonoBehaviour
 
             for (int i = 0; i < guids.Length; i++)
             {
-                AddressableAssetEntry entry = settings.CreateOrMoveEntry(guids[i], group, readOnly: false, postEvent: false);
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
                 string name = path.Replace(item.Key + "/", "");
                 int idx = name.LastIndexOf(".");
+                if (idx < 0)
+                    continue;
+
+                AddressableAssetEntry entry = settings.CreateOrMoveEntry(guids[i], group, readOnly: false, postEvent: false);
                 name = name.Remove(idx, name.Length - idx);
 
                 if (item.Value == pathToName["Scene"])
@@ -108,6 +112,9 @@ public class AddressableHelper : MonoBehaviour
                     string path = AssetDatabase.GUIDToAssetPath(guids[i]);
                     string name = path.Replace(item.Key + "/", "");
                     int idx = name.LastIndexOf(".");
+                    if (idx < 0)
+                        continue;
+
                     name = name.Remove(idx, name.Length - idx);
 
                     if (item.Value == pathToName["Scene"])
@@ -189,6 +196,32 @@ public class AddressableHelper : MonoBehaviour
                 }
             }
         }
+    }
+
+    public static void ModelSetUp()
+    {
+        AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressableAssetGroup group = settings.DefaultGroup;
+        var eIte = group.entries.GetEnumerator();
+
+        string rolePath = pathToName["Role"];
+        while (eIte.MoveNext())
+        {
+            if (eIte.Current.address.Contains(rolePath))
+            {
+                string[] dependencies = AssetDatabase.GetDependencies(eIte.Current.AssetPath);
+                foreach (var path in dependencies)
+                {
+                    var modelImporter = AssetImporter.GetAtPath(path) as ModelImporter;
+                    if (modelImporter != null)
+                    {
+                        modelImporter.animationType = ModelImporterAnimationType.Human;
+                    }
+                }
+            }
+        }
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
     }
 
     public static void RemoveEntry()
@@ -403,5 +436,36 @@ public class AddressableHelper : MonoBehaviour
             }
             File.WriteAllLines(strFilePath, lines);
         }
+    }
+
+
+
+    public static bool IsSceneExist()
+    {
+        AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressableAssetGroup group = settings.DefaultGroup;
+
+        var eIte = group.entries.GetEnumerator();
+        while (eIte.MoveNext())
+        {
+            string assetPath = eIte.Current.AssetPath;
+
+            SceneAsset scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(assetPath);
+            if (scene != null)
+            {
+                return true;
+            }
+
+            ItemInfoConfig info = AssetDatabase.LoadAssetAtPath<ItemInfoConfig>(assetPath);
+            if (info != null)
+            {
+                if (info.storeItemInfo.Length > 0)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

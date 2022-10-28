@@ -29,7 +29,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 150031902630721522}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -2.25}
+  m_LocalPosition: {x: 0, y: 0, z: 0.75}
   m_LocalScale: {x: 1.8, y: 4, z: 1.5}
   m_Children: []
   m_Father: {fileID: 8749318165842599950}
@@ -107,6 +107,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c952e3983b6d65449c7265f7c611a3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  eventName: 
   actOnAwake: 0
   delayExecute: 0
   events: []
@@ -117,7 +118,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   executeLimitCount: -1
-  targetLocalPos: {x: 0, y: 0, z: -0.75}
+  targetLocalPos: {x: 0, y: 0, z: 2}
+  sourceLocalPos: {x: 0, y: 0, z: 0.75}
   moveSec: 0.5
   moveSound: {fileID: 150562188513393965}
   target: {fileID: 5917646539055732145}
@@ -244,13 +246,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3343762691973417522}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 4.7, z: 0}
-  m_LocalScale: {x: 2, y: 1.5, z: 6.5}
+  m_LocalScale: {x: 2, y: 6.5, z: 1.5}
   m_Children: []
   m_Father: {fileID: 458266452446257141}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!33 &1983585507352839130
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -415,7 +417,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5552608266182219770}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 2.25}
+  m_LocalPosition: {x: 0, y: 0, z: 0.75}
   m_LocalScale: {x: 1.8, y: 4, z: 1.5}
   m_Children: []
   m_Father: {fileID: 8925563673852094940}
@@ -493,6 +495,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c952e3983b6d65449c7265f7c611a3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  eventName: 
   actOnAwake: 0
   delayExecute: 0
   events: []
@@ -503,7 +506,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   executeLimitCount: -1
-  targetLocalPos: {x: 0, y: 0, z: 0.75}
+  targetLocalPos: {x: 0, y: 0, z: 2}
+  sourceLocalPos: {x: 0, y: 0, z: 0.75}
   moveSec: 0.5
   moveSound: {fileID: 7480316180084088128}
   target: {fileID: 486211132850265137}
@@ -627,14 +631,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5888061873185764475}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: -1, z: 0, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 486211132850265137}
   m_Father: {fileID: 5739140231346113940}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
 --- !u!1 &6718946920433726768
 GameObject:
   m_ObjectHideFlags: 0
@@ -685,8 +689,8 @@ MonoBehaviour:
   hp:
     BaseValue: 100
   faceToTileDoor: 0
-  doorOpenZ: -1.5
-  doorCloseZ: -0.7
+  doorOpenZ: 2
+  doorCloseZ: 0.75
   moveEvents:
   - {fileID: 7984780002339048578}
   - {fileID: 5657045405529867315}

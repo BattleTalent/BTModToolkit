@@ -68,8 +68,50 @@ namespace CrossLink
         [Tooltip("skin discription")]
         public string desc;
 
-        [Tooltip("character of skin")]
-        public string characterName;
+        [Tooltip("name of the root node of all meshes in the prefab")]
+        public string meshRoot;
+    }
+
+    [System.Serializable]
+    public class RoleModInfo
+    {
+        [Tooltip("prefab name")]
+        public string roleName;
+
+        [Tooltip("the name displayed on game")]
+        public string name;
+
+        [Tooltip("role discription")]
+        public string desc;
+
+        [Tooltip("replace NPC.")]
+        public string[] replaceRole;
+
+        [Tooltip("character's weapon")]
+        public string weapon;
+
+        [Tooltip("character's attribute, read only the first data of this array, Use default data when array length is 0.")]
+        public RoleAttr[] attr;
+
+        public SoundEffectInfo boneBreakSound;
+        public SoundEffectInfo hurtSound;
+        public SoundEffectInfo deathSound;
+        public SoundEffectInfo groundSound;
+        public SoundEffectInfo warningSound;
+        public SoundEffectInfo attackSound;
+        public SoundEffectInfo tauntSound;
+    }
+
+    [System.Serializable]
+    public class RoleAttr
+    {
+        public float hpMax;
+
+        public float mpMax;
+
+        public float atkMlp;
+
+        public float massMlp;
     }
 
     [CreateAssetMenu(fileName = "ItemInfoConfig", menuName = "ItemInfoConfig")]
@@ -96,6 +138,9 @@ namespace CrossLink
 
         [SerializeField]
         public SkinInfo[] skinInfo;
+
+        [SerializeField]
+        public RoleModInfo[] roleModInfo;
 
         [SerializeField]
         public HitInfo[] hitInfo;
