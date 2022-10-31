@@ -29,6 +29,5 @@ namespace CrossLink
         public Object statue;
         public MetaDefine meta;
         public string[] pool;
-        public PipelineDefine[] waveData;
     }
 }

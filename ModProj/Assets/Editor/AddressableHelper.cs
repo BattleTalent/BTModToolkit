@@ -72,6 +72,8 @@ public class AddressableHelper : MonoBehaviour
                 int idx = name.LastIndexOf(".");
                 if (idx < 0)
                     continue;
+                if (name.Contains("OcclusionCullingData"))
+                    continue;
 
                 AddressableAssetEntry entry = settings.CreateOrMoveEntry(guids[i], group, readOnly: false, postEvent: false);
                 name = name.Remove(idx, name.Length - idx);
@@ -113,6 +115,8 @@ public class AddressableHelper : MonoBehaviour
                     string name = path.Replace(item.Key + "/", "");
                     int idx = name.LastIndexOf(".");
                     if (idx < 0)
+                        continue;
+                    if (name.Contains("OcclusionCullingData"))
                         continue;
 
                     name = name.Remove(idx, name.Length - idx);
