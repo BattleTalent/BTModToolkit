@@ -203,24 +203,28 @@ namespace CrossLink
                 foreach (var bone in LODS[i].bones) Names.Add(bone.name);
                 LODBones[i] = Names.ToArray();
             }
-            var rootBone = LODS[0].rootBone;
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                var child = transform.GetChild(i);
-                if (rootBone.IsChildOf(child))
-                {
-#if UNITY_EDITOR
-                    if (Application.isPlaying == false)
-                    {
-                        DestroyImmediate(child.gameObject);
-                    }
-                    else
-#endif
-                    {
-                        Destroy(child.gameObject);
-                    }
 
-                    break;
+            if (LODS.Length > 0)
+            {
+                var rootBone = LODS[0].rootBone;
+                for (int i = 0; i < transform.childCount; i++)
+                {
+                    var child = transform.GetChild(i);
+                    if (rootBone.IsChildOf(child))
+                    {
+#if UNITY_EDITOR
+                        if (Application.isPlaying == false)
+                        {
+                            DestroyImmediate(child.gameObject);
+                        }
+                        else
+#endif
+                        {
+                            Destroy(child.gameObject);
+                        }
+
+                        break;
+                    }
                 }
             }
         }
