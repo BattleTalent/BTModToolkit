@@ -1,0 +1,86 @@
+
+local flyFlame = {
+    hitDistance = 5,
+    hitWidth = 0.5,
+    hitHeight = 0.5,
+    hitStartOffset = 0.5,
+    
+    checkInterval = 0.2,
+    
+    hzCheckHit = CL.FramerateController(0.2),
+    
+    destroyBody = false,
+    checkCounter = 0,
+}
+
+function flyFlame:OnSpawn()
+    self.checkCounter = 0
+    self.hzCheckHit.checkFrequencyTimer = 0
+    self.hzCheckHit.checkUpdateInterval = self.checkInterval
+    
+    if self.destroyBody then
+        local hitInfo = CL.RagdollHitMgr.Instance:GetHitInfoByCol(self.col)
+        if hitInfo ~= nil then
+            hitInfo:OnInteractRoleHitPhase1Event("+", self.HitPhase1)
+        end
+    end
+    
+    CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0, -1)
+end
+
+function flyFlame:HitPhase1(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+    if fc.muscleState:IsPowerfulCharacter() then
+        return
+    end
+    
+    local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+    if frag then
+        CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+    end
+    CL.FullBodyMuscleState.dmgEffectData.ripApart = true
+end
+
+function flyFlame:Update()
+    self.hzCheckHit:TickToZero(UE.Time.deltaTime)
+    
+    if self.hzCheckHit.limitUpdateFrequency then
+        self.checkCounter = self.checkCounter + 1
+        self:DoFireCheck()
+    end
+end
+
+function flyFlame:OnDisable()
+    if self.checkCounter == 0 then
+        self:DoFireCheck()
+    end
+end
+
+flyFlameCols = {}
+
+function flyFlame:DoFireCheck()
+    local center = self.host.trans.position + self.host.trans.forward * (self.hitDistance / 2 + self.hitStartOffset)
+    local halfExt = UE.Vector3(self.hitWidth/2, self.hitHeight/2, (self.hitDistance/2))
+    
+    local flyFlameCols = UE.Physics.OverlapBox(center, halfExt, self.host.trans.rotation, CL.LayerDefine.BodyMask.value)
+    self.center.position = center
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.SetHitScanIgnore(self.host.ignoreDamageList)
+    
+    for i = 0, flyFlameCols.Length - 1 do
+        CL.InteractTrigger.ApplyHitScanDamage(flyFlameCols[i],
+            self.host, self.host.rb, self.host.col, self.host.trans.forward, CL.AiProxy.CampNone)
+    end
+    self:AfterHitScan()
+    
+    CL.InteractTrigger.EndHitScan()
+end
+
+function flyFlame:AfterHitScan()
+    
+end
+
+return Class(Require("LuaScript/WMD_FlySpellBaseScript"),nil,flyFlame)
