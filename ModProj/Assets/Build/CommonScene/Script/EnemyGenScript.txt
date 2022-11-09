@@ -1,0 +1,18 @@
+
+local EnemyGen = {
+    name = "Goblin_Axe",
+}
+
+function EnemyGen:Awake()
+    local fc = CL.CharacterMgr.Instance:SpawnRole(self.name)
+    if fc == nil then
+        return
+    end
+    
+    fc.transform.position = self.host.gameObject.transform.position
+    fc.transform.forward = self.host.gameObject.transform.forward
+    print("gen enemy----------")
+end
+
+
+return Class(nil, nil, EnemyGen)
