@@ -66,9 +66,9 @@ function flyFlame:DoFireCheck()
     local halfExt = UE.Vector3(self.hitWidth/2, self.hitHeight/2, (self.hitDistance/2))
     
     local flyFlameCols = UE.Physics.OverlapBox(center, halfExt, self.host.trans.rotation, CL.LayerDefine.BodyMask.value)
-    self.center.position = center
     CL.InteractTrigger.BeginScanDmg()
     CL.InteractTrigger.SetHitScanIgnore(self.host.ignoreDamageList)
+    
     
     for i = 0, flyFlameCols.Length - 1 do
         CL.InteractTrigger.ApplyHitScanDamage(flyFlameCols[i],
