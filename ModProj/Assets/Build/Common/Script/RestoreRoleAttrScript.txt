@@ -1,0 +1,21 @@
+
+local RestoreRoleAttr = {
+}
+
+function RestoreRoleAttr:OnEnable()
+    local fc = self.trans.root:GetComponent(typeof(CL.FullCharacterControl))
+    if not IsNullOrDestroyed(fc) then
+        self:RestoreHp(fc)
+        self:RestoreMp(fc)
+    end
+end
+
+function RestoreRoleAttr:RestoreHp(fc)
+    fc.attr.hp:SetBaseValue(fc.attr.hpMax.BaseValue)
+end
+
+function RestoreRoleAttr:RestoreMp(fc)
+    fc.attr.mp:SetBaseValue(fc.attr.mpMax.BaseValue)
+end
+
+return Class(nil, nil, RestoreRoleAttr)
