@@ -438,6 +438,7 @@ namespace CrossLink
 
         public static void CheckItemInfoConfig()
         {
+            bool isPass = true;
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             AddressableAssetGroup group = settings.DefaultGroup;
 
@@ -511,10 +512,14 @@ namespace CrossLink
                 if (CheckAddressableExistItem(item.Key) == false)
                 {
                     Debug.LogError("The item:"+ item.Key + " in ItemInfoConfig:" + item.Value + " did not find a matching file in Addressables.");
+                    isPass = false;
                 }
             }
 
-            Debug.Log("Pass");
+            if (isPass)
+            {
+                Debug.Log("Pass");
+            }
         }
 
         private static bool CheckAddressableExistItem(string name)

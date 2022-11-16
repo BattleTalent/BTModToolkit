@@ -214,20 +214,25 @@ namespace CrossLink
         [EasyButtons.Button]
         public void Check()
         {
+            bool isPass = true;
             string prefix = AddressableConfig.GetConfig().GetPrefix();
 
             //Weapon
             if (storeItemInfo != null)
             {
-                foreach(var item in storeItemInfo){
+                foreach (var item in storeItemInfo) {
                     if (!item.addStoreItemName.Contains(prefix))
                     {
                         Debug.LogError("The prefix of addStoreItemName:" + item.addStoreItemName + " is wrong or missing, please fill in " +
                             "the same prefix as in AddressableConfig.");
+                        isPass = false;
                     }
 
                     if (string.IsNullOrEmpty(item.name))
+                    {
                         Debug.LogError("Please fill in the name of the StoreItemInfo.");
+                        isPass = false;
+                    }
                 }
             }
 
@@ -240,10 +245,14 @@ namespace CrossLink
                     {
                         Debug.LogError("The Prefix of sceneName:" + item.sceneName + " is wrong or missing, please fill in " +
                             "the same prefix as in AddressableConfig.");
+                        isPass = false;
                     }
 
                     if (string.IsNullOrEmpty(item.name))
+                    {
                         Debug.LogError("Please fill in the name of the SceneModInfo.");
+                        isPass = false;
+                    }
                 }
             }
 
@@ -256,12 +265,19 @@ namespace CrossLink
                     {
                         Debug.LogError("The Prefix of skinName:" + item.skinName + " is wrong or missing, please fill in " +
                             "the same prefix as in AddressableConfig.");
+                        isPass = false;
                     }
 
                     if (string.IsNullOrEmpty(item.name))
+                    {
                         Debug.LogError("Please fill in the name of the SkinInfo.");
+                        isPass = false;
+                    }
                     if (string.IsNullOrEmpty(item.meshRoot))
+                    {
                         Debug.LogError("Please fill in the MeshRoot of the SkinInfo.");
+                        isPass = false;
+                    }
 
                 }
             }
@@ -275,11 +291,20 @@ namespace CrossLink
                     {
                         Debug.LogError("The Prefix of roleName:" + item.roleName + " is wrong or missing, please fill in " +
                             "the same prefix as in AddressableConfig.");
+                        isPass = false;
                     }
 
                     if (string.IsNullOrEmpty(item.name))
+                    {
                         Debug.LogError("Please fill in the name of the RoleModInfo.");
+                        isPass = false;
+                    }
                 }
+            }
+
+            if (isPass)
+            {
+                Debug.Log("Pass");
             }
         }
     }
