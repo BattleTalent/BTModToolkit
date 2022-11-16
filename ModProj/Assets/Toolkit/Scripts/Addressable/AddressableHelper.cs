@@ -405,22 +405,31 @@ namespace CrossLink
                 }
 
                 //Scene
-                foreach (var item in info.sceneModInfo)
+                if (info.sceneModInfo != null)
                 {
-                    item.sceneName = item.sceneName.Replace(oldPrefix, curPrefix);
+                    foreach (var item in info.sceneModInfo)
+                    {
+                        item.sceneName = item.sceneName.Replace(oldPrefix, curPrefix);
+                    }
                 }
 
                 //Skin
-                foreach (var item in info.skinInfo)
+                if (info.skinInfo != null)
                 {
-                    item.skinName = item.skinName.Replace(oldPrefix, curPrefix);
+                    foreach (var item in info.skinInfo)
+                    {
+                        item.skinName = item.skinName.Replace(oldPrefix, curPrefix);
+                    }
                 }
 
                 //Role
-                foreach (var item in info.roleModInfo)
+                if (info.roleModInfo != null)
                 {
-                    item.roleName = item.roleName.Replace(oldPrefix, curPrefix);
-                    item.weapon = item.weapon.Replace(oldPrefix, curPrefix);
+                    foreach (var item in info.roleModInfo)
+                    {
+                        item.roleName = item.roleName.Replace(oldPrefix, curPrefix);
+                        item.weapon = item.weapon.Replace(oldPrefix, curPrefix);
+                    }
                 }
             }
             AssetDatabase.SaveAssets();
@@ -448,24 +457,51 @@ namespace CrossLink
 
                 foreach (var item in info.storeItemInfo)
                 {
-                    names.Add(item.addStoreItemName, assetPath);
-                }
-                foreach (var item in info.sceneModInfo)
-                {
-                    names.Add(item.sceneName, assetPath);
-                }
-                foreach (var item in info.skinInfo)
-                {
-                    names.Add(item.skinName, assetPath);
-                }
-                foreach (var item in info.roleModInfo)
-                {
-                    names.Add(item.roleName, assetPath);
-
-                    if (!string.IsNullOrEmpty(item.weapon))
+                    if (!names.ContainsKey(item.addStoreItemName))
                     {
-                        if(item.weapon.Contains(prefix))
-                            names.Add(item.weapon, assetPath);
+                        names.Add(item.addStoreItemName, assetPath);
+                    }
+                }
+                if (info.sceneModInfo != null)
+                {
+                    foreach (var item in info.sceneModInfo)
+                    {
+                        if (!names.ContainsKey(item.sceneName))
+                        {
+                            names.Add(item.sceneName, assetPath);
+                        }
+                    }
+                }
+
+                if (info.skinInfo != null)
+                {
+                    foreach (var item in info.skinInfo)
+                    {
+                        if (!names.ContainsKey(item.skinName))
+                        {
+                            names.Add(item.skinName, assetPath);
+                        }
+                    }
+                }
+                if (info.roleModInfo != null)
+                {
+                    foreach (var item in info.roleModInfo)
+                    {
+                        if (!names.ContainsKey(item.roleName))
+                        {
+                            names.Add(item.roleName, assetPath);
+                        }
+
+                        if (!string.IsNullOrEmpty(item.weapon))
+                        {
+                            if (item.weapon.Contains(prefix))
+                            {
+                                if (!names.ContainsKey(item.weapon))
+                                {
+                                    names.Add(item.weapon, assetPath);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -477,6 +513,8 @@ namespace CrossLink
                     Debug.LogError("The item:"+ item.Key + " in ItemInfoConfig:" + item.Value + " did not find a matching file in Addressables.");
                 }
             }
+
+            Debug.Log("Pass");
         }
 
         private static bool CheckAddressableExistItem(string name)
@@ -492,7 +530,7 @@ namespace CrossLink
                 if (strs == null)
                     continue;
 
-                if (strs[1] == name)
+                if (strs[strs.Length - 1] == name)
                 {
                     return true;
                 }
