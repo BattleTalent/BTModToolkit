@@ -87,7 +87,7 @@ namespace CrossLink
         [Tooltip("replace NPC.")]
         public string[] replaceRole;
 
-        [Tooltip("character's weapon")]
+        [Tooltip("character's weapon, fill in the addStoreItemName in ItemInfoConfig when using a mod weapon.")]
         public string weapon;
 
         [Tooltip("character's attribute, read only the first data of this array, Use default data when array length is 0.")]
@@ -144,5 +144,168 @@ namespace CrossLink
 
         [SerializeField]
         public HitInfo[] hitInfo;
+
+        [EasyButtons.Button]
+        public void AutoAddPrefix()
+        {
+            //Weapon
+            string prefix = AddressableConfig.GetConfig().GetPrefix();
+            if (storeItemInfo != null)
+            {
+                foreach (var item in storeItemInfo)
+                {
+                    if (string.IsNullOrEmpty(item.addStoreItemName))
+                        continue;
+
+                    if (!item.addStoreItemName.Contains(prefix))
+                    {
+                        item.addStoreItemName = prefix + item.addStoreItemName;
+                    }
+                }
+            }
+
+            //Scene
+            if (sceneModInfo != null)
+            {
+                foreach (var item in sceneModInfo)
+                {
+                    if (string.IsNullOrEmpty(item.sceneName))
+                        continue;
+
+
+                    if (!item.sceneName.Contains(prefix))
+                    {
+                        item.sceneName = prefix + item.sceneName;
+                    }
+                }
+            }
+
+            //Skin
+            if (skinInfo != null)
+            {
+                foreach (var item in skinInfo)
+                {
+                    if (string.IsNullOrEmpty(item.skinName))
+                        continue;
+
+                    if (!item.skinName.Contains(prefix))
+                    {
+                        item.skinName = prefix + item.skinName;
+                    }
+                }
+            }
+
+            //Role
+            if (roleModInfo != null)
+            {
+                foreach (var item in roleModInfo)
+                {
+                    if (string.IsNullOrEmpty(item.roleName))
+                        continue;
+
+                    if (!item.roleName.Contains(prefix))
+                    {
+                        item.roleName = prefix + item.roleName;
+                    }
+                }
+            }
+        }
+
+        [EasyButtons.Button]
+        public void Check()
+        {
+            bool isPass = true;
+            string prefix = AddressableConfig.GetConfig().GetPrefix();
+
+            //Weapon
+            if (storeItemInfo != null)
+            {
+                foreach (var item in storeItemInfo) {
+                    if (!item.addStoreItemName.Contains(prefix))
+                    {
+                        Debug.LogError("The prefix of addStoreItemName:" + item.addStoreItemName + " is wrong or missing, please fill in " +
+                            "the same prefix as in AddressableConfig.");
+                        isPass = false;
+                    }
+
+                    if (string.IsNullOrEmpty(item.name))
+                    {
+                        Debug.LogError("Please fill in the name of the StoreItemInfo.");
+                        isPass = false;
+                    }
+                }
+            }
+
+            //Scene
+            if (sceneModInfo != null)
+            {
+                foreach (var item in sceneModInfo)
+                {
+                    if (!item.sceneName.Contains(prefix))
+                    {
+                        Debug.LogError("The Prefix of sceneName:" + item.sceneName + " is wrong or missing, please fill in " +
+                            "the same prefix as in AddressableConfig.");
+                        isPass = false;
+                    }
+
+                    if (string.IsNullOrEmpty(item.name))
+                    {
+                        Debug.LogError("Please fill in the name of the SceneModInfo.");
+                        isPass = false;
+                    }
+                }
+            }
+
+            //Skin
+            if (skinInfo != null)
+            {
+                foreach (var item in skinInfo)
+                {
+                    if (!item.skinName.Contains(prefix))
+                    {
+                        Debug.LogError("The Prefix of skinName:" + item.skinName + " is wrong or missing, please fill in " +
+                            "the same prefix as in AddressableConfig.");
+                        isPass = false;
+                    }
+
+                    if (string.IsNullOrEmpty(item.name))
+                    {
+                        Debug.LogError("Please fill in the name of the SkinInfo.");
+                        isPass = false;
+                    }
+                    if (string.IsNullOrEmpty(item.meshRoot))
+                    {
+                        Debug.LogError("Please fill in the MeshRoot of the SkinInfo.");
+                        isPass = false;
+                    }
+
+                }
+            }
+
+            //Role
+            if (roleModInfo != null)
+            {
+                foreach (var item in roleModInfo)
+                {
+                    if (!item.roleName.Contains(prefix))
+                    {
+                        Debug.LogError("The Prefix of roleName:" + item.roleName + " is wrong or missing, please fill in " +
+                            "the same prefix as in AddressableConfig.");
+                        isPass = false;
+                    }
+
+                    if (string.IsNullOrEmpty(item.name))
+                    {
+                        Debug.LogError("Please fill in the name of the RoleModInfo.");
+                        isPass = false;
+                    }
+                }
+            }
+
+            if (isPass)
+            {
+                Debug.Log("Pass");
+            }
+        }
     }
 }

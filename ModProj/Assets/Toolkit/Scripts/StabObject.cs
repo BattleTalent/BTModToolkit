@@ -157,6 +157,10 @@ namespace CrossLink
                 Gizmos.DrawSphere(stabPos + forwardDir * geo.stabTie, 0.02f);
                 //Gizmos.DrawLine(geoPos + widthDir)
 
+                Debug.DrawLine(stabPos, stabPos + widthDir * 0.02f - forwardDir * 0.02f, Color.yellow);
+                Debug.DrawLine(stabPos, stabPos - widthDir * 0.02f - forwardDir * 0.02f, Color.yellow);
+                Debug.DrawLine(stabPos, stabPos + thickDir * 0.02f - forwardDir * 0.02f, Color.yellow);
+                Debug.DrawLine(stabPos, stabPos - thickDir * 0.02f - forwardDir * 0.02f, Color.yellow);
             }
 #endif
 
