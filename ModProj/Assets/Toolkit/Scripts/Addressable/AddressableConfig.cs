@@ -88,6 +88,7 @@ namespace CrossLink
             AddressableHelper.AutoCompleteGazeObj();
 
 
+            Check();
             //AddressableHelper.ModelSetUp();
         }
 
@@ -100,6 +101,7 @@ namespace CrossLink
             AddressableHelper.AutoCompleteGazeObj();
 
 
+            Check();
             //AddressableHelper.ModelSetUp();
         }
 
