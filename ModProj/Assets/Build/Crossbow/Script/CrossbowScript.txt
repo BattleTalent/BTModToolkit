@@ -63,10 +63,16 @@ end
 
 function Crossbow:Shoot()
     local obj = CL.PrefabPool.SpawnPrefab("WMD_ExplodeArrow", "FlyObj/")
+    if IsNullOrDestroyed(obj) then
+        return
+    end
+    
     local iw = obj:GetComponent("InteractBase")
     iw.trans.position = self.createPoint.position
     iw:AddForce(self.createPoint.forward * self.intensity, UE.ForceMode.VelocityChange)
     iw.trans.rotation = UE.Quaternion.LookRotation(self.createPoint.forward)
+    
+    self:TryAerialStayByInteract(self.host.interact)
     
     local scp = obj:GetComponent("InteractTriggerX").script
     local lua = scp.self
@@ -82,5 +88,14 @@ function Crossbow:Shoot()
     UE.ForceMode.Impulse)
 end
 
+function Crossbow:TryAerialStayByInteract(interact)
+    local hand = interact:GetPrimaryHand() or interact:GetSecondaryHand()
+    if not hand or IsNullOrDestroyed(hand) then
+        return
+    end
+    if hand.character:IsMidAir() and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_AirStayRange") then
+        hand.character:StartAerialStayByOthers(hand)
+    end
+end
 
 return Class(nil,nil,Crossbow)

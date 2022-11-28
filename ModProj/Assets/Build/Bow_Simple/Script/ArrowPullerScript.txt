@@ -177,6 +177,10 @@ function ArrowPuller:StartPull()
     end
     self.isPulling = true
     
+    if self.usingHand.character:IsMidAir() and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_AirStayRange") then
+        self.usingHand.character:StartAerialStayByOthers(self.usingHand)
+    end
+    
     if self.spawnArrowSound then
         self.spawnArrowSound.soundInfo:Play(self.ib.trans.position)
     end
