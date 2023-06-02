@@ -15,7 +15,7 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_Data:
     m_SerializedData: []
-  m_GUID: 301f4b9be1643bf4dadee3a8dcfbbd2b
+  m_GUID: 5e5c5fae2a229644cab1ee115071f7bf
   m_SerializeEntries:
   - m_GUID: cf63918ee35bdec4983173608921eeb2
     m_Address: LuaScript/WMD_BulletScript
@@ -23,6 +23,10 @@ MonoBehaviour:
     m_SerializedLabels: []
   - m_GUID: 3576ef4a941c6ce459ec7edab98b6502
     m_Address: LuaScript/WMD_FlySpellBaseScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 8ac7202d6449c554b8ac839e591ee111
+    m_Address: LuaScript/WMD_RestoreRoleAttrScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: 2623d6cc0169c4241891f6a73f6bbd23
@@ -171,6 +175,22 @@ MonoBehaviour:
     m_SerializedLabels: []
   - m_GUID: f6008fe7df1ffa44eac8079f3116bedc
     m_Address: Config/WMD_Dagger_Mind_Info
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 60fbbd602d4648144be47a93e4168150
+    m_Address: Weapon/WMD_Dagger_Dash
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: d5bc5224f7b39cc4ca1e59ff529d3937
+    m_Address: LuaScript/WMD_DaggerDashScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 8e7618cce3c7acc4f88a8f59cbc2103c
+    m_Address: ICon/WMD_Dagger_Dash
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 008a79c19ec295c44b51ed9f5750daae
+    m_Address: Config/WMD_Dagger_Dash_Info
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: f846718b5ce755240bfcd5e410ca5f04
@@ -685,20 +705,76 @@ MonoBehaviour:
     m_Address: Config/WMD_Wand_Ice_Info
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 60fbbd602d4648144be47a93e4168150
-    m_Address: Weapon/WMD_Dagger_Dash
+  - m_GUID: 016ad2b20ac13ca46ae482fc8c13fc73
+    m_Address: LuaScript/WMD_FlyFlameScript
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: d5bc5224f7b39cc4ca1e59ff529d3937
-    m_Address: LuaScript/WMD_DaggerDashScript
+  - m_GUID: 76b347c1050565546a234dd4c4165377
+    m_Address: Effect/WMD_FlyFlame
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 8e7618cce3c7acc4f88a8f59cbc2103c
-    m_Address: ICon/WMD_Dagger_Dash
+  - m_GUID: b0b2b1448dd3dd8498d43b83ff9da43f
+    m_Address: FlyObj/WMD_FlyFlame
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 008a79c19ec295c44b51ed9f5750daae
-    m_Address: Config/WMD_Dagger_Dash_Info
+  - m_GUID: 30a7bf37744f2914aadc3a7e29070977
+    m_Address: Audio/Sound/WMD_Fire_Burn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 3140416aa8a61344b995fdf0f6acb35b
+    m_Address: ICon/WMD_SimpleScene
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 658fba41072785a42a94094eb029f82e
+    m_Address: Audio/Sound/WMD_explore_tomb_loop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 60f93f28f7c5e1c48af016f23121ffed
+    m_Address: Audio/Sound/WMD_normal_fight_tomb_loop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: e2cb1a20c2e1df7489f6467e2784fcb9
+    m_Address: Config/WMD_SimpleScene
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 6104ce464430e0643b8ae95a66e479e2
+    m_Address: WMD_SimpleScene
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 6c45d90f49a1adf41ad1b38d7ca6f276
+    m_Address: Audio/Sound/WMD_goblinDead
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: f369f1b15a999c449b85a18df69e1cbe
+    m_Address: Config/WMD_SimpleRole
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 855fa02dbea27dc43a17dfd6176b81ba
+    m_Address: Role/WMD_SimpleRole
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 20bd07d5de4f42948aa277b1465076af
+    m_Address: ICon/WMD_SimpleCharacterSkin
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: df07281ad7cdca04a831bbe3a69d5973
+    m_Address: Config/WMD_SimpleCharacterSkin
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 9b53d46ed0f97d04ca2129905ecdbbc4
+    m_Address: Skin/WMD_SimpleCharacterSkin
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: fda3f3bca0d9e394f9c3fc1f8b33123c
+    m_Address: LuaScript/WMD_EnemyGenScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: e7126875a388dbc449d842633e5c28c9
+    m_Address: LuaScript/WMD_RespawnPointScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: b54b81369cffd7b4c843f345481d99e1
+    m_Address: LuaScript/WMD_SceneInitScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: 55653c56c8432504f93e3f371b4d924c
