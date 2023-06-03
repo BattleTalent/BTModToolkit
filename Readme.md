@@ -159,4 +159,6 @@ https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/damage-pipe
 | Quest   | read it on **in-game console** or using **adb log command** or using **sidequest's adb window** |
 
 
+### Attributions
 
+* Song used in the song mod: Spinning Monkeys - Kevin Macleod under license: https://creativecommons.org/licenses/by/3.0/
