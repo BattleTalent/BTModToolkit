@@ -29,7 +29,7 @@ namespace CrossLink
             {
                 targetpath += splitedPath[i] + "/";
             }
-            targetpath += "CrossLink/BattleTalent/Mods";
+            targetpath += "CyDream/BattleTalent/Mods";
 
             return targetpath;
         }
@@ -122,7 +122,7 @@ namespace CrossLink
             {
                 targetpath += splitedPath[i] + "/";
             }
-            targetpath += "CrossLink/BattleTalent/Mods";
+            targetpath += "CyDream/BattleTalent/Mods";
 
             var targetModPath = targetpath + "/" + Application.productName;
 
