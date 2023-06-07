@@ -268,6 +268,101 @@ namespace CrossLink
 #endif
         }
 
+        public static void UpdatePrefab(GameObject root, String oldPrefix, String curPrefix) {
+            var hasChanged = false;
+            foreach (var fo in root.GetComponentsInChildren<GazeObj>())
+            {
+                fo.showInfo = fo.showInfo.Replace(oldPrefix, curPrefix);
+                fo.showName = fo.showName.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+
+            foreach (var so in root.GetComponentsInChildren<SoundEffectPlayer>())
+            {
+                for (int j = 0; j < so.soundInfo.soundNames.Length; j++)
+                {
+                    so.soundInfo.soundNames[j] = so.soundInfo.soundNames[j].Replace(oldPrefix, curPrefix);
+                    hasChanged = true;
+                }
+            }
+
+            foreach (var rg in root.GetComponentsInChildren<RagdollHitInfoObj>())
+            {
+                rg.hitInfo.templateName = rg.hitInfo.templateName.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+
+            foreach (var fo in root.GetComponentsInChildren<FlyObjectX>())
+            {
+                LuaScript ls = fo.script;
+                string name = ls.GetLuaScript();
+                ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
+                var stringList = ls.GetStringList();
+                foreach (var str in stringList)
+                {
+                    str.value = str.value.Replace(oldPrefix, curPrefix);
+                }
+
+                fo.flyObjTobeCreatedOnImpact = fo.flyObjTobeCreatedOnImpact.Replace(oldPrefix, curPrefix);
+                SoundEffectReplacePrefix(fo.delaySound, oldPrefix, curPrefix);
+
+                fo.shootEffect = fo.shootEffect.Replace(oldPrefix, curPrefix);
+                SoundEffectReplacePrefix(fo.shootSound, oldPrefix, curPrefix);
+
+                fo.impactEffect = fo.impactEffect.Replace(oldPrefix, curPrefix);
+                fo.impactSceneDecal = fo.impactSceneDecal.Replace(oldPrefix, curPrefix);
+                SoundEffectReplacePrefix(fo.impactSound, oldPrefix, curPrefix);
+
+                fo.tailEffect = fo.tailEffect.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+        
+            foreach (var it in root.GetComponentsInChildren<InteractTriggerX>())
+            {
+                LuaScript ls = it.script;
+                string name = ls.GetLuaScript();
+                ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
+                var stringList = ls.GetStringList();
+                foreach (var str in stringList)
+                {
+                    str.value = str.value.Replace(oldPrefix, curPrefix);
+                }
+
+                it.chargeEffect = it.chargeEffect.Replace(oldPrefix, curPrefix);
+                it.chargeEndEffect = it.chargeEndEffect.Replace(oldPrefix, curPrefix);
+
+                SoundEffectReplacePrefix(it.chargeSound, oldPrefix, curPrefix);
+                SoundEffectReplacePrefix(it.chargeEndSound, oldPrefix, curPrefix);
+
+                it.activateEffect = it.activateEffect.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+
+            foreach (var lb in root.GetComponentsInChildren<LuaBehaviour>())
+            {
+                LuaScript ls = lb.script;
+                string name = ls.GetLuaScript();
+                ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
+                var stringList = ls.GetStringList();
+                foreach (var str in stringList)
+                {
+                    str.value = str.value.Replace(oldPrefix, curPrefix);
+                }
+                hasChanged = true;
+            }
+
+            if (hasChanged) {
+                try
+                {
+                    PrefabUtility.SavePrefabAsset(root);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning(e.Message);
+                }
+            }
+        }
+
         public static void RefreshPrefabPrefix(string oldPrefix, string curPrefix)
         {
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -279,93 +374,14 @@ namespace CrossLink
                 string assetPath = eIte.Current.AssetPath;
 
                 GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+
+                
                 if (root == null)
                 {
                     continue;
                 }
 
-                foreach (var fo in root.GetComponentsInChildren<GazeObj>())
-                {
-                    fo.showInfo = fo.showInfo.Replace(oldPrefix, curPrefix);
-                    fo.showName = fo.showName.Replace(oldPrefix, curPrefix);
-                }
-
-                foreach (var so in root.GetComponentsInChildren<SoundEffectPlayer>())
-                {
-                    for (int j = 0; j < so.soundInfo.soundNames.Length; j++)
-                    {
-                        so.soundInfo.soundNames[j] = so.soundInfo.soundNames[j].Replace(oldPrefix, curPrefix);
-                    }
-                }
-
-                foreach (var rg in root.GetComponentsInChildren<RagdollHitInfoObj>())
-                {
-                    rg.hitInfo.templateName = rg.hitInfo.templateName.Replace(oldPrefix, curPrefix);
-                }
-
-                foreach (var fo in root.GetComponentsInChildren<FlyObjectX>())
-                {
-                    LuaScript ls = fo.script;
-                    string name = ls.GetLuaScript();
-                    ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
-                    var stringList = ls.GetStringList();
-                    foreach (var str in stringList)
-                    {
-                        str.value = str.value.Replace(oldPrefix, curPrefix);
-                    }
-
-                    fo.flyObjTobeCreatedOnImpact = fo.flyObjTobeCreatedOnImpact.Replace(oldPrefix, curPrefix);
-                    SoundEffectReplacePrefix(fo.delaySound, oldPrefix, curPrefix);
-
-                    fo.shootEffect = fo.shootEffect.Replace(oldPrefix, curPrefix);
-                    SoundEffectReplacePrefix(fo.shootSound, oldPrefix, curPrefix);
-
-                    fo.impactEffect = fo.impactEffect.Replace(oldPrefix, curPrefix);
-                    fo.impactSceneDecal = fo.impactSceneDecal.Replace(oldPrefix, curPrefix);
-                    SoundEffectReplacePrefix(fo.impactSound, oldPrefix, curPrefix);
-
-                    fo.tailEffect = fo.tailEffect.Replace(oldPrefix, curPrefix);
-                }
-                foreach (var it in root.GetComponentsInChildren<InteractTriggerX>())
-                {
-                    LuaScript ls = it.script;
-                    string name = ls.GetLuaScript();
-                    ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
-                    var stringList = ls.GetStringList();
-                    foreach (var str in stringList)
-                    {
-                        str.value = str.value.Replace(oldPrefix, curPrefix);
-                    }
-
-                    it.chargeEffect = it.chargeEffect.Replace(oldPrefix, curPrefix);
-                    it.chargeEndEffect = it.chargeEndEffect.Replace(oldPrefix, curPrefix);
-
-                    SoundEffectReplacePrefix(it.chargeSound, oldPrefix, curPrefix);
-                    SoundEffectReplacePrefix(it.chargeEndSound, oldPrefix, curPrefix);
-
-                    it.activateEffect = it.activateEffect.Replace(oldPrefix, curPrefix);
-                }
-
-                foreach (var lb in root.GetComponentsInChildren<LuaBehaviour>())
-                {
-                    LuaScript ls = lb.script;
-                    string name = ls.GetLuaScript();
-                    ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
-                    var stringList = ls.GetStringList();
-                    foreach (var str in stringList)
-                    {
-                        str.value = str.value.Replace(oldPrefix, curPrefix);
-                    }
-                }
-
-                try
-                {
-                    PrefabUtility.SavePrefabAsset(root);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogWarning(e.Message);
-                }
+                UpdatePrefab(root, oldPrefix, curPrefix);
             }
         }
 
@@ -432,8 +448,19 @@ namespace CrossLink
                     }
                 }
             }
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+
+            var toolkitPrefabsGuids = AssetDatabase.FindAssets("t:prefab", new string[] {"Assets/Toolkit/Prefabs"});
+            Debug.Log(toolkitPrefabsGuids);
+            foreach( var guid in toolkitPrefabsGuids )
+            {
+                var path = AssetDatabase.GUIDToAssetPath( guid );
+                GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>( path );
+
+                UpdatePrefab(root, oldPrefix, curPrefix);
+            }
         }
 
         public static void CheckItemInfoConfig()
