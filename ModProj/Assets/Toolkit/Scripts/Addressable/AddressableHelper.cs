@@ -453,7 +453,6 @@ namespace CrossLink
             AssetDatabase.Refresh();
 
             var toolkitPrefabsGuids = AssetDatabase.FindAssets("t:prefab", new string[] {"Assets/Toolkit/Prefabs"});
-            Debug.Log(toolkitPrefabsGuids);
             foreach( var guid in toolkitPrefabsGuids )
             {
                 var path = AssetDatabase.GUIDToAssetPath( guid );
