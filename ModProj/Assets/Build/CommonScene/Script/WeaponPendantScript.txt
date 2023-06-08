@@ -1,0 +1,37 @@
+local WeaponPendant = {
+    weapon = nil,
+}
+
+function WeaponPendant:Start()
+    local spawnedWeapon = self.weapon
+    if type(self.weapon) == "string" then
+        spawnedWeapon = CL.ResourceMgr.Instantiate(self.weapon)
+    end
+
+    spawnedWeapon.transform.position = self.host.gameObject.transform.position
+    
+    CL.InteractBasePendant.MakeLoosePendant(spawnedWeapon)
+
+    self.onSpawnStart = function()
+        local interactWeapon = spawnedWeapon:GetComponent(typeof(CL.InteractWeapon))
+        if not interactWeapon:IsGrabbed() then
+            spawnedWeapon:SetActive(false)
+        end
+    end
+
+    self.onSpawnEnd = function()
+        spawnedWeapon:SetActive(true)
+    end
+
+    CL.SpawnPointMgr.Instance:SpawnStartEvent("+", self.onSpawnStart)
+    CL.SpawnPointMgr.Instance:SpawnFinishEvent("+", self.onSpawnEnd)
+    CL.SpawnPointMgr.Instance:SpawnClearEvent("+", self.onSpawnEnd)
+end
+
+function WeaponPendant:OnDestroy()
+    CL.SpawnPointMgr.Instance:SpawnStartEvent("-", self.onSpawnStart)
+    CL.SpawnPointMgr.Instance:SpawnFinishEvent("-", self.onSpawnEnd)
+    CL.SpawnPointMgr.Instance:SpawnClearEvent("-", self.onSpawnEnd)
+end
+
+return Class(nil, nil, WeaponPendant)
