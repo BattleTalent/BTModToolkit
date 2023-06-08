@@ -1,9 +1,8 @@
-
 local WeaponPendant = {
     weapon = nil,
 }
 
-function WeaponPendant:Awake()
+function WeaponPendant:Start()
     local spawnedWeapon = self.weapon
     if type(self.weapon) == "string" then
         spawnedWeapon = CL.ResourceMgr.Instantiate(self.weapon)
@@ -14,23 +13,22 @@ function WeaponPendant:Awake()
     CL.InteractBasePendant.MakeLoosePendant(spawnedWeapon)
 
     self.onSpawnStart = function()
-        print("on start")
-        spawnedWeapon:SetActive(false)
+        local interactWeapon = spawnedWeapon:GetComponent(typeof(CL.InteractWeapon))
+        if not interactWeapon:IsGrabbed() then
+            spawnedWeapon:SetActive(false)
+        end
     end
 
     self.onSpawnEnd = function()
-        print("on end")
         spawnedWeapon:SetActive(true)
     end
 
     CL.SpawnPointMgr.Instance:SpawnStartEvent("+", self.onSpawnStart)
     CL.SpawnPointMgr.Instance:SpawnFinishEvent("+", self.onSpawnEnd)
     CL.SpawnPointMgr.Instance:SpawnClearEvent("+", self.onSpawnEnd)
-    print("listeners have been set!")
 end
 
 function WeaponPendant:OnDestroy()
-    print("listeners have been removed!")
     CL.SpawnPointMgr.Instance:SpawnStartEvent("-", self.onSpawnStart)
     CL.SpawnPointMgr.Instance:SpawnFinishEvent("-", self.onSpawnEnd)
     CL.SpawnPointMgr.Instance:SpawnClearEvent("-", self.onSpawnEnd)

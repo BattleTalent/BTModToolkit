@@ -1,10 +1,9 @@
-
 local WaveStatue = {
     statue = "Selector/Statue/SkelStatue",
     wave = nil,
 }
 
-function WaveStatue:Awake()
+function WaveStatue:Start()
     local selectorTemp = CL.ResourceMgr.Instantiate("Selector/SpawnTemplate")
     local slp = selectorTemp:GetComponent(typeof(CL.SelectorSpawn))
     self.its = selectorTemp:GetComponent(typeof(CL.ItemSelector))
@@ -21,12 +20,24 @@ function WaveStatue:Awake()
     spawnedStatue.transform.parent = selectorTemp.transform;
     spawnedStatue.transform.localPosition = UE.Vector3.zero;
     spawnedStatue.transform.localRotation = UE.Quaternion.identity;
-    
-    --self.its.skillChangeColors = spawnedStatue:GetComponentsInChildren(typeof(UE.Renderer))
 
-    -- (optional) gain extra buff for activating this selector
-    --local buffSelector = s:AddComponent(typeof(CL.ArenaBuffSelector))
-    --buffSelector.selector = self.its
+    self.onSpawnStart = function()
+        spawnedStatue:SetActive(false)
+    end
+
+    self.onSpawnEnd = function()
+        spawnedStatue:SetActive(true)
+    end
+
+    CL.SpawnPointMgr.Instance:SpawnStartEvent("+", self.onSpawnStart)
+    CL.SpawnPointMgr.Instance:SpawnFinishEvent("+", self.onSpawnEnd)
+    CL.SpawnPointMgr.Instance:SpawnClearEvent("+", self.onSpawnEnd)
+end
+
+function WaveStatue:OnDestroy()
+    CL.SpawnPointMgr.Instance:SpawnStartEvent("-", self.onSpawnStart)
+    CL.SpawnPointMgr.Instance:SpawnFinishEvent("-", self.onSpawnEnd)
+    CL.SpawnPointMgr.Instance:SpawnClearEvent("-", self.onSpawnEnd)
 end
 
 return Class(nil, nil, WaveStatue)
