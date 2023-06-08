@@ -22,11 +22,11 @@ function WaveStatue:Start()
     spawnedStatue.transform.localRotation = UE.Quaternion.identity;
 
     self.onSpawnStart = function()
-        spawnedStatue:SetActive(false)
+        selectorTemp:SetActive(false)
     end
 
     self.onSpawnEnd = function()
-        spawnedStatue:SetActive(true)
+        selectorTemp:SetActive(true)
     end
 
     CL.SpawnPointMgr.Instance:SpawnStartEvent("+", self.onSpawnStart)
