@@ -24,13 +24,11 @@ function WeaponPendant:Start()
     end
 
     CL.SpawnPointMgr.Instance:SpawnStartEvent("+", self.onSpawnStart)
-    CL.SpawnPointMgr.Instance:SpawnFinishEvent("+", self.onSpawnEnd)
     CL.SpawnPointMgr.Instance:SpawnClearEvent("+", self.onSpawnEnd)
 end
 
 function WeaponPendant:OnDestroy()
     CL.SpawnPointMgr.Instance:SpawnStartEvent("-", self.onSpawnStart)
-    CL.SpawnPointMgr.Instance:SpawnFinishEvent("-", self.onSpawnEnd)
     CL.SpawnPointMgr.Instance:SpawnClearEvent("-", self.onSpawnEnd)
 end
 
