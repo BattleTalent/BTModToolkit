@@ -1,0 +1,18 @@
+
+-- this script can make play jump when enter the trigger area
+
+local JumpForward = {
+	-- trigger(TriggerByArea)
+	jumpForce = 15
+}
+
+
+function JumpForward:Start()
+	local function onJump()
+		CL.InteractCharacter.PlayerInstance:AddUpForce(self.jumpForce)
+	end
+	self.trigger.actions:AddListener(onJump)
+end
+
+
+return Class(nil, nil, JumpForward)
