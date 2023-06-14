@@ -93,6 +93,12 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>AddHp</b> (f
 <tr class="memitem:a418db7ca0afba028437b641c41da6d13 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a418db7ca0afba028437b641c41da6d13"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>ChangeCamp</b> ()</td></tr>
 <tr class="separator:a418db7ca0afba028437b641c41da6d13 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5634b2e3c153b6284504a3ea17473b1 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="ad5634b2e3c153b6284504a3ea17473b1"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetDeadTime</b> ()</td></tr>
+<tr class="separator:ad5634b2e3c153b6284504a3ea17473b1 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af955f63f1ee2f7cb4aebb336b54b7638 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="af955f63f1ee2f7cb4aebb336b54b7638"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDiedForAWhile</b> (float sec=1f)</td></tr>
+<tr class="separator:af955f63f1ee2f7cb4aebb336b54b7638 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a76d2058cb9bcff2546a3c29a095fda1e inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a76d2058cb9bcff2546a3c29a095fda1e"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>ToString</b> ()</td></tr>
 <tr class="separator:a76d2058cb9bcff2546a3c29a095fda1e inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -114,6 +120,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDead</b> ()</td></t
 <tr class="memitem:a3d9fac170e0b150da813639a7115f70d inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a3d9fac170e0b150da813639a7115f70d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Relive</b> ()</td></tr>
 <tr class="separator:a3d9fac170e0b150da813639a7115f70d inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d5495604971544976ff565f1c632740 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a1d5495604971544976ff565f1c632740"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReduceHp</b> (float dhp=-100)</td></tr>
+<tr class="separator:a1d5495604971544976ff565f1c632740 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a46b1a07bbf79829881044e59a3b43b inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a6a46b1a07bbf79829881044e59a3b43b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ToDead</b> ()</td></tr>
 <tr class="separator:a6a46b1a07bbf79829881044e59a3b43b inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -177,6 +186,9 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>GlobalAtkMlp</b> = 1
 <tr class="memitem:a2a61a4072222baf400580f33cf98016a"><td class="memItemLeft" align="right" valign="top"><a id="a2a61a4072222baf400580f33cf98016a"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableHpBar</b> = false</td></tr>
 <tr class="separator:a2a61a4072222baf400580f33cf98016a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a887275f76a34f40828c3a56973f658a3"><td class="memItemLeft" align="right" valign="top"><a id="a887275f76a34f40828c3a56973f658a3"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>extraHitResist</b> = 0</td></tr>
+<tr class="separator:a887275f76a34f40828c3a56973f658a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_combat_attr"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_combat_attr')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_combat_attr.html">CrossLink.CombatAttr</a></td></tr>
 <tr class="memitem:aa410689f1287b7ae535427420eb0c721 inherit pub_attribs_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="aa410689f1287b7ae535427420eb0c721"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>camp</b> = AIProxy.CampBad</td></tr>
@@ -218,9 +230,15 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>SystemMaxHp</b
 <tr class="memitem:aa6ceb4bce14a38f6004126ddaab0822b inherit pub_static_attribs_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="aa6ceb4bce14a38f6004126ddaab0822b"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>ContentMaxHp</b> = 99999f</td></tr>
 <tr class="separator:aa6ceb4bce14a38f6004126ddaab0822b inherit pub_static_attribs_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a032cf22584be5b89b39633960af9684e inherit pub_static_attribs_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a032cf22584be5b89b39633960af9684e"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MiniAmountHpLeft</b> = 20</td></tr>
+<tr class="separator:a032cf22584be5b89b39633960af9684e inherit pub_static_attribs_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a648aa28233e60dffb3d58481a742fe73 inherit pub_static_attribs_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a648aa28233e60dffb3d58481a742fe73"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>SmallAmountHpLeft</b> = 100</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>SmallAmountHpLeft</b> = 80</td></tr>
 <tr class="separator:a648aa28233e60dffb3d58481a742fe73 inherit pub_static_attribs_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7cd103f17824d41be2c9fc7f3d32cf1d inherit pub_static_attribs_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a7cd103f17824d41be2c9fc7f3d32cf1d"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MiddleAmountHpLeft</b> = 160</td></tr>
+<tr class="separator:a7cd103f17824d41be2c9fc7f3d32cf1d inherit pub_static_attribs_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header events_class_cross_link_1_1_combat_attr"><td colspan="2" onclick="javascript:toggleInherit('events_class_cross_link_1_1_combat_attr')"><img src="closed.png" alt="-"/>&#160;Events inherited from <a class="el" href="class_cross_link_1_1_combat_attr.html">CrossLink.CombatAttr</a></td></tr>
 <tr class="memitem:a82637dfa828f3d241312373855cc620e inherit events_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a82637dfa828f3d241312373855cc620e"></a>
 System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>DeadEvent</b></td></tr>

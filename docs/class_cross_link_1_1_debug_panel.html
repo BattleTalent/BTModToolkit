@@ -69,7 +69,9 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_debug_panel-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.DebugPanel Class Reference</div>  </div>
@@ -83,18 +85,33 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a8a4c902d910c2d4ef09cd5909c9c1d1a"><td class="memItemLeft" align="right" valign="top"><a id="a8a4c902d910c2d4ef09cd5909c9c1d1a"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnInit</b> ()</td></tr>
 <tr class="separator:a8a4c902d910c2d4ef09cd5909c9c1d1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f25d60286f881a8495d29c4b69d6e10"><td class="memItemLeft" align="right" valign="top"><a id="a3f25d60286f881a8495d29c4b69d6e10"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RefleshOtherTab</b> ()</td></tr>
+<tr class="separator:a3f25d60286f881a8495d29c4b69d6e10"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a534c9ab237ce7c5dc178a6432da0ea26"><td class="memItemLeft" align="right" valign="top"><a id="a534c9ab237ce7c5dc178a6432da0ea26"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnConfigRecordingSetup</b> ()</td></tr>
 <tr class="separator:a534c9ab237ce7c5dc178a6432da0ea26"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1444f5b321fa554d2e8dee03683a17f7"><td class="memItemLeft" align="right" valign="top"><a id="a1444f5b321fa554d2e8dee03683a17f7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnAddCoin</b> ()</td></tr>
 <tr class="separator:a1444f5b321fa554d2e8dee03683a17f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aceb64c675b2541094708b0705c32e319"><td class="memItemLeft" align="right" valign="top"><a id="aceb64c675b2541094708b0705c32e319"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnClearScene</b> ()</td></tr>
+<tr class="separator:aceb64c675b2541094708b0705c32e319"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6516b2289b1fbe1927006654dee3cd2c"><td class="memItemLeft" align="right" valign="top"><a id="a6516b2289b1fbe1927006654dee3cd2c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnSpawnEnemey</b> ()</td></tr>
+<tr class="separator:a6516b2289b1fbe1927006654dee3cd2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae62e941835cdd11a5885213c790dc4e3"><td class="memItemLeft" align="right" valign="top"><a id="ae62e941835cdd11a5885213c790dc4e3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnKillAll</b> ()</td></tr>
 <tr class="separator:ae62e941835cdd11a5885213c790dc4e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d228d9747d106204bf73e4f72379d82"><td class="memItemLeft" align="right" valign="top"><a id="a7d228d9747d106204bf73e4f72379d82"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClosestKill</b> ()</td></tr>
 <tr class="separator:a7d228d9747d106204bf73e4f72379d82"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f78d72f1b0bc126d70d163dfa15465a"><td class="memItemLeft" align="right" valign="top"><a id="a5f78d72f1b0bc126d70d163dfa15465a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ToggleAllAI</b> ()</td></tr>
+<tr class="separator:a5f78d72f1b0bc126d70d163dfa15465a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbcc35e7f82750f945e494f23b11c0fa"><td class="memItemLeft" align="right" valign="top"><a id="abbcc35e7f82750f945e494f23b11c0fa"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>ClosestToggleAI</b> ()</td></tr>
+<tr class="separator:abbcc35e7f82750f945e494f23b11c0fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7fa11bbbf06b2148096da3c7280bcdb6"><td class="memItemLeft" align="right" valign="top"><a id="a7fa11bbbf06b2148096da3c7280bcdb6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClosestBoostHp</b> ()</td></tr>
 <tr class="separator:a7fa11bbbf06b2148096da3c7280bcdb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -107,39 +124,141 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ClosestAtkDesire</b> 
 <tr class="memitem:a61a6a1d01cb443aa4a202a63a77e7b4e"><td class="memItemLeft" align="right" valign="top"><a id="a61a6a1d01cb443aa4a202a63a77e7b4e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClosestMotionFeature</b> ()</td></tr>
 <tr class="separator:a61a6a1d01cb443aa4a202a63a77e7b4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a37214d9520ea9b50b926fd0c0e247a43"><td class="memItemLeft" align="right" valign="top"><a id="a37214d9520ea9b50b926fd0c0e247a43"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>TagChange</b> (<a class="el" href="class_cross_link_1_1_u_i_option.html">UIOption</a> ui)</td></tr>
-<tr class="separator:a37214d9520ea9b50b926fd0c0e247a43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a32156b93a2b421dc0507f20e42d7babf"><td class="memItemLeft" align="right" valign="top"><a id="a32156b93a2b421dc0507f20e42d7babf"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnWeapon</b> ()</td></tr>
-<tr class="separator:a32156b93a2b421dc0507f20e42d7babf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe83a0eaec43f56a019a12cbfdae4bb2"><td class="memItemLeft" align="right" valign="top"><a id="afe83a0eaec43f56a019a12cbfdae4bb2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnhanceToggle</b> (bool isOn)</td></tr>
+<tr class="separator:afe83a0eaec43f56a019a12cbfdae4bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b6e879ec54f3585b325dd1b06314bf9"><td class="memItemLeft" align="right" valign="top"><a id="a5b6e879ec54f3585b325dd1b06314bf9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnModItemToggle</b> (bool isOn)</td></tr>
+<tr class="separator:a5b6e879ec54f3585b325dd1b06314bf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b3a0c19458ba0eb6a7859dd3137459d"><td class="memItemLeft" align="right" valign="top"><a id="a9b3a0c19458ba0eb6a7859dd3137459d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RefleshSkinOption</b> ()</td></tr>
+<tr class="separator:a9b3a0c19458ba0eb6a7859dd3137459d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2770221f262fd2333484fdbec5eaf939"><td class="memItemLeft" align="right" valign="top"><a id="a2770221f262fd2333484fdbec5eaf939"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RefleshRoleModOption</b> ()</td></tr>
+<tr class="separator:a2770221f262fd2333484fdbec5eaf939"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16521f6b69747feba5845459bbb6fbbf"><td class="memItemLeft" align="right" valign="top"><a id="a16521f6b69747feba5845459bbb6fbbf"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsRoleExist</b> (string name)</td></tr>
+<tr class="separator:a16521f6b69747feba5845459bbb6fbbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae155f363af7453a66f274c08f6ec24cb"><td class="memItemLeft" align="right" valign="top"><a id="ae155f363af7453a66f274c08f6ec24cb"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnFastTravel</b> ()</td></tr>
 <tr class="separator:ae155f363af7453a66f274c08f6ec24cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27fa3a31f374399246f8a6f50da143ac"><td class="memItemLeft" align="right" valign="top"><a id="a27fa3a31f374399246f8a6f50da143ac"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SummonThirdPersonCam</b> ()</td></tr>
+<tr class="separator:a27fa3a31f374399246f8a6f50da143ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c90eea706f30115b4aacc978b87c388"><td class="memItemLeft" align="right" valign="top"><a id="a8c90eea706f30115b4aacc978b87c388"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ToggleLivMode</b> ()</td></tr>
+<tr class="separator:a8c90eea706f30115b4aacc978b87c388"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a579809a28032b814070a5f84aadca29c"><td class="memItemLeft" align="right" valign="top"><a id="a579809a28032b814070a5f84aadca29c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEndlessToggle</b> (bool isOn)</td></tr>
+<tr class="separator:a579809a28032b814070a5f84aadca29c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e18db5b9a79d2b53ead26be6d514896"><td class="memItemLeft" align="right" valign="top"><a id="a9e18db5b9a79d2b53ead26be6d514896"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ToggleEndlessMode</b> ()</td></tr>
+<tr class="separator:a9e18db5b9a79d2b53ead26be6d514896"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5eb86438c09e53f43eb03b023a1f81c"><td class="memItemLeft" align="right" valign="top"><a id="ae5eb86438c09e53f43eb03b023a1f81c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ToggleWideAngleLens</b> ()</td></tr>
+<tr class="separator:ae5eb86438c09e53f43eb03b023a1f81c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a240c69c4c01539cb7fe6df8b8a502bb3"><td class="memItemLeft" align="right" valign="top"><a id="a240c69c4c01539cb7fe6df8b8a502bb3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowProfilingPanel</b> ()</td></tr>
+<tr class="separator:a240c69c4c01539cb7fe6df8b8a502bb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7550e811e63dab53483ff283c95c597e"><td class="memItemLeft" align="right" valign="top"><a id="a7550e811e63dab53483ff283c95c597e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>GetTools</b> ()</td></tr>
+<tr class="separator:a7550e811e63dab53483ff283c95c597e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8edab3e60102e360026492a7d2b9c515"><td class="memItemLeft" align="right" valign="top"><a id="a8edab3e60102e360026492a7d2b9c515"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>GetBuffGun</b> ()</td></tr>
+<tr class="separator:a8edab3e60102e360026492a7d2b9c515"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c5ed391391c6f9b848dfcf31e6e6871"><td class="memItemLeft" align="right" valign="top"><a id="a6c5ed391391c6f9b848dfcf31e6e6871"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>GetDebugGun</b> ()</td></tr>
+<tr class="separator:a6c5ed391391c6f9b848dfcf31e6e6871"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e8923f6f6dff6d86bdbeb31be7aba4e"><td class="memItemLeft" align="right" valign="top"><a id="a0e8923f6f6dff6d86bdbeb31be7aba4e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnterSceneAgain</b> ()</td></tr>
+<tr class="separator:a0e8923f6f6dff6d86bdbeb31be7aba4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0e4af0c6b77955699eb7986d2d808174"><td class="memItemLeft" align="right" valign="top"><a id="a0e4af0c6b77955699eb7986d2d808174"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnClearMods</b> ()</td></tr>
 <tr class="separator:a0e4af0c6b77955699eb7986d2d808174"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11aaf07aa6f9cd9b6b8085425d47f993"><td class="memItemLeft" align="right" valign="top"><a id="a11aaf07aa6f9cd9b6b8085425d47f993"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnReloadMods</b> ()</td></tr>
 <tr class="separator:a11aaf07aa6f9cd9b6b8085425d47f993"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3bd83fab397d6c7f15775a5cf93201fc"><td class="memItemLeft" align="right" valign="top"><a id="a3bd83fab397d6c7f15775a5cf93201fc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDropItems</b> ()</td></tr>
+<tr class="separator:a3bd83fab397d6c7f15775a5cf93201fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3fb50a05b9b19a4688129fd137c3925"><td class="memItemLeft" align="right" valign="top"><a id="ab3fb50a05b9b19a4688129fd137c3925"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RespawnCharacterInThisTile</b> ()</td></tr>
+<tr class="separator:ab3fb50a05b9b19a4688129fd137c3925"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aada75c84475feb1252203d1ef8f842e0"><td class="memItemLeft" align="right" valign="top"><a id="aada75c84475feb1252203d1ef8f842e0"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>GoToTestScene</b> ()</td></tr>
 <tr class="separator:aada75c84475feb1252203d1ef8f842e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac4138610345730665eaf4dc93936316"><td class="memItemLeft" align="right" valign="top"><a id="aac4138610345730665eaf4dc93936316"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>GoToScene</b> (string scene)</td></tr>
 <tr class="separator:aac4138610345730665eaf4dc93936316"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7e1a8b2040e2232273d1b980d7c8671a"><td class="memItemLeft" align="right" valign="top"><a id="a7e1a8b2040e2232273d1b980d7c8671a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>GoToModBrowser</b> ()</td></tr>
-<tr class="separator:a7e1a8b2040e2232273d1b980d7c8671a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c7f564d64bd07b8688baafa4d7dee8b"><td class="memItemLeft" align="right" valign="top"><a id="a2c7f564d64bd07b8688baafa4d7dee8b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>NextPage</b> ()</td></tr>
-<tr class="separator:a2c7f564d64bd07b8688baafa4d7dee8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75ed2e6f14446fab5704eb752f0bf1fd"><td class="memItemLeft" align="right" valign="top"><a id="a75ed2e6f14446fab5704eb752f0bf1fd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>PrevPage</b> ()</td></tr>
-<tr class="separator:a75ed2e6f14446fab5704eb752f0bf1fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65e72c87bd72d57e74682463f5fb0dd1"><td class="memItemLeft" align="right" valign="top"><a id="a65e72c87bd72d57e74682463f5fb0dd1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnRole</b> ()</td></tr>
-<tr class="separator:a65e72c87bd72d57e74682463f5fb0dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af66de7b6bb098a9ec209cf30a97ab120"><td class="memItemLeft" align="right" valign="top"><a id="af66de7b6bb098a9ec209cf30a97ab120"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>GoToModifier</b> ()</td></tr>
+<tr class="separator:af66de7b6bb098a9ec209cf30a97ab120"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d6331d707283750056d4a44077479b1"><td class="memItemLeft" align="right" valign="top"><a id="a8d6331d707283750056d4a44077479b1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>GoToModBrowser</b> (bool newSite=false)</td></tr>
+<tr class="separator:a8d6331d707283750056d4a44077479b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d683ae133b4f0cf1179a1c89c2c1c3c"><td class="memItemLeft" align="right" valign="top"><a id="a7d683ae133b4f0cf1179a1c89c2c1c3c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NextPage</b> (int type)</td></tr>
+<tr class="separator:a7d683ae133b4f0cf1179a1c89c2c1c3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab64bce154149cde27bcf88a5f83c5660"><td class="memItemLeft" align="right" valign="top"><a id="ab64bce154149cde27bcf88a5f83c5660"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PrevPage</b> (int type)</td></tr>
+<tr class="separator:ab64bce154149cde27bcf88a5f83c5660"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e1e227ebc48c65f99913444562a2869"><td class="memItemLeft" align="right" valign="top"><a id="a9e1e227ebc48c65f99913444562a2869"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnAllyToggle</b> (bool isOn)</td></tr>
+<tr class="separator:a9e1e227ebc48c65f99913444562a2869"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a793edfd9f81b1c01ee88e0e58fafe323"><td class="memItemLeft" align="right" valign="top"><a id="a793edfd9f81b1c01ee88e0e58fafe323"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnIdleToggle</b> (bool isOn)</td></tr>
+<tr class="separator:a793edfd9f81b1c01ee88e0e58fafe323"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad18839caf47a46e1a221ea8846a97fb1"><td class="memItemLeft" align="right" valign="top"><a id="ad18839caf47a46e1a221ea8846a97fb1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnMaxHpToggle</b> (bool isOn)</td></tr>
+<tr class="separator:ad18839caf47a46e1a221ea8846a97fb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22311d3d38e69b0ef8c47483af6b813c"><td class="memItemLeft" align="right" valign="top"><a id="a22311d3d38e69b0ef8c47483af6b813c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnNoAIToggle</b> (bool isOn)</td></tr>
+<tr class="separator:a22311d3d38e69b0ef8c47483af6b813c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abcd544c2f0541e6bdbc0f2f6d800ab6c"><td class="memItemLeft" align="right" valign="top"><a id="abcd544c2f0541e6bdbc0f2f6d800ab6c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ToggleGhostMode</b> ()</td></tr>
+<tr class="separator:abcd544c2f0541e6bdbc0f2f6d800ab6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adedc27798977796f978bafe65014bc13"><td class="memItemLeft" align="right" valign="top"><a id="adedc27798977796f978bafe65014bc13"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>GoToModScene</b> ()</td></tr>
+<tr class="separator:adedc27798977796f978bafe65014bc13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affc342117821bfcc79ebf26658992116"><td class="memItemLeft" align="right" valign="top"><a id="affc342117821bfcc79ebf26658992116"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>AddEventToScene</b> ()</td></tr>
+<tr class="separator:affc342117821bfcc79ebf26658992116"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64cbc12e138b9d46f3149b9a72173c09"><td class="memItemLeft" align="right" valign="top"><a id="a64cbc12e138b9d46f3149b9a72173c09"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveCurSceneEvent</b> ()</td></tr>
+<tr class="separator:a64cbc12e138b9d46f3149b9a72173c09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06237dad8d9997f7bf0abdff3a52e083"><td class="memItemLeft" align="right" valign="top"><a id="a06237dad8d9997f7bf0abdff3a52e083"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReSkinCharacter</b> (<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a> select)</td></tr>
+<tr class="separator:a06237dad8d9997f7bf0abdff3a52e083"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8b735a796c7c0c715b375c676e2c4de"><td class="memItemLeft" align="right" valign="top"><a id="ae8b735a796c7c0c715b375c676e2c4de"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetCharacter</b> ()</td></tr>
+<tr class="separator:ae8b735a796c7c0c715b375c676e2c4de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a912314b329bac90db40e973005e57219"><td class="memItemLeft" align="right" valign="top"><a id="a912314b329bac90db40e973005e57219"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>HideGloveBtn</b> ()</td></tr>
+<tr class="separator:a912314b329bac90db40e973005e57219"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad279b0a772d5aad8b138d819630ed3b2"><td class="memItemLeft" align="right" valign="top"><a id="ad279b0a772d5aad8b138d819630ed3b2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>FullCharacterSetupBtn</b> (<a class="el" href="class_cross_link_1_1_option_item.html">OptionItem</a> optionItem)</td></tr>
+<tr class="separator:ad279b0a772d5aad8b138d819630ed3b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff968ec88401a145499e3bd85b234cb9"><td class="memItemLeft" align="right" valign="top"><a id="aff968ec88401a145499e3bd85b234cb9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHitRandomValue</b> (<a class="el" href="class_cross_link_1_1_u_i_option.html">UIOption</a> ot)</td></tr>
+<tr class="separator:aff968ec88401a145499e3bd85b234cb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b51ebce6b652a38ea9ca85ea96ac86f"><td class="memItemLeft" align="right" valign="top"><a id="a0b51ebce6b652a38ea9ca85ea96ac86f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnPlaySong</b> ()</td></tr>
+<tr class="separator:a0b51ebce6b652a38ea9ca85ea96ac86f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0feae84cbd074fd177020345d3acec89"><td class="memItemLeft" align="right" valign="top"><a id="a0feae84cbd074fd177020345d3acec89"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnPauseSong</b> ()</td></tr>
+<tr class="separator:a0feae84cbd074fd177020345d3acec89"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef8fea8ecfbb92f0f6567f71c9eae9aa"><td class="memItemLeft" align="right" valign="top"><a id="aef8fea8ecfbb92f0f6567f71c9eae9aa"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnMusicChange</b> (<a class="el" href="class_cross_link_1_1_u_i_option.html">UIOption</a> io)</td></tr>
+<tr class="separator:aef8fea8ecfbb92f0f6567f71c9eae9aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d0071a433e3b8d1eee8c89ad73aba7b"><td class="memItemLeft" align="right" valign="top"><a id="a0d0071a433e3b8d1eee8c89ad73aba7b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlaySong</b> (<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a> select)</td></tr>
+<tr class="separator:a0d0071a433e3b8d1eee8c89ad73aba7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68bf12f0c78ff119149cc71289bc5b4f"><td class="memItemLeft" align="right" valign="top"><a id="a68bf12f0c78ff119149cc71289bc5b4f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnVolChange</b> (<a class="el" href="class_cross_link_1_1_u_i_option.html">UIOption</a> io)</td></tr>
+<tr class="separator:a68bf12f0c78ff119149cc71289bc5b4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07376a876d44f55c4caa1745b9b0f076"><td class="memItemLeft" align="right" valign="top"><a id="a07376a876d44f55c4caa1745b9b0f076"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>BgmSwitch</b> ()</td></tr>
+<tr class="separator:a07376a876d44f55c4caa1745b9b0f076"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_class_cross_link_1_1_panel_base"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_cross_link_1_1_panel_base')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_panel_base.html">CrossLink.PanelBase</a></td></tr>
 <tr class="memitem:a6695512b6989eeaa6c1d74be41149515 inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="a6695512b6989eeaa6c1d74be41149515"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>FadeIn</b> (System.Action onFin=null)</td></tr>
@@ -154,8 +273,32 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnRelease</b>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Exit</b> ()</td></tr>
 <tr class="separator:a8818eb93b263cc3b0097755530c54e8c inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a77a5fbc7417e298f496eb6861f26f396"><td class="memItemLeft" align="right" valign="top"><a id="a77a5fbc7417e298f496eb6861f26f396"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnWeapon</b> (string weaponToSpawn)</td></tr>
+<tr class="separator:a77a5fbc7417e298f496eb6861f26f396"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e1a7dae042f4bec8851eee9f62b3b79"><td class="memItemLeft" align="right" valign="top"><a id="a4e1a7dae042f4bec8851eee9f62b3b79"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnRole</b> (string roleToSpawn)</td></tr>
+<tr class="separator:a4e1a7dae042f4bec8851eee9f62b3b79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a541209ce1e767a90e762840e72a04be7"><td class="memItemLeft" align="right" valign="top"><a id="a541209ce1e767a90e762840e72a04be7"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>OnPlayerLoaded</b> ()</td></tr>
+<tr class="separator:a541209ce1e767a90e762840e72a04be7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa780b96d431a193148eb14fd4b2288bf"><td class="memItemLeft" align="right" valign="top"><a id="aa780b96d431a193148eb14fd4b2288bf"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>ReSkinCharacter</b> (string name)</td></tr>
+<tr class="separator:aa780b96d431a193148eb14fd4b2288bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2482f2434ca9bfae892b918b67e5862a"><td class="memItemLeft" align="right" valign="top"><a id="a2482f2434ca9bfae892b918b67e5862a"></a>
+static GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnRole</b> (string name, string replaceRole)</td></tr>
+<tr class="separator:a2482f2434ca9bfae892b918b67e5862a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:a377493d692e593a18a458a34d22256fa"><td class="memItemLeft" align="right" valign="top"><a id="a377493d692e593a18a458a34d22256fa"></a>
+<a class="el" href="class_cross_link_1_1_u_i_button.html">UIButton</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>taps</b></td></tr>
+<tr class="separator:a377493d692e593a18a458a34d22256fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44a36020537805017a5e82068edf3e7e"><td class="memItemLeft" align="right" valign="top"><a id="a44a36020537805017a5e82068edf3e7e"></a>
+GameObject[]&#160;</td><td class="memItemRight" valign="bottom"><b>items</b></td></tr>
+<tr class="separator:a44a36020537805017a5e82068edf3e7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad59bc5f9bf48e93cc7a0f2b0e16eaa4f"><td class="memItemLeft" align="right" valign="top"><a id="ad59bc5f9bf48e93cc7a0f2b0e16eaa4f"></a>
 <a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>cheatHP</b></td></tr>
 <tr class="separator:ad59bc5f9bf48e93cc7a0f2b0e16eaa4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -171,30 +314,96 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a99a1340b855ec4cc88d4f2ffdc646b9e"><td class="memItemLeft" align="right" valign="top"><a id="a99a1340b855ec4cc88d4f2ffdc646b9e"></a>
 <a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>cheatAtkDesire</b></td></tr>
 <tr class="separator:a99a1340b855ec4cc88d4f2ffdc646b9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1f830b53b77f9c1bf484b365a51585c5"><td class="memItemLeft" align="right" valign="top"><a id="a1f830b53b77f9c1bf484b365a51585c5"></a>
-<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>tagSelect</b></td></tr>
-<tr class="separator:a1f830b53b77f9c1bf484b365a51585c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad44d3a43f0753ef43b99a8a1f6e6618b"><td class="memItemLeft" align="right" valign="top"><a id="ad44d3a43f0753ef43b99a8a1f6e6618b"></a>
-<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>weaponSelect</b></td></tr>
-<tr class="separator:ad44d3a43f0753ef43b99a8a1f6e6618b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac1ac4f15314e533a09ed6c8294deac34"><td class="memItemLeft" align="right" valign="top"><a id="ac1ac4f15314e533a09ed6c8294deac34"></a>
-<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>roleSelect</b></td></tr>
-<tr class="separator:ac1ac4f15314e533a09ed6c8294deac34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8be7169aecdee5ab4089b5c3593dcae2"><td class="memItemLeft" align="right" valign="top"><a id="a8be7169aecdee5ab4089b5c3593dcae2"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>hitRandom</b></td></tr>
+<tr class="separator:a8be7169aecdee5ab4089b5c3593dcae2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff7162437ebad4fdf5c62e50eff9d337"><td class="memItemLeft" align="right" valign="top"><a id="aff7162437ebad4fdf5c62e50eff9d337"></a>
 GameObject[]&#160;</td><td class="memItemRight" valign="bottom"><b>pages</b></td></tr>
 <tr class="separator:aff7162437ebad4fdf5c62e50eff9d337"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a612ac15f6416d54b8c71a523493fec75"><td class="memItemLeft" align="right" valign="top"><a id="a612ac15f6416d54b8c71a523493fec75"></a>
-<a class="el" href="class_cross_link_1_1_u_i_button.html">UIButton</a>&#160;</td><td class="memItemRight" valign="bottom"><b>nextPageBtn</b></td></tr>
-<tr class="separator:a612ac15f6416d54b8c71a523493fec75"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeed1a76cd3857281531ebaf309cd3ac6"><td class="memItemLeft" align="right" valign="top"><a id="aeed1a76cd3857281531ebaf309cd3ac6"></a>
-<a class="el" href="class_cross_link_1_1_u_i_button.html">UIButton</a>&#160;</td><td class="memItemRight" valign="bottom"><b>prevPageBtn</b></td></tr>
-<tr class="separator:aeed1a76cd3857281531ebaf309cd3ac6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7638d6c7fd8582ff5429a8f5b98c27ea"><td class="memItemLeft" align="right" valign="top"><a id="a7638d6c7fd8582ff5429a8f5b98c27ea"></a>
+<a class="el" href="class_cross_link_1_1_u_i_button.html">UIButton</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>pageBtn</b></td></tr>
+<tr class="separator:a7638d6c7fd8582ff5429a8f5b98c27ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abc0f55ef09d434f913ff53e000a5c561"><td class="memItemLeft" align="right" valign="top"><a id="abc0f55ef09d434f913ff53e000a5c561"></a>
 Object&#160;</td><td class="memItemRight" valign="bottom"><b>consolePrefab</b></td></tr>
 <tr class="separator:abc0f55ef09d434f913ff53e000a5c561"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0178df8fd5e3467bf4d11dea1a5aa26c"><td class="memItemLeft" align="right" valign="top"><a id="a0178df8fd5e3467bf4d11dea1a5aa26c"></a>
 <a class="el" href="class_cross_link_1_1_h_u_d_anchor.html">HUDAnchor</a>&#160;</td><td class="memItemRight" valign="bottom"><b>anchor</b></td></tr>
 <tr class="separator:a0178df8fd5e3467bf4d11dea1a5aa26c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14f4d7ba8f727d84bf8cf1686add0aba"><td class="memItemLeft" align="right" valign="top"><a id="a14f4d7ba8f727d84bf8cf1686add0aba"></a>
+<a class="el" href="class_cross_link_1_1_option_item.html">OptionItem</a>&#160;</td><td class="memItemRight" valign="bottom"><b>roleModOption</b></td></tr>
+<tr class="separator:a14f4d7ba8f727d84bf8cf1686add0aba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf18e2599f921a18d124cd579e24e394"><td class="memItemLeft" align="right" valign="top"><a id="abf18e2599f921a18d124cd579e24e394"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>skinSelect</b></td></tr>
+<tr class="separator:abf18e2599f921a18d124cd579e24e394"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a452c3a7db998c93496923a02e063a35e"><td class="memItemLeft" align="right" valign="top"><a id="a452c3a7db998c93496923a02e063a35e"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>sceneSelect</b></td></tr>
+<tr class="separator:a452c3a7db998c93496923a02e063a35e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6be91ecdec4e716f2bdd7a0188a54c26"><td class="memItemLeft" align="right" valign="top"><a id="a6be91ecdec4e716f2bdd7a0188a54c26"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>eventSelect</b></td></tr>
+<tr class="separator:a6be91ecdec4e716f2bdd7a0188a54c26"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a989c478763f5eb2a5a606d5130c7ff9e"><td class="memItemLeft" align="right" valign="top"><a id="a989c478763f5eb2a5a606d5130c7ff9e"></a>
+Text&#160;</td><td class="memItemRight" valign="bottom"><b>eventDesc</b></td></tr>
+<tr class="separator:a989c478763f5eb2a5a606d5130c7ff9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e9a520e671c8d7626f1e2d69d6046fb"><td class="memItemLeft" align="right" valign="top"><a id="a4e9a520e671c8d7626f1e2d69d6046fb"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>waveSelect</b></td></tr>
+<tr class="separator:a4e9a520e671c8d7626f1e2d69d6046fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1eac1f9060a43b60a6012ac7d32b88bd"><td class="memItemLeft" align="right" valign="top"><a id="a1eac1f9060a43b60a6012ac7d32b88bd"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>musicSelect</b></td></tr>
+<tr class="separator:a1eac1f9060a43b60a6012ac7d32b88bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73dcbe632b5d20130c13f82b8197ac54"><td class="memItemLeft" align="right" valign="top"><a id="a73dcbe632b5d20130c13f82b8197ac54"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>volSelect</b></td></tr>
+<tr class="separator:a73dcbe632b5d20130c13f82b8197ac54"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a297e277ee52c1d9a8a05cf406216cd34"><td class="memItemLeft" align="right" valign="top"><a id="a297e277ee52c1d9a8a05cf406216cd34"></a>
+GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>bgmOn</b></td></tr>
+<tr class="separator:a297e277ee52c1d9a8a05cf406216cd34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a731932f7c2d1ace50599b3d840862ed5"><td class="memItemLeft" align="right" valign="top"><a id="a731932f7c2d1ace50599b3d840862ed5"></a>
+GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>bgmOff</b></td></tr>
+<tr class="separator:a731932f7c2d1ace50599b3d840862ed5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18bf9af86150caa97324c99f44127d67"><td class="memItemLeft" align="right" valign="top"><a id="a18bf9af86150caa97324c99f44127d67"></a>
+Toggle&#160;</td><td class="memItemRight" valign="bottom"><b>enhanceToggle</b></td></tr>
+<tr class="separator:a18bf9af86150caa97324c99f44127d67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1740b2463a3cf2db6f75f507eb1160fc"><td class="memItemLeft" align="right" valign="top"><a id="a1740b2463a3cf2db6f75f507eb1160fc"></a>
+Toggle&#160;</td><td class="memItemRight" valign="bottom"><b>modItemToggle</b></td></tr>
+<tr class="separator:a1740b2463a3cf2db6f75f507eb1160fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae49002a5282c6a1810447fd070ca00ba"><td class="memItemLeft" align="right" valign="top"><a id="ae49002a5282c6a1810447fd070ca00ba"></a>
+<a class="el" href="class_cross_link_1_1_content_weapon_node.html">ContentWeaponNode</a>&#160;</td><td class="memItemRight" valign="bottom"><b>weaponNode</b></td></tr>
+<tr class="separator:ae49002a5282c6a1810447fd070ca00ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bfe5b49d0cb34f8f944afd223786b30"><td class="memItemLeft" align="right" valign="top"><a id="a5bfe5b49d0cb34f8f944afd223786b30"></a>
+Toggle&#160;</td><td class="memItemRight" valign="bottom"><b>allyToggle</b></td></tr>
+<tr class="separator:a5bfe5b49d0cb34f8f944afd223786b30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2bf239504cedfe69a236400bb982357"><td class="memItemLeft" align="right" valign="top"><a id="af2bf239504cedfe69a236400bb982357"></a>
+Toggle&#160;</td><td class="memItemRight" valign="bottom"><b>idleToggle</b></td></tr>
+<tr class="separator:af2bf239504cedfe69a236400bb982357"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad34d8477d07cdab373a539b1bc59f14f"><td class="memItemLeft" align="right" valign="top"><a id="ad34d8477d07cdab373a539b1bc59f14f"></a>
+Toggle&#160;</td><td class="memItemRight" valign="bottom"><b>hpMaxToggle</b></td></tr>
+<tr class="separator:ad34d8477d07cdab373a539b1bc59f14f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a720f361501b9d130fcd2a921cf1dc476"><td class="memItemLeft" align="right" valign="top"><a id="a720f361501b9d130fcd2a921cf1dc476"></a>
+Toggle&#160;</td><td class="memItemRight" valign="bottom"><b>noAIToggle</b></td></tr>
+<tr class="separator:a720f361501b9d130fcd2a921cf1dc476"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad716e8abc3331df45004bbb1fdb5bde6"><td class="memItemLeft" align="right" valign="top"><a id="ad716e8abc3331df45004bbb1fdb5bde6"></a>
+Toggle&#160;</td><td class="memItemRight" valign="bottom"><b>endlessToggle</b></td></tr>
+<tr class="separator:ad716e8abc3331df45004bbb1fdb5bde6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9982f958ed1091f1bc4ba5d6f951ff9"><td class="memItemLeft" align="right" valign="top"><a id="ae9982f958ed1091f1bc4ba5d6f951ff9"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_check_box.html">UIOptionCheckBox</a>&#160;</td><td class="memItemRight" valign="bottom"><b>roleCheckBox</b></td></tr>
+<tr class="separator:ae9982f958ed1091f1bc4ba5d6f951ff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab68258f935282ddad59a6072ec3ade7d"><td class="memItemLeft" align="right" valign="top"><a id="ab68258f935282ddad59a6072ec3ade7d"></a>
+GameObject[]&#160;</td><td class="memItemRight" valign="bottom"><b>additionalPages</b></td></tr>
+<tr class="separator:ab68258f935282ddad59a6072ec3ade7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d28ba6a57b37b5ceca2206c6fdc0c58"><td class="memItemLeft" align="right" valign="top"><a id="a4d28ba6a57b37b5ceca2206c6fdc0c58"></a>
+<a class="el" href="class_cross_link_1_1_u_i_button.html">UIButton</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>additionalPageBtn</b></td></tr>
+<tr class="separator:a4d28ba6a57b37b5ceca2206c6fdc0c58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03b15b1885119609bcd293ae7efd715d"><td class="memItemLeft" align="right" valign="top"><a id="a03b15b1885119609bcd293ae7efd715d"></a>
+GameObject[]&#160;</td><td class="memItemRight" valign="bottom"><b>HideOnMobile</b></td></tr>
+<tr class="separator:a03b15b1885119609bcd293ae7efd715d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa598e09cc9f612c22675f14ea99989f"><td class="memItemLeft" align="right" valign="top"><a id="afa598e09cc9f612c22675f14ea99989f"></a>
+<a class="el" href="class_cross_link_1_1_modifier_panel.html">ModifierPanel</a>&#160;</td><td class="memItemRight" valign="bottom"><b>modifier</b></td></tr>
+<tr class="separator:afa598e09cc9f612c22675f14ea99989f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77229a63bc868c67d6a459273dba88e9"><td class="memItemLeft" align="right" valign="top"><a id="a77229a63bc868c67d6a459273dba88e9"></a>
+GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>playSong</b></td></tr>
+<tr class="separator:a77229a63bc868c67d6a459273dba88e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b71dadf849b72a3fa37eb31bc7dc9cf"><td class="memItemLeft" align="right" valign="top"><a id="a7b71dadf849b72a3fa37eb31bc7dc9cf"></a>
+GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>pauseSong</b></td></tr>
+<tr class="separator:a7b71dadf849b72a3fa37eb31bc7dc9cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_panel_base"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_panel_base')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_panel_base.html">CrossLink.PanelBase</a></td></tr>
 <tr class="memitem:a9a24f430d66dd383c441fce0e2f6033e inherit pub_attribs_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="a9a24f430d66dd383c441fce0e2f6033e"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>panelName</b></td></tr>
@@ -202,6 +411,12 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>panelName</b></td><
 <tr class="memitem:ac87cc6394dbdba98896846d7a35ec801 inherit pub_attribs_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="ac87cc6394dbdba98896846d7a35ec801"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreFadeEffect</b> = false</td></tr>
 <tr class="separator:ac87cc6394dbdba98896846d7a35ec801 inherit pub_attribs_class_cross_link_1_1_panel_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a7c0114eb4a78cb7712db325a44713376"><td class="memItemLeft" align="right" valign="top"><a id="a7c0114eb4a78cb7712db325a44713376"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>PlaySkinTag</b> = &quot;Player&quot;</td></tr>
+<tr class="separator:a7c0114eb4a78cb7712db325a44713376"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>

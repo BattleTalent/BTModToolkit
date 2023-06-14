@@ -68,6 +68,8 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
@@ -79,11 +81,22 @@ $(function() {
 
 <p>Inherits MonoBehaviour.</p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:acb40218979bf91a1435ef2004d5d2771"><td class="memItemLeft" align="right" valign="top"><a id="acb40218979bf91a1435ef2004d5d2771"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>Priority</b> { <b>Front</b> = 1
+, <b>Middle</b>
+, <b>Affer</b>
+ }</td></tr>
+<tr class="separator:acb40218979bf91a1435ef2004d5d2771"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:afb6df709c481dd4b318fad200ded1e03"><td class="memItemLeft" align="right" valign="top"><a id="afb6df709c481dd4b318fad200ded1e03"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsColorLerping</b> ()</td></tr>
 <tr class="separator:afb6df709c481dd4b318fad200ded1e03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a505642a1f59af44383ea4a076d9818d0"><td class="memItemLeft" align="right" valign="top"><a id="a505642a1f59af44383ea4a076d9818d0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LerpColorWithPriority</b> (Color c, float sec, bool igScale, Priority p)</td></tr>
+<tr class="separator:a505642a1f59af44383ea4a076d9818d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3e2fd148c1135acb032fb09a3ccb2fbe"><td class="memItemLeft" align="right" valign="top"><a id="a3e2fd148c1135acb032fb09a3ccb2fbe"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LerpColorFliterToAndBack</b> (Color c, float sec, bool igScale=true)</td></tr>
 <tr class="separator:a3e2fd148c1135acb032fb09a3ccb2fbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -99,6 +112,9 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aa9bfa06f4f22d08bdf87ccb9e5083eb5"><td class="memItemLeft" align="right" valign="top"><a id="aa9bfa06f4f22d08bdf87ccb9e5083eb5"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>LerpColorToAndBack</b> (Color c, float sec)</td></tr>
 <tr class="separator:aa9bfa06f4f22d08bdf87ccb9e5083eb5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6aeb4790eadc4fd393f546683703ede"><td class="memItemLeft" align="right" valign="top"><a id="ad6aeb4790eadc4fd393f546683703ede"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>LerpColorToAndBackWithPriority</b> (Color c, float sec, Priority priority=Priority.Front)</td></tr>
+<tr class="separator:ad6aeb4790eadc4fd393f546683703ede"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7be9a67e9c2a3cacb561eabd0d8d502"><td class="memItemLeft" align="right" valign="top"><a id="ab7be9a67e9c2a3cacb561eabd0d8d502"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetBloomEnable</b> (bool e)</td></tr>
 <tr class="separator:ab7be9a67e9c2a3cacb561eabd0d8d502"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -111,6 +127,9 @@ static <a class="el" href="class_cross_link_1_1_post_process_control.html">PostP
 <tr class="memitem:a6378677b34b79049c8666af90e66b9e6"><td class="memItemLeft" align="right" valign="top"><a id="a6378677b34b79049c8666af90e66b9e6"></a>
 static Color&#160;</td><td class="memItemRight" valign="bottom"><b>BloodColor</b> = new Color(0.9f, 0.1f, 0.1f, 0.5f)</td></tr>
 <tr class="separator:a6378677b34b79049c8666af90e66b9e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f0b6aaf5239d5f84c93159aaac2f967"><td class="memItemLeft" align="right" valign="top"><a id="a9f0b6aaf5239d5f84c93159aaac2f967"></a>
+static Color&#160;</td><td class="memItemRight" valign="bottom"><b>FreezeColor</b> = new Color(0.7f, 0.9f, 1f, 0.5f)</td></tr>
+<tr class="separator:a9f0b6aaf5239d5f84c93159aaac2f967"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad193c69064bd81e181efadb576f49f60"><td class="memItemLeft" align="right" valign="top"><a id="ad193c69064bd81e181efadb576f49f60"></a>
 static Color&#160;</td><td class="memItemRight" valign="bottom"><b>BlackColor</b> = new Color(0, 0, 0, 1)</td></tr>
 <tr class="separator:ad193c69064bd81e181efadb576f49f60"><td class="memSeparator" colspan="2">&#160;</td></tr>

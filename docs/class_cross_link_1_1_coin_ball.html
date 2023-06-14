@@ -69,7 +69,9 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="class_cross_link_1_1_coin_ball-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.CoinBall Class Reference</div>  </div>
@@ -83,15 +85,36 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a663334417290d1a47f36e7f1411998a4"><td class="memItemLeft" align="right" valign="top"><a id="a663334417290d1a47f36e7f1411998a4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> (Vector3 pos, float delayFly=0)</td></tr>
 <tr class="separator:a663334417290d1a47f36e7f1411998a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29dd563b3f81f11dfa6bccb7ca22a4e3"><td class="memItemLeft" align="right" valign="top"><a id="a29dd563b3f81f11dfa6bccb7ca22a4e3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Transform</b> (Vector3 offset)</td></tr>
+<tr class="separator:a29dd563b3f81f11dfa6bccb7ca22a4e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a80f62eac7f599f38415b0c59faad3ae0"><td class="memItemLeft" align="right" valign="top"><a id="a80f62eac7f599f38415b0c59faad3ae0"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>getSound</b> = &quot;CoinGet&quot;</td></tr>
+<tr class="separator:a80f62eac7f599f38415b0c59faad3ae0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:afdb44b183734e481330c472f78a51214"><td class="memItemLeft" align="right" valign="top"><a id="afdb44b183734e481330c472f78a51214"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>InitStayCoinSec</b> = 6</td></tr>
+<tr class="separator:afdb44b183734e481330c472f78a51214"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa84991ef0c52ceb9675e3a38d745d826"><td class="memItemLeft" align="right" valign="top"><a id="aa84991ef0c52ceb9675e3a38d745d826"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>InitFlyCoinSec</b> = 8</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>InitFlyCoinSec</b> = 0.4f</td></tr>
 <tr class="separator:aa84991ef0c52ceb9675e3a38d745d826"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aed0ad35e479a82fe38df4ff30e08d198"><td class="memItemLeft" align="right" valign="top"><a id="aed0ad35e479a82fe38df4ff30e08d198"></a>
 static float&#160;</td><td class="memItemRight" valign="bottom"><b>FlyCoinSec</b> = InitFlyCoinSec</td></tr>
 <tr class="separator:aed0ad35e479a82fe38df4ff30e08d198"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e4ba1f43d6352016e0d3577e559edc1"><td class="memItemLeft" align="right" valign="top"><a id="a0e4ba1f43d6352016e0d3577e559edc1"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>FlyToSec</b> = 0.5f</td></tr>
+<tr class="separator:a0e4ba1f43d6352016e0d3577e559edc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:aedb34a6d41ef3f0f3e415f068a2c8644"><td class="memItemLeft" align="right" valign="top"><a id="aedb34a6d41ef3f0f3e415f068a2c8644"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>flying</b> = false</td></tr>
+<tr class="separator:aedb34a6d41ef3f0f3e415f068a2c8644"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

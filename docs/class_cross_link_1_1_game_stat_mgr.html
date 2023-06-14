@@ -71,6 +71,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_game_stat_mgr-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.GameStatMgr Class Reference</div>  </div>
@@ -79,6 +80,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a80ac4a235fbee11217c3aa0913f2fefa"><td class="memItemLeft" align="right" valign="top"><a id="a80ac4a235fbee11217c3aa0913f2fefa"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> ()</td></tr>
+<tr class="separator:a80ac4a235fbee11217c3aa0913f2fefa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cabc670b031ddcbc8b66b505265f55e"><td class="memItemLeft" align="right" valign="top"><a id="a4cabc670b031ddcbc8b66b505265f55e"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsTutorialFinish</b> ()</td></tr>
 <tr class="separator:a4cabc670b031ddcbc8b66b505265f55e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -103,6 +107,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>CommitDeadZoneCount</
 <tr class="memitem:aeda773ea0a6662c6604042c663f53327"><td class="memItemLeft" align="right" valign="top"><a id="aeda773ea0a6662c6604042c663f53327"></a>
 <a class="el" href="class_cross_link_1_1_fight_stat_data.html">FightStatData</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetFightReport</b> ()</td></tr>
 <tr class="separator:aeda773ea0a6662c6604042c663f53327"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a33586a29cf027e8d677d23de8f9c00"><td class="memItemLeft" align="right" valign="top"><a id="a6a33586a29cf027e8d677d23de8f9c00"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ModifyStartRecordTime</b> (float extraSec)</td></tr>
+<tr class="separator:a6a33586a29cf027e8d677d23de8f9c00"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35274de3a2623ecfc2e613e42d906a13"><td class="memItemLeft" align="right" valign="top"><a id="a35274de3a2623ecfc2e613e42d906a13"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsRecording</b> ()</td></tr>
 <tr class="separator:a35274de3a2623ecfc2e613e42d906a13"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -136,18 +143,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>CommitManaCost</b> (f
 <tr class="memitem:ad9734df6ee1bfacf659bc4286b637e9b"><td class="memItemLeft" align="right" valign="top"><a id="ad9734df6ee1bfacf659bc4286b637e9b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>CommitHpCost</b> (float hpDelta)</td></tr>
 <tr class="separator:ad9734df6ee1bfacf659bc4286b637e9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b7ca6f2885b4a70b67f038c4bf9a741"><td class="memItemLeft" align="right" valign="top"><a id="a2b7ca6f2885b4a70b67f038c4bf9a741"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CommitWeaponSpawn</b> (string weapon)</td></tr>
-<tr class="separator:a2b7ca6f2885b4a70b67f038c4bf9a741"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ef13795b74271a4c38956322ee7e698"><td class="memItemLeft" align="right" valign="top"><a id="a9ef13795b74271a4c38956322ee7e698"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CommitSandbox</b> (<a class="el" href="class_cross_link_1_1_sandbox_control.html">SandboxControl</a> sc)</td></tr>
-<tr class="separator:a9ef13795b74271a4c38956322ee7e698"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac04b46e2e58784d455316bf09ad6ccb8"><td class="memItemLeft" align="right" valign="top"><a id="ac04b46e2e58784d455316bf09ad6ccb8"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CommitBuy</b> (string item)</td></tr>
-<tr class="separator:ac04b46e2e58784d455316bf09ad6ccb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8d34556308fac63a1488c2121919d6e"><td class="memItemLeft" align="right" valign="top"><a id="ad8d34556308fac63a1488c2121919d6e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CommitLock</b> (string item)</td></tr>
-<tr class="separator:ad8d34556308fac63a1488c2121919d6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -160,6 +155,15 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:ae28653239ca617bdaa38c662182de830"><td class="memItemLeft" align="right" valign="top"><a id="ae28653239ca617bdaa38c662182de830"></a>
 static <a class="el" href="class_cross_link_1_1_game_stat_mgr.html">GameStatMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_game_stat_mgr.html">GameStatMgr</a>()</td></tr>
 <tr class="separator:ae28653239ca617bdaa38c662182de830"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:aed82c0031a33e3d9bc833d7444079ae8"><td class="memItemLeft" align="right" valign="top"><a id="aed82c0031a33e3d9bc833d7444079ae8"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>BeginRecordEvent</b></td></tr>
+<tr class="separator:aed82c0031a33e3d9bc833d7444079ae8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aead79974085f4af6989c39d7d1633a01"><td class="memItemLeft" align="right" valign="top"><a id="aead79974085f4af6989c39d7d1633a01"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>EndRecordEvent</b></td></tr>
+<tr class="separator:aead79974085f4af6989c39d7d1633a01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

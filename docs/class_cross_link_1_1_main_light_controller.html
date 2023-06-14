@@ -68,9 +68,11 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_main_light_controller-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.MainLightController Class Reference</div>  </div>
@@ -79,6 +81,27 @@ $(function() {
 
 <p>Inherits MonoBehaviour.</p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:abaa713050f161b8edbdbe44bf1b07271"><td class="memItemLeft" align="right" valign="top"><a id="abaa713050f161b8edbdbe44bf1b07271"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RecordMainlightIntensity</b> (float li)</td></tr>
+<tr class="separator:abaa713050f161b8edbdbe44bf1b07271"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff27aa30238a8c4b71d9e3a3212dcb49"><td class="memItemLeft" align="right" valign="top"><a id="aff27aa30238a8c4b71d9e3a3212dcb49"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TurnOnOtherLight</b> ()</td></tr>
+<tr class="separator:aff27aa30238a8c4b71d9e3a3212dcb49"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73776c14a5c21eddde1f727d07c68085"><td class="memItemLeft" align="right" valign="top"><a id="a73776c14a5c21eddde1f727d07c68085"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TurnOffOtherLight</b> ()</td></tr>
+<tr class="separator:a73776c14a5c21eddde1f727d07c68085"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76c2488cb93f90fd6e62a613104993b1"><td class="memItemLeft" align="right" valign="top"><a id="a76c2488cb93f90fd6e62a613104993b1"></a>
+Light&#160;</td><td class="memItemRight" valign="bottom"><b>GetShadowActiveMainLight</b> ()</td></tr>
+<tr class="separator:a76c2488cb93f90fd6e62a613104993b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b064689116df9763f1ac75ca9f9b1e1"><td class="memItemLeft" align="right" valign="top"><a id="a0b064689116df9763f1ac75ca9f9b1e1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TurnMainLight</b> (bool on, float lightChangeSpeed)</td></tr>
+<tr class="separator:a0b064689116df9763f1ac75ca9f9b1e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae03f57ec304d0b557f9b07fb0b4089a7"><td class="memItemLeft" align="right" valign="top"><a id="ae03f57ec304d0b557f9b07fb0b4089a7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TurnOn</b> (bool on, float lightChangeSpeed)</td></tr>
+<tr class="separator:ae03f57ec304d0b557f9b07fb0b4089a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a9f55843b241c71b889c961b135c313ff"><td class="memItemLeft" align="right" valign="top"><a id="a9f55843b241c71b889c961b135c313ff"></a>
@@ -90,12 +113,21 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:afaea94edea26ca5128a34549c6b31923"><td class="memItemLeft" align="right" valign="top"><a id="afaea94edea26ca5128a34549c6b31923"></a>
 Light&#160;</td><td class="memItemRight" valign="bottom"><b>mainLight</b></td></tr>
 <tr class="separator:afaea94edea26ca5128a34549c6b31923"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d69726d7c4a6c7cac82237c16988839"><td class="memItemLeft" align="right" valign="top"><a id="a2d69726d7c4a6c7cac82237c16988839"></a>
+Light[]&#160;</td><td class="memItemRight" valign="bottom"><b>otherLights</b></td></tr>
+<tr class="separator:a2d69726d7c4a6c7cac82237c16988839"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:a6521128ae300901b341ce9552d1964f4"><td class="memItemLeft" align="right" valign="top"><a id="a6521128ae300901b341ce9552d1964f4"></a>
 static <a class="el" href="class_cross_link_1_1_main_light_controller.html">MainLightController</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b></td></tr>
 <tr class="separator:a6521128ae300901b341ce9552d1964f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:a0151b14b94b94ed08a10763d04d4a4b8"><td class="memItemLeft" align="right" valign="top"><a id="a0151b14b94b94ed08a10763d04d4a4b8"></a>
+System.Action&lt; Light &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnMainLightChange</b></td></tr>
+<tr class="separator:a0151b14b94b94ed08a10763d04d4a4b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

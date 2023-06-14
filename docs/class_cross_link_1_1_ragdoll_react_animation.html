@@ -85,6 +85,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aff543129ba7b115c8d74fb873d645ed2"><td class="memItemLeft" align="right" valign="top"><a id="aff543129ba7b115c8d74fb873d645ed2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> ()</td></tr>
 <tr class="separator:aff543129ba7b115c8d74fb873d645ed2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ddc436108ec158d4e3ba79756192cce"><td class="memItemLeft" align="right" valign="top"><a id="a7ddc436108ec158d4e3ba79756192cce"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ConfigGrabPose</b> ()</td></tr>
+<tr class="separator:a7ddc436108ec158d4e3ba79756192cce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a10a177e00a54eb166c9f84089361f98e"><td class="memItemLeft" align="right" valign="top"><a id="a10a177e00a54eb166c9f84089361f98e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>InitMakeup</b> ()</td></tr>
 <tr class="separator:a10a177e00a54eb166c9f84089361f98e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -145,9 +148,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsBlockStop</b> ()</t
 <tr class="memitem:a6e746b9de53a288b5cf25f2ab3bfcf9e"><td class="memItemLeft" align="right" valign="top"><a id="a6e746b9de53a288b5cf25f2ab3bfcf9e"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetHitBlockTime</b> ()</td></tr>
 <tr class="separator:a6e746b9de53a288b5cf25f2ab3bfcf9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a47da28a5d4e4d485b4899c46f7e99e7f"><td class="memItemLeft" align="right" valign="top"><a id="a47da28a5d4e4d485b4899c46f7e99e7f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>OnBlock</b> ()</td></tr>
-<tr class="separator:a47da28a5d4e4d485b4899c46f7e99e7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f743042cbcac4fc606c8de04ff121cf"><td class="memItemLeft" align="right" valign="top"><a id="a9f743042cbcac4fc606c8de04ff121cf"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnBlock</b> (Vector3 forceDir)</td></tr>
+<tr class="separator:a9f743042cbcac4fc606c8de04ff121cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe83b2db73c743e39c3ffbb3f0298865"><td class="memItemLeft" align="right" valign="top"><a id="abe83b2db73c743e39c3ffbb3f0298865"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearWeaponOffset</b> ()</td></tr>
 <tr class="separator:abe83b2db73c743e39c3ffbb3f0298865"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -160,9 +163,15 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDismember</b> ()</t
 <tr class="memitem:aa19fc958008d329c05337e607763dff3"><td class="memItemLeft" align="right" valign="top"><a id="aa19fc958008d329c05337e607763dff3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>InitDismember</b> ()</td></tr>
 <tr class="separator:aa19fc958008d329c05337e607763dff3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe6cf010c753361d74acbc31e9570776"><td class="memItemLeft" align="right" valign="top"><a id="afe6cf010c753361d74acbc31e9570776"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsCutable</b> ()</td></tr>
+<tr class="separator:afe6cf010c753361d74acbc31e9570776"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff0bb027bb0b70dc8dfe0b39d327e8fa"><td class="memItemLeft" align="right" valign="top"><a id="aff0bb027bb0b70dc8dfe0b39d327e8fa"></a>
 BodyFragment&#160;</td><td class="memItemRight" valign="bottom"><b>GetBodyFragment</b> (string muName)</td></tr>
 <tr class="separator:aff0bb027bb0b70dc8dfe0b39d327e8fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7dc0680bfc76828ca24cc01953e0b9ce"><td class="memItemLeft" align="right" valign="top"><a id="a7dc0680bfc76828ca24cc01953e0b9ce"></a>
+BodyFragment&#160;</td><td class="memItemRight" valign="bottom"><b>FindClosestFrag</b> (Vector3 point)</td></tr>
+<tr class="separator:a7dc0680bfc76828ca24cc01953e0b9ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a588840307908d258b8bf221baf2af5"><td class="memItemLeft" align="right" valign="top"><a id="a7a588840307908d258b8bf221baf2af5"></a>
 BodyFragment&#160;</td><td class="memItemRight" valign="bottom"><b>CheckHitDismemberPoint</b> (string muName, Vector3 point, float cutRadiuMlp=1)</td></tr>
 <tr class="separator:a7a588840307908d258b8bf221baf2af5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,6 +184,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>Dismember</b> (BodyFr
 <tr class="memitem:ac4fb59d2e9977257027d909c2308cebf"><td class="memItemLeft" align="right" valign="top"><a id="ac4fb59d2e9977257027d909c2308cebf"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>FreezeEffect</b> (bool f)</td></tr>
 <tr class="separator:ac4fb59d2e9977257027d909c2308cebf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45725c770134fff5bb413351132c497b"><td class="memItemLeft" align="right" valign="top"><a id="a45725c770134fff5bb413351132c497b"></a>
+<a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetWeapon</b> (string boneName)</td></tr>
+<tr class="separator:a45725c770134fff5bb413351132c497b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae341d36bf7cb6e1fee3a48536cfe9188"><td class="memItemLeft" align="right" valign="top"><a id="ae341d36bf7cb6e1fee3a48536cfe9188"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetWeaponCollisionEnableWith</b> (Collider[] cols, bool e)</td></tr>
 <tr class="separator:ae341d36bf7cb6e1fee3a48536cfe9188"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -256,9 +268,9 @@ PaintIn3D.P3dPaintableTexture&#160;</td><td class="memItemRight" valign="bottom"
 <tr class="memitem:adfe33b351ef7c3c3207f297de07d6bdd"><td class="memItemLeft" align="right" valign="top"><a id="adfe33b351ef7c3c3207f297de07d6bdd"></a>
 PaintIn3D.P3dPaintableTexture&#160;</td><td class="memItemRight" valign="bottom"><b>paintGloss</b></td></tr>
 <tr class="separator:adfe33b351ef7c3c3207f297de07d6bdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af40c3dfe68e0fba4eadaf79fd4e8922c"><td class="memItemLeft" align="right" valign="top"><a id="af40c3dfe68e0fba4eadaf79fd4e8922c"></a>
-System.Action&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>BreakDefendEvent</b></td></tr>
-<tr class="separator:af40c3dfe68e0fba4eadaf79fd4e8922c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7c3a538964a0a36e19ee52530d842da"><td class="memItemLeft" align="right" valign="top"><a id="ac7c3a538964a0a36e19ee52530d842da"></a>
+System.Action&lt; int, Vector3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>BreakDefendEvent</b></td></tr>
+<tr class="separator:ac7c3a538964a0a36e19ee52530d842da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6633d6f45a24aa594982d8d03f6cc57f"><td class="memItemLeft" align="right" valign="top"><a id="a6633d6f45a24aa594982d8d03f6cc57f"></a>
 <a class="el" href="class_cross_link_1_1_weapon_i_k_pose.html">WeaponIKPose</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>weaponIKPose</b></td></tr>
 <tr class="separator:a6633d6f45a24aa594982d8d03f6cc57f"><td class="memSeparator" colspan="2">&#160;</td></tr>

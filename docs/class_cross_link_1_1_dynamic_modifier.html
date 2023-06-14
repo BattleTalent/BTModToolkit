@@ -119,8 +119,8 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetEnable</b> ()</t
 <tr class="memitem:a496a6b59a6a11c6defb940e6de5aad8f"><td class="memItemLeft" align="right" valign="top"><a id="a496a6b59a6a11c6defb940e6de5aad8f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetValue</b> (float v)</td></tr>
 <tr class="separator:a496a6b59a6a11c6defb940e6de5aad8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa5f27d9bedcac0fe4ae0361f47d9ed9"><td class="memItemLeft" align="right" valign="top"><a id="afa5f27d9bedcac0fe4ae0361f47d9ed9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>RecoverValue</b> ()</td></tr>
+<tr class="memitem:afa5f27d9bedcac0fe4ae0361f47d9ed9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_dynamic_modifier.html#afa5f27d9bedcac0fe4ae0361f47d9ed9">RecoverValue</a> ()</td></tr>
+<tr class="memdesc:afa5f27d9bedcac0fe4ae0361f47d9ed9"><td class="mdescLeft">&#160;</td><td class="mdescRight">recover value state to default  <a href="class_cross_link_1_1_dynamic_modifier.html#afa5f27d9bedcac0fe4ae0361f47d9ed9">More...</a><br /></td></tr>
 <tr class="separator:afa5f27d9bedcac0fe4ae0361f47d9ed9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15b4dc607e8f7d8326ba50d057ec86d3"><td class="memItemLeft" align="right" valign="top"><a id="a15b4dc607e8f7d8326ba50d057ec86d3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Reset</b> ()</td></tr>
@@ -137,11 +137,11 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>name</b></td></tr>
 <tr class="memitem:ab6ea3d1827a436848713fa9c2b8ec233"><td class="memItemLeft" align="right" valign="top"><a id="ab6ea3d1827a436848713fa9c2b8ec233"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>dependUnlockItem</b></td></tr>
 <tr class="separator:ab6ea3d1827a436848713fa9c2b8ec233"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad54d0854b0cf1329cdcd918322303235"><td class="memItemLeft" align="right" valign="top"><a id="ad54d0854b0cf1329cdcd918322303235"></a>
-SettingType&#160;</td><td class="memItemRight" valign="bottom"><b>setting</b> = SettingType.UseValue</td></tr>
+<tr class="memitem:ad54d0854b0cf1329cdcd918322303235"><td class="memItemLeft" align="right" valign="top">SettingType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_dynamic_modifier.html#ad54d0854b0cf1329cdcd918322303235">setting</a> = SettingType.UseValue</td></tr>
+<tr class="memdesc:ad54d0854b0cf1329cdcd918322303235"><td class="mdescLeft">&#160;</td><td class="mdescRight">define wehere to read value  <a href="class_cross_link_1_1_dynamic_modifier.html#ad54d0854b0cf1329cdcd918322303235">More...</a><br /></td></tr>
 <tr class="separator:ad54d0854b0cf1329cdcd918322303235"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9d32dceea2d19454e4c9caacafe3842"><td class="memItemLeft" align="right" valign="top"><a id="ac9d32dceea2d19454e4c9caacafe3842"></a>
-SettingValueEffect&#160;</td><td class="memItemRight" valign="bottom"><b>valueEffect</b> = SettingValueEffect.UseSettingValue</td></tr>
+<tr class="memitem:ac9d32dceea2d19454e4c9caacafe3842"><td class="memItemLeft" align="right" valign="top">SettingValueEffect&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_dynamic_modifier.html#ac9d32dceea2d19454e4c9caacafe3842">valueEffect</a> = SettingValueEffect.UseSettingValue</td></tr>
+<tr class="memdesc:ac9d32dceea2d19454e4c9caacafe3842"><td class="mdescLeft">&#160;</td><td class="mdescRight">only affect when enabled by setting  <a href="class_cross_link_1_1_dynamic_modifier.html#ac9d32dceea2d19454e4c9caacafe3842">More...</a><br /></td></tr>
 <tr class="separator:ac9d32dceea2d19454e4c9caacafe3842"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a566654aaec7f5429c4bb52aec1ed9f11"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_dynamic_modifier.html#a566654aaec7f5429c4bb52aec1ed9f11">valueInSetting</a></td></tr>
 <tr class="memdesc:a566654aaec7f5429c4bb52aec1ed9f11"><td class="mdescLeft">&#160;</td><td class="mdescRight">used when toggle to SettingType.EnableBySetting  <a href="class_cross_link_1_1_dynamic_modifier.html#a566654aaec7f5429c4bb52aec1ed9f11">More...</a><br /></td></tr>
@@ -164,7 +164,59 @@ System.Action&lt; <a class="el" href="class_cross_link_1_1_dynamic_modifier.html
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>modifier can be applied by ModOP or buff then the system will ask the role or system, if this modifier is enabled then we'll pull the value out of this modifier then the value will be activated in the way they configed </p>
-</div><h2 class="groupheader">Member Data Documentation</h2>
+</div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="afa5f27d9bedcac0fe4ae0361f47d9ed9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa5f27d9bedcac0fe4ae0361f47d9ed9">&#9670;&nbsp;</a></span>RecoverValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.DynamicModifier.RecoverValue </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>recover value state to default </p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="ad54d0854b0cf1329cdcd918322303235"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad54d0854b0cf1329cdcd918322303235">&#9670;&nbsp;</a></span>setting</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">SettingType CrossLink.DynamicModifier.setting = SettingType.UseValue</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>define wehere to read value </p>
+
+</div>
+</div>
+<a id="ac9d32dceea2d19454e4c9caacafe3842"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9d32dceea2d19454e4c9caacafe3842">&#9670;&nbsp;</a></span>valueEffect</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">SettingValueEffect CrossLink.DynamicModifier.valueEffect = SettingValueEffect.UseSettingValue</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>only affect when enabled by setting </p>
+
+</div>
+</div>
 <a id="a566654aaec7f5429c4bb52aec1ed9f11"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a566654aaec7f5429c4bb52aec1ed9f11">&#9670;&nbsp;</a></span>valueInSetting</h2>
 
