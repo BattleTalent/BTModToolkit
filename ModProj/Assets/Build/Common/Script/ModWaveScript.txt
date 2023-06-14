@@ -1,0 +1,48 @@
+
+-- this script will change the wave data, and setup the roles need to be replaced
+-- TODO: recover them back once leave
+
+local ModWave = {
+	-- wave(WaveGenerator) -- for example: ["WMD_SimpleRole", "WMD_SimpleRole", "WMD_SimpleRole"]
+	modRoleTable = {
+		WMD_SimpleRole = "Goblin_Axe"
+	}
+}
+
+
+function ModWave:Start()
+	-- modify wave data
+	--self:UpdateWave(self.wave, self.modRoleTable)
+	self:UpdateWave(self.wave, self.modRoleTable)
+	CL.RoleGroupTable.GetConfig().playableWaves:Add(self.wave)
+end
+
+function ModWave:OnDestroy()
+
+end
+
+function ModWave:UpdateWave(wave, modRoleTable)
+--[[
+	for i=0,wave.pool.Length-1 do
+		print(wave.pool[i])
+	end
+
+	for i,v in pairs(modRoleTable) do
+		print(v)
+	end
+--]]
+
+	for i=0,wave.pool.Length-1 do
+		local curRole = wave.pool[i]
+		local originalRole = modRoleTable[curRole]
+		if originalRole then
+			wave.pool[i] = originalRole
+			CL.SettingMgr.Instance:ApplyModToCharacter(true, curRole, originalRole)
+		end
+	end
+
+end
+
+
+
+return Class(nil, nil, ModWave)
