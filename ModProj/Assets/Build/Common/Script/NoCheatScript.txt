@@ -4,7 +4,8 @@
 local NoCheat = {
 	originalCheat = false,
 	originalKickJump = false,
-	originalModifierEnabled = false
+	originalModifierEnabled = false,
+	originalSlowmo = false,
 }
 
 
@@ -14,20 +15,25 @@ function NoCheat:Start()
 	local kickItem = CL.UnlockContentConfig.GetItemState("Func_KickJump")
 	self.originalKickJump = not kickItem.disabled
 	self.originalModifierEnabled = CL.DynamicModifierConfig.GlobalEnabled
+	local slowItem = CL.UnlockContentConfig.GetItemState("Func_SlowMo")
+	self.originalSlowmo = not slowItem.disabled
 
 	-- setup those functions
 	CL.SettingMgr.Instance.unlockCheating = false
 	kickItem.disabled = true
 	CL.DynamicModifierConfig.GlobalEnabled = false
+	slowItem.disabled = true
 end
 
 function NoCheat:OnDestroy()
 	local kickItem = CL.UnlockContentConfig.GetItemState("Func_KickJump")
+	local slowItem = CL.UnlockContentConfig.GetItemState("Func_SlowMo")
 
 	-- setup those functions
 	CL.SettingMgr.Instance.unlockCheating = self.originalCheat
 	kickItem.disabled = not self.originalKickJump
 	CL.DynamicModifierConfig.GlobalEnabled = self.originalModifierEnabled
+	slowItem.disabled = not self.originalSlowmo
 end
 
 
