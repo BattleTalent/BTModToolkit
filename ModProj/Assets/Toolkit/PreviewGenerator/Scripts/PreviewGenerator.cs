@@ -39,10 +39,6 @@ public class PreviewGenerator
     public Vector2 PanOffset;
     public float ZoomLevel;
     
-    [Delayed]
-    public int RenderWidth = 256;
-    [Delayed]
-    public int RenderHeight = 256;
     public BackgroundColorOrTextureInfo BackgroundColorOrTextureInfo;
     public AnimationClipInfo AnimationClipInfo;
     private const int PREVIEW_LAYER = 22;
@@ -314,7 +310,7 @@ public class PreviewGenerator
 
 
             Texture2D tempTexture =
-                RuntimePreviewGenerator.GenerateModelPreview(tempGameObject.transform, RenderWidth, RenderHeight);
+                RuntimePreviewGenerator.GenerateModelPreview(tempGameObject.transform, 256, 256);
 
             if ((_postProcessMergeComponent != null) && (BackgroundColorOrTextureInfo.backType != BackgroundTextureTypes.Color))
             {

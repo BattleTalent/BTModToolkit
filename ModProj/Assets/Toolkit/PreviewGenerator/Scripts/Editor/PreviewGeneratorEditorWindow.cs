@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -165,8 +165,6 @@ public class PreviewGeneratorDrawer : PropertyDrawer
         SerializedProperty ViewDirectionProperty = property.FindPropertyRelative("ViewDirection");
         SerializedProperty ViewRightProperty = property.FindPropertyRelative("ViewRightDirection");
         SerializedProperty ViewUpProperty = property.FindPropertyRelative("ViewUpDirection");
-        SerializedProperty RenderWidthProperty = property.FindPropertyRelative("RenderWidth");
-        SerializedProperty RenderHeightProperty = property.FindPropertyRelative("RenderHeight");
 
         mouseOverTexture = texRect.Contains(Event.current.mousePosition);
         if (mouseOverTexture && (Event.current.type == EventType.MouseDrag))
@@ -259,9 +257,6 @@ public class PreviewGeneratorDrawer : PropertyDrawer
                 ZoomLevelProperty.floatValue = Mathf.Min(.999999f, ZoomLevelProperty.floatValue);
             }
 
-            RenderWidthProperty.intValue = Mathf.Min(Mathf.Max(RenderWidthProperty.intValue, MinTextureSize), MaxTextureSize);
-            RenderHeightProperty.intValue = Mathf.Min(Mathf.Max(RenderHeightProperty.intValue, MinTextureSize), MaxTextureSize);
-
             previewGenerator.bRepaintNeeded = true;
 
         }
@@ -289,7 +284,7 @@ public class PreviewGeneratorDrawer : PropertyDrawer
         }
         
         EditorGUILayout.Space();
-        float boxHeight = Mathf.Min(EditorGUIUtility.currentViewWidth - 36, previewGenerator.RenderHeight);
+        float boxHeight = Mathf.Min(EditorGUIUtility.currentViewWidth - 36, 256);
         GUILayout.Box(previewTexture,
             GUILayout.Height(boxHeight), GUILayout.Width(EditorGUIUtility.currentViewWidth - 36));
         if (Event.current.type == EventType.Repaint)
@@ -365,7 +360,8 @@ public class AnimationClipInfoDrawer : PropertyDrawer
 public class BackgroundColorOrTextureInfoDrawer : PropertyDrawer
 {
     private bool backgroundFoldOut = true;
-    
+    int         _selectedBackground   = 0;
+
     // Draw the property inside the given rect
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
@@ -380,6 +376,7 @@ public class BackgroundColorOrTextureInfoDrawer : PropertyDrawer
             EditorGUI.indentLevel++;
             // make selection transparent background
             BackgroundTextureTypes selGridInt = (BackgroundTextureTypes) BackgroundTypeProperty.enumValueIndex;
+            this._selectedBackground = EditorGUILayout.Popup("My Simple Dropdown", _selectedBackground, new string[3] { "Transparent", "Color", "Texture" });
 
             FontStyle origFontStyle = EditorStyles.label.fontStyle;
             if (BackgroundTypeProperty.prefabOverride)
@@ -387,33 +384,24 @@ public class BackgroundColorOrTextureInfoDrawer : PropertyDrawer
                 EditorStyles.label.fontStyle = FontStyle.Bold;
             }
 
-            if (EditorGUILayout.Toggle("Use Transparent Background",
-                (selGridInt == BackgroundTextureTypes.Transparent)))
-            {
+            if (_selectedBackground == 0) {
                 selGridInt = BackgroundTextureTypes.Transparent;
             }
 
-            if (EditorGUILayout.Toggle("Use Color Background", (selGridInt == BackgroundTextureTypes.Color)))
-            {
+            if (_selectedBackground == 1) {
                 selGridInt = BackgroundTextureTypes.Color;
+                EditorGUILayout.PropertyField(BackgroundColorProperty);
             }
 
-            if (EditorGUILayout.Toggle("Use Texture Background", (selGridInt == BackgroundTextureTypes.Texture)))
-            {
+            if (_selectedBackground == 2) {
                 selGridInt = BackgroundTextureTypes.Texture;
+                EditorGUILayout.PropertyField(BackgroundTextureProperty);
+                EditorGUILayout.PropertyField(UseBackgroundAlphaProperty);
             }
 
             EditorStyles.label.fontStyle = origFontStyle;
             BackgroundTypeProperty.enumValueIndex = (int) selGridInt;
 
-            EditorGUI.BeginDisabledGroup(selGridInt != BackgroundTextureTypes.Color);
-            EditorGUILayout.PropertyField(BackgroundColorProperty);
-            EditorGUI.EndDisabledGroup();
-
-            EditorGUI.BeginDisabledGroup(selGridInt != BackgroundTextureTypes.Texture);
-            EditorGUILayout.PropertyField(BackgroundTextureProperty);
-            EditorGUILayout.PropertyField(UseBackgroundAlphaProperty);
-            EditorGUI.EndDisabledGroup();
             EditorGUI.indentLevel--;
         }
 
