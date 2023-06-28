@@ -18,7 +18,7 @@ public class PreviewGeneratorEditorWindow : EditorWindow
     private Vector2 curScrollPosition = new Vector2(0.0f, 0.0f);
     private const string _settingsPath = "/ProjectSettings/PreviewGeneratorSettings.json";
 
-    [MenuItem("Window/Preview Generator")]
+    [MenuItem("Tools/Preview Generator", false, 10)]
     static void ShowWindow()
     {
         window = GetWindow<PreviewGeneratorEditorWindow>();
@@ -81,7 +81,6 @@ public class PreviewGeneratorEditorWindow : EditorWindow
             return;
         }
 
-        EditorGUILayout.InspectorTitlebar(true, this);
         EditorGUILayout.BeginHorizontal();
         {
             EditorGUILayout.Space();
