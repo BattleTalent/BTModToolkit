@@ -29,10 +29,11 @@ namespace CrossLink
             {
                 targetpath += splitedPath[i] + "/";
             }
-            targetpath += "CrossLink/BattleTalent/Mods";
+            targetpath += "CyDream/BattleTalent/Mods";
 
             return targetpath;
         }
+
 
         [MenuItem("BuildTools/FastBuildAndInstallForWindows")]
         public static void FastBuildAndInstallForWindows()
@@ -72,7 +73,7 @@ namespace CrossLink
         }
 #endif
 
-        [MenuItem("BuildTools/BuildAllBundles")]
+        [MenuItem("BuildTools/BuildAllBundles", false, 0)]
         public static void BuildAll()
         {
             ClearOldFiles();
@@ -90,7 +91,7 @@ namespace CrossLink
         }
 
 
-        [MenuItem("BuildTools/ClearOldFiles")]
+        [MenuItem("BuildTools/ClearOldFiles", false, 0)]
         static void ClearOldFiles()
         {
             var buildPath = Application.dataPath + "/Mods/";
@@ -109,7 +110,7 @@ namespace CrossLink
             UnityEditor.EditorUserBuildSettings.androidBuildSubtarget = MobileTextureSubtarget.ASTC;
         }
 
-        [MenuItem("BuildTools/InstallModOnWindows")]
+        [MenuItem("BuildTools/InstallModOnWindows", false, 11)]
         static void InstallModOnWindows()
         {
             var targetpath = Application.persistentDataPath;
@@ -121,7 +122,7 @@ namespace CrossLink
             {
                 targetpath += splitedPath[i] + "/";
             }
-            targetpath += "CrossLink/BattleTalent/Mods";
+            targetpath += "CyDream/BattleTalent/Mods";
 
             var targetModPath = targetpath + "/" + Application.productName;
 
@@ -139,7 +140,7 @@ namespace CrossLink
 
 
         
-        [MenuItem("BuildTools/InstallModOnAndroid")]
+        [MenuItem("BuildTools/InstallModOnAndroid", false, 11)]
         static void InstallModOnAndroid()
         {
 
@@ -223,6 +224,7 @@ namespace CrossLink
             }
 #endif
         }
+
 
         static void BuildWithProfile(BuildTargetGroup buildGroup, BuildTarget buildTarget)
         {

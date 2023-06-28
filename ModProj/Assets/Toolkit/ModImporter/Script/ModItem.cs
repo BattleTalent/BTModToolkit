@@ -145,6 +145,7 @@ namespace CrossLink
 
         private void CreatePrefabObj(GameObject obj, string path)
         {
+            Debug.Log(obj.name + " saved to: " + path);
 #if UNITY_EDITOR
             if (!Directory.Exists(path))
             {
@@ -152,6 +153,7 @@ namespace CrossLink
             }
             try
             {
+                SaveScripts(path);
                 UnityEditor.PrefabUtility.SaveAsPrefabAsset(obj, path + "/" + obj.name + ".prefab");
             }
             catch (System.Exception e)
@@ -161,5 +163,20 @@ namespace CrossLink
 #endif
         }
         #endregion
+
+        public void SaveScripts(string exportPath)
+        {
+            string subFolder = "/Script";
+            Directory.CreateDirectory(exportPath + subFolder);
+
+            foreach (string scriptPath in modInfo.scripts)
+            {
+                var obj = ResourceMgr.Instantiate(scriptPath) as TextAsset;
+                if (obj == null)
+                    return;
+                string[] words = scriptPath.Split('/');
+                File.WriteAllText(exportPath + subFolder + "/" + words[words.Length - 1] + ".txt", obj.text);
+            }
+        }
     }
 }

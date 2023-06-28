@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -77,6 +77,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:a97580f1d57a06a30f22b3f747416ea07"><td class="memItemLeft" align="right" valign="top"><a id="a97580f1d57a06a30f22b3f747416ea07"></a>
+static LayerMask&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultLayer</b> = LayerMask.NameToLayer(&quot;Default&quot;)</td></tr>
+<tr class="separator:a97580f1d57a06a30f22b3f747416ea07"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8cb345e765bc1c3eecd3466cc422ba7"><td class="memItemLeft" align="right" valign="top"><a id="af8cb345e765bc1c3eecd3466cc422ba7"></a>
 static LayerMask&#160;</td><td class="memItemRight" valign="bottom"><b>EnvLayer</b> = LayerMask.NameToLayer(&quot;CharacterObstacle&quot;)</td></tr>
 <tr class="separator:af8cb345e765bc1c3eecd3466cc422ba7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -128,9 +131,15 @@ static LayerMask&#160;</td><td class="memItemRight" valign="bottom"><b>InteractL
 <tr class="memitem:ac01f3f0c405f00085ff58fca43cd9928"><td class="memItemLeft" align="right" valign="top"><a id="ac01f3f0c405f00085ff58fca43cd9928"></a>
 static LayerMask&#160;</td><td class="memItemRight" valign="bottom"><b>BodyMask</b> = RagdollLayerMask | RagdollFakeLayerMask | InteractLayerMask</td></tr>
 <tr class="separator:ac01f3f0c405f00085ff58fca43cd9928"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3bccc57b11e925e45faabcd61a3f0e9"><td class="memItemLeft" align="right" valign="top"><a id="af3bccc57b11e925e45faabcd61a3f0e9"></a>
+static LayerMask&#160;</td><td class="memItemRight" valign="bottom"><b>VisibleCollisionMask</b> = BodyMask | EnvLayerMask</td></tr>
+<tr class="separator:af3bccc57b11e925e45faabcd61a3f0e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4964b3f9cfeb3b6c053b281afcf954c2"><td class="memItemLeft" align="right" valign="top"><a id="a4964b3f9cfeb3b6c053b281afcf954c2"></a>
 static LayerMask&#160;</td><td class="memItemRight" valign="bottom"><b>AirwallLayerMask</b> = 1 &lt;&lt; LayerMask.NameToLayer(&quot;AirWall&quot;)</td></tr>
 <tr class="separator:a4964b3f9cfeb3b6c053b281afcf954c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb4ed702be38e2a67fe57205030a6cff"><td class="memItemLeft" align="right" valign="top"><a id="afb4ed702be38e2a67fe57205030a6cff"></a>
+static LayerMask&#160;</td><td class="memItemRight" valign="bottom"><b>CharacterOnlyLayerMask</b> = 1 &lt;&lt; LayerMask.NameToLayer(&quot;CharacterOnly&quot;)</td></tr>
+<tr class="separator:afb4ed702be38e2a67fe57205030a6cff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1091eb7af3c1e5fcd363f0d0cafaaef6"><td class="memItemLeft" align="right" valign="top"><a id="a1091eb7af3c1e5fcd363f0d0cafaaef6"></a>
 static LayerMask&#160;</td><td class="memItemRight" valign="bottom"><b>CharacterActLayerMask</b> = 1 &lt;&lt; LayerMask.NameToLayer(&quot;CharacterAct&quot;)</td></tr>
 <tr class="separator:a1091eb7af3c1e5fcd363f0d0cafaaef6"><td class="memSeparator" colspan="2">&#160;</td></tr>

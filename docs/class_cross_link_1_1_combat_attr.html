@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -87,12 +87,21 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a418db7ca0afba028437b641c41da6d13"><td class="memItemLeft" align="right" valign="top"><a id="a418db7ca0afba028437b641c41da6d13"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>ChangeCamp</b> ()</td></tr>
 <tr class="separator:a418db7ca0afba028437b641c41da6d13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5634b2e3c153b6284504a3ea17473b1"><td class="memItemLeft" align="right" valign="top"><a id="ad5634b2e3c153b6284504a3ea17473b1"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetDeadTime</b> ()</td></tr>
+<tr class="separator:ad5634b2e3c153b6284504a3ea17473b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af955f63f1ee2f7cb4aebb336b54b7638"><td class="memItemLeft" align="right" valign="top"><a id="af955f63f1ee2f7cb4aebb336b54b7638"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDiedForAWhile</b> (float sec=1f)</td></tr>
+<tr class="separator:af955f63f1ee2f7cb4aebb336b54b7638"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a76d2058cb9bcff2546a3c29a095fda1e"><td class="memItemLeft" align="right" valign="top"><a id="a76d2058cb9bcff2546a3c29a095fda1e"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>ToString</b> ()</td></tr>
 <tr class="separator:a76d2058cb9bcff2546a3c29a095fda1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4918eff111542c7f9bccacdd503e94f4"><td class="memItemLeft" align="right" valign="top"><a id="a4918eff111542c7f9bccacdd503e94f4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> (<a class="el" href="class_cross_link_1_1_character_config_1_1_character_config_item.html">CharacterConfig.CharacterConfigItem</a> configData)</td></tr>
 <tr class="separator:a4918eff111542c7f9bccacdd503e94f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81c3674b50fee1f41b55a9b05dc3d6ec"><td class="memItemLeft" align="right" valign="top"><a id="a81c3674b50fee1f41b55a9b05dc3d6ec"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>InitBuff</b> ()</td></tr>
+<tr class="separator:a81c3674b50fee1f41b55a9b05dc3d6ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9dbdab07dc23c6fc78114c088d6b156c"><td class="memItemLeft" align="right" valign="top"><a id="a9dbdab07dc23c6fc78114c088d6b156c"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>AddHp</b> (float hpDelta)</td></tr>
 <tr class="separator:a9dbdab07dc23c6fc78114c088d6b156c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,6 +117,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDead</b> ()</td></t
 <tr class="memitem:a3d9fac170e0b150da813639a7115f70d"><td class="memItemLeft" align="right" valign="top"><a id="a3d9fac170e0b150da813639a7115f70d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Relive</b> ()</td></tr>
 <tr class="separator:a3d9fac170e0b150da813639a7115f70d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d5495604971544976ff565f1c632740"><td class="memItemLeft" align="right" valign="top"><a id="a1d5495604971544976ff565f1c632740"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReduceHp</b> (float dhp=-100)</td></tr>
+<tr class="separator:a1d5495604971544976ff565f1c632740"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a46b1a07bbf79829881044e59a3b43b"><td class="memItemLeft" align="right" valign="top"><a id="a6a46b1a07bbf79829881044e59a3b43b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ToDead</b> ()</td></tr>
 <tr class="separator:a6a46b1a07bbf79829881044e59a3b43b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -126,18 +138,27 @@ virtual float&#160;</td><td class="memItemRight" valign="bottom"><b>GetFinalMass
 <tr class="memitem:aee163a50517eda0ca538abd416ad83c8"><td class="memItemLeft" align="right" valign="top"><a id="aee163a50517eda0ca538abd416ad83c8"></a>
 <a class="el" href="class_cross_link_1_1_attr_modifier.html">AttrModifier</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetModifier</b> ()</td></tr>
 <tr class="separator:aee163a50517eda0ca538abd416ad83c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3890e2729bda3749915251b85fe7e208"><td class="memItemLeft" align="right" valign="top"><a id="a3890e2729bda3749915251b85fe7e208"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>GetState</b> (string name)</td></tr>
-<tr class="separator:a3890e2729bda3749915251b85fe7e208"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c353f9a15e29304d5522dd053176608"><td class="memItemLeft" align="right" valign="top"><a id="a4c353f9a15e29304d5522dd053176608"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetState</b> (string name)</td></tr>
+<tr class="separator:a4c353f9a15e29304d5522dd053176608"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a92939895264ae98c4fb52ca806c61393"><td class="memItemLeft" align="right" valign="top"><a id="a92939895264ae98c4fb52ca806c61393"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>HasState</b> (string name)</td></tr>
 <tr class="separator:a92939895264ae98c4fb52ca806c61393"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ff5a2c38f2384580529a6f50438b487"><td class="memItemLeft" align="right" valign="top"><a id="a7ff5a2c38f2384580529a6f50438b487"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsImmune</b> (string element)</td></tr>
+<tr class="separator:a7ff5a2c38f2384580529a6f50438b487"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ace1cf1b6cf58d332799d5206ae6c16"><td class="memItemLeft" align="right" valign="top"><a id="a4ace1cf1b6cf58d332799d5206ae6c16"></a>
 virtual float&#160;</td><td class="memItemRight" valign="bottom"><b>ReadValue</b> (string attr)</td></tr>
 <tr class="separator:a4ace1cf1b6cf58d332799d5206ae6c16"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8f7c4a65c3a2f127ae94e2c6955ed24"><td class="memItemLeft" align="right" valign="top"><a id="af8f7c4a65c3a2f127ae94e2c6955ed24"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteValue</b> (string attr, float v)</td></tr>
 <tr class="separator:af8f7c4a65c3a2f127ae94e2c6955ed24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3579cf318d26c856c007a843c09ba45"><td class="memItemLeft" align="right" valign="top"><a id="ac3579cf318d26c856c007a843c09ba45"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>ListenToModify</b> (string modifierName, System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, string &gt; func, bool pullValue=true)</td></tr>
+<tr class="separator:ac3579cf318d26c856c007a843c09ba45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33e651b939779d36203b671162af3205"><td class="memItemLeft" align="right" valign="top"><a id="a33e651b939779d36203b671162af3205"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UnListenToModify</b> (string modifierName, System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, string &gt; func)</td></tr>
+<tr class="separator:a33e651b939779d36203b671162af3205"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a306078a28f5069cc1c8fdc31729353ac"><td class="memItemLeft" align="right" valign="top"><a id="a306078a28f5069cc1c8fdc31729353ac"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerStateUpdate</b> (string state)</td></tr>
 <tr class="separator:a306078a28f5069cc1c8fdc31729353ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,17 +196,32 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>configName</b></td>
 <a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>&#160;</td><td class="memItemRight" valign="bottom"><b>mp</b> = new <a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>(10)</td></tr>
 <tr class="separator:a128a0023fc8b5544fac7bdca36b6a3fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa259586cec3a3dc95eedacd57f44a58"><td class="memItemLeft" align="right" valign="top"><a id="aaa259586cec3a3dc95eedacd57f44a58"></a>
-<a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>&#160;</td><td class="memItemRight" valign="bottom"><b>atkMlp</b> = new <a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>(0)</td></tr>
+<a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>&#160;</td><td class="memItemRight" valign="bottom"><b>atkMlp</b> = new <a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>(1)</td></tr>
 <tr class="separator:aaa259586cec3a3dc95eedacd57f44a58"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc3979833aac3cfcb4f527a1bbb8e283"><td class="memItemLeft" align="right" valign="top"><a id="acc3979833aac3cfcb4f527a1bbb8e283"></a>
 <a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>&#160;</td><td class="memItemRight" valign="bottom"><b>massMlp</b> = new <a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>(1)</td></tr>
 <tr class="separator:acc3979833aac3cfcb4f527a1bbb8e283"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac768574a857b21239fe79d4127792338"><td class="memItemLeft" align="right" valign="top"><a id="ac768574a857b21239fe79d4127792338"></a>
+string[]&#160;</td><td class="memItemRight" valign="bottom"><b>defaultBuffs</b></td></tr>
+<tr class="separator:ac768574a857b21239fe79d4127792338"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:a203b41572b31ac3c0391b5e3ce2ac2b6"><td class="memItemLeft" align="right" valign="top"><a id="a203b41572b31ac3c0391b5e3ce2ac2b6"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>SystemMaxHp</b> = 99999999</td></tr>
+<tr class="separator:a203b41572b31ac3c0391b5e3ce2ac2b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6ceb4bce14a38f6004126ddaab0822b"><td class="memItemLeft" align="right" valign="top"><a id="aa6ceb4bce14a38f6004126ddaab0822b"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>ContentMaxHp</b> = 99999f</td></tr>
+<tr class="separator:aa6ceb4bce14a38f6004126ddaab0822b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a032cf22584be5b89b39633960af9684e"><td class="memItemLeft" align="right" valign="top"><a id="a032cf22584be5b89b39633960af9684e"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MiniAmountHpLeft</b> = 20</td></tr>
+<tr class="separator:a032cf22584be5b89b39633960af9684e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a648aa28233e60dffb3d58481a742fe73"><td class="memItemLeft" align="right" valign="top"><a id="a648aa28233e60dffb3d58481a742fe73"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>SmallAmountHpLeft</b> = 100</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>SmallAmountHpLeft</b> = 80</td></tr>
 <tr class="separator:a648aa28233e60dffb3d58481a742fe73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7cd103f17824d41be2c9fc7f3d32cf1d"><td class="memItemLeft" align="right" valign="top"><a id="a7cd103f17824d41be2c9fc7f3d32cf1d"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MiddleAmountHpLeft</b> = 160</td></tr>
+<tr class="separator:a7cd103f17824d41be2c9fc7f3d32cf1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>

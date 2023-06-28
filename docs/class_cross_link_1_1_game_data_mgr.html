@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -88,18 +88,54 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetupData</b> 
 <tr class="memitem:a0ceb7eacef77f356675bf61f3c93dba7"><td class="memItemLeft" align="right" valign="top"><a id="a0ceb7eacef77f356675bf61f3c93dba7"></a>
 static <a class="el" href="class_cross_link_1_1_config_data_base.html">ConfigDataBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>LoadOneXML</b> (string fileName, System.Type type)</td></tr>
 <tr class="separator:a0ceb7eacef77f356675bf61f3c93dba7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a699d2dd16fe3d51d72afc16d79339b5e"><td class="memItemLeft" align="right" valign="top"><a id="a699d2dd16fe3d51d72afc16d79339b5e"></a>
+static <a class="el" href="class_cross_link_1_1_config_data_base.html">ConfigDataBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>LoadOneBinary</b> (string fileName, System.Type type)</td></tr>
+<tr class="separator:a699d2dd16fe3d51d72afc16d79339b5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0e35aecd56134c316507618e546bd81"><td class="memItemLeft" align="right" valign="top"><a id="ad0e35aecd56134c316507618e546bd81"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadOneBinaryAsnyc</b> (string fileName, System.Type type, System.Action&lt; <a class="el" href="class_cross_link_1_1_config_data_base.html">ConfigDataBase</a> &gt; cb)</td></tr>
+<tr class="separator:ad0e35aecd56134c316507618e546bd81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af662ac8098bead9f155f850736699e31"><td class="memItemLeft" align="right" valign="top"><a id="af662ac8098bead9f155f850736699e31"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>OutputXML</b> (string fileName, System.Type type, object data)</td></tr>
 <tr class="separator:af662ac8098bead9f155f850736699e31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aea8ab83609ff5cf666925538b85d5f98"><td class="memItemLeft" align="right" valign="top"><a id="aea8ab83609ff5cf666925538b85d5f98"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadAllData</b> ()</td></tr>
 <tr class="separator:aea8ab83609ff5cf666925538b85d5f98"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c69baa56a181424ae2885098da733d4"><td class="memItemLeft" align="right" valign="top"><a id="a4c69baa56a181424ae2885098da733d4"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadAllDataAsync</b> ()</td></tr>
+<tr class="separator:a4c69baa56a181424ae2885098da733d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f403f46fd33e12d88e9ad727ec85769"><td class="memItemLeft" align="right" valign="top"><a id="a5f403f46fd33e12d88e9ad727ec85769"></a>
 static <a class="el" href="class_cross_link_1_1_config_data_base.html">ConfigDataBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetData</b> (System.Type type)</td></tr>
 <tr class="separator:a5f403f46fd33e12d88e9ad727ec85769"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a54b99960b1d64a80c92ab0902ecb172b"><td class="memItemLeft" align="right" valign="top"><a id="a54b99960b1d64a80c92ab0902ecb172b"></a>
 static T&#160;</td><td class="memItemRight" valign="bottom"><b>GetData&lt; T &gt;</b> ()</td></tr>
 <tr class="separator:a54b99960b1d64a80c92ab0902ecb172b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad853639dee032c433a68b0486cce12d2"><td class="memItemLeft" align="right" valign="top"><a id="ad853639dee032c433a68b0486cce12d2"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>InitSave</b> ()</td></tr>
+<tr class="separator:ad853639dee032c433a68b0486cce12d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a555c13fd627ead990dcaec81b870f98a"><td class="memItemLeft" align="right" valign="top"><a id="a555c13fd627ead990dcaec81b870f98a"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>Save&lt; T &gt;</b> (string key, T data)</td></tr>
+<tr class="separator:a555c13fd627ead990dcaec81b870f98a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc66e604f1632fc6703dcbe9bad5e1c4"><td class="memItemLeft" align="right" valign="top"><a id="abc66e604f1632fc6703dcbe9bad5e1c4"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>KeyExists</b> (string key)</td></tr>
+<tr class="separator:abc66e604f1632fc6703dcbe9bad5e1c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c5c17bac92ba02d6b1898d87907188d"><td class="memItemLeft" align="right" valign="top"><a id="a6c5c17bac92ba02d6b1898d87907188d"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>DeleteKey</b> (string key)</td></tr>
+<tr class="separator:a6c5c17bac92ba02d6b1898d87907188d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af275d01709012a429ba861e8408fc1b9"><td class="memItemLeft" align="right" valign="top"><a id="af275d01709012a429ba861e8408fc1b9"></a>
+static T&#160;</td><td class="memItemRight" valign="bottom"><b>Load&lt; T &gt;</b> (string key)</td></tr>
+<tr class="separator:af275d01709012a429ba861e8408fc1b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa911857a6a48a290097b9d326227c4c3"><td class="memItemLeft" align="right" valign="top"><a id="aa911857a6a48a290097b9d326227c4c3"></a>
+static T&#160;</td><td class="memItemRight" valign="bottom"><b>Load&lt; T &gt;</b> (string key, T defaultValue)</td></tr>
+<tr class="separator:aa911857a6a48a290097b9d326227c4c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c15f03e305328cb408b38f11e79d2d8"><td class="memItemLeft" align="right" valign="top"><a id="a4c15f03e305328cb408b38f11e79d2d8"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>StoreSave</b> ()</td></tr>
+<tr class="separator:a4c15f03e305328cb408b38f11e79d2d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97af8ddb04e498a9375f0c152e54d118"><td class="memItemLeft" align="right" valign="top"><a id="a97af8ddb04e498a9375f0c152e54d118"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>CreateBackup</b> ()</td></tr>
+<tr class="separator:a97af8ddb04e498a9375f0c152e54d118"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1365d326de29546b10b2e9d4af1254a4"><td class="memItemLeft" align="right" valign="top"><a id="a1365d326de29546b10b2e9d4af1254a4"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>RestoreBackup</b> ()</td></tr>
+<tr class="separator:a1365d326de29546b10b2e9d4af1254a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -109,6 +145,12 @@ const string&#160;</td><td class="memItemRight" valign="bottom"><b>ConfigDataPat
 <tr class="memitem:a72f2e578b47ba45e1e96806fe2c49d99"><td class="memItemLeft" align="right" valign="top"><a id="a72f2e578b47ba45e1e96806fe2c49d99"></a>
 static <a class="el" href="class_cross_link_1_1_game_data_mgr.html">GameDataMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_game_data_mgr.html">GameDataMgr</a>()</td></tr>
 <tr class="separator:a72f2e578b47ba45e1e96806fe2c49d99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9199b91bbb2b3c8e7bba7593beb44a08"><td class="memItemLeft" align="right" valign="top"><a id="a9199b91bbb2b3c8e7bba7593beb44a08"></a>
+static Dictionary&lt; System.Type, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ConfigFiles</b> = new Dictionary&lt;System.Type, string&gt;()</td></tr>
+<tr class="separator:a9199b91bbb2b3c8e7bba7593beb44a08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f203c85b9bdeace98299a38ac5c39ab"><td class="memItemLeft" align="right" valign="top"><a id="a5f203c85b9bdeace98299a38ac5c39ab"></a>
+static Dictionary&lt; string, <a class="el" href="class_cross_link_1_1_config_data_base.html">ConfigDataBase</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ConfigDict</b> = new Dictionary&lt;string, <a class="el" href="class_cross_link_1_1_config_data_base.html">ConfigDataBase</a>&gt;()</td></tr>
+<tr class="separator:a5f203c85b9bdeace98299a38ac5c39ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Used to load game data that config in Excel <br  />

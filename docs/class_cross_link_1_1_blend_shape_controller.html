@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -70,6 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_blend_shape_controller-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.BlendShapeController Class Reference</div>  </div>
@@ -80,6 +81,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a907fd830b8593824349206de958b6481"><td class="memItemLeft" align="right" valign="top"><a id="a907fd830b8593824349206de958b6481"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetExtraLodMesh</b> (SkinnedMeshRenderer lm)</td></tr>
+<tr class="separator:a907fd830b8593824349206de958b6481"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4bd221ab17fc380b81377bed3455bb3d"><td class="memItemLeft" align="right" valign="top"><a id="a4bd221ab17fc380b81377bed3455bb3d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> ()</td></tr>
 <tr class="separator:a4bd221ab17fc380b81377bed3455bb3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -89,9 +93,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Blend</b> (string set
 <tr class="memitem:a0e1a3988a12d4bcced3c04d63c75291d"><td class="memItemLeft" align="right" valign="top"><a id="a0e1a3988a12d4bcced3c04d63c75291d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Recover</b> ()</td></tr>
 <tr class="separator:a0e1a3988a12d4bcced3c04d63c75291d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaf647c907a1738ff98e91f6fb4d1bbcc"><td class="memItemLeft" align="right" valign="top"><a id="aaf647c907a1738ff98e91f6fb4d1bbcc"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyBlend</b> (string setName, float percent, bool lerp=true, bool ignorePermanent=true)</td></tr>
-<tr class="separator:aaf647c907a1738ff98e91f6fb4d1bbcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0fc135a546c8f1fe7763697c016a2241"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_blend_shape_controller.html#a0fc135a546c8f1fe7763697c016a2241">ApplyBlend</a> (string setName, float percent, bool lerp=true, bool skipPermanent=true)</td></tr>
+<tr class="memdesc:a0fc135a546c8f1fe7763697c016a2241"><td class="mdescLeft">&#160;</td><td class="mdescRight">only change the weights we've defined in the specific blendset  <a href="class_cross_link_1_1_blend_shape_controller.html#a0fc135a546c8f1fe7763697c016a2241">More...</a><br /></td></tr>
+<tr class="separator:a0fc135a546c8f1fe7763697c016a2241"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d2f9097f85f63b054c7841895ecf1d9"><td class="memItemLeft" align="right" valign="top"><a id="a7d2f9097f85f63b054c7841895ecf1d9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyBlend</b> (<a class="el" href="class_cross_link_1_1_blend_set.html">BlendSet</a> blends, float percent, bool lerp=true, bool skipPermanent=true)</td></tr>
+<tr class="separator:a7d2f9097f85f63b054c7841895ecf1d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -101,10 +108,68 @@ SkinnedMeshRenderer&#160;</td><td class="memItemRight" valign="bottom"><b>animMe
 <tr class="memitem:addafee2d8ef6cc58d80ad32eca283387"><td class="memItemLeft" align="right" valign="top"><a id="addafee2d8ef6cc58d80ad32eca283387"></a>
 <a class="el" href="class_cross_link_1_1_blend_set.html">BlendSet</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>blends</b></td></tr>
 <tr class="separator:addafee2d8ef6cc58d80ad32eca283387"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af24939798f51ba634dadf63615b7b751"><td class="memItemLeft" align="right" valign="top"><a id="af24939798f51ba634dadf63615b7b751"></a>
-bool[]&#160;</td><td class="memItemRight" valign="bottom"><b>permanentBlendShape</b></td></tr>
-<tr class="separator:af24939798f51ba634dadf63615b7b751"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a43d8468d182232c433c3606c8d30531a"><td class="memItemLeft" align="right" valign="top"><a id="a43d8468d182232c433c3606c8d30531a"></a>
+<a class="el" href="class_cross_link_1_1_blend_shape_sub_obj.html">BlendShapeSubObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>subObj</b></td></tr>
+<tr class="separator:a43d8468d182232c433c3606c8d30531a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a5c635c697398423df607f9bbcf25c6f1"><td class="memItemLeft" align="right" valign="top"><a id="a5c635c697398423df607f9bbcf25c6f1"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultFacial</b> = &quot;Default&quot;</td></tr>
+<tr class="separator:a5c635c697398423df607f9bbcf25c6f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a0fc135a546c8f1fe7763697c016a2241"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0fc135a546c8f1fe7763697c016a2241">&#9670;&nbsp;</a></span>ApplyBlend()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.BlendShapeController.ApplyBlend </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>setName</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>percent</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>lerp</em> = <code>true</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>skipPermanent</em> = <code>true</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>only change the weights we've defined in the specific blendset </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">setName</td><td></td></tr>
+    <tr><td class="paramname">percent</td><td></td></tr>
+    <tr><td class="paramname">lerp</td><td></td></tr>
+    <tr><td class="paramname">skipPermanent</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

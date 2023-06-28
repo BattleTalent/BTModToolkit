@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -87,6 +87,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>InitSupportLan
 <tr class="memitem:a2d0ebe186a1c8512d6b6741dac7d2e4b"><td class="memItemLeft" align="right" valign="top"><a id="a2d0ebe186a1c8512d6b6741dac7d2e4b"></a>
 static int&#160;</td><td class="memItemRight" valign="bottom"><b>FindSupportedLanguage</b> (SystemLanguage lang)</td></tr>
 <tr class="separator:a2d0ebe186a1c8512d6b6741dac7d2e4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad508ec71db5acf6de1dd8381ccb0dba"><td class="memItemLeft" align="right" valign="top"><a id="aad508ec71db5acf6de1dd8381ccb0dba"></a>
+static SystemLanguage&#160;</td><td class="memItemRight" valign="bottom"><b>ProcessLanguage</b> (SystemLanguage language)</td></tr>
+<tr class="separator:aad508ec71db5acf6de1dd8381ccb0dba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a596563449cb1bd20cb52d0c8f0513a94"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_language_mgr.html#a596563449cb1bd20cb52d0c8f0513a94">CheckLanguage</a> ()</td></tr>
 <tr class="separator:a596563449cb1bd20cb52d0c8f0513a94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a99e686ca2ad7c155bbfbfdf23ca80789"><td class="memItemLeft" align="right" valign="top"><a id="a99e686ca2ad7c155bbfbfdf23ca80789"></a>
@@ -95,9 +98,15 @@ static string&#160;</td><td class="memItemRight" valign="bottom"><b>Highlight</b
 <tr class="memitem:a91fe1233b7c2371b5c83d70553dd4246"><td class="memItemLeft" align="right" valign="top"><a id="a91fe1233b7c2371b5c83d70553dd4246"></a>
 static string&#160;</td><td class="memItemRight" valign="bottom"><b>Lowlight</b> (string content)</td></tr>
 <tr class="separator:a91fe1233b7c2371b5c83d70553dd4246"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a517f4b03a7ebd9dca64bb316c0892c03"><td class="memItemLeft" align="right" valign="top"><a id="a517f4b03a7ebd9dca64bb316c0892c03"></a>
+static string&#160;</td><td class="memItemRight" valign="bottom"><b>GetTextIDWithInputDeviceType</b> (string textID)</td></tr>
+<tr class="separator:a517f4b03a7ebd9dca64bb316c0892c03"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fd574f54bb5730b87e26ee725b60ff4"><td class="memItemLeft" align="right" valign="top">static string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_language_mgr.html#a8fd574f54bb5730b87e26ee725b60ff4">GetText</a> (string textID)</td></tr>
 <tr class="memdesc:a8fd574f54bb5730b87e26ee725b60ff4"><td class="mdescLeft">&#160;</td><td class="mdescRight">get the text in the corresponding language, if the traslation text is missing, then it'll return English version  <a href="class_cross_link_1_1_language_mgr.html#a8fd574f54bb5730b87e26ee725b60ff4">More...</a><br /></td></tr>
 <tr class="separator:a8fd574f54bb5730b87e26ee725b60ff4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3641eb73263c6cb862ffe253e7d03441"><td class="memItemLeft" align="right" valign="top"><a id="a3641eb73263c6cb862ffe253e7d03441"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsIDExist</b> (string textID)</td></tr>
+<tr class="separator:a3641eb73263c6cb862ffe253e7d03441"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a441f59d81f6fd3f01f61e6ef77bed7a2"><td class="memItemLeft" align="right" valign="top">static string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_language_mgr.html#a441f59d81f6fd3f01f61e6ef77bed7a2">GetTexture</a> (string texID)</td></tr>
 <tr class="memdesc:a441f59d81f6fd3f01f61e6ef77bed7a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">get the texture in the corresponding language, if the traslation text is missing, then it'll return English version  <a href="class_cross_link_1_1_language_mgr.html#a441f59d81f6fd3f01f61e6ef77bed7a2">More...</a><br /></td></tr>
 <tr class="separator:a441f59d81f6fd3f01f61e6ef77bed7a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -107,15 +116,27 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:a80501e989eab39112d5080d25d0afcfb"><td class="memItemLeft" align="right" valign="top"><a id="a80501e989eab39112d5080d25d0afcfb"></a>
 static <a class="el" href="class_cross_link_1_1_language_mgr.html">LanguageMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_language_mgr.html">LanguageMgr</a>()</td></tr>
 <tr class="separator:a80501e989eab39112d5080d25d0afcfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a817c2a9e52ff0ac085fa001f9a062411"><td class="memItemLeft" align="right" valign="top"><a id="a817c2a9e52ff0ac085fa001f9a062411"></a>
+static Dictionary&lt; SystemLanguage, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>LanguageComplete</b> = null</td></tr>
+<tr class="separator:a817c2a9e52ff0ac085fa001f9a062411"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b63e7cba0576e8f25c3bfcf74c5a304"><td class="memItemLeft" align="right" valign="top"><a id="a9b63e7cba0576e8f25c3bfcf74c5a304"></a>
+static Dictionary&lt; string, SystemLanguage &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>LanguageCode</b> = null</td></tr>
+<tr class="separator:a9b63e7cba0576e8f25c3bfcf74c5a304"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab30f9939e9688a6c93dfaaea12e7b1c3"><td class="memItemLeft" align="right" valign="top"><a id="ab30f9939e9688a6c93dfaaea12e7b1c3"></a>
 static SystemLanguage[]&#160;</td><td class="memItemRight" valign="bottom"><b>SupportLanguages</b> = null</td></tr>
 <tr class="separator:ab30f9939e9688a6c93dfaaea12e7b1c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ee5a4f08096d47256ba8920f2f31131"><td class="memItemLeft" align="right" valign="top"><a id="a6ee5a4f08096d47256ba8920f2f31131"></a>
 static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>DisplayLanguages</b> = null</td></tr>
 <tr class="separator:a6ee5a4f08096d47256ba8920f2f31131"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80e4703229884d43c86f6770243db8a7"><td class="memItemLeft" align="right" valign="top"><a id="a80e4703229884d43c86f6770243db8a7"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>SettingsLanguages</b> = null</td></tr>
+<tr class="separator:a80e4703229884d43c86f6770243db8a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a88d70774e0fa7c34c890861b7a61dff7"><td class="memItemLeft" align="right" valign="top"><a id="a88d70774e0fa7c34c890861b7a61dff7"></a>
 static int&#160;</td><td class="memItemRight" valign="bottom"><b>currentLanguageIndex</b> = -1</td></tr>
 <tr class="separator:a88d70774e0fa7c34c890861b7a61dff7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad57f9f3efd03a6a2db48f0c4c25e8fc8"><td class="memItemLeft" align="right" valign="top"><a id="ad57f9f3efd03a6a2db48f0c4c25e8fc8"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>defaultLanguageIndex</b> = 0</td></tr>
+<tr class="separator:ad57f9f3efd03a6a2db48f0c4c25e8fc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a266cfdea28ffb85f00192bb1300816b7"><td class="memItemLeft" align="right" valign="top"><a id="a266cfdea28ffb85f00192bb1300816b7"></a>
 static System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>LangChangeEvent</b></td></tr>
 <tr class="separator:a266cfdea28ffb85f00192bb1300816b7"><td class="memSeparator" colspan="2">&#160;</td></tr>

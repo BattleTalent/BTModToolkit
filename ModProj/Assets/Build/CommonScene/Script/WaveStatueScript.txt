@@ -1,0 +1,41 @@
+local WaveStatue = {
+    statue = "Selector/Statue/SkelStatue",
+    wave = nil,
+}
+
+function WaveStatue:Start()
+    local selectorTemp = CL.ResourceMgr.Instantiate("Selector/SpawnTemplate")
+    local slp = selectorTemp:GetComponent(typeof(CL.SelectorSpawn))
+    self.its = selectorTemp:GetComponent(typeof(CL.ItemSelector))
+    
+    -- set track target
+    self.its.trackTarget = self.host.gameObject.transform
+    slp.waveDef = self.wave
+
+    local spawnedStatue = self.statue
+    if type(self.statue) == "string" then
+        spawnedStatue = CL.ResourceMgr.Instantiate(self.statue)
+    end
+
+    spawnedStatue.transform.parent = selectorTemp.transform;
+    spawnedStatue.transform.localPosition = UE.Vector3.zero;
+    spawnedStatue.transform.localRotation = UE.Quaternion.identity;
+
+    self.onSpawnStart = function()
+        selectorTemp:SetActive(false)
+    end
+
+    self.onSpawnEnd = function()
+        selectorTemp:SetActive(true)
+    end
+
+    CL.SpawnPointMgr.Instance:SpawnStartEvent("+", self.onSpawnStart)
+    CL.SpawnPointMgr.Instance:SpawnClearEvent("+", self.onSpawnEnd)
+end
+
+function WaveStatue:OnDestroy()
+    CL.SpawnPointMgr.Instance:SpawnStartEvent("-", self.onSpawnStart)
+    CL.SpawnPointMgr.Instance:SpawnClearEvent("-", self.onSpawnEnd)
+end
+
+return Class(nil, nil, WaveStatue)

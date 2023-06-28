@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -102,12 +102,27 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a93fee7185c2564d95d4dd188588e5ffa"><td class="memItemLeft" align="right" valign="top"><a id="a93fee7185c2564d95d4dd188588e5ffa"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetMoveSpeed</b> (SettingMgr.MoveType mt)</td></tr>
 <tr class="separator:a93fee7185c2564d95d4dd188588e5ffa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0cdca61e01713ca96a7c0f8f10d8a185"><td class="memItemLeft" align="right" valign="top"><a id="a0cdca61e01713ca96a7c0f8f10d8a185"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetSpeedMlp</b> (float sm=1)</td></tr>
+<tr class="separator:a0cdca61e01713ca96a7c0f8f10d8a185"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47cf5fd97c380950b6a0c93d2c1dfe52"><td class="memItemLeft" align="right" valign="top"><a id="a47cf5fd97c380950b6a0c93d2c1dfe52"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetMoveSpeedForAWhile</b> (float speed, float sec=0.5f)</td></tr>
+<tr class="separator:a47cf5fd97c380950b6a0c93d2c1dfe52"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3fae04a4235dfcfd870324d69589809"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_input_movement.html#ad3fae04a4235dfcfd870324d69589809">SetOptionalMoveDirForSec</a> (Vector3 worldMoveDir, float sec)</td></tr>
+<tr class="memdesc:ad3fae04a4235dfcfd870324d69589809"><td class="mdescLeft">&#160;</td><td class="mdescRight">Make the controller pressing forward for a while  <a href="class_cross_link_1_1_input_movement.html#ad3fae04a4235dfcfd870324d69589809">More...</a><br /></td></tr>
+<tr class="separator:ad3fae04a4235dfcfd870324d69589809"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1705eef8fb286fd939ce99f2f4f4468"><td class="memItemLeft" align="right" valign="top"><a id="ae1705eef8fb286fd939ce99f2f4f4468"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StopOptionalMoveDir</b> ()</td></tr>
+<tr class="separator:ae1705eef8fb286fd939ce99f2f4f4468"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3511a274ec60486a1ca81a2513469561"><td class="memItemLeft" align="right" valign="top"><a id="a3511a274ec60486a1ca81a2513469561"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TickChaosMelee</b> ()</td></tr>
 <tr class="separator:a3511a274ec60486a1ca81a2513469561"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac1452cfe06daf2caef90fc1c124ae5b"><td class="memItemLeft" align="right" valign="top"><a id="aac1452cfe06daf2caef90fc1c124ae5b"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsChaosWaving</b> ()</td></tr>
 <tr class="separator:aac1452cfe06daf2caef90fc1c124ae5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a937b7804f4e90677b4ec59d14203768d"><td class="memItemLeft" align="right" valign="top"><a id="a937b7804f4e90677b4ec59d14203768d"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsChaoseAcc</b> ()</td></tr>
+<tr class="separator:a937b7804f4e90677b4ec59d14203768d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab08e77d2feac30c8c7500b89f453b696"><td class="memItemLeft" align="right" valign="top"><a id="ab08e77d2feac30c8c7500b89f453b696"></a>
 <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetMoveHand</b> ()</td></tr>
 <tr class="separator:ab08e77d2feac30c8c7500b89f453b696"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -138,18 +153,15 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>airSpeed</b> = 2.5f<
 <tr class="memitem:aac1da34a8fb9681007a92c9b5dfd5853"><td class="memItemLeft" align="right" valign="top"><a id="aac1da34a8fb9681007a92c9b5dfd5853"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>airRunSpeed</b> = 0.5f</td></tr>
 <tr class="separator:aac1da34a8fb9681007a92c9b5dfd5853"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08b4ca7d3a47b3ddfee0db99c1b3480e"><td class="memItemLeft" align="right" valign="top"><a id="a08b4ca7d3a47b3ddfee0db99c1b3480e"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>runInPlaceYOffsetThreshold</b> = 0.05f</td></tr>
-<tr class="separator:a08b4ca7d3a47b3ddfee0db99c1b3480e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ed38bb5f5a637e4cab6c51f58e1ae1e"><td class="memItemLeft" align="right" valign="top"><a id="a5ed38bb5f5a637e4cab6c51f58e1ae1e"></a>
 AnimationCurve&#160;</td><td class="memItemRight" valign="bottom"><b>moveDotSpeed</b></td></tr>
 <tr class="separator:a5ed38bb5f5a637e4cab6c51f58e1ae1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad264a9f5bffe14bf9806fa0a4dab47a6"><td class="memItemLeft" align="right" valign="top"><a id="ad264a9f5bffe14bf9806fa0a4dab47a6"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>rotateTime</b> = 0.2f</td></tr>
-<tr class="separator:ad264a9f5bffe14bf9806fa0a4dab47a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20cbfb6febee9674c1c5988969ead237"><td class="memItemLeft" align="right" valign="top"><a id="a20cbfb6febee9674c1c5988969ead237"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>rotateAngle</b> = 3f</td></tr>
-<tr class="separator:a20cbfb6febee9674c1c5988969ead237"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af24e8d1a0050731f4b3ed9936697c2b2"><td class="memItemLeft" align="right" valign="top"><a id="af24e8d1a0050731f4b3ed9936697c2b2"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>snapRotateTime</b> = 0.15f</td></tr>
+<tr class="separator:af24e8d1a0050731f4b3ed9936697c2b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77d260d653d0f3fe80eec8e10ec7c127"><td class="memItemLeft" align="right" valign="top"><a id="a77d260d653d0f3fe80eec8e10ec7c127"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>snapRotateAngle</b> = 5f</td></tr>
+<tr class="separator:a77d260d653d0f3fe80eec8e10ec7c127"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42217a9c6191aa0720ba576717f0a0e8"><td class="memItemLeft" align="right" valign="top"><a id="a42217a9c6191aa0720ba576717f0a0e8"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>smoothRotateAngle</b> = 1f</td></tr>
 <tr class="separator:a42217a9c6191aa0720ba576717f0a0e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -174,7 +186,54 @@ static MoveScheme&#160;</td><td class="memItemRight" valign="bottom"><b>moveSche
 <tr class="memitem:a7ae31e93c7f850e395ea155e876c30ff"><td class="memItemLeft" align="right" valign="top"><a id="a7ae31e93c7f850e395ea155e876c30ff"></a>
 static GrabScheme&#160;</td><td class="memItemRight" valign="bottom"><b>grabScheme</b> = GrabScheme.PressGrab</td></tr>
 <tr class="separator:a7ae31e93c7f850e395ea155e876c30ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a246822d0557f6094cad455d5ca4f0340"><td class="memItemLeft" align="right" valign="top"><a id="a246822d0557f6094cad455d5ca4f0340"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MoveThredhold</b> = 0.15f</td></tr>
+<tr class="separator:a246822d0557f6094cad455d5ca4f0340"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9484d9e95e38b887763f193e8f362f9b"><td class="memItemLeft" align="right" valign="top"><a id="a9484d9e95e38b887763f193e8f362f9b"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MoveThredholdWMR</b> = 0.15f</td></tr>
+<tr class="separator:a9484d9e95e38b887763f193e8f362f9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7883587c7013ef015c0b77e07dd41ba6"><td class="memItemLeft" align="right" valign="top"><a id="a7883587c7013ef015c0b77e07dd41ba6"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>StepInputSec</b> = 0.15f</td></tr>
+<tr class="separator:a7883587c7013ef015c0b77e07dd41ba6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ad3fae04a4235dfcfd870324d69589809"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad3fae04a4235dfcfd870324d69589809">&#9670;&nbsp;</a></span>SetOptionalMoveDirForSec()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.InputMovement.SetOptionalMoveDirForSec </td>
+          <td>(</td>
+          <td class="paramtype">Vector3&#160;</td>
+          <td class="paramname"><em>worldMoveDir</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>sec</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Make the controller pressing forward for a while </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">worldMoveDir</td><td></td></tr>
+    <tr><td class="paramname">sec</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

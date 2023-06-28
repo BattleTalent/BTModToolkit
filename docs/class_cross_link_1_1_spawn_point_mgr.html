@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -69,6 +69,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="#events">Events</a> &#124;
@@ -118,9 +119,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetSpawnClear</b> (
 <tr class="memitem:a4bcbaf55faea1de9d81917e43a16445e"><td class="memItemLeft" align="right" valign="top"><a id="a4bcbaf55faea1de9d81917e43a16445e"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsClear</b> ()</td></tr>
 <tr class="separator:a4bcbaf55faea1de9d81917e43a16445e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a72f9cbff8fc719f535ee40352b359174"><td class="memItemLeft" align="right" valign="top"><a id="a72f9cbff8fc719f535ee40352b359174"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsKillAll</b> ()</td></tr>
+<tr class="separator:a72f9cbff8fc719f535ee40352b359174"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abfdefa1f35f0031ed3bfb8a4fc63ef7f"><td class="memItemLeft" align="right" valign="top"><a id="abfdefa1f35f0031ed3bfb8a4fc63ef7f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearSpawn</b> ()</td></tr>
 <tr class="separator:abfdefa1f35f0031ed3bfb8a4fc63ef7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:af02d27f6f4ffe6b55003ca3ddf88bc20"><td class="memItemLeft" align="right" valign="top"><a id="af02d27f6f4ffe6b55003ca3ddf88bc20"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetMgr</b> ()</td></tr>
+<tr class="separator:af02d27f6f4ffe6b55003ca3ddf88bc20"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -133,18 +143,27 @@ Transform[]&#160;</td><td class="memItemRight" valign="bottom"><b>pointList</b><
 <tr class="memitem:a864a7660fba61c1e400f6ef14b64f148"><td class="memItemLeft" align="right" valign="top"><a id="a864a7660fba61c1e400f6ef14b64f148"></a>
 <a class="el" href="class_cross_link_1_1_move_indicator.html">MoveIndicator</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>indicatorList</b></td></tr>
 <tr class="separator:a864a7660fba61c1e400f6ef14b64f148"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a777107c8854bae6d53adb68a961d629e"><td class="memItemLeft" align="right" valign="top"><a id="a777107c8854bae6d53adb68a961d629e"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>spawnEffect</b></td></tr>
+<tr class="separator:a777107c8854bae6d53adb68a961d629e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:a7100fcd617728e843b9d09f797a72792"><td class="memItemLeft" align="right" valign="top"><a id="a7100fcd617728e843b9d09f797a72792"></a>
 static <a class="el" href="class_cross_link_1_1_spawn_point_mgr.html">SpawnPointMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b></td></tr>
 <tr class="separator:a7100fcd617728e843b9d09f797a72792"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18c5411fa27e189f02acef3ded70f6e0"><td class="memItemLeft" align="right" valign="top"><a id="a18c5411fa27e189f02acef3ded70f6e0"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>EndlessMode</b> = false</td></tr>
+<tr class="separator:a18c5411fa27e189f02acef3ded70f6e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>
 <tr class="memitem:a7032b0c7e5fa863d22787f691ffd3318"><td class="memItemLeft" align="right" valign="top"><a id="a7032b0c7e5fa863d22787f691ffd3318"></a>
 System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnStartEvent</b></td></tr>
 <tr class="separator:a7032b0c7e5fa863d22787f691ffd3318"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a308aa2ae65fdd3ceb5ca816f8671535b"><td class="memItemLeft" align="right" valign="top"><a id="a308aa2ae65fdd3ceb5ca816f8671535b"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnCountEvent</b></td></tr>
+<tr class="separator:a308aa2ae65fdd3ceb5ca816f8671535b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afcd928978f8ca4139ac75cd8d0bbc45d"><td class="memItemLeft" align="right" valign="top"><a id="afcd928978f8ca4139ac75cd8d0bbc45d"></a>
 System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnFinishEvent</b></td></tr>
 <tr class="separator:afcd928978f8ca4139ac75cd8d0bbc45d"><td class="memSeparator" colspan="2">&#160;</td></tr>

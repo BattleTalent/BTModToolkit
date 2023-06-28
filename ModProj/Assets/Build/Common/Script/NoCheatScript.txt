@@ -1,0 +1,41 @@
+
+-- this script can disable cheating, modifiers and wall kick, and recover those states when leave
+
+local NoCheat = {
+	originalCheat = false,
+	originalKickJump = false,
+	originalModifierEnabled = false,
+	originalSlowmo = false,
+}
+
+
+function NoCheat:Start()
+	-- record values first
+	self.originalCheat = CL.SettingMgr.Instance.unlockCheating
+	local kickItem = CL.UnlockContentConfig.GetItemState("Func_KickJump")
+	self.originalKickJump = not kickItem.disabled
+	self.originalModifierEnabled = CL.DynamicModifierConfig.GlobalEnabled
+	local slowItem = CL.UnlockContentConfig.GetItemState("Func_SlowMo")
+	self.originalSlowmo = not slowItem.disabled
+
+	-- setup those functions
+	CL.SettingMgr.Instance.unlockCheating = false
+	kickItem.disabled = true
+	CL.DynamicModifierConfig.GlobalEnabled = false
+	slowItem.disabled = true
+end
+
+function NoCheat:OnDestroy()
+	local kickItem = CL.UnlockContentConfig.GetItemState("Func_KickJump")
+	local slowItem = CL.UnlockContentConfig.GetItemState("Func_SlowMo")
+
+	-- setup those functions
+	CL.SettingMgr.Instance.unlockCheating = self.originalCheat
+	kickItem.disabled = not self.originalKickJump
+	CL.DynamicModifierConfig.GlobalEnabled = self.originalModifierEnabled
+	slowItem.disabled = not self.originalSlowmo
+end
+
+
+
+return Class(nil, nil, NoCheat)

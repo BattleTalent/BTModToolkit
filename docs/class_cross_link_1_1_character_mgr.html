@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -70,6 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_character_mgr-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.CharacterMgr Class Reference</div>  </div>
@@ -95,12 +96,27 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>UnRegFullCharacter</b
 <tr class="memitem:a480d551fbf3b7609492ab2d5c5f26fff"><td class="memItemLeft" align="right" valign="top"><a id="a480d551fbf3b7609492ab2d5c5f26fff"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>AddToDeadList</b> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fc)</td></tr>
 <tr class="separator:a480d551fbf3b7609492ab2d5c5f26fff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8f6849c663302773b1f1535a323bee0"><td class="memItemLeft" align="right" valign="top"><a id="ab8f6849c663302773b1f1535a323bee0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnRoleAsync</b> (string role, System.Action&lt; <a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> &gt; onSpawn)</td></tr>
+<tr class="separator:ab8f6849c663302773b1f1535a323bee0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d18e6a830944c483b938dfafab7b9cb"><td class="memItemLeft" align="right" valign="top"><a id="a8d18e6a830944c483b938dfafab7b9cb"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnRoleAsync</b> (string role, bool force=false, System.Action&lt; <a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> &gt; cb=null)</td></tr>
+<tr class="separator:a8d18e6a830944c483b938dfafab7b9cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1e806d6c4f8c8631af055877a613e813"><td class="memItemLeft" align="right" valign="top"><a id="a1e806d6c4f8c8631af055877a613e813"></a>
+<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnRole</b> (string role, bool force=false)</td></tr>
+<tr class="separator:a1e806d6c4f8c8631af055877a613e813"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:aa41540d2e11785415fc97088994a9cb6"><td class="memItemLeft" align="right" valign="top"><a id="aa41540d2e11785415fc97088994a9cb6"></a>
 static <a class="el" href="class_cross_link_1_1_character_mgr.html">CharacterMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_character_mgr.html">CharacterMgr</a>()</td></tr>
 <tr class="separator:aa41540d2e11785415fc97088994a9cb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:acf77495770359469b3c33a6d0a81ed7b"><td class="memItemLeft" align="right" valign="top"><a id="acf77495770359469b3c33a6d0a81ed7b"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnRoleEvent</b></td></tr>
+<tr class="separator:acf77495770359469b3c33a6d0a81ed7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

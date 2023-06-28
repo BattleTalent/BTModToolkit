@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -70,6 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
 <a href="class_cross_link_1_1_panel_base-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.PanelBase Class Reference</div>  </div>
@@ -78,13 +79,16 @@ $(function() {
 
 <p>Inherits MonoBehaviour.</p>
 
-<p>Inherited by <a class="el" href="class_cross_link_1_1_attach_point_panel.html">CrossLink.AttachPointPanel</a>, <a class="el" href="class_cross_link_1_1_damage_u_i.html">CrossLink.DamageUI</a>, <a class="el" href="class_cross_link_1_1_debug_panel.html">CrossLink.DebugPanel</a>, <a class="el" href="class_cross_link_1_1_fight_stat_panel.html">CrossLink.FightStatPanel</a>, <a class="el" href="class_cross_link_1_1_full_state_panel.html">CrossLink.FullStatePanel</a>, <a class="el" href="class_cross_link_1_1_full_task_panel.html">CrossLink.FullTaskPanel</a>, <a class="el" href="class_cross_link_1_1_gaze_panel.html">CrossLink.GazePanel</a>, <a class="el" href="class_cross_link_1_1_h_u_d_gaze_info.html">CrossLink.HUDGazeInfo</a>, <a class="el" href="class_cross_link_1_1_h_u_d_mount.html">CrossLink.HUDMount</a>, <a class="el" href="class_cross_link_1_1_h_u_d_number.html">CrossLink.HUDNumber</a>, <a class="el" href="class_cross_link_1_1_h_u_d_state.html">CrossLink.HUDState</a>, <a class="el" href="class_cross_link_1_1_h_u_d_text.html">CrossLink.HUDText</a>, <a class="el" href="class_cross_link_1_1_login_panel.html">CrossLink.LoginPanel</a>, <a class="el" href="class_cross_link_1_1_mod_browser.html">CrossLink.ModBrowser</a>, <a class="el" href="class_cross_link_1_1_runtime_inspector_panel.html">CrossLink.RuntimeInspectorPanel</a>, <a class="el" href="class_cross_link_1_1_selector_progress.html">CrossLink.SelectorProgress</a>, <a class="el" href="class_cross_link_1_1_setting_panel.html">CrossLink.SettingPanel</a>, <a class="el" href="class_cross_link_1_1_text_panel.html">CrossLink.TextPanel</a>, and <a class="el" href="class_cross_link_1_1_unlock_content_panel.html">CrossLink.UnlockContentPanel</a>.</p>
+<p>Inherited by <a class="el" href="class_cross_link_1_1_attach_point_panel.html">CrossLink.AttachPointPanel</a>, <a class="el" href="class_cross_link_1_1_damage_u_i.html">CrossLink.DamageUI</a>, <a class="el" href="class_cross_link_1_1_debug_panel.html">CrossLink.DebugPanel</a>, <a class="el" href="class_cross_link_1_1_fight_stat_panel.html">CrossLink.FightStatPanel</a>, <a class="el" href="class_cross_link_1_1_full_state_panel.html">CrossLink.FullStatePanel</a>, <a class="el" href="class_cross_link_1_1_full_task_panel.html">CrossLink.FullTaskPanel</a>, <a class="el" href="class_cross_link_1_1_gaze_panel.html">CrossLink.GazePanel</a>, <a class="el" href="class_cross_link_1_1_h_u_d_debug.html">CrossLink.HUDDebug</a>, <a class="el" href="class_cross_link_1_1_h_u_d_gaze_info.html">CrossLink.HUDGazeInfo</a>, <a class="el" href="class_cross_link_1_1_h_u_d_mount.html">CrossLink.HUDMount</a>, <a class="el" href="class_cross_link_1_1_h_u_d_number.html">CrossLink.HUDNumber</a>, <a class="el" href="class_cross_link_1_1_h_u_d_state.html">CrossLink.HUDState</a>, <a class="el" href="class_cross_link_1_1_h_u_d_text.html">CrossLink.HUDText</a>, <a class="el" href="class_cross_link_1_1_h_u_d_tips_info.html">CrossLink.HUDTipsInfo</a>, <a class="el" href="class_cross_link_1_1_keyboard.html">CrossLink.Keyboard</a>, <a class="el" href="class_cross_link_1_1_login_panel.html">CrossLink.LoginPanel</a>, <a class="el" href="class_cross_link_1_1_message_dialog.html">CrossLink.MessageDialog</a>, <a class="el" href="class_cross_link_1_1_mod_browser.html">CrossLink.ModBrowser</a>, <a class="el" href="class_cross_link_1_1_modifier_panel.html">CrossLink.ModifierPanel</a>, <a class="el" href="class_cross_link_1_1_runtime_inspector_panel.html">CrossLink.RuntimeInspectorPanel</a>, <a class="el" href="class_cross_link_1_1_selector_progress.html">CrossLink.SelectorProgress</a>, <a class="el" href="class_cross_link_1_1_setting_panel.html">CrossLink.SettingPanel</a>, <a class="el" href="class_cross_link_1_1_text_panel.html">CrossLink.TextPanel</a>, <a class="el" href="class_cross_link_1_1_time_counter_panel.html">CrossLink.TimeCounterPanel</a>, <a class="el" href="class_cross_link_1_1_title_panel.html">CrossLink.TitlePanel</a>, <a class="el" href="class_cross_link_1_1_training_panel.html">CrossLink.TrainingPanel</a>, and <a class="el" href="class_cross_link_1_1_unlock_content_panel.html">CrossLink.UnlockContentPanel</a>.</p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:abbfeb4ff401da474ef20965de9b9ec9a"><td class="memItemLeft" align="right" valign="top"><a id="abbfeb4ff401da474ef20965de9b9ec9a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>FadeIn</b> ()</td></tr>
-<tr class="separator:abbfeb4ff401da474ef20965de9b9ec9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6695512b6989eeaa6c1d74be41149515"><td class="memItemLeft" align="right" valign="top"><a id="a6695512b6989eeaa6c1d74be41149515"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>FadeIn</b> (System.Action onFin=null)</td></tr>
+<tr class="separator:a6695512b6989eeaa6c1d74be41149515"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21dc63d6a351ee0f85c456e34ef4c5f2"><td class="memItemLeft" align="right" valign="top"><a id="a21dc63d6a351ee0f85c456e34ef4c5f2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>FadeOut</b> (System.Action onFin=null)</td></tr>
+<tr class="separator:a21dc63d6a351ee0f85c456e34ef4c5f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a215b590db71c8e71d38e51eeca8dccf7"><td class="memItemLeft" align="right" valign="top"><a id="a215b590db71c8e71d38e51eeca8dccf7"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnInit</b> ()</td></tr>
 <tr class="separator:a215b590db71c8e71d38e51eeca8dccf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -100,6 +104,15 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a9a24f430d66dd383c441fce0e2f6033e"><td class="memItemLeft" align="right" valign="top"><a id="a9a24f430d66dd383c441fce0e2f6033e"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>panelName</b></td></tr>
 <tr class="separator:a9a24f430d66dd383c441fce0e2f6033e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac87cc6394dbdba98896846d7a35ec801"><td class="memItemLeft" align="right" valign="top"><a id="ac87cc6394dbdba98896846d7a35ec801"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreFadeEffect</b> = false</td></tr>
+<tr class="separator:ac87cc6394dbdba98896846d7a35ec801"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:a5e2c75a54f15f2898b4101491b8f6d17"><td class="memItemLeft" align="right" valign="top"><a id="a5e2c75a54f15f2898b4101491b8f6d17"></a>
+CanvasGroup&#160;</td><td class="memItemRight" valign="bottom"><b>canvasGroup</b></td></tr>
+<tr class="separator:a5e2c75a54f15f2898b4101491b8f6d17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

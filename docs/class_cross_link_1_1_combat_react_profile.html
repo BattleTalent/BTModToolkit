@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -70,6 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_combat_react_profile-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.CombatReactProfile Class Reference</div>  </div>
@@ -104,21 +105,21 @@ RagdollProfile&#160;</td><td class="memItemRight" valign="bottom"><b>atkProfile<
 <tr class="memitem:a07b15b24dd5c4a7edadf5f09ac142e19"><td class="memItemLeft" align="right" valign="top"><a id="a07b15b24dd5c4a7edadf5f09ac142e19"></a>
 RagdollProfile&#160;</td><td class="memItemRight" valign="bottom"><b>unbanlancedProfile</b></td></tr>
 <tr class="separator:a07b15b24dd5c4a7edadf5f09ac142e19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a747880e854722ffbe8386f74b3bed49c"><td class="memItemLeft" align="right" valign="top"><a id="a747880e854722ffbe8386f74b3bed49c"></a>
+RagdollProfile&#160;</td><td class="memItemRight" valign="bottom"><b>atkStayProfile</b></td></tr>
+<tr class="separator:a747880e854722ffbe8386f74b3bed49c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a36d623195ca4bac0c0afe38fc10152a5"><td class="memItemLeft" align="right" valign="top"><a id="a36d623195ca4bac0c0afe38fc10152a5"></a>
 <a class="el" href="class_cross_link_1_1_react_anim_info.html">ReactAnimInfo</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>hitReact</b></td></tr>
 <tr class="separator:a36d623195ca4bac0c0afe38fc10152a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58342bd2593fe2d107a25403f2b447f3"><td class="memItemLeft" align="right" valign="top"><a id="a58342bd2593fe2d107a25403f2b447f3"></a>
 <a class="el" href="class_cross_link_1_1_k_o_anim_info.html">KOAnimInfo</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>koReact</b></td></tr>
 <tr class="separator:a58342bd2593fe2d107a25403f2b447f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0aaaa14640eb43da1c2605ec2850d97"><td class="memItemLeft" align="right" valign="top"><a id="aa0aaaa14640eb43da1c2605ec2850d97"></a>
-<a class="el" href="class_cross_link_1_1_anim_info.html">AnimInfo</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>tauntAnims</b></td></tr>
-<tr class="separator:aa0aaaa14640eb43da1c2605ec2850d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f125bbc3f87595d6258d096779f882f"><td class="memItemLeft" align="right" valign="top"><a id="a4f125bbc3f87595d6258d096779f882f"></a>
 string[]&#160;</td><td class="memItemRight" valign="bottom"><b>breakDefAnim</b></td></tr>
 <tr class="separator:a4f125bbc3f87595d6258d096779f882f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aecfc276fc8f2c862f37e75f2e5c698ee"><td class="memItemLeft" align="right" valign="top"><a id="aecfc276fc8f2c862f37e75f2e5c698ee"></a>
-string[]&#160;</td><td class="memItemRight" valign="bottom"><b>deadReact</b></td></tr>
-<tr class="separator:aecfc276fc8f2c862f37e75f2e5c698ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02097e879c0447c81d1a75dac4fd5ea9"><td class="memItemLeft" align="right" valign="top"><a id="a02097e879c0447c81d1a75dac4fd5ea9"></a>
+<a class="el" href="class_cross_link_1_1_react_anim_info.html">ReactAnimInfo</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>deadReact</b></td></tr>
+<tr class="separator:a02097e879c0447c81d1a75dac4fd5ea9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9213d6e71e89552c843e50a682708c7"><td class="memItemLeft" align="right" valign="top"><a id="af9213d6e71e89552c843e50a682708c7"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>dizzyAnim</b> = &quot;OutOfStamina&quot;</td></tr>
 <tr class="separator:af9213d6e71e89552c843e50a682708c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -137,14 +138,23 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>footMat</b> = MatDe
 <tr class="memitem:a8381990f152503da437b2a7be8f07b6e"><td class="memItemLeft" align="right" valign="top"><a id="a8381990f152503da437b2a7be8f07b6e"></a>
 <a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>groundSound</b></td></tr>
 <tr class="separator:a8381990f152503da437b2a7be8f07b6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc6c543abb3e5a065975b61955d179f7"><td class="memItemLeft" align="right" valign="top"><a id="afc6c543abb3e5a065975b61955d179f7"></a>
+<a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>warningSound</b></td></tr>
+<tr class="separator:afc6c543abb3e5a065975b61955d179f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab51d386363d62048dcc04c51f563e0c"><td class="memItemLeft" align="right" valign="top"><a id="aab51d386363d62048dcc04c51f563e0c"></a>
+<a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>attackSound</b></td></tr>
+<tr class="separator:aab51d386363d62048dcc04c51f563e0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a265a692c6b6b9e038b2c3ba136627cf9"><td class="memItemLeft" align="right" valign="top"><a id="a265a692c6b6b9e038b2c3ba136627cf9"></a>
+<a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>tauntSound</b></td></tr>
+<tr class="separator:a265a692c6b6b9e038b2c3ba136627cf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a79980644316579109731a8c2e60a7aaf"><td class="memItemLeft" align="right" valign="top"><a id="a79980644316579109731a8c2e60a7aaf"></a>
-string&#160;</td><td class="memItemRight" valign="bottom"><b>hurtFace</b></td></tr>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>hurtFace</b> = &quot;Hurt&quot;</td></tr>
 <tr class="separator:a79980644316579109731a8c2e60a7aaf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac165eba92a834f7ee507e4b5f1f9d170"><td class="memItemLeft" align="right" valign="top"><a id="ac165eba92a834f7ee507e4b5f1f9d170"></a>
-string&#160;</td><td class="memItemRight" valign="bottom"><b>attackFace</b></td></tr>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>attackFace</b> = &quot;Atk&quot;</td></tr>
 <tr class="separator:ac165eba92a834f7ee507e4b5f1f9d170"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aacde8f973992f99d7dcb2ff2205bd9eb"><td class="memItemLeft" align="right" valign="top"><a id="aacde8f973992f99d7dcb2ff2205bd9eb"></a>
-string&#160;</td><td class="memItemRight" valign="bottom"><b>deadFace</b></td></tr>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>deadFace</b> = &quot;Dead&quot;</td></tr>
 <tr class="separator:aacde8f973992f99d7dcb2ff2205bd9eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a02b12725b287aeb5889125c06e8ab862"><td class="memItemLeft" align="right" valign="top"><a id="a02b12725b287aeb5889125c06e8ab862"></a>
 PaintIn3D.P3dPaintDecal&#160;</td><td class="memItemRight" valign="bottom"><b>slashDecalTex</b></td></tr>
@@ -191,6 +201,39 @@ Material&#160;</td><td class="memItemRight" valign="bottom"><b>cutMaterial</b></
 <tr class="memitem:a8ef4791da70c383f90a47b016aa21c67"><td class="memItemLeft" align="right" valign="top"><a id="a8ef4791da70c383f90a47b016aa21c67"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isBloodable</b> = false</td></tr>
 <tr class="separator:a8ef4791da70c383f90a47b016aa21c67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a7f92e020ec8e62e31f9bc7319a03a329"><td class="memItemLeft" align="right" valign="top"><a id="a7f92e020ec8e62e31f9bc7319a03a329"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>DeflectToRight</b> = new string[] { &quot;BlockBreakRight&quot; }</td></tr>
+<tr class="separator:a7f92e020ec8e62e31f9bc7319a03a329"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a256cd78e8eacabfb8f328dfcc04439e4"><td class="memItemLeft" align="right" valign="top"><a id="a256cd78e8eacabfb8f328dfcc04439e4"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>DeflectToLeft</b> = new string[] { &quot;BlockBreakLeft&quot; }</td></tr>
+<tr class="separator:a256cd78e8eacabfb8f328dfcc04439e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed7ea7d1ef63267c56b82e22daeab294"><td class="memItemLeft" align="right" valign="top"><a id="aed7ea7d1ef63267c56b82e22daeab294"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>Block2RightAnims</b> = new string[] { &quot;HitBlockRight&quot;, &quot;RH_Block_RU&quot;, &quot;RH_Block_RD&quot; }</td></tr>
+<tr class="separator:aed7ea7d1ef63267c56b82e22daeab294"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc023015fb3722814e0c5d52036fd2ff"><td class="memItemLeft" align="right" valign="top"><a id="afc023015fb3722814e0c5d52036fd2ff"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>Block2LeftAnims</b> = new string[] { &quot;HitBlockLeft&quot;, &quot;LH_Block_LU&quot;, &quot;LH_Block_LD&quot; }</td></tr>
+<tr class="separator:afc023015fb3722814e0c5d52036fd2ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22f576466bb53579224ac7d7c5a3be08"><td class="memItemLeft" align="right" valign="top"><a id="a22f576466bb53579224ac7d7c5a3be08"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>TwoHandBlock2RightAnims</b> = new string[] { &quot;HitBlockRight&quot; }</td></tr>
+<tr class="separator:a22f576466bb53579224ac7d7c5a3be08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90cd47383153c500fe66d13f46df88f5"><td class="memItemLeft" align="right" valign="top"><a id="a90cd47383153c500fe66d13f46df88f5"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>TwoHandBlock2LeftAnims</b> = new string[] { &quot;HitBlockLeft&quot; }</td></tr>
+<tr class="separator:a90cd47383153c500fe66d13f46df88f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef947f131099c5e33554c4eef3ee8d34"><td class="memItemLeft" align="right" valign="top"><a id="aef947f131099c5e33554c4eef3ee8d34"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>RightBlock2RightAnims</b> = new string[] { &quot;RH_Block_RU&quot;, &quot;RH_Block_RD&quot; }</td></tr>
+<tr class="separator:aef947f131099c5e33554c4eef3ee8d34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7fe424f4d26b9e20c12e449a443e13ba"><td class="memItemLeft" align="right" valign="top"><a id="a7fe424f4d26b9e20c12e449a443e13ba"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>RightBlock2LeftAnims</b> = new string[] { &quot;RH_Block_L&quot; }</td></tr>
+<tr class="separator:a7fe424f4d26b9e20c12e449a443e13ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac5b7091d8db6c68aeee14dfa2f79586c"><td class="memItemLeft" align="right" valign="top"><a id="ac5b7091d8db6c68aeee14dfa2f79586c"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>LeftBlock2RightAnims</b> = new string[] { &quot;LH_Block_R&quot;}</td></tr>
+<tr class="separator:ac5b7091d8db6c68aeee14dfa2f79586c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaeb4e55fa97219eac788655cc5353c6d"><td class="memItemLeft" align="right" valign="top"><a id="aaeb4e55fa97219eac788655cc5353c6d"></a>
+static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>LeftBlock2LeftAnims</b> = new string[] { &quot;LH_Block_LU&quot;, &quot;LH_Block_LD&quot; }</td></tr>
+<tr class="separator:aaeb4e55fa97219eac788655cc5353c6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -85,6 +85,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a09571c80e33f338e75c68a14c1ed4f62"><td class="memItemLeft" align="right" valign="top"><a id="a09571c80e33f338e75c68a14c1ed4f62"></a>
 <a class="el" href="class_cross_link_1_1_attr_modifier.html">AttrModifier</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetModifier</b> ()</td></tr>
 <tr class="separator:a09571c80e33f338e75c68a14c1ed4f62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a537fce3a62c063a308c19d3a4cbab3"><td class="memItemLeft" align="right" valign="top"><a id="a0a537fce3a62c063a308c19d3a4cbab3"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetState</b> (string name)</td></tr>
+<tr class="separator:a0a537fce3a62c063a308c19d3a4cbab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14d4421d8dd54e3a51c2fafa9c2d8dd1"><td class="memItemLeft" align="right" valign="top"><a id="a14d4421d8dd54e3a51c2fafa9c2d8dd1"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>HasState</b> (string name)</td></tr>
+<tr class="separator:a14d4421d8dd54e3a51c2fafa9c2d8dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad681e6fa172a4b3b8c0e4ed46eece1d2"><td class="memItemLeft" align="right" valign="top"><a id="ad681e6fa172a4b3b8c0e4ed46eece1d2"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>ReadValue</b> (string attr)</td></tr>
 <tr class="separator:ad681e6fa172a4b3b8c0e4ed46eece1d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -118,6 +124,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetTemplate</b> ()<
 <tr class="memitem:a200c0a4db2e8f448b811b539747fd3e8"><td class="memItemLeft" align="right" valign="top"><a id="a200c0a4db2e8f448b811b539747fd3e8"></a>
 override string&#160;</td><td class="memItemRight" valign="bottom"><b>ToString</b> ()</td></tr>
 <tr class="separator:a200c0a4db2e8f448b811b539747fd3e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98d40556bf07851f3c98d853e1bc913f"><td class="memItemLeft" align="right" valign="top"><a id="a98d40556bf07851f3c98d853e1bc913f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetRememberProtector</b> (bool r)</td></tr>
+<tr class="separator:a98d40556bf07851f3c98d853e1bc913f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01a5da961ded9f6c99a522988d0d0ae7"><td class="memItemLeft" align="right" valign="top"><a id="a01a5da961ded9f6c99a522988d0d0ae7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnProtect</b> (<a class="el" href="class_cross_link_1_1_hit_protector.html">HitProtector</a> protector, float t)</td></tr>
+<tr class="separator:a01a5da961ded9f6c99a522988d0d0ae7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1400b844d63d4f774b559d3f83366955"><td class="memItemLeft" align="right" valign="top"><a id="a1400b844d63d4f774b559d3f83366955"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ForgetProtectors</b> ()</td></tr>
+<tr class="separator:a1400b844d63d4f774b559d3f83366955"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -166,6 +181,9 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>dizzyFactor</b> = 0f
 <tr class="memitem:a4aae468d3e9cc8e07eb7bca67189f6d1"><td class="memItemLeft" align="right" valign="top"><a id="a4aae468d3e9cc8e07eb7bca67189f6d1"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>stiffValue</b> = 3.5f</td></tr>
 <tr class="separator:a4aae468d3e9cc8e07eb7bca67189f6d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01ae469f479a9e75749f8e8aac0c6064"><td class="memItemLeft" align="right" valign="top"><a id="a01ae469f479a9e75749f8e8aac0c6064"></a>
+<a class="el" href="class_cross_link_1_1_ragdoll_hit_info_data.html">RagdollHitInfoData</a>&#160;</td><td class="memItemRight" valign="bottom"><b>additionalHitInfo</b></td></tr>
+<tr class="separator:a01ae469f479a9e75749f8e8aac0c6064"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -175,6 +193,12 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>StandardBaseVa
 <tr class="memitem:a85abc05da0680fd32885bccd06b0817c"><td class="memItemLeft" align="right" valign="top"><a id="a85abc05da0680fd32885bccd06b0817c"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>StandardMaxValue</b> = 1000</td></tr>
 <tr class="separator:a85abc05da0680fd32885bccd06b0817c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1fe8b1a0e9bb03dbe8eeade89492af0"><td class="memItemLeft" align="right" valign="top"><a id="aa1fe8b1a0e9bb03dbe8eeade89492af0"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>BaseHitValue</b> = 110</td></tr>
+<tr class="separator:aa1fe8b1a0e9bb03dbe8eeade89492af0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a79ed356da82a73f48463c70aeb658c5b"><td class="memItemLeft" align="right" valign="top"><a id="a79ed356da82a73f48463c70aeb658c5b"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>BaseHitResistValue</b> = 110</td></tr>
+<tr class="separator:a79ed356da82a73f48463c70aeb658c5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>

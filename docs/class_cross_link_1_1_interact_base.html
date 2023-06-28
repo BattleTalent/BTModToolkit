@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -75,6 +75,7 @@ $(function() {
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_interact_base-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -98,6 +99,17 @@ Public Types</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:a045255bf5bec9d39c843e14de7c81a5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b89137c2549cfba802b3d8aad6d6832"><td class="memItemLeft" align="right" valign="top"><a id="a2b89137c2549cfba802b3d8aad6d6832"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>HeavyLevel</b> { <br />
+&#160;&#160;<b>None</b>
+, <b>VeryLight</b>
+, <b>Light</b>
+, <b>Normal</b>
+, <br />
+&#160;&#160;<b>Heavy</b>
+, <b>VeryHeavy</b>
+<br />
+ }</td></tr>
+<tr class="separator:a2b89137c2549cfba802b3d8aad6d6832"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -107,6 +119,12 @@ Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetLastVelocity</b
 <tr class="memitem:af18042e6522ce489cfa22a42a9a8b5c0"><td class="memItemLeft" align="right" valign="top"><a id="af18042e6522ce489cfa22a42a9a8b5c0"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetLocalVelocity</b> ()</td></tr>
 <tr class="separator:af18042e6522ce489cfa22a42a9a8b5c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85d8602430344424d51734b91e5ba784"><td class="memItemLeft" align="right" valign="top"><a id="a85d8602430344424d51734b91e5ba784"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TapWeaponHangingTime</b> ()</td></tr>
+<tr class="separator:a85d8602430344424d51734b91e5ba784"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23e11ac013da56c8bd67105823783c41"><td class="memItemLeft" align="right" valign="top"><a id="a23e11ac013da56c8bd67105823783c41"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsWeaponHanging</b> ()</td></tr>
+<tr class="separator:a23e11ac013da56c8bd67105823783c41"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5cc5ce5f2be57ab30c87d213de4156d2"><td class="memItemLeft" align="right" valign="top"><a id="a5cc5ce5f2be57ab30c87d213de4156d2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>MulplyDurabulity</b> (float mlp)</td></tr>
 <tr class="separator:a5cc5ce5f2be57ab30c87d213de4156d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -122,6 +140,9 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>GetDuralityDisplay<
 <tr class="memitem:af769d6450ce79eb9eb694121b0eb8ce1"><td class="memItemLeft" align="right" valign="top"><a id="af769d6450ce79eb9eb694121b0eb8ce1"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>CostDurability</b> (int cost=1, bool costByUsing=true)</td></tr>
 <tr class="separator:af769d6450ce79eb9eb694121b0eb8ce1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6af3ad28f563599650cb4e9d801ba691"><td class="memItemLeft" align="right" valign="top"><a id="a6af3ad28f563599650cb4e9d801ba691"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsBrokwnWarning</b> ()</td></tr>
+<tr class="separator:a6af3ad28f563599650cb4e9d801ba691"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f532d759c6608b79534738646b98504"><td class="memItemLeft" align="right" valign="top"><a id="a5f532d759c6608b79534738646b98504"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnterBrokenReady</b> ()</td></tr>
 <tr class="separator:a5f532d759c6608b79534738646b98504"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -149,6 +170,9 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>Dead</b> (bo
 <tr class="memitem:a9bd84fd8b22425dd1232fb162c4461d8"><td class="memItemLeft" align="right" valign="top"><a id="a9bd84fd8b22425dd1232fb162c4461d8"></a>
 <a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetLatestHolder</b> ()</td></tr>
 <tr class="separator:a9bd84fd8b22425dd1232fb162c4461d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a916219f68bc059f5fd0dde281f0a7f39"><td class="memItemLeft" align="right" valign="top"><a id="a916219f68bc059f5fd0dde281f0a7f39"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetLatestHolder</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> aIProxy)</td></tr>
+<tr class="separator:a916219f68bc059f5fd0dde281f0a7f39"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac83179994150e5650b34b3e46ce9dcc"><td class="memItemLeft" align="right" valign="top"><a id="aac83179994150e5650b34b3e46ce9dcc"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsHeldByNpc</b> ()</td></tr>
 <tr class="separator:aac83179994150e5650b34b3e46ce9dcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -182,6 +206,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>MarkAtkDisableForAWhi
 <tr class="memitem:ad1be3143214c83a12cc3b61da44536d0"><td class="memItemLeft" align="right" valign="top"><a id="ad1be3143214c83a12cc3b61da44536d0"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDisableAtkmark</b> ()</td></tr>
 <tr class="separator:ad1be3143214c83a12cc3b61da44536d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef7bd8eb938386166523df89a18bf9dc"><td class="memItemLeft" align="right" valign="top"><a id="aef7bd8eb938386166523df89a18bf9dc"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsChargedThrown</b> ()</td></tr>
+<tr class="separator:aef7bd8eb938386166523df89a18bf9dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d572db01983f3d9dddb08de0453dd6f"><td class="memItemLeft" align="right" valign="top"><a id="a9d572db01983f3d9dddb08de0453dd6f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MarkChargedThrownAssist</b> (bool t)</td></tr>
+<tr class="separator:a9d572db01983f3d9dddb08de0453dd6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a08e71b8d6dddf623408c82d4507536"><td class="memItemLeft" align="right" valign="top"><a id="a2a08e71b8d6dddf623408c82d4507536"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>MarkThrowAssist</b> (float offset=0)</td></tr>
 <tr class="separator:a2a08e71b8d6dddf623408c82d4507536"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -212,6 +242,12 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnAttachBuil
 <tr class="memitem:aec0bdf114096510d634d42019dfc26fa"><td class="memItemLeft" align="right" valign="top"><a id="aec0bdf114096510d634d42019dfc26fa"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnAttachBreak</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, ConfigurableJoint joint, Rigidbody part)</td></tr>
 <tr class="separator:aec0bdf114096510d634d42019dfc26fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a377344db94a871fcc29f46b1b79a7c8e"><td class="memItemLeft" align="right" valign="top"><a id="a377344db94a871fcc29f46b1b79a7c8e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHeavyLevel</b> (HeavyLevel hl)</td></tr>
+<tr class="separator:a377344db94a871fcc29f46b1b79a7c8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f982b44f5a1b970221b297ebb00e181"><td class="memItemLeft" align="right" valign="top"><a id="a8f982b44f5a1b970221b297ebb00e181"></a>
+HeavyLevel&#160;</td><td class="memItemRight" valign="bottom"><b>GetHeavyLevel</b> ()</td></tr>
+<tr class="separator:a8f982b44f5a1b970221b297ebb00e181"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e3d15a9e50b66c54e30d7fd59d1e4d8"><td class="memItemLeft" align="right" valign="top"><a id="a6e3d15a9e50b66c54e30d7fd59d1e4d8"></a>
 <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetPrimaryHand</b> ()</td></tr>
 <tr class="separator:a6e3d15a9e50b66c54e30d7fd59d1e4d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -233,9 +269,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>BoostInertia</b> (boo
 <tr class="memitem:a6a233730fe5131e6b04c0e9b92df8475"><td class="memItemLeft" align="right" valign="top"><a id="a6a233730fe5131e6b04c0e9b92df8475"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsJustLeave</b> ()</td></tr>
 <tr class="separator:a6a233730fe5131e6b04c0e9b92df8475"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa23d135d4cf3a4c727ca0d57d4eed1a0"><td class="memItemLeft" align="right" valign="top"><a id="aa23d135d4cf3a4c727ca0d57d4eed1a0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>MarkLeave</b> ()</td></tr>
-<tr class="separator:aa23d135d4cf3a4c727ca0d57d4eed1a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7994b12c10b15be45cdcc660f34dc07a"><td class="memItemLeft" align="right" valign="top"><a id="a7994b12c10b15be45cdcc660f34dc07a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MarkLeave</b> (float offset=0)</td></tr>
+<tr class="separator:a7994b12c10b15be45cdcc660f34dc07a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a182ebb2f517a086cec3fa5b8c91e834f"><td class="memItemLeft" align="right" valign="top"><a id="a182ebb2f517a086cec3fa5b8c91e834f"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsTightByStab</b> ()</td></tr>
+<tr class="separator:a182ebb2f517a086cec3fa5b8c91e834f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aefcbdad21b4a199ca4dd0e65a5a1792c"><td class="memItemLeft" align="right" valign="top"><a id="aefcbdad21b4a199ca4dd0e65a5a1792c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableRecoil</b> (float recoilValue=0.25f, float sec=0.2f)</td></tr>
+<tr class="separator:aefcbdad21b4a199ca4dd0e65a5a1792c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e9906d22f3857719e8583911648da22"><td class="memItemLeft" align="right" valign="top"><a id="a2e9906d22f3857719e8583911648da22"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetTight</b> (bool tie)</td></tr>
 <tr class="separator:a2e9906d22f3857719e8583911648da22"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -245,9 +287,24 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandPower</b> ()</
 <tr class="memitem:a1081a381a474a5343c7bcd46a337fad0"><td class="memItemLeft" align="right" valign="top"><a id="a1081a381a474a5343c7bcd46a337fad0"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandPowerFactor</b> ()</td></tr>
 <tr class="separator:a1081a381a474a5343c7bcd46a337fad0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad23147371280340abbeaae829d7e40bf"><td class="memItemLeft" align="right" valign="top"><a id="ad23147371280340abbeaae829d7e40bf"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPower</b> (bool hi)</td></tr>
-<tr class="separator:ad23147371280340abbeaae829d7e40bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae46976af3a5e3b2ec8bb296d6e420ed3"><td class="memItemLeft" align="right" valign="top"><a id="ae46976af3a5e3b2ec8bb296d6e420ed3"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandHitFactor</b> ()</td></tr>
+<tr class="separator:ae46976af3a5e3b2ec8bb296d6e420ed3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f457ae22915aa0729cd243610ece04b"><td class="memItemLeft" align="right" valign="top"><a id="a0f457ae22915aa0729cd243610ece04b"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandRecoilFactor</b> ()</td></tr>
+<tr class="separator:a0f457ae22915aa0729cd243610ece04b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4056c973c5f51bace94cd3ec0d0d2e70"><td class="memItemLeft" align="right" valign="top"><a id="a4056c973c5f51bace94cd3ec0d0d2e70"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandBreakDefFactor</b> ()</td></tr>
+<tr class="separator:a4056c973c5f51bace94cd3ec0d0d2e70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19d1e1b763e62bd6e330bfed20063268"><td class="memItemLeft" align="right" valign="top"><a id="a19d1e1b763e62bd6e330bfed20063268"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetKOFactor</b> ()</td></tr>
+<tr class="separator:a19d1e1b763e62bd6e330bfed20063268"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec1029bef12f658e18d6b94da22f5fa0"><td class="memItemLeft" align="right" valign="top"><a id="aec1029bef12f658e18d6b94da22f5fa0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandLinearDrive</b> (float factor=1)</td></tr>
+<tr class="separator:aec1029bef12f658e18d6b94da22f5fa0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac40a56e6cf6fab7282565ec6a0b311ed"><td class="memItemLeft" align="right" valign="top"><a id="ac40a56e6cf6fab7282565ec6a0b311ed"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHandPower</b> (bool hi, bool skipCacheCheck=false, float extraFactor=1)</td></tr>
+<tr class="separator:ac40a56e6cf6fab7282565ec6a0b311ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff255ab71969f1cbaaa4b2584af85878"><td class="memItemLeft" align="right" valign="top"><a id="aff255ab71969f1cbaaa4b2584af85878"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCallBegin</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
 <tr class="separator:aff255ab71969f1cbaaa4b2584af85878"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -314,6 +371,21 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>GetAttachIndex</b> (<a
 <tr class="memitem:a2e5ce266553386ed0162a033f02ca38d"><td class="memItemLeft" align="right" valign="top"><a id="a2e5ce266553386ed0162a033f02ca38d"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetClosestDistance</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
 <tr class="separator:a2e5ce266553386ed0162a033f02ca38d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec8a044699c47ee2c2da863631f577ec"><td class="memItemLeft" align="right" valign="top"><a id="aec8a044699c47ee2c2da863631f577ec"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowHint</b> (<a class="el" href="class_cross_link_1_1_attach_point_quad.html">AttachPointQuad</a> quad)</td></tr>
+<tr class="separator:aec8a044699c47ee2c2da863631f577ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5121f73e7fa5391fd83d5d9a8e944a11"><td class="memItemLeft" align="right" valign="top"><a id="a5121f73e7fa5391fd83d5d9a8e944a11"></a>
+<a class="el" href="class_cross_link_1_1_attach_point_quad.html">AttachPointQuad</a>&#160;</td><td class="memItemRight" valign="bottom"><b>CreateHint</b> (Transform trans, Vector3 anchor)</td></tr>
+<tr class="separator:a5121f73e7fa5391fd83d5d9a8e944a11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ad72906318435c0f3cfc5c81cd1b941"><td class="memItemLeft" align="right" valign="top"><a id="a8ad72906318435c0f3cfc5c81cd1b941"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>HideHint</b> (<a class="el" href="class_cross_link_1_1_attach_point_quad.html">AttachPointQuad</a> quad)</td></tr>
+<tr class="separator:a8ad72906318435c0f3cfc5c81cd1b941"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5773fe37a80eb191d771a35f4327a78"><td class="memItemLeft" align="right" valign="top"><a id="ab5773fe37a80eb191d771a35f4327a78"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveHint</b> (<a class="el" href="class_cross_link_1_1_attach_point_quad.html">AttachPointQuad</a> quad)</td></tr>
+<tr class="separator:ab5773fe37a80eb191d771a35f4327a78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ff7dda43676580f7155cb014e799a06"><td class="memItemLeft" align="right" valign="top"><a id="a9ff7dda43676580f7155cb014e799a06"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearAllHints</b> ()</td></tr>
+<tr class="separator:a9ff7dda43676580f7155cb014e799a06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af7e5e25fbd234a0f0b06619ca29a10a5"><td class="memItemLeft" align="right" valign="top"><a id="af7e5e25fbd234a0f0b06619ca29a10a5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsSlotEquiped</b> ()</td></tr>
 <tr class="separator:af7e5e25fbd234a0f0b06619ca29a10a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -329,6 +401,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsSlotAttach</b> (<a 
 <tr class="memitem:ad80cbcd53d49904946f3e7e41529b3ce"><td class="memItemLeft" align="right" valign="top"><a id="ad80cbcd53d49904946f3e7e41529b3ce"></a>
 <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetAssociatedHand</b> ()</td></tr>
 <tr class="separator:ad80cbcd53d49904946f3e7e41529b3ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a098091c57c7c1dbfa0434fe7017e7581"><td class="memItemLeft" align="right" valign="top"><a id="a098091c57c7c1dbfa0434fe7017e7581"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsExistItemType</b> (string type)</td></tr>
+<tr class="separator:a098091c57c7c1dbfa0434fe7017e7581"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa2b3fefe20d1403a6ca73e77ec3b5620"><td class="memItemLeft" align="right" valign="top"><a id="aa2b3fefe20d1403a6ca73e77ec3b5620"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnSlot</b> (<a class="el" href="class_cross_link_1_1_slot_trigger.html">SlotTrigger</a> slot)</td></tr>
 <tr class="separator:aa2b3fefe20d1403a6ca73e77ec3b5620"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -356,9 +431,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Paint</b> (Vector3 po
 <tr class="memitem:aef4866b1403c1f1adf1ce3a606f47602"><td class="memItemLeft" align="right" valign="top"><a id="aef4866b1403c1f1adf1ce3a606f47602"></a>
 PaintIn3D.P3dPaintDecal&#160;</td><td class="memItemRight" valign="bottom"><b>GetBloodDecal</b> ()</td></tr>
 <tr class="separator:aef4866b1403c1f1adf1ce3a606f47602"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e43cd1177a71c0c0b95e2d005219b82"><td class="memItemLeft" align="right" valign="top"><a id="a4e43cd1177a71c0c0b95e2d005219b82"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateForgeLevel</b> (int newForgeLevel)</td></tr>
+<tr class="separator:a4e43cd1177a71c0c0b95e2d005219b82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1fcf9e1393c600d93c1f20d46dea82b8"><td class="memItemLeft" align="right" valign="top"><a id="a1fcf9e1393c600d93c1f20d46dea82b8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpgradeForceLevel</b> ()</td></tr>
 <tr class="separator:a1fcf9e1393c600d93c1f20d46dea82b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4099ce89e56cf0b5b937895843dc6ca7"><td class="memItemLeft" align="right" valign="top"><a id="a4099ce89e56cf0b5b937895843dc6ca7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpgradeForgeLevelToMax</b> ()</td></tr>
+<tr class="separator:a4099ce89e56cf0b5b937895843dc6ca7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6384e3c0b9234c27a9c0f74035241ca"><td class="memItemLeft" align="right" valign="top"><a id="ac6384e3c0b9234c27a9c0f74035241ca"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetEnhanceDesc</b> ()</td></tr>
+<tr class="separator:ac6384e3c0b9234c27a9c0f74035241ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b5e601c35988d046f4749b376d018bc"><td class="memItemLeft" align="right" valign="top"><a id="a3b5e601c35988d046f4749b376d018bc"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsEnhance</b> ()</td></tr>
 <tr class="separator:a3b5e601c35988d046f4749b376d018bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -366,6 +450,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsEnhance</b> ()</td>
 <tr class="memitem:a4392c3ed80106d1f480325d5841270c5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a4392c3ed80106d1f480325d5841270c5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStaticScene</b> ()</td></tr>
 <tr class="separator:a4392c3ed80106d1f480325d5841270c5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16020284b7653d217c3910b1ca72aa74 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a16020284b7653d217c3910b1ca72aa74"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>HasMovableRigidbody</b> ()</td></tr>
+<tr class="separator:a16020284b7653d217c3910b1ca72aa74 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c604fb48dbc89bcd2b1146b966e0f71 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a8c604fb48dbc89bcd2b1146b966e0f71"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsScene</b> ()</td></tr>
 <tr class="separator:a8c604fb48dbc89bcd2b1146b966e0f71 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -396,6 +483,9 @@ Rigidbody[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetRBs</b> (bo
 <tr class="memitem:a2162719f938165bf3e8719e17950af57 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a2162719f938165bf3e8719e17950af57"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>ContainRB</b> (Rigidbody rb)</td></tr>
 <tr class="separator:a2162719f938165bf3e8719e17950af57 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4f27d6be19d0a02658c4508f981d19a inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aa4f27d6be19d0a02658c4508f981d19a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ModifyMassCenter</b> (Vector3 mcenter, float sec=0.2f)</td></tr>
+<tr class="separator:aa4f27d6be19d0a02658c4508f981d19a inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adce9ea63f7278888e8fc89c3b45c0188 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="adce9ea63f7278888e8fc89c3b45c0188"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetTotalMass</b> ()</td></tr>
 <tr class="separator:adce9ea63f7278888e8fc89c3b45c0188 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -420,9 +510,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetRBCols</b> (bool c
 <tr class="memitem:a130d83a4581bb13bf60728140f27210c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a130d83a4581bb13bf60728140f27210c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetKinematic</b> (bool kine)</td></tr>
 <tr class="separator:a130d83a4581bb13bf60728140f27210c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5034bfac4fede6b8a90be275ece43d1 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ab5034bfac4fede6b8a90be275ece43d1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableGravityAWhile</b> (float sec)</td></tr>
-<tr class="separator:ab5034bfac4fede6b8a90be275ece43d1 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd482cca16f2c7cd097a19016ad07d5f inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="afd482cca16f2c7cd097a19016ad07d5f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableGravityAWhile</b> (float sec=0.12f)</td></tr>
+<tr class="separator:afd482cca16f2c7cd097a19016ad07d5f inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1dea0f62f06e0fd15364c4d12b75aea9 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a1dea0f62f06e0fd15364c4d12b75aea9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDisableGravity</b> ()</td></tr>
+<tr class="separator:a1dea0f62f06e0fd15364c4d12b75aea9 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5eca95d0a3d99c29d7c6eb863e3b871c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a5eca95d0a3d99c29d7c6eb863e3b871c"></a>
 Collider[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetCols</b> (bool forceUpdate=false)</td></tr>
 <tr class="separator:a5eca95d0a3d99c29d7c6eb863e3b871c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -456,12 +549,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableCollisionEffect
 <tr class="memitem:a7324c3879e0a86eb31800656a0f3088a inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a7324c3879e0a86eb31800656a0f3088a"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDead</b> ()</td></tr>
 <tr class="separator:a7324c3879e0a86eb31800656a0f3088a inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31bad3b235d63f22776785ea6f29952d inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a31bad3b235d63f22776785ea6f29952d"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionWithHitScan</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
+<tr class="separator:a31bad3b235d63f22776785ea6f29952d inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a50a26ea38e07c365d545b120a607a747 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a50a26ea38e07c365d545b120a607a747"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCull</b> (<a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> tile)</td></tr>
 <tr class="separator:a50a26ea38e07c365d545b120a607a747 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad171b90853faeb0cb29041d2f5505410 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ad171b90853faeb0cb29041d2f5505410"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnRetain</b> (<a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> tile)</td></tr>
 <tr class="separator:ad171b90853faeb0cb29041d2f5505410 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad92989928aff5c72ce575abecba36505 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ad92989928aff5c72ce575abecba36505"></a>
+<a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetCurrentEnterTile</b> ()</td></tr>
+<tr class="separator:ad92989928aff5c72ce575abecba36505 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac412bdebd505473c85911823b6f86921 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ac412bdebd505473c85911823b6f86921"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnter</b> (<a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> tile)</td></tr>
 <tr class="separator:ac412bdebd505473c85911823b6f86921 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -532,6 +631,9 @@ static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">Phys
 <tr class="memitem:a9d0ee445833af97b9e3b29c89924dc1d inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a9d0ee445833af97b9e3b29c89924dc1d"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>QueryLogicTargetInRadiusTemp</b> (Vector3 pos, float radius)</td></tr>
 <tr class="separator:a9d0ee445833af97b9e3b29c89924dc1d inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad81db86987ffffc25b138229e702bce3 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ad81db86987ffffc25b138229e702bce3"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStaticScene</b> (GameObject go)</td></tr>
+<tr class="separator:ad81db86987ffffc25b138229e702bce3 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -553,6 +655,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>handCalling</b> = fal
 <tr class="memitem:a8ecdca71545b886f6492e82072e3a19e"><td class="memItemLeft" align="right" valign="top"><a id="a8ecdca71545b886f6492e82072e3a19e"></a>
 Transform[]&#160;</td><td class="memItemRight" valign="bottom"><b>guardPoints</b></td></tr>
 <tr class="separator:a8ecdca71545b886f6492e82072e3a19e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd12c8f03bd6938c2fb50270e1189dee"><td class="memItemLeft" align="right" valign="top"><a id="acd12c8f03bd6938c2fb50270e1189dee"></a>
+HeavyLevel&#160;</td><td class="memItemRight" valign="bottom"><b>heavyLevel</b> = HeavyLevel.None</td></tr>
+<tr class="separator:acd12c8f03bd6938c2fb50270e1189dee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adf8ad7e2c684e28d2273a6aef49db5a7"><td class="memItemLeft" align="right" valign="top"><a id="adf8ad7e2c684e28d2273a6aef49db5a7"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>linearForce</b> = 30000</td></tr>
 <tr class="separator:adf8ad7e2c684e28d2273a6aef49db5a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -580,6 +685,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>beAbleToShowGrab</b> 
 <tr class="memitem:a204341564addbcf0ed5abc5e7126e7c1"><td class="memItemLeft" align="right" valign="top"><a id="a204341564addbcf0ed5abc5e7126e7c1"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableAutoTickTwoHand</b> = false</td></tr>
 <tr class="separator:a204341564addbcf0ed5abc5e7126e7c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f15393c85826d8187af4127b1e2634d"><td class="memItemLeft" align="right" valign="top"><a id="a0f15393c85826d8187af4127b1e2634d"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>checkDrop</b> = false</td></tr>
+<tr class="separator:a0f15393c85826d8187af4127b1e2634d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d6904e673f555981bd60426b0840d11"><td class="memItemLeft" align="right" valign="top"><a id="a8d6904e673f555981bd60426b0840d11"></a>
 <a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>attachList</b></td></tr>
 <tr class="separator:a8d6904e673f555981bd60426b0840d11"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -640,6 +748,16 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheatDura</b> 
 <tr class="separator:a95d2a0a9e5cd2134ce0eec51e00951d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5bd93d482b21af55a29dc64e64ca3152"><td class="memItemLeft" align="right" valign="top">static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>deadEffectSounds</b></td></tr>
 <tr class="separator:a5bd93d482b21af55a29dc64e64ca3152"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f53a02db10be63a75883faff2459d86"><td class="memItemLeft" align="right" valign="top">static Dictionary&lt; HeavyLevel, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HeavyLevel2HandFactor</b></td></tr>
+<tr class="separator:a0f53a02db10be63a75883faff2459d86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1c836071cd2468eee5c0a6a3c4948fb"><td class="memItemLeft" align="right" valign="top">static Dictionary&lt; HeavyLevel, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HeavyLevel2BreakDefFactor</b></td></tr>
+<tr class="separator:aa1c836071cd2468eee5c0a6a3c4948fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2e0bea5efe84e3006ea639b9c572731"><td class="memItemLeft" align="right" valign="top">static Dictionary&lt; HeavyLevel, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HeavyLevel2RecoilFactor</b></td></tr>
+<tr class="separator:ab2e0bea5efe84e3006ea639b9c572731"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7411283b8af7917690d68e1306bd668"><td class="memItemLeft" align="right" valign="top">static Dictionary&lt; HeavyLevel, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HeavyLevel2KOFactor</b></td></tr>
+<tr class="separator:aa7411283b8af7917690d68e1306bd668"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a973028c11ab1212e45e920df645416fd"><td class="memItemLeft" align="right" valign="top">static Dictionary&lt; HeavyLevel, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HeavyLevel2LogicHit</b></td></tr>
+<tr class="separator:a973028c11ab1212e45e920df645416fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a95a1268dfa847082700a094ea9c716d1"><td class="memItemLeft" align="right" valign="top"><a id="a95a1268dfa847082700a094ea9c716d1"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>PrimaryHandToSecondaryHandPhase1</b> = false</td></tr>
 <tr class="separator:a95a1268dfa847082700a094ea9c716d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -683,6 +801,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>OnDestroy</b> ()</td>
 <tr class="memitem:abd6b59835f341f7b641ebae180a509c2 inherit pro_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="abd6b59835f341f7b641ebae180a509c2"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnDead</b> ()</td></tr>
 <tr class="separator:abd6b59835f341f7b641ebae180a509c2 inherit pro_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa890af900a88fb477748488445cf0447 inherit pro_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aa890af900a88fb477748488445cf0447"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>NeedToClearParent</b> ()</td></tr>
+<tr class="separator:aa890af900a88fb477748488445cf0447 inherit pro_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -739,6 +860,12 @@ List&lt; <a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> &
 <a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>currentEnterTile</b> = null</td></tr>
 <tr class="separator:ac1c999b94702488ee835e39bcb2fa217 inherit pro_attribs_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:a92d0046d73088dff6b27629890abf2de"><td class="memItemLeft" align="right" valign="top"><a id="a92d0046d73088dff6b27629890abf2de"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>ForgeLevel</b><code> [get]</code></td></tr>
+<tr class="separator:a92d0046d73088dff6b27629890abf2de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>
 <tr class="memitem:a7f247143515a5a25f5a016057e9e7193"><td class="memItemLeft" align="right" valign="top"><a id="a7f247143515a5a25f5a016057e9e7193"></a>
@@ -747,6 +874,9 @@ System.Action&lt; <a class="el" href="class_cross_link_1_1_attach_obj.html">Atta
 <tr class="memitem:a1458247333860abfce39101102b0e88a"><td class="memItemLeft" align="right" valign="top"><a id="a1458247333860abfce39101102b0e88a"></a>
 System.Action&lt; <a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a>, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GrabEvent</b></td></tr>
 <tr class="separator:a1458247333860abfce39101102b0e88a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f35897b11050836ea43b5e8e5e4856c"><td class="memItemLeft" align="right" valign="top"><a id="a6f35897b11050836ea43b5e8e5e4856c"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_slot_trigger.html">SlotTrigger</a>, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>SlotBeginEvent</b></td></tr>
+<tr class="separator:a6f35897b11050836ea43b5e8e5e4856c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6afd5fcce4db972eb080710b8c40d42d"><td class="memItemLeft" align="right" valign="top"><a id="a6afd5fcce4db972eb080710b8c40d42d"></a>
 System.Action&lt; <a class="el" href="class_cross_link_1_1_slot_trigger.html">SlotTrigger</a>, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>SlotEvent</b></td></tr>
 <tr class="separator:a6afd5fcce4db972eb080710b8c40d42d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -775,6 +905,9 @@ System.Action&lt; <a class="el" href="class_cross_link_1_1_interact_base.html">I
 <tr class="memitem:adb63aad0895a2a00f4a149fdb65d384a inherit events_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="adb63aad0895a2a00f4a149fdb65d384a"></a>
 System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>DeadEvent</b></td></tr>
 <tr class="separator:adb63aad0895a2a00f4a149fdb65d384a inherit events_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecd7cbdcf31d57911471954fe5dca94b inherit events_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aecd7cbdcf31d57911471954fe5dca94b"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a>, Rigidbody, Collider, Vector3, Vector3, Vector3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnHitScanEvent</b></td></tr>
+<tr class="separator:aecd7cbdcf31d57911471954fe5dca94b inherit events_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Data Documentation</h2>
 <a id="a5bd93d482b21af55a29dc64e64ca3152"></a>
@@ -801,6 +934,151 @@ System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">Ph
 <div class="line">            <span class="stringliteral">&quot;Magic/Explode02&quot;</span>,</div>
 <div class="line">            <span class="stringliteral">&quot;Magic/Explode03&quot;</span>,</div>
 <div class="line">            <span class="stringliteral">&quot;Magic/Explode04&quot;</span>,</div>
+<div class="line">        }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="aa1c836071cd2468eee5c0a6a3c4948fb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa1c836071cd2468eee5c0a6a3c4948fb">&#9670;&nbsp;</a></span>HeavyLevel2BreakDefFactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Dictionary&lt;HeavyLevel, float&gt; CrossLink.InteractBase.HeavyLevel2BreakDefFactor</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;HeavyLevel, float&gt;() {</div>
+<div class="line">            { HeavyLevel.VeryLight, 0.5f},</div>
+<div class="line">            { HeavyLevel.Light, 0.9f},</div>
+<div class="line">            { HeavyLevel.Normal, 1.15f},</div>
+<div class="line">            { HeavyLevel.Heavy, 1.8f},</div>
+<div class="line">            { HeavyLevel.VeryHeavy, 2.5f},</div>
+<div class="line">        }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a0f53a02db10be63a75883faff2459d86"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f53a02db10be63a75883faff2459d86">&#9670;&nbsp;</a></span>HeavyLevel2HandFactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Dictionary&lt;HeavyLevel, float&gt; CrossLink.InteractBase.HeavyLevel2HandFactor</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;HeavyLevel, float&gt;() {</div>
+<div class="line">            { HeavyLevel.VeryLight, 0.2f},</div>
+<div class="line">            { HeavyLevel.Light, 0.3f},</div>
+<div class="line">            { HeavyLevel.Normal, 0.5f},</div>
+<div class="line">            { HeavyLevel.Heavy, InteractMgr.NORMAL_HAND_POWER },</div>
+<div class="line">            { HeavyLevel.VeryHeavy, InteractMgr.NORMAL_HAND_POWER },</div>
+<div class="line">        }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="aa7411283b8af7917690d68e1306bd668"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7411283b8af7917690d68e1306bd668">&#9670;&nbsp;</a></span>HeavyLevel2KOFactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Dictionary&lt;HeavyLevel, float&gt; CrossLink.InteractBase.HeavyLevel2KOFactor</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;HeavyLevel, float&gt;() {</div>
+<div class="line">            { HeavyLevel.VeryLight, 0.02f},</div>
+<div class="line">            { HeavyLevel.Light, 0.05f},</div>
+<div class="line">            { HeavyLevel.Normal, 0.1f},</div>
+<div class="line">            { HeavyLevel.Heavy, 0.3f},</div>
+<div class="line">            { HeavyLevel.VeryHeavy, 0.6f},</div>
+<div class="line">        }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a973028c11ab1212e45e920df645416fd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a973028c11ab1212e45e920df645416fd">&#9670;&nbsp;</a></span>HeavyLevel2LogicHit</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Dictionary&lt;HeavyLevel, float&gt; CrossLink.InteractBase.HeavyLevel2LogicHit</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;HeavyLevel, float&gt;() {</div>
+<div class="line">            { HeavyLevel.VeryLight, 1f},</div>
+<div class="line">            { HeavyLevel.Light, 2f},</div>
+<div class="line">            { HeavyLevel.Normal, 3f},</div>
+<div class="line">            { HeavyLevel.Heavy, 4f},</div>
+<div class="line">            { HeavyLevel.VeryHeavy, 8f},</div>
+<div class="line">        }</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="ab2e0bea5efe84e3006ea639b9c572731"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2e0bea5efe84e3006ea639b9c572731">&#9670;&nbsp;</a></span>HeavyLevel2RecoilFactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">Dictionary&lt;HeavyLevel, float&gt; CrossLink.InteractBase.HeavyLevel2RecoilFactor</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;HeavyLevel, float&gt;() {</div>
+<div class="line">            { HeavyLevel.VeryLight, 0.2f},</div>
+<div class="line">            { HeavyLevel.Light, 0.2f},</div>
+<div class="line">            { HeavyLevel.Normal, 0.24f},</div>
+<div class="line">            { HeavyLevel.Heavy, 0.3f},</div>
+<div class="line">            { HeavyLevel.VeryHeavy, 0.4f},</div>
 <div class="line">        }</div>
 </div><!-- fragment -->
 </div>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -82,6 +82,12 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a1f26aa2a6aca39d29afa21c3e043f3f7"><td class="memItemLeft" align="right" valign="top"><a id="a1f26aa2a6aca39d29afa21c3e043f3f7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>MoveSpeedMlp</b> (float mlp)</td></tr>
+<tr class="separator:a1f26aa2a6aca39d29afa21c3e043f3f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9bd933c38494e7f1c64bb1f244b9eb1"><td class="memItemLeft" align="right" valign="top"><a id="ac9bd933c38494e7f1c64bb1f244b9eb1"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> ()</td></tr>
+<tr class="separator:ac9bd933c38494e7f1c64bb1f244b9eb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1746bcbb1be35fc09870437a2ec5431d"><td class="memItemLeft" align="right" valign="top"><a id="a1746bcbb1be35fc09870437a2ec5431d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EyesOn</b> (Transform target)</td></tr>
 <tr class="separator:a1746bcbb1be35fc09870437a2ec5431d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -151,9 +157,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>LayerIsOpened</b> (in
 <tr class="memitem:a189e1677e89fd72d6a24c13b331ba9d5"><td class="memItemLeft" align="right" valign="top"><a id="a189e1677e89fd72d6a24c13b331ba9d5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsHighLod</b> ()</td></tr>
 <tr class="separator:a189e1677e89fd72d6a24c13b331ba9d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acc261a5ca11d3ef38aff38dc98d4432a"><td class="memItemLeft" align="right" valign="top"><a id="acc261a5ca11d3ef38aff38dc98d4432a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetIKLod</b> (bool high)</td></tr>
-<tr class="separator:acc261a5ca11d3ef38aff38dc98d4432a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76ea1bac84244bf0b8115fa96df8b17f"><td class="memItemLeft" align="right" valign="top"><a id="a76ea1bac84244bf0b8115fa96df8b17f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetIKLod</b> (LodLevel lv)</td></tr>
+<tr class="separator:a76ea1bac84244bf0b8115fa96df8b17f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a068c38075e6e09a9292a44e335e080e7"><td class="memItemLeft" align="right" valign="top"><a id="a068c38075e6e09a9292a44e335e080e7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetTailWaving</b> (bool w)</td></tr>
+<tr class="separator:a068c38075e6e09a9292a44e335e080e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b2fc1756c48e952b6fe9bdb5e95d1cb"><td class="memItemLeft" align="right" valign="top"><a id="a3b2fc1756c48e952b6fe9bdb5e95d1cb"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableGrounder</b> (bool e)</td></tr>
 <tr class="separator:a3b2fc1756c48e952b6fe9bdb5e95d1cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -208,6 +217,12 @@ TrailRenderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>eyeTrails<
 <tr class="memitem:a8c9cdf2653acafaaa4347a7176e47d75"><td class="memItemLeft" align="right" valign="top"><a id="a8c9cdf2653acafaaa4347a7176e47d75"></a>
 FIMSpace.FEyes.FEyesAnimator&#160;</td><td class="memItemRight" valign="bottom"><b>eyesAnim</b></td></tr>
 <tr class="separator:a8c9cdf2653acafaaa4347a7176e47d75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a627386bc69542236999e0e19621da91d"><td class="memItemLeft" align="right" valign="top"><a id="a627386bc69542236999e0e19621da91d"></a>
+FIMSpace.FTail.TailAnimator2[]&#160;</td><td class="memItemRight" valign="bottom"><b>tails</b></td></tr>
+<tr class="separator:a627386bc69542236999e0e19621da91d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd6f7a9a3e42c45243bef8373f7004fb"><td class="memItemLeft" align="right" valign="top"><a id="afd6f7a9a3e42c45243bef8373f7004fb"></a>
+MagicaCloth.MagicaBoneCloth&#160;</td><td class="memItemRight" valign="bottom"><b>cloth</b></td></tr>
+<tr class="separator:afd6f7a9a3e42c45243bef8373f7004fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a90182779ed32eb95ff0751242d4a6f75"><td class="memItemLeft" align="right" valign="top"><a id="a90182779ed32eb95ff0751242d4a6f75"></a>
 RootMotion.FinalIK.AimIK&#160;</td><td class="memItemRight" valign="bottom"><b>aimIK</b></td></tr>
 <tr class="separator:a90182779ed32eb95ff0751242d4a6f75"><td class="memSeparator" colspan="2">&#160;</td></tr>

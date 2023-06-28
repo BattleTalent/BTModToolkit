@@ -1,7 +1,6 @@
 var searchData=
 [
-  ['crosslink_1146',['CrossLink',['../namespace_cross_link.html',1,'']]],
-  ['editorextensions_1147',['EditorExtensions',['../namespace_cross_link_1_1_editor_extensions.html',1,'CrossLink']]],
-  ['effects_1148',['Effects',['../namespace_cross_link_1_1_editor_extensions_1_1_effects.html',1,'CrossLink::EditorExtensions']]],
-  ['utilities_1149',['Utilities',['../namespace_cross_link_1_1_editor_extensions_1_1_utilities.html',1,'CrossLink::EditorExtensions']]]
+  ['androidultimateplugin_1459',['AndroidUltimatePlugin',['../namespace_android_ultimate_plugin.html',1,'']]],
+  ['editor_1460',['Editor',['../namespace_android_ultimate_plugin_1_1_helpers_1_1_editor.html',1,'AndroidUltimatePlugin::Helpers']]],
+  ['helpers_1461',['Helpers',['../namespace_android_ultimate_plugin_1_1_helpers.html',1,'AndroidUltimatePlugin']]]
 ];

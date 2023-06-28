@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -69,6 +69,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_level_mgr-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -81,25 +82,76 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a554e22fa115e9dfe49e33117f221946e"><td class="memItemLeft" align="right" valign="top"><a id="a554e22fa115e9dfe49e33117f221946e"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsJustLoadedLevel</b> (float ct)</td></tr>
 <tr class="separator:a554e22fa115e9dfe49e33117f221946e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a963d0bcbbc5486a8ff172fea73ad20ef"><td class="memItemLeft" align="right" valign="top"><a id="a963d0bcbbc5486a8ff172fea73ad20ef"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>LoadLevel</b> (<a class="el" href="class_cross_link_1_1_level_description.html">LevelDescription</a> ld)</td></tr>
-<tr class="separator:a963d0bcbbc5486a8ff172fea73ad20ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83026cf94599192ae90e95f7ccd97373"><td class="memItemLeft" align="right" valign="top"><a id="a83026cf94599192ae90e95f7ccd97373"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadLevel</b> (string levelName)</td></tr>
+<tr class="separator:a83026cf94599192ae90e95f7ccd97373"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3e690dff6f7c62776a373a1cf22877f"><td class="memItemLeft" align="right" valign="top"><a id="ae3e690dff6f7c62776a373a1cf22877f"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetLoadingSceneName</b> ()</td></tr>
+<tr class="separator:ae3e690dff6f7c62776a373a1cf22877f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2cdbe35f94a201caa109d695cc11a0b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_level_mgr.html#ac2cdbe35f94a201caa109d695cc11a0b">LoadScene</a> (string name)</td></tr>
+<tr class="memdesc:ac2cdbe35f94a201caa109d695cc11a0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loads a scene  <a href="class_cross_link_1_1_level_mgr.html#ac2cdbe35f94a201caa109d695cc11a0b">More...</a><br /></td></tr>
+<tr class="separator:ac2cdbe35f94a201caa109d695cc11a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53518ed1d4daf4d2ae8776e7f7492f48"><td class="memItemLeft" align="right" valign="top"><a id="a53518ed1d4daf4d2ae8776e7f7492f48"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsLoadingScene</b> ()</td></tr>
+<tr class="separator:a53518ed1d4daf4d2ae8776e7f7492f48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3bd9e49dbcd120a6a300e797df2c9f63"><td class="memItemLeft" align="right" valign="top"><a id="a3bd9e49dbcd120a6a300e797df2c9f63"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearLoading</b> ()</td></tr>
+<tr class="separator:a3bd9e49dbcd120a6a300e797df2c9f63"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34cf16de21f84a2c7599b9e20d256049"><td class="memItemLeft" align="right" valign="top"><a id="a34cf16de21f84a2c7599b9e20d256049"></a>
+<a class="el" href="class_cross_link_1_1_scene_layout.html">SceneLayout</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetCurrentSceneLayout</b> ()</td></tr>
+<tr class="separator:a34cf16de21f84a2c7599b9e20d256049"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48f445738517e9c3116881e954e9674f"><td class="memItemLeft" align="right" valign="top"><a id="a48f445738517e9c3116881e954e9674f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>InitLevel</b> (<a class="el" href="class_cross_link_1_1_level_description.html">LevelDescription</a> ld)</td></tr>
 <tr class="separator:a48f445738517e9c3116881e954e9674f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1f35b8f167b7dfb3c0cf2f57972a0f8"><td class="memItemLeft" align="right" valign="top"><a id="ad1f35b8f167b7dfb3c0cf2f57972a0f8"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadContent</b> (<a class="el" href="class_cross_link_1_1_scene_obj_layout.html">SceneObjLayout</a>[] layoutList, <a class="el" href="class_cross_link_1_1_scene_obj_desc.html">SceneObjDesc</a>[] objList, System.Action&lt; GameObject, <a class="el" href="class_cross_link_1_1_scene_obj_layout.html">SceneObjLayout</a> &gt; OnFit=null)</td></tr>
-<tr class="separator:ad1f35b8f167b7dfb3c0cf2f57972a0f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dc8684fe3498bce0c3a6e15c9c5edce"><td class="memItemLeft" align="right" valign="top"><a id="a5dc8684fe3498bce0c3a6e15c9c5edce"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadContent</b> (<a class="el" href="class_cross_link_1_1_scene_obj_layout.html">SceneObjLayout</a>[] layoutList, <a class="el" href="class_cross_link_1_1_scene_obj_desc.html">SceneObjDesc</a>[] objList, System.Action&lt; GameObject, <a class="el" href="class_cross_link_1_1_scene_obj_layout.html">SceneObjLayout</a>, <a class="el" href="class_cross_link_1_1_scene_obj_desc.html">SceneObjDesc</a> &gt; OnFit=null)</td></tr>
+<tr class="separator:a5dc8684fe3498bce0c3a6e15c9c5edce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a732ab1ffb2e223fd0ec71135f51b39ca"><td class="memItemLeft" align="right" valign="top"><a id="a732ab1ffb2e223fd0ec71135f51b39ca"></a>
 <a class="el" href="class_cross_link_1_1_scene_obj_layout.html">SceneObjLayout</a>&#160;</td><td class="memItemRight" valign="bottom"><b>FindLayoutByPlaceName</b> (<a class="el" href="class_cross_link_1_1_scene_obj_layout.html">SceneObjLayout</a>[] layoutList, string placeName)</td></tr>
 <tr class="separator:a732ab1ffb2e223fd0ec71135f51b39ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a51c99126b5e5ac9f65886468fd3d4993"><td class="memItemLeft" align="right" valign="top"><a id="a51c99126b5e5ac9f65886468fd3d4993"></a>
+List&lt; System.Action &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>exeOnceAfterLoad</b> = new List&lt;System.Action&gt;()</td></tr>
+<tr class="separator:a51c99126b5e5ac9f65886468fd3d4993"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:a149fb0b93e786fc9342352e0433e6e6b"><td class="memItemLeft" align="right" valign="top"><a id="a149fb0b93e786fc9342352e0433e6e6b"></a>
 static <a class="el" href="class_cross_link_1_1_level_mgr.html">LevelMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_level_mgr.html">LevelMgr</a>()</td></tr>
 <tr class="separator:a149fb0b93e786fc9342352e0433e6e6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab34a7ea521d628303c2a7760d128b42"><td class="memItemLeft" align="right" valign="top"><a id="aab34a7ea521d628303c2a7760d128b42"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>LDPath</b> = &quot;Levels/LvData/LD_&quot;</td></tr>
+<tr class="separator:aab34a7ea521d628303c2a7760d128b42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="ac2cdbe35f94a201caa109d695cc11a0b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac2cdbe35f94a201caa109d695cc11a0b">&#9670;&nbsp;</a></span>LoadScene()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void CrossLink.LevelMgr.LoadScene </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>name</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Loads a scene </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">name</td><td>Name of the scene to load</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -84,12 +84,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3b9edea5eba5e4eb2dbc2d3a7924f652"><td class="memItemLeft" align="right" valign="top"><a id="a3b9edea5eba5e4eb2dbc2d3a7924f652"></a>
 Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>GetFingerGrabRB</b> ()</td></tr>
 <tr class="separator:a3b9edea5eba5e4eb2dbc2d3a7924f652"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a7db6e6acf223d4a9313705a339fe52"><td class="memItemLeft" align="right" valign="top"><a id="a1a7db6e6acf223d4a9313705a339fe52"></a>
+Collider&#160;</td><td class="memItemRight" valign="bottom"><b>GetFingerGrabCol</b> ()</td></tr>
+<tr class="separator:a1a7db6e6acf223d4a9313705a339fe52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4c84084f82e607ae541d0371e5218ce2"><td class="memItemLeft" align="right" valign="top"><a id="a4c84084f82e607ae541d0371e5218ce2"></a>
 Collider&#160;</td><td class="memItemRight" valign="bottom"><b>CheckFingerGrabBoardPhase</b> (System.Func&lt; Collider, bool &gt; fliter=null)</td></tr>
 <tr class="separator:a4c84084f82e607ae541d0371e5218ce2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a351a0ff8035bc8f6527f5a4e4f6687d3"><td class="memItemLeft" align="right" valign="top"><a id="a351a0ff8035bc8f6527f5a4e4f6687d3"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>DoFingerGrab</b> ()</td></tr>
 <tr class="separator:a351a0ff8035bc8f6527f5a4e4f6687d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b0f109e6c2a749424f563f0df779a0b"><td class="memItemLeft" align="right" valign="top"><a id="a9b0f109e6c2a749424f563f0df779a0b"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateFingerGrabPose</b> (Rigidbody rb)</td></tr>
+<tr class="separator:a9b0f109e6c2a749424f563f0df779a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aead3a397a2ce095dc4c2eca31af1c273"><td class="memItemLeft" align="right" valign="top"><a id="aead3a397a2ce095dc4c2eca31af1c273"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFingerFollowSpeed</b> (float weightPerSec)</td></tr>
 <tr class="separator:aead3a397a2ce095dc4c2eca31af1c273"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -126,6 +132,9 @@ RootMotion.FinalIK.HandPoser&#160;</td><td class="memItemRight" valign="bottom">
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:a41d8a3a984faa8a09ee8db82587eaa62"><td class="memItemLeft" align="right" valign="top"><a id="a41d8a3a984faa8a09ee8db82587eaa62"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>BoardPhaseRadius</b> = 0.2f</td></tr>
+<tr class="separator:a41d8a3a984faa8a09ee8db82587eaa62"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a671d213288a5f7bedad597bf17885ba4"><td class="memItemLeft" align="right" valign="top"><a id="a671d213288a5f7bedad597bf17885ba4"></a>
 const int&#160;</td><td class="memItemRight" valign="bottom"><b>ThumbFinger</b> = 0</td></tr>
 <tr class="separator:a671d213288a5f7bedad597bf17885ba4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -141,6 +150,9 @@ const int&#160;</td><td class="memItemRight" valign="bottom"><b>RingFinger</b> =
 <tr class="memitem:ac63e54a62b43725845a1eae8c6de6f82"><td class="memItemLeft" align="right" valign="top"><a id="ac63e54a62b43725845a1eae8c6de6f82"></a>
 const int&#160;</td><td class="memItemRight" valign="bottom"><b>PinkieFinger</b> = 4</td></tr>
 <tr class="separator:ac63e54a62b43725845a1eae8c6de6f82"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05d0458f0e5234d643f0003280d437ef"><td class="memItemLeft" align="right" valign="top"><a id="a05d0458f0e5234d643f0003280d437ef"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>FingerSizeMlp</b> = 1f</td></tr>
+<tr class="separator:a05d0458f0e5234d643f0003280d437ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa3926ff2c1d9e69a1c80fb209e9b65a"><td class="memItemLeft" align="right" valign="top"><a id="aaa3926ff2c1d9e69a1c80fb209e9b65a"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>FastWeightSpeed</b> = 12f</td></tr>
 <tr class="separator:aaa3926ff2c1d9e69a1c80fb209e9b65a"><td class="memSeparator" colspan="2">&#160;</td></tr>

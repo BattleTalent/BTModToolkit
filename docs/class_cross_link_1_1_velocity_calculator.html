@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -85,7 +85,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetParent</b> (<a cla
 <a class="el" href="class_cross_link_1_1_velocity_calculator.html">VelocityCalculator</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetParent</b> ()</td></tr>
 <tr class="separator:a9bd81bc926a193e0e64151fb0e6e5479"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2dbfb778c913352f895b460f10122ca4"><td class="memItemLeft" align="right" valign="top">Vector3&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_velocity_calculator.html#a2dbfb778c913352f895b460f10122ca4">GetVelocityEstimateLocal</a> ()</td></tr>
-<tr class="memdesc:a2dbfb778c913352f895b460f10122ca4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Local means ignore the velocity by character movement so no matter the character is running or standing still, the velocity you got should be the same  <a href="class_cross_link_1_1_velocity_calculator.html#a2dbfb778c913352f895b460f10122ca4">More...</a><br /></td></tr>
+<tr class="memdesc:a2dbfb778c913352f895b460f10122ca4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Local means ignore the velocity by character movement so no matter the character is running or standing still, the velocity you got should be the same the return vec3 is world space  <a href="class_cross_link_1_1_velocity_calculator.html#a2dbfb778c913352f895b460f10122ca4">More...</a><br /></td></tr>
 <tr class="separator:a2dbfb778c913352f895b460f10122ca4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb2c06250d39be44a3d8e0a6f90d6929"><td class="memItemLeft" align="right" valign="top"><a id="abb2c06250d39be44a3d8e0a6f90d6929"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearVelocity</b> ()</td></tr>
@@ -96,9 +96,15 @@ Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetAvgVelocityLoca
 <tr class="memitem:a56decabe29010957d4b6c8dc1989ef85"><td class="memItemLeft" align="right" valign="top"><a id="a56decabe29010957d4b6c8dc1989ef85"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetAvgVelocityLocal</b> (float sec)</td></tr>
 <tr class="separator:a56decabe29010957d4b6c8dc1989ef85"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae44e4100465fe168a2b0fb7b99ae20c1"><td class="memItemLeft" align="right" valign="top"><a id="ae44e4100465fe168a2b0fb7b99ae20c1"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>GetContinousMoveSec</b> (bool local=false)</td></tr>
-<tr class="separator:ae44e4100465fe168a2b0fb7b99ae20c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42ca85658eb9b125cb54837576e4199b"><td class="memItemLeft" align="right" valign="top"><a id="a42ca85658eb9b125cb54837576e4199b"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetContinousMoveSec</b> (bool local=true)</td></tr>
+<tr class="separator:a42ca85658eb9b125cb54837576e4199b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfb31a4279087adff2c2b7d36045e8b6"><td class="memItemLeft" align="right" valign="top"><a id="acfb31a4279087adff2c2b7d36045e8b6"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetContinousMoveSecAll</b> (bool local=true)</td></tr>
+<tr class="separator:acfb31a4279087adff2c2b7d36045e8b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0031b076bafc6599c0dad4de2e505c99"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_velocity_calculator.html#a0031b076bafc6599c0dad4de2e505c99">GetContinousMoveSecAve</a> (bool local=true)</td></tr>
+<tr class="memdesc:a0031b076bafc6599c0dad4de2e505c99"><td class="mdescLeft">&#160;</td><td class="mdescRight">calc based on ave velocity  <a href="class_cross_link_1_1_velocity_calculator.html#a0031b076bafc6599c0dad4de2e505c99">More...</a><br /></td></tr>
+<tr class="separator:a0031b076bafc6599c0dad4de2e505c99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1bdc85833689c191f7874b54f572d97"><td class="memItemLeft" align="right" valign="top"><a id="ad1bdc85833689c191f7874b54f572d97"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetVelocityEstimate</b> ()</td></tr>
 <tr class="separator:ad1bdc85833689c191f7874b54f572d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,10 +127,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateFrame</b> (floa
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a0edbfb051f010cba372b0ac3c556f4ae"><td class="memItemLeft" align="right" valign="top"><a id="a0edbfb051f010cba372b0ac3c556f4ae"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>velocityAverageFrames</b> = 32</td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>velocityAverageFrames</b> = 48</td></tr>
 <tr class="separator:a0edbfb051f010cba372b0ac3c556f4ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d815e2be8ef45542a065584405e464a"><td class="memItemLeft" align="right" valign="top"><a id="a3d815e2be8ef45542a065584405e464a"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>angularVelocityAverageFrames</b> = 32</td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>angularVelocityAverageFrames</b> = 48</td></tr>
 <tr class="separator:a3d815e2be8ef45542a065584405e464a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab697450d12f9c045441d2a5673b65947"><td class="memItemLeft" align="right" valign="top"><a id="ab697450d12f9c045441d2a5673b65947"></a>
 Vector3[]&#160;</td><td class="memItemRight" valign="bottom"><b>velocitySamples</b></td></tr>
@@ -137,6 +143,33 @@ Vector3[]&#160;</td><td class="memItemRight" valign="bottom"><b>velocitySamplesL
 <tr class="separator:a8d87789bf1ea6ac9a0b8f53a496958fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a0031b076bafc6599c0dad4de2e505c99"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0031b076bafc6599c0dad4de2e505c99">&#9670;&nbsp;</a></span>GetContinousMoveSecAve()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">float CrossLink.VelocityCalculator.GetContinousMoveSecAve </td>
+          <td>(</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>local</em> = <code>true</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>calc based on ave velocity </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">local</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
 <a id="a2dbfb778c913352f895b460f10122ca4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2dbfb778c913352f895b460f10122ca4">&#9670;&nbsp;</a></span>GetVelocityEstimateLocal()</h2>
 
@@ -152,7 +185,7 @@ Vector3[]&#160;</td><td class="memItemRight" valign="bottom"><b>velocitySamplesL
       </table>
 </div><div class="memdoc">
 
-<p>Local means ignore the velocity by character movement so no matter the character is running or standing still, the velocity you got should be the same </p>
+<p>Local means ignore the velocity by character movement so no matter the character is running or standing still, the velocity you got should be the same the return vec3 is world space </p>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
 </div>

@@ -4,7 +4,7 @@ local SceneInit = {
 }
 
 function SceneInit:Awake()
-    self.spawnPointMgr.pointList = {}
+    --self.spawnPointMgr.pointList = {}
     
     --character
     self.characterObj = CL.ResourceMgr.Instantiate("Character/[VRTK_Scripts]")

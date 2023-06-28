@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">0.0.9</span>
+   &#160;<span id="projectnumber">V10</span>
    </div>
   </td>
  </tr>
@@ -98,6 +98,9 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnStateClear
 <tr class="memitem:ab9f230f0349f1fc2df14c99c6a49617b"><td class="memItemLeft" align="right" valign="top"><a id="ab9f230f0349f1fc2df14c99c6a49617b"></a>
 List&lt; <a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>QueryInteractInRange</b> (Vector3 pos, float radius)</td></tr>
 <tr class="separator:ab9f230f0349f1fc2df14c99c6a49617b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb56303fa3be9864bb1f7d21e01988ae"><td class="memItemLeft" align="right" valign="top"><a id="acb56303fa3be9864bb1f7d21e01988ae"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDropItems</b> ()</td></tr>
+<tr class="separator:acb56303fa3be9864bb1f7d21e01988ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a895cc9598550d8da45f458769f1589c2"><td class="memItemLeft" align="right" valign="top"><a id="a895cc9598550d8da45f458769f1589c2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>RegInteractDrop</b> (<a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a> ib)</td></tr>
 <tr class="separator:a895cc9598550d8da45f458769f1589c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,8 +128,17 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:a130c8e4d2430733b7b30ab6a04332a09"><td class="memItemLeft" align="right" valign="top"><a id="a130c8e4d2430733b7b30ab6a04332a09"></a>
 static <a class="el" href="class_cross_link_1_1_interact_mgr.html">InteractMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_interact_mgr.html">InteractMgr</a>()</td></tr>
 <tr class="separator:a130c8e4d2430733b7b30ab6a04332a09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93f71886369ec41e6b2b928c13ed0033"><td class="memItemLeft" align="right" valign="top"><a id="a93f71886369ec41e6b2b928c13ed0033"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DISCONNECT_CHECKER_DISTANCE</b> = 1f</td></tr>
+<tr class="separator:a93f71886369ec41e6b2b928c13ed0033"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac083a12d8999e35addbb5639f814f54c"><td class="memItemLeft" align="right" valign="top"><a id="ac083a12d8999e35addbb5639f814f54c"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DISCONNECT_CHECKER_DISTANCE_SQRT</b> = DISCONNECT_CHECKER_DISTANCE * DISCONNECT_CHECKER_DISTANCE</td></tr>
+<tr class="separator:ac083a12d8999e35addbb5639f814f54c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2157f6be3a46a284878478fbde500a8d"><td class="memItemLeft" align="right" valign="top"><a id="a2157f6be3a46a284878478fbde500a8d"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DISCONNECT_CHECK_SEC</b> = 0.4f</td></tr>
+<tr class="separator:a2157f6be3a46a284878478fbde500a8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80685ed0581b0a522d487264b19517fd"><td class="memItemLeft" align="right" valign="top"><a id="a80685ed0581b0a522d487264b19517fd"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>DISCONNECT_DISTANCE</b> = 0.25f</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>DISCONNECT_DISTANCE</b> = 0.35f</td></tr>
 <tr class="separator:a80685ed0581b0a522d487264b19517fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af57cb7a0b633c601e62d697e1746c457"><td class="memItemLeft" align="right" valign="top"><a id="af57cb7a0b633c601e62d697e1746c457"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>DISCONNECT_DISTANCE_SQRT</b> = DISCONNECT_DISTANCE * DISCONNECT_DISTANCE</td></tr>
@@ -144,7 +156,7 @@ static <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>SHOW_HINT_DIS</b> = 5</td></tr>
 <tr class="separator:a8af2e37c1232c5e50b6626400a67c842"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af149ae37b4a5e51d2810556fe46451d9"><td class="memItemLeft" align="right" valign="top"><a id="af149ae37b4a5e51d2810556fe46451d9"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>NORMAL_HAND_POWER</b> = 1f</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>NORMAL_HAND_POWER</b> = 0.85f</td></tr>
 <tr class="separator:af149ae37b4a5e51d2810556fe46451d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adacf5a2179f89157d5aefd923dcee668"><td class="memItemLeft" align="right" valign="top">const float&#160;</td><td class="memItemRight" valign="bottom"><b>TIE_HAND_POWER</b></td></tr>
 <tr class="separator:adacf5a2179f89157d5aefd923dcee668"><td class="memSeparator" colspan="2">&#160;</td></tr>
