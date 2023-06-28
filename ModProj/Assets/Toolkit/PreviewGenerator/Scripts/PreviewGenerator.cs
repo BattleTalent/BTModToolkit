@@ -278,6 +278,7 @@ public class PreviewGenerator
         if (GameObjectToRender != null)
         {
             GameObject tempGameObject = GameObject.Instantiate(GameObjectToRender.gameObject, null, false);
+            _lastPNGPathName = GameObjectToRender.name;
             tempGameObject.hideFlags = HideFlags.HideAndDontSave;
 
             _internalCameraObject = GetInternalCamera();
