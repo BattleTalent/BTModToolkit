@@ -484,7 +484,12 @@ namespace CrossLink
 
                 foreach (var item in info.storeItemInfo)
                 {
-                    if (!names.ContainsKey(item.addStoreItemName))
+                    if (string.IsNullOrEmpty(item.addStoreItemName))
+                    {
+                        Debug.LogError("an addStoreItemName is Empty in ItemInfoConfig: " + assetPath);
+                        isPass = false;
+                    }
+                    else if (!names.ContainsKey(item.addStoreItemName))
                     {
                         names.Add(item.addStoreItemName, assetPath);
                     }
@@ -493,7 +498,12 @@ namespace CrossLink
                 {
                     foreach (var item in info.sceneModInfo)
                     {
-                        if (!names.ContainsKey(item.sceneName))
+                        if (string.IsNullOrEmpty(item.sceneName))
+                        {
+                            Debug.LogError("an sceneName is Empty in ItemInfoConfig: " + assetPath);
+                            isPass = false;
+                        }
+                        else if(!names.ContainsKey(item.sceneName))
                         {
                             names.Add(item.sceneName, assetPath);
                         }
@@ -504,7 +514,12 @@ namespace CrossLink
                 {
                     foreach (var item in info.skinInfo)
                     {
-                        if (!names.ContainsKey(item.skinName))
+                        if (string.IsNullOrEmpty(item.skinName))
+                        {
+                            Debug.LogError("an skinName is Empty in ItemInfoConfig: " + assetPath);
+                            isPass = false;
+                        }
+                        else if(!names.ContainsKey(item.skinName))
                         {
                             names.Add(item.skinName, assetPath);
                         }
@@ -514,7 +529,12 @@ namespace CrossLink
                 {
                     foreach (var item in info.roleModInfo)
                     {
-                        if (!names.ContainsKey(item.roleName))
+                        if (string.IsNullOrEmpty(item.roleName))
+                        {
+                            Debug.LogError("an roleName is Empty in ItemInfoConfig: " + assetPath);
+                            isPass = false;
+                        }
+                        else if(!names.ContainsKey(item.roleName))
                         {
                             names.Add(item.roleName, assetPath);
                         }
