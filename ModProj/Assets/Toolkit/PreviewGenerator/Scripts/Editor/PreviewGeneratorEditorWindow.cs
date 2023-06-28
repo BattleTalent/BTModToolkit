@@ -271,18 +271,7 @@ public class PreviewGeneratorDrawer : PropertyDrawer
         Texture2D previewTexture = previewGenerator.PreviewTexture;
         
         EditorGUILayout.Space();
-        if (GUILayout.Button(" Save PNG... ", GUILayout.ExpandWidth(false)))
-        {
-            string path = Path.GetDirectoryName(previewGenerator.LastPNGPathName);
-            string filename = Path.GetFileName(previewGenerator.LastPNGPathName);
-            path = EditorUtility.SaveFilePanel("Save Texture as PNG", path, filename, "png");
-            if (path.Length != 0)
-            {
-                previewGenerator.SavePNG(path);                
-            }
-        }
-        
-        EditorGUILayout.Space();
+    
         float boxHeight = Mathf.Min(EditorGUIUtility.currentViewWidth - 36, 256);
         GUILayout.Box(previewTexture,
             GUILayout.Height(boxHeight), GUILayout.Width(EditorGUIUtility.currentViewWidth - 36));
@@ -294,6 +283,16 @@ public class PreviewGeneratorDrawer : PropertyDrawer
 
         EditorGUILayout.Space();
 
+        if (GUILayout.Button(" Save PNG... ", GUILayout.ExpandWidth(true)))
+        {
+            string path = Path.GetDirectoryName(previewGenerator.LastPNGPathName);
+            string filename = Path.GetFileName(previewGenerator.LastPNGPathName);
+            path = EditorUtility.SaveFilePanel("Save Texture as PNG", path, filename, "png");
+            if (path.Length != 0)
+            {
+                previewGenerator.SavePNG(path);                
+            }
+        }
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
