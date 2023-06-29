@@ -10,7 +10,9 @@ namespace CrossLink
         {
             Weapon,
             Song,
-            Scene
+            Scene,
+            Role,
+            Skin
         }
 
         static TemplateWizardAsset wizard;
@@ -22,6 +24,8 @@ namespace CrossLink
         ModType previousselectedModType = ModType.Weapon;
         [ConditionalField("selectedModType", false, ModType.Weapon, ModType.Song)]public StoreItemInfo storeItemInfo;
         [ConditionalField("selectedModType", false, ModType.Scene)]public SceneModInfo sceneModInfo;
+        [ConditionalField("selectedModType", false, ModType.Role)]public RoleModInfo roleModInfo;
+        [ConditionalField("selectedModType", false, ModType.Skin)]public SkinInfo skinInfo;
 
         [EasyButtons.Button]
         void GenerateTemplate()
@@ -53,6 +57,14 @@ namespace CrossLink
 
             if(selectedModType == ModType.Scene) {
                 GenerateSceneTemplate(newModFolderPath);
+            }
+
+            if(selectedModType == ModType.Role) {
+                GenerateRoleTemplate(newModFolderPath);
+            }
+
+            if(selectedModType == ModType.Skin) {
+                GenerateSkinTemplate(newModFolderPath);
             }
 
             if(AddressableConfig.GetConfig().addressablePaths.Contains(newModFolderPath) == false) {
@@ -136,6 +148,14 @@ namespace CrossLink
                 sceneModInfo.sceneName = AddressableConfig.GetConfig().GetPrefix() + newModFolderName;
                 return;
             }
+            if(selectedModType == ModType.Role){
+                roleModInfo.roleName = AddressableConfig.GetConfig().GetPrefix() + newModFolderName;
+                return;
+            }
+            if(selectedModType == ModType.Skin){
+                skinInfo.skinName = AddressableConfig.GetConfig().GetPrefix() + newModFolderName;
+                return;
+            }
         }
 
         void SetStatusMessage(string statusMessage, MessageType statusMessageType) {
@@ -182,6 +202,31 @@ namespace CrossLink
             var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
             itemInfoConfig.sceneModInfo = new SceneModInfo[1];
             itemInfoConfig.sceneModInfo[0] = sceneModInfo;
+        }
+
+        void GenerateRoleTemplate(string newModFolderPath){ 
+            AssetDatabase.CreateFolder(newModFolderPath, "ICon");
+            AssetDatabase.CreateFolder(newModFolderPath, "Config");
+            AssetDatabase.CreateFolder(newModFolderPath, "Audio");
+            AssetDatabase.CreateFolder(newModFolderPath, "Role");
+
+            CreateIcon(newModFolderName);
+
+            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            itemInfoConfig.roleModInfo = new RoleModInfo[1];
+            itemInfoConfig.roleModInfo[0] = roleModInfo;
+        }
+
+        void GenerateSkinTemplate(string newModFolderPath){ 
+            AssetDatabase.CreateFolder(newModFolderPath, "ICon");
+            AssetDatabase.CreateFolder(newModFolderPath, "Config");
+            AssetDatabase.CreateFolder(newModFolderPath, "Skin");
+
+            CreateIcon(newModFolderName);
+
+            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            itemInfoConfig.skinInfo = new SkinInfo[1];
+            itemInfoConfig.skinInfo[0] = skinInfo;
         }
     }
 }
