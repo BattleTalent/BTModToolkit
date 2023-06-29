@@ -93,6 +93,20 @@ namespace CrossLink
             DestroyImmediate(instantiatedPrefab);
         }
 
+        private void CreateRolePrefab(string newModFolderName)
+        {
+            GameObject gameObject = new GameObject();
+            PrefabUtility.SaveAsPrefabAsset(gameObject, $"Assets/Build/{newModFolderName}/Role/{newModFolderName}.prefab");
+            DestroyImmediate(gameObject);
+        }
+
+        private void CreateSkinPrefab(string newModFolderName)
+        {
+            GameObject gameObject = new GameObject();
+            PrefabUtility.SaveAsPrefabAsset(gameObject, $"Assets/Build/{newModFolderName}/Skin/{newModFolderName}.prefab");
+            DestroyImmediate(gameObject);
+        }
+
         private void CreateIcon(string newModFolderName)
         {
             AssetDatabase.CopyAsset(
@@ -211,6 +225,7 @@ namespace CrossLink
             AssetDatabase.CreateFolder(newModFolderPath, "Role");
 
             CreateIcon(newModFolderName);
+            CreateRolePrefab(newModFolderName);
 
             var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
             itemInfoConfig.roleModInfo = new RoleModInfo[1];
@@ -223,6 +238,7 @@ namespace CrossLink
             AssetDatabase.CreateFolder(newModFolderPath, "Skin");
 
             CreateIcon(newModFolderName);
+            CreateSkinPrefab(newModFolderName);
 
             var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
             itemInfoConfig.skinInfo = new SkinInfo[1];
