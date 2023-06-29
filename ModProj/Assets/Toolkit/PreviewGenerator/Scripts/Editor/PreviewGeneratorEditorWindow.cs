@@ -18,11 +18,12 @@ public class PreviewGeneratorEditorWindow : EditorWindow
     private Vector2 curScrollPosition = new Vector2(0.0f, 0.0f);
     private const string _settingsPath = "/ProjectSettings/PreviewGeneratorSettings.json";
 
-    [MenuItem("Tools/Preview Generator", false, 10)]
+    [MenuItem("Tools/Icon Generator", false, 10)]
     static void ShowWindow()
     {
         window = GetWindow<PreviewGeneratorEditorWindow>();
         window.minSize = new Vector2(525.0f, 695.0f);
+        window.title = "Icon Generator";
     }
     
     protected void OnEnable ()
@@ -61,6 +62,7 @@ public class PreviewGeneratorEditorWindow : EditorWindow
         {
             window = GetWindow<PreviewGeneratorEditorWindow>();
             window.minSize = new Vector2(525.0f, 695.0f);
+            window.title = "Icon Generator";
             //OnEnable();
         }
 
