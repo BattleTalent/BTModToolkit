@@ -9,13 +9,10 @@ Hello, this is the scripting document, you can query these API, then use them in
 
 ### Quick Start to build the mods from this project
 
-https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/tutorials/modtoolkit-overview
+[https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview](https://battletalent.github.io/community-docs/docs/getting-started/modtoolkit-overview)
 
 if you just want to try play this mod, you can download it from [HERE](https://github.com/fonzieyang/BTModToolkit/releases/download/V0.0.1/ModProj.zip)
 
-### Modding tutorial
-
-https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/tutorials/modtoolkit-overview
 
 ### Commonly used classes
 
