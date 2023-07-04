@@ -32,6 +32,10 @@ namespace CrossLink
         [EasyButtons.Button]
         void GenerateTemplate()
         {
+            if (newModFolderName == "") {
+                SetStatusMessage("Please enter a mod folder name.", MessageType.Warning);
+                return;
+            }
             if (newModFolderName.Contains(" ")) {
                 SetStatusMessage("Mod folder name should not contain spaces.", MessageType.Warning);
                 return;
