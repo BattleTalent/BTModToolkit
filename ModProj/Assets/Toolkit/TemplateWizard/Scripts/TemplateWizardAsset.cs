@@ -105,9 +105,10 @@ namespace CrossLink
 
         private void CreateRolePrefab(string newModFolderName)
         {
-            GameObject gameObject = new GameObject();
-            PrefabUtility.SaveAsPrefabAsset(gameObject, $"Assets/Build/{newModFolderName}/Role/{newModFolderName}.prefab");
-            DestroyImmediate(gameObject);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootRoleNode.prefab");
+            var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/Role/{newModFolderName}.prefab", InteractionMode.AutomatedAction);
+            DestroyImmediate(instantiatedPrefab);
         }
 
         private void CreateSkinPrefab(string newModFolderName)
