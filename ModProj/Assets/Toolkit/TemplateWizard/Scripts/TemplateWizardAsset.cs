@@ -86,15 +86,6 @@ namespace CrossLink
             SetStatusMessage("Success!", MessageType.Info);
         }
 
-        private ItemInfoConfig CreateItemInfoConfig(string newModFolderName)
-        {
-            ItemInfoConfig asset = CreateInstance<ItemInfoConfig>();
-            AssetDatabase.CreateAsset(asset, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
-            AssetDatabase.SaveAssets();
-
-            return asset;
-        }
-
         private void CreateWeaponPrefab(string newModFolderName)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootWeaponNode.prefab");
@@ -211,9 +202,11 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateWeaponPrefab(newModFolderName);
             
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.storeItemInfo = new StoreItemInfo[1];
             itemInfoConfig.storeItemInfo[0] = storeItemInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateSongTemplate(string newModFolderPath){ 
@@ -223,9 +216,11 @@ namespace CrossLink
 
             CreateIcon(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.storeItemInfo = new StoreItemInfo[1];
             itemInfoConfig.storeItemInfo[0] = storeItemInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateSceneTemplate(string newModFolderPath){ 
@@ -236,9 +231,11 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateScene(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.sceneModInfo = new SceneModInfo[1];
             itemInfoConfig.sceneModInfo[0] = sceneModInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateRoleTemplate(string newModFolderPath){ 
@@ -250,9 +247,11 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateRolePrefab(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();  
             itemInfoConfig.roleModInfo = new RoleModInfo[1];
             itemInfoConfig.roleModInfo[0] = roleModInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateSkinTemplate(string newModFolderPath){ 
@@ -263,9 +262,11 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateSkinPrefab(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();   
             itemInfoConfig.skinInfo = new SkinInfo[1];
             itemInfoConfig.skinInfo[0] = skinInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateAvatarTemplate(string newModFolderPath){ 
@@ -276,9 +277,11 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateAvatarPrefab(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>(); 
             itemInfoConfig.avatarInfo = new AvatarInfo[1];
             itemInfoConfig.avatarInfo[0] = avatarInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
     }
 }
