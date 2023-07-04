@@ -12,7 +12,8 @@ namespace CrossLink
             Song,
             Scene,
             Role,
-            Skin
+            Skin,
+            Avatar
         }
 
         static TemplateWizardAsset wizard;
@@ -26,6 +27,7 @@ namespace CrossLink
         [ConditionalField("selectedModType", false, ModType.Scene)]public SceneModInfo sceneModInfo;
         [ConditionalField("selectedModType", false, ModType.Role)]public RoleModInfo roleModInfo;
         [ConditionalField("selectedModType", false, ModType.Skin)]public SkinInfo skinInfo;
+        [ConditionalField("selectedModType", false, ModType.Avatar)]public AvatarInfo avatarInfo;
 
         [EasyButtons.Button]
         void GenerateTemplate()
@@ -67,6 +69,10 @@ namespace CrossLink
                 GenerateSkinTemplate(newModFolderPath);
             }
 
+            if(selectedModType == ModType.Avatar) {
+                GenerateAvatarTemplate(newModFolderPath);
+            }
+
             if(AddressableConfig.GetConfig().addressablePaths.Contains(newModFolderPath) == false) {
                 AddressableConfig.GetConfig().addressablePaths.Add(newModFolderPath);
             }
@@ -105,6 +111,14 @@ namespace CrossLink
             GameObject gameObject = new GameObject();
             PrefabUtility.SaveAsPrefabAsset(gameObject, $"Assets/Build/{newModFolderName}/Skin/{newModFolderName}.prefab");
             DestroyImmediate(gameObject);
+        }
+
+        private void CreateAvatarPrefab(string newModFolderName)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootAvatarNode.prefab");
+            var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/Avatar/{newModFolderName}.prefab", InteractionMode.AutomatedAction);
+            DestroyImmediate(instantiatedPrefab);
         }
 
         private void CreateIcon(string newModFolderName)
@@ -168,6 +182,10 @@ namespace CrossLink
             }
             if(selectedModType == ModType.Skin){
                 skinInfo.skinName = AddressableConfig.GetConfig().GetPrefix() + newModFolderName;
+                return;
+            }
+            if(selectedModType == ModType.Avatar){
+                avatarInfo.avatarName = AddressableConfig.GetConfig().GetPrefix() + newModFolderName;
                 return;
             }
         }
@@ -243,6 +261,19 @@ namespace CrossLink
             var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
             itemInfoConfig.skinInfo = new SkinInfo[1];
             itemInfoConfig.skinInfo[0] = skinInfo;
+        }
+
+        void GenerateAvatarTemplate(string newModFolderPath){ 
+            AssetDatabase.CreateFolder(newModFolderPath, "ICon");
+            AssetDatabase.CreateFolder(newModFolderPath, "Config");
+            AssetDatabase.CreateFolder(newModFolderPath, "Avatar");
+
+            CreateIcon(newModFolderName);
+            CreateAvatarPrefab(newModFolderName);
+
+            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            itemInfoConfig.avatarInfo = new AvatarInfo[1];
+            itemInfoConfig.avatarInfo[0] = avatarInfo;
         }
     }
 }
