@@ -6,6 +6,11 @@ namespace CrossLink
 
     public static class DebugDraw
     {
+#if UNITY_EDITOR
+        static bool Draw = true;
+#else
+        static bool Draw = false;
+#endif
 
         static public Color alpha05 = new Color(0, 0, 0, 0.5f);
         static public Color alpha025 = new Color(0, 0, 0, 0.25f);
@@ -59,29 +64,30 @@ namespace CrossLink
         // Courtesy of robertbu
         public static void DrawPlane(Vector3 position, Vector3 normal, float size, Color color, float duration, bool depthTest = true)
         {
-#if false
-        Vector3 v3;
- 
-        if (normal.normalized != Vector3.forward)
-            v3 = Vector3.Cross(normal, Vector3.forward).normalized * normal.magnitude;
-        else
-            v3 = Vector3.Cross(normal, Vector3.up).normalized * normal.magnitude;;
- 
-        Vector3 corner0 = position + v3 * size;
-        Vector3 corner2 = position - v3 * size;
- 
-        Quaternion q = Quaternion.AngleAxis(90.0f, normal);
-        v3 = q * v3;
-        Vector3 corner1 = position + v3 * size;
-        Vector3 corner3 = position - v3 * size;
+#if true
+            Vector3 v3;
 
-        Debug.DrawLine(corner0, corner2, color, duration, depthTest);
-        Debug.DrawLine(corner1, corner3, color, duration, depthTest);
-        Debug.DrawLine(corner0, corner1, color, duration, depthTest);
-        Debug.DrawLine(corner1, corner2, color, duration, depthTest);
-        Debug.DrawLine(corner2, corner3, color, duration, depthTest);
-        Debug.DrawLine(corner3, corner0, color, duration, depthTest);
-        Debug.DrawRay(position, normal * size, color, duration, depthTest);
+            if (normal.normalized != Vector3.forward)
+                v3 = Vector3.Cross(normal, Vector3.forward).normalized * normal.magnitude;
+            else
+                v3 = Vector3.Cross(normal, Vector3.up).normalized * normal.magnitude; ;
+
+            Vector3 corner0 = position + v3 * size;
+            Vector3 corner2 = position - v3 * size;
+
+            Quaternion q = Quaternion.AngleAxis(90.0f, normal);
+            v3 = q * v3;
+            Vector3 corner1 = position + v3 * size;
+            Vector3 corner3 = position - v3 * size;
+
+            DrawLine(corner0, corner2, color, duration);
+            DrawLine(corner1, corner3, color, duration);
+            DrawLine(corner0, corner1, color, duration);
+            DrawLine(corner1, corner2, color, duration);
+            DrawLine(corner2, corner3, color, duration);
+            DrawLine(corner3, corner0, color, duration);
+            //Debug.DrawRay(position, normal * size, color, duration, depthTest);
+            DrawLine(position, position + normal * size, color, duration);
 #endif
         }
 
@@ -113,6 +119,22 @@ namespace CrossLink
             Debug.DrawLine(b, c, color);
             Debug.DrawLine(c, a, color);
 #endif
+        }
+
+        public static void DrawLine(Vector3 LineStart, Vector3 LineEnd, Color Color, float LifeTime = 0.0f)
+        {
+            if (!Draw) return;
+
+#if ENABLE_VR_DRAW
+            if (Application.isPlaying)
+            {
+                DrawDebugTools.DrawLine(LineStart, LineEnd, Color, LifeTime);
+            }
+            else
+#endif
+            {
+                Debug.DrawLine(LineStart, LineEnd, Color, LifeTime);
+            }
         }
 
         public static void DrawMesh(Mesh mesh, Color color, Transform t)

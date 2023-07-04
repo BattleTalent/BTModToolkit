@@ -57,6 +57,145 @@ namespace CrossLink
     }
 
     [System.Serializable]
+    public class HandPoseModifier
+    {
+        [Tooltip("HandPoseName")]
+        public string name;
+
+        [Tooltip("Adjusting the position of the avatar left hand pose.")]
+        public Vector3 leftHandPosition;
+
+        [Tooltip("Adjusting the rotation of the avatar left hand pose.")]
+        public Quaternion leftHandRotation;
+
+        [Tooltip("Adjusting the position of the avatar right hand pose.")]
+        public Vector3 rightHandPosition;
+
+        [Tooltip("Adjusting the rotation of the avatar right hand pose.")]
+        public Quaternion rightHandRotation;
+
+        [Tooltip("Degree of finger flexion. The fingers are, in order, thumb, index, middle, ring and pinky(pinkie).")]
+        public float[] fingerWeight;
+
+#if UNITY_EDITOR
+
+        static public void SetDefaultPoseValue(HandPoseModifier handPose)
+        {
+            HandPoseLib lib = UnityEditor.AssetDatabase.LoadAssetAtPath<HandPoseLib>("Assets/Toolkit/HandPoseHelper/HandPoseLib.asset");
+
+            if (lib == null)
+                return;
+
+            HandPoseSetup hps;
+            GameObject preset;
+            for (int i = 0; i < lib.poseDefines.Length; i++)
+            {
+                if (handPose.name.Equals(lib.poseDefines[i].poseName))
+                {
+                    for (int j = 0; j < lib.poseDefines[i].handPoses.Length; j++)
+                    {
+                        preset = lib.poseDefines[i].handPoses[j] as GameObject;
+                        if (preset)
+                        {
+                            hps = preset.GetComponentInChildren<HandPoseSetup>();
+                            if (hps)
+                            {
+                                if (j == RagdollBoneInfo.RIGHT_HAND)
+                                {
+                                    handPose.rightHandPosition = hps.transform.localPosition;
+                                    handPose.rightHandRotation = hps.transform.localRotation;
+                                }
+                                else
+                                {
+                                    handPose.leftHandPosition = hps.transform.localPosition;
+                                    handPose.leftHandRotation = hps.transform.localRotation;
+                                }
+                                handPose.fingerWeight = hps.preset.fingerWeight.ToArray();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+#endif
+    }
+
+    //static public void SetDefaultPoseValue(HandPoseModifier handPose)
+    //{
+    //    string name = string.Empty;
+    //    switch (handPose.name)
+    //    {
+    //        case "HoldPose":
+    //            handPose.leftHandPosition = Vector3.zero;
+    //            handPose.leftHandRotation = Quaternion.Euler(0, 90, 90);
+    //            handPose.rightHandPosition = new Vector3(0, 0, -0.0603f);
+    //            handPose.rightHandRotation = Quaternion.Euler(0, -90, -90);
+    //            handPose.fingerWeight = new float[5] { 0.5f, 0.7f, 0.65f, 0.65f, 0.6f };
+    //            break;
+    //        case "GunPose":
+    //            handPose.leftHandPosition = new Vector3(0.0025f, 0.0117f, -0.002f);
+    //            handPose.leftHandRotation = Quaternion.Euler(-257.273f, -253.278f, 33.84999f);
+    //            handPose.rightHandPosition = new Vector3(-0.0079f, 0.0119f, 0.0076f);
+    //            handPose.rightHandRotation = Quaternion.Euler(-109.337f, -71.92599f, -7.527985f);
+    //            handPose.fingerWeight = new float[5] { 0, 0, 0.7f, 0.7f, 0.7f };
+    //            break;
+    //        case "GunPose2":
+    //            handPose.leftHandPosition = new Vector3(-0.013f, -0.0082f, -0.0153f);
+    //            handPose.leftHandRotation = Quaternion.Euler(64.861f, 74.691f, -5.991f);
+    //            handPose.rightHandPosition = new Vector3(-0.0078f, 0.0155f, -0.0169f);
+    //            handPose.rightHandRotation = Quaternion.Euler(-106.35f, -72.60699f, -1.055969f);
+    //            handPose.fingerWeight = new float[5] { 0, 0.15f, 0.7f, 0.7f, 0.7f };
+    //            break;
+    //        case "GrabPose":
+    //            handPose.leftHandPosition = Vector3.zero;
+    //            handPose.leftHandRotation = Quaternion.Euler(-90f, 0, 90f);
+    //            handPose.rightHandPosition = Vector3.zero;
+    //            handPose.rightHandRotation = Quaternion.Euler(-90f, 0, -90f);
+    //            handPose.fingerWeight = new float[5] { 0, 0, 0, 0, 0 };
+    //            break;
+    //        case "DefaultPose":
+    //            handPose.leftHandPosition = Vector3.zero;
+    //            handPose.leftHandRotation = Quaternion.Euler(-90f, 0, 90f);
+    //            handPose.rightHandPosition = Vector3.zero;
+    //            handPose.rightHandRotation = Quaternion.Euler(-90f, 0, -90f);
+    //            handPose.fingerWeight = new float[5] { 0, 0, 0, 0, 0 };
+    //            break;
+    //        case "GlovePose":
+    //            handPose.leftHandPosition = new Vector3(-0.0232f, -0.0179f, -0.0047f);
+    //            handPose.leftHandRotation = Quaternion.Euler(58.557f, 80.137f, 340.902f);
+    //            handPose.rightHandPosition = new Vector3(0.0034f, 0.0017f, -0.0032f);
+    //            handPose.rightHandRotation = Quaternion.Euler(-67.786f, 90.00001f, -180f);
+    //            handPose.fingerWeight = new float[5] { 0.85f, 0.83f, 0.87f, 0.87f, 0.87f };
+    //            break;
+    //        case "GuitarPose":
+    //            handPose.leftHandPosition = new Vector3(0.0394f, -0.0037f, -0.0504f);
+    //            handPose.leftHandRotation = Quaternion.Euler(80.827f, 13.572f, 81.94801f);
+    //            handPose.rightHandPosition = new Vector3(-0.0113f, 0.0032f, -0.0093f);
+    //            handPose.rightHandRotation = Quaternion.Euler(-249.778f, -98.87201f, 178.619f);
+    //            handPose.fingerWeight = new float[5] { 0.85f, 0.83f, 0.87f, 0.87f, 0.87f };
+    //            break;
+    //        default:
+    //            Debug.Log("Your handPose :" + handPose.name + " is not the default value, only the default handPose can be set.");
+    //            break;
+    //    }
+    //}
+    [System.Serializable]
+    public class AvatarInfo
+    {
+        [Tooltip("prefab name")]
+        public string avatarName;
+
+        [Tooltip("the name displayed on game")]
+        public string name;
+
+        [Tooltip("skin discription")]
+        public string desc;
+
+        [Tooltip("Adjust the data of the HandPose exclusive to this model, the default handPose are HoldPose, GunPose, GunPose2, GrabPose, DefaultPose, GlovePose.")]
+        public HandPoseModifier[] handposes;
+    }
+
+    [System.Serializable]
     public class SkinInfo
     {
         [Tooltip("skin name")]
@@ -87,6 +226,9 @@ namespace CrossLink
         [Tooltip("replace NPC.")]
         public string[] replaceRole;
 
+        [Tooltip("default replace NPC.")]
+        public string defaultReplacement;
+
         [Tooltip("character's weapon, fill in the addStoreItemName in ItemInfoConfig when using a mod weapon.")]
         public string weapon;
 
@@ -100,6 +242,8 @@ namespace CrossLink
         public SoundEffectInfo warningSound;
         public SoundEffectInfo attackSound;
         public SoundEffectInfo tauntSound;
+
+        //BodyFragment[] bodyFragments;
     }
 
     [System.Serializable]
@@ -112,6 +256,16 @@ namespace CrossLink
         public float atkMlp;
 
         public float massMlp;
+    }
+
+    [System.Serializable]
+    public class HandPose
+    {
+        public string name;
+
+        public string leftHandPreset;
+
+        public string rightHandPreset;
     }
 
     [CreateAssetMenu(fileName = "ItemInfoConfig", menuName = "ItemInfoConfig")]
@@ -137,14 +291,21 @@ namespace CrossLink
         public SceneModInfo[] sceneModInfo;
 
         [SerializeField]
+        public AvatarInfo[] avatarInfo;
+
+        [SerializeField]
         public SkinInfo[] skinInfo;
 
         [SerializeField]
         public RoleModInfo[] roleModInfo;
 
         [SerializeField]
+        public HandPose[] handPoseInfo;
+
+        [SerializeField]
         public HitInfo[] hitInfo;
 
+#if UNITY_EDITOR
         [EasyButtons.Button]
         public void AutoAddPrefix()
         {
@@ -207,6 +368,60 @@ namespace CrossLink
                     {
                         item.roleName = prefix + item.roleName;
                     }
+                }
+            }
+
+            //HandPose
+            if (handPoseInfo != null)
+            {
+                foreach (var item in handPoseInfo)
+                {
+                    if (!string.IsNullOrEmpty(item.name))
+                    {
+                        if (!item.name.Contains(prefix))
+                        {
+                            item.name = prefix + item.name;
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(item.leftHandPreset))
+                    {
+                        if (!item.leftHandPreset.Contains(prefix))
+                        {
+                            item.leftHandPreset = prefix + item.leftHandPreset;
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(item.rightHandPreset))
+                    {
+                        if (!item.rightHandPreset.Contains(prefix))
+                        {
+                            item.rightHandPreset = prefix + item.rightHandPreset;
+                        }
+                    }
+                }
+            }
+        }
+
+        [EasyButtons.Button]
+        public void SetDefaultPoseValueToAvatar(string avatarName, string pose)
+        {
+            if (avatarInfo == null)
+                return;
+
+            foreach (var item in avatarInfo)
+            {
+                if (item.avatarName == avatarName)
+                {
+                    foreach (var info in item.handposes)
+                    {
+                        if (info.name == pose)
+                        {
+                            HandPoseModifier.SetDefaultPoseValue(info);
+                            break;
+                        }
+                    }
+                    break;
                 }
             }
         }
@@ -302,10 +517,57 @@ namespace CrossLink
                 }
             }
 
+            //handpose
+            if (handPoseInfo != null)
+            {
+                foreach (var item in handPoseInfo)
+                {
+                    if (!item.name.Contains(prefix))
+                    {
+                        Debug.LogError("The Prefix of name:" + item.name + " is wrong or missing, please fill in " +
+                            "the same prefix as in AddressableConfig.");
+                        isPass = false;
+                    }
+
+                    if (string.IsNullOrEmpty(item.name))
+                    {
+                        Debug.LogError("Please fill in the name of the HandPoseInfo.");
+                        isPass = false;
+                    }
+
+                    if (!item.leftHandPreset.Contains(prefix))
+                    {
+                        Debug.LogError("The Prefix of LeftHandPreset:" + item.leftHandPreset + " is wrong or missing, please fill in " +
+                            "the same prefix as in AddressableConfig.");
+                        isPass = false;
+                    }
+
+                    if (string.IsNullOrEmpty(item.leftHandPreset))
+                    {
+                        Debug.LogError("Please fill in the name of the HandPoseInfo.");
+                        isPass = false;
+                    }
+
+                    if (!item.rightHandPreset.Contains(prefix))
+                    {
+                        Debug.LogError("The Prefix of RightHandPreset:" + item.rightHandPreset + " is wrong or missing, please fill in " +
+                            "the same prefix as in AddressableConfig.");
+                        isPass = false;
+                    }
+
+                    if (string.IsNullOrEmpty(item.rightHandPreset))
+                    {
+                        Debug.LogError("Please fill in the name of the HandPoseInfo.");
+                        isPass = false;
+                    }
+                }
+            }
+
             if (isPass)
             {
                 Debug.Log("Pass");
             }
         }
+#endif
     }
 }
