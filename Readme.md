@@ -114,13 +114,13 @@ https://battletalent.github.io/community-docs/docs/details/damage-pipeline
 
 | Dev Environment                             | Pros                                                         | Cons                                                |
 | ------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------- |
-| edit in Editor + debug in Windows Simulator | 1. dosen't need a gaming PC<br> 2. iterate very fast, because you don't need to put on headset<br> 3. you can make use of shotcut to debug faster | 1. the feeling is different from in VR              |
-| edit in Editor + debug in SteamVR           | 1. you can check the real size in headset<br> 2. you can make use of shotcut to debug faster | 1. need to install mod and put on headset everytime |
+| edit in Editor + debug in Windows Simulator | 1. dosen't need a gaming PC<br> 2. iterate very fast, because you don't need to put on headset<br> 3. you can make use of shortcut to debug faster | 1. the feeling is different from in VR              |
+| edit in Editor + debug in SteamVR           | 1. you can check the real size in headset<br> 2. you can make use of shortcut to debug faster | 1. need to install mod and put on headset everytime |
 | edit in Editor + debug in Quest             | 1. you can check the real size in headset                    | 1. need to install mod and put on headset everytime |
 
-#### Shotcut
+#### Shortcut
 
-| Shotcut        | Function at Body Mode | Function at Hand Mode    |
+| Shortcut        | Function at Body Mode | Function at Hand Mode    |
 | -------------- | --------------------- | ------------------------ |
 | WASD           | walk                  | walk                     |
 | Shift          | run                   | hand rotation            |
@@ -129,7 +129,7 @@ https://battletalent.github.io/community-docs/docs/details/damage-pipeline
 | Mouse Movement | body rotation         | hand movement            |
 | Ctrl           |                       | hand movement on Z axis  |
 
-| Shotcut  | Function                         |
+| Shortcut  | Function                         |
 | -------- | -------------------------------- |
 | F12      | open or close MainMenu           |
 | F11      | open or close CheatMenu          |
