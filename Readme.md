@@ -91,7 +91,7 @@ For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event in
 
 #### Damage Pipeline
 
-https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/damage-pipeline
+https://battletalent.github.io/community-docs/docs/details/damage-pipeline
 
 
 
