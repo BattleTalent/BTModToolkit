@@ -25,7 +25,9 @@ namespace CrossLink
         { "Audio", "Audio/Sound/" },
         { "Config", "Config/" },
         { "Scene", "Scene/" },
+        { "Avatar", "Avatar/" },
         { "Skin", "Skin/" },
+        { "HandPose", "Attach/Mod/" },
         { "Role", "Role/" },
     };
 

@@ -1,0 +1,96 @@
+--luaBehaviour
+local ArrowBase = {
+    reflashTime = 0.01,
+    }
+
+function ArrowBase:Reset()
+    self.trail = self.host.gameObject:GetComponent(UE.TrailRenderer)
+end
+
+function ArrowBase:Awake()
+    self.lifeCircleId = CL.Scheduler.RemoveSchedule(self.lifeCircleId)
+    self.lifeCircleId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , self.reflashTime, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ArrowBase:Start()
+    self.OnStabEnter = function(si)
+        if not IsNullOrDestroyed(self.trail) then
+            self.trail.enabled = false
+        end
+    end
+    
+    
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("+", self.OnStabEnter)
+    end
+end
+
+function ArrowBase:Update()
+    if not self.disabled then
+       if self.ib.rb.velocity.sqrMagnitude > 0.01 then
+           CL.PhysicsFollow.TrackRotation(self.ib.rb, UE.Quaternion.LookRotation(self.ib.rb.velocity))
+        end
+    end
+end
+
+function ArrowBase:OnPut(bow)
+end
+
+function ArrowBase:OnShoot(bow)
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = true
+    end
+    
+    self.disabled = false
+    
+    CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:GiveBack()
+        end,
+    0, 0, 10)
+end
+
+function ArrowBase:OnColliderEnter(collision)
+    if self.disabled then
+        return
+    end
+    
+    local hand = CL.InteractHand.GetHandByCollider(collision.collider)
+    if not IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local player = CL.PlayerUnit.GetPhysicsUnit(collision.transform.root)
+    if not IsNullOrDestroyed(player) then
+        if player.unitType == CL.Tagger.Tag.PlayerRole then
+            return
+        end
+    end
+    
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = false
+    end
+    self.disabled = true
+end
+
+function ArrowBase:OnCancel(bow)
+    self:GiveBack()
+end
+
+function ArrowBase:GiveBack()
+    self.disabled = false
+    self.ib:Clear()
+    if self.trail ~= nil then
+        self.trail:Clear()
+        self.trail.enabled = false
+    end
+    CL.PrefabPool.GiveBack(self.ib.gameObject)
+end
+
+return Class(nil, nil, ArrowBase)
