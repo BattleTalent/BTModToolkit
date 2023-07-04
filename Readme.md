@@ -74,15 +74,15 @@ For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event in
 | Basic Components                   | Function                                                     | More Details                                                 |
 | ---------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | InteractWeapon                     | represent the entity of weapon                               |                                                              |
-| InteractTrigger / InteractTriggerX | define how weapon works when player pressing trigger button  | https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/skill-system |
+| InteractTrigger / InteractTriggerX | define how weapon works when player pressing trigger button  | https://battletalent.github.io/community-docs/docs/details/skill-system |
 | StabObj                            | define how your weapon penetrate others                      |                                                              |
-| RagdollHitInfoObj                  | define how to calculate damage                               | https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/hitinfo-and-collisioneffect |
+| RagdollHitInfoObj                  | define how to calculate damage                               | https://battletalent.github.io/community-docs/docs/details/hitinfo-and-collisioneffect |
 | RagdollHitInfoRef                  | it'll define a group of RagdollHitInfoObj as a whole, so that they won't hit multiple times |                                                              |
 | RigidbodyInit                      | define intertia tensor and center mass, if it's zero, then it'll not take effect on the rigidbody |                                                              |
-| CollisionEffect                    | simulate physics collision effect                            | https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/hitinfo-and-collisioneffect |
+| CollisionEffect                    | simulate physics collision effect                            | https://battletalent.github.io/community-docs/docs/details/hitinfo-and-collisioneffect |
 | AttachLine / AttachPoint           | define how player grabs it                                   |                                                              |
 | Mount Point                        | define how player put it in the pocket                       |                                                              |
-| FlyObj / FlyObjX                   | attached on Fly Object, such as bullet, magic                | https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/flyobject |
+| FlyObj / FlyObjX                   | attached on Fly Object, such as bullet, magic                | https://battletalent.github.io/community-docs/docs/details/flyobject |
 
 
 
