@@ -1,7 +1,3 @@
-#if UNITY_EDITOR
-
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
@@ -9,13 +5,16 @@ namespace CrossLink
 {
     public class RoleSlots : MonoBehaviour
     {
+
         public GameObject handSlotLeft;
         public GameObject handSlotRight;
         public GameObject shoulderSlotLeft;
         public GameObject shoulderSlotRight;
 
+#if UNITY_EDITOR
+
         [EasyButtons.Button]
-        public void AutoGetHandTransform()
+        public void GenerateSlots()
         {
             var animator = GetComponent<Animator>();
             if (animator == null)
@@ -109,7 +108,6 @@ namespace CrossLink
                 Gizmos.DrawRay(shoulderSlotRight.transform.position, direction);
             }
         }
-        
+#endif
     }
 }
-#endif
