@@ -1,0 +1,119 @@
+local HandPoseTool = {
+    disable = false,
+    dragSpeed = 0.2,
+    baseSpeed = 0.2,
+    accSpeed = 1,
+}
+
+function HandPoseTool:SlotSpell(slot)
+    self:ShowMenu()
+    self:StartUpdate()
+end
+
+function HandPoseTool:UnSlotSpell(slot)
+    self:HideMenu()
+    self:StopUpdate()
+end
+
+function HandPoseTool:ShowMenu()
+    if self.panel then
+        self.panel:Show(true)
+        
+        self.panel:UpdateSelectHand(self.slotHand)
+    else
+        
+        local eo = CL.EffectMgr.Instance:PlayEffect(self.effectName, self.createPoint.position, UE.Quaternion.identity)
+        if not IsNullOrDestroyed(eo) then
+            eo.trans:SetParent(self.createPoint)
+            local lua = eo.trans:GetComponent(typeof(CL.LuaBehaviour))
+            if not IsNullOrDestroyed(lua) then
+                self.panel = lua:GetSelf()
+                if self.panel then
+                    self.panel:Init(self.createPoint, self.slotHand)
+                end
+            end
+        end
+    end
+end
+
+function HandPoseTool:HideMenu()
+    if self.panel then
+        self.panel:Show(false)
+    end
+end
+
+function HandPoseTool:StartUpdate()
+    self.updateActId = CL.Scheduler.RemoveSchedule(self.updateActId)
+    self.updateActId = CL.Scheduler.Create(self.host.interact.gameObject, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function HandPoseTool:Update()
+    if self.slotHand then
+        self:UpdateInput()
+    end
+end
+
+function HandPoseTool:UpdateInput()
+    local v = self.slotHand.inputs[CL.VRTKInputButton.ButtonType.Touchpad].Axis
+    local value = nil
+    if v.y ~= 0 then
+        value = -v.y * self.dragSpeed * UE.Time.deltaTime
+        self.dragSpeed = self.dragSpeed + UE.Time.deltaTime * self.accSpeed
+    end
+    
+    v = UE.Input.GetAxis("Mouse ScrollWheel")
+    if v ~= 0 then
+        value = v * self.dragSpeed * UE.Time.deltaTime * 400
+        self.dragSpeed = self.dragSpeed + UE.Time.deltaTime * self.accSpeed
+    end
+    
+    
+    if value then
+        if self.panel then
+            self.panel:RefleshData(value)
+        end
+    else
+        self.dragSpeed = self.baseSpeed
+    end
+end
+
+function HandPoseTool:DisableMovement(disable)
+    CL.InteractCharacter.PlayerInstance:SetDisableMoveCommand(disable)
+    CL.InteractCharacter.PlayerInstance:ToggleKinematic(disable)
+    
+    CL.TextPanel.ShowTips("Disable movement: " .. tostring(disable) , 2)
+end
+
+function HandPoseTool:StopUpdate()
+    self.updateActId = CL.Scheduler.RemoveSchedule(self.updateActId)
+end
+
+
+
+
+function HandPoseTool:OpenSkill()
+    self.orderType = 1
+end
+
+function HandPoseTool:CloseSkill()
+    if self.orderType == 1 then
+        if self.panel then
+            self.panel:SelectNext()
+        end
+    end
+end
+
+function HandPoseTool:OnChargeReady()
+    self.orderType = 2
+    self.disable = not self.disable
+    self:DisableMovement(self.disable)
+    
+    self.host:CloseSkill()
+end
+
+return Class(Require("LuaScript/WMD_SpellBaseScript"), nil, HandPoseTool)

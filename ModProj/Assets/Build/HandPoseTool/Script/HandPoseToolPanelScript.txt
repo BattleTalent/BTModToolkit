@@ -1,0 +1,184 @@
+
+local HandPoseToolPanel = {
+    curHandPoseTrans = nil,
+    tips = "1. Press Trigger to select the parameter to be adjusted. Use joystick to control the value of the currently selected parameter.",
+    
+    cachePosition = UE.Vector3.zero,
+    cacheEuler = UE.Vector3.zero,
+    
+    selectIdx = 1,    
+}
+
+function HandPoseToolPanel:Init(trans, hand)
+    self.hand = hand
+
+    if IsNullOrDestroyed(self.hand) then
+        return
+    end
+    
+    self.selectList = { 
+        [1] = 
+            {
+                ["value"] = 0,
+                ["Text"] = self.posX,
+            }, 
+        [2] = 
+            {
+                ["value"] = 0,
+                ["Text"] = self.posY, 
+            },
+        [3] = 
+            {
+                ["value"] = 0,
+                ["Text"] = self.posZ,  
+            },
+        [4] = 
+            {
+                ["value"] = 0,
+                ["Text"] = self.rotX,  
+            },
+        [5] = 
+            {
+                ["value"] = 0,
+                ["Text"] = self.rotY, 
+            },
+        [6] = 
+            {
+                ["value"] = 0,
+                ["Text"] = self.rotZ,
+            },
+        }
+    
+    self.headset = self.hand.character:GetHeadset()
+    RemoveSchedule(self, self.updateTimer)
+    
+    self.targetHand = self.hand:GetAnotherHand()
+
+    self:SelectHandPose()
+    
+    self.grabFunc = function()
+        self:SelectHandPose()
+    end
+    self.targetHand:GrabEvent("+", self.grabFunc)
+    
+    self.updateTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not IsNullOrDestroyed(trans) then
+                self:UpdatePositionFollow(trans.position, self.headset)
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.Update)
+end
+
+function HandPoseToolPanel:UpdateSelectHand(hand)
+    self.hand = hand
+    
+    self.headset = self.hand.character:GetHeadset()
+    
+    
+    if self.targetHand and not IsNullOrDestroyed(self.targetHand) then
+        self.targetHand:GrabEvent("-", self.grabFunc)
+    end
+    self.targetHand = self.hand:GetAnotherHand()
+    self:SelectHandPose()
+    self.targetHand:GrabEvent("+", self.grabFunc)
+end
+
+function HandPoseToolPanel:Show(isShow)
+    self.trans.gameObject:SetActive(isShow)
+end
+
+function HandPoseToolPanel:RefleshData(value)
+    if not self.curHandPose then
+        return
+    end
+    self.selectList[self.selectIdx].Value = self.selectList[self.selectIdx].Value + value
+    self.selectList[self.selectIdx].Text.text = self.selectList[self.selectIdx].Value
+    
+    self:PasteDataTohand()
+end
+
+function HandPoseToolPanel:ResetConsoleTips()
+    self.console.text = self.tips
+end
+
+function HandPoseToolPanel:HapticPulse()
+    if self.hand then
+        self.hand:HapticPulse(self.hand.character.skillChargeHapticCurve, 0.2, 0.8)
+    end
+end
+
+function HandPoseToolPanel:SelectHandPose()
+    if not self.targetHand and IsNullOrDestroyed(self.targetHand.attachTo) then
+        return
+    end
+    local attachObj = self.targetHand.attachTo
+    
+    if not attachObj then
+        return
+    end
+    
+    --1. get handPoseSetup
+    self.curHandPose = attachObj:GetOrCreateHandPose(self.targetHand)
+    self.curHandPoseTrans = self.curHandPose.transform
+    
+    --3. reflesh panel
+    self.console.text = " Cur hand pose: "..attachObj.handPose
+    
+    self:PasteFromPosition(self.curHandPoseTrans.localPosition)
+    self:PasteFromRotation(self.curHandPoseTrans.localRotation)
+end
+
+function HandPoseToolPanel:SelectNext()
+    if not self.targetHand then
+        return
+    end
+    
+    self.selectIdx = self.selectIdx % #self.selectList + 1
+    self.arrowTrans.position = self.selectList[self.selectIdx].Text.transform.position
+end
+
+function HandPoseToolPanel:PasteFromPosition(vec)
+    self.selectList[1].Value = vec.x
+    self.selectList[2].Value = vec.y
+    self.selectList[3].Value = vec.z
+    
+    self.selectList[1].Text.text = vec.x
+    self.selectList[2].Text.text = vec.y
+    self.selectList[3].Text.text = vec.z
+end
+
+function HandPoseToolPanel:PasteFromRotation(rot)
+    self.selectList[4].Value = rot.eulerAngles.x
+    self.selectList[5].Value = rot.eulerAngles.y
+    self.selectList[6].Value = rot.eulerAngles.z
+    
+    self.selectList[4].Text.text = rot.eulerAngles.x
+    self.selectList[5].Text.text = rot.eulerAngles.y
+    self.selectList[6].Text.text = rot.eulerAngles.z
+end
+
+function HandPoseToolPanel:PasteDataTohand()
+    self.curHandPoseTrans.localPosition = UE.Vector3(self.selectList[1].Value, 
+        self.selectList[2].Value, self.selectList[3].Value)
+    
+    self.curHandPoseTrans.localRotation = UE.Quaternion.Euler(self.selectList[4].Value, 
+        self.selectList[5].Value, self.selectList[6].Value)
+end
+
+function HandPoseToolPanel:UpdatePositionFollow(pos, headset)
+    if IsNullOrDestroyed(headset) then
+        return
+    end
+    
+    self.trans.position = pos
+    self.trans.rotation = UE.Quaternion.LookRotation(pos - headset.position)
+end
+
+
+function HandPoseToolPanel:ResetState()
+end
+
+
+return Class(nil, nil, HandPoseToolPanel)
