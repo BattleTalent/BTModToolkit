@@ -48,8 +48,25 @@ namespace CrossLink
             handposeControlLeft.handTrans = animator.GetBoneTransform(HumanBodyBones.LeftHand);
             handposeControlRight.handTrans = animator.GetBoneTransform(HumanBodyBones.RightHand);
 
+            AutoCorrectRenderer();
+
             Debug.LogWarning("Please check if this is correct after use. If not, " +
                 "please assign the handTrans of the handPoseControl manually.");
+        }
+
+        [EasyButtons.Button]
+        public void AutoCorrectRenderer()
+        {
+            if (fbxPrefab == null)
+            {
+                return;
+            }
+
+            var renderers = fbxPrefab.GetComponentsInChildren<SkinnedMeshRenderer>();
+            foreach (var renderer in renderers)
+            {
+                renderer.updateWhenOffscreen = true;
+            }
         }
     }
 
