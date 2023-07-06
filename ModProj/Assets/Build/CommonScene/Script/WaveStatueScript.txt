@@ -4,7 +4,11 @@ local WaveStatue = {
 }
 
 function WaveStatue:Start()
-    local selectorTemp = CL.ResourceMgr.Instantiate("Selector/SpawnTemplate")
+    local selectorTemp = CL.ResourceMgr.Instantiate(
+        "Selector/SpawnTemplate",           
+        self.host.gameObject.transform.position, 
+        self.host.gameObject.transform.rotation
+    )
     local slp = selectorTemp:GetComponent(typeof(CL.SelectorSpawn))
     self.its = selectorTemp:GetComponent(typeof(CL.ItemSelector))
     
@@ -14,7 +18,11 @@ function WaveStatue:Start()
 
     local spawnedStatue = self.statue
     if type(self.statue) == "string" then
-        spawnedStatue = CL.ResourceMgr.Instantiate(self.statue)
+        spawnedStatue = CL.ResourceMgr.Instantiate(
+            self.statue,
+            self.host.gameObject.transform.position, 
+            self.host.gameObject.transform.rotation
+        )
     end
 
     spawnedStatue.transform.parent = selectorTemp.transform;
