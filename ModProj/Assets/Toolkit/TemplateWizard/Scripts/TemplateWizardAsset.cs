@@ -12,7 +12,8 @@ namespace CrossLink
             Song,
             Scene,
             Role,
-            Skin
+            Skin,
+            Avatar
         }
 
         static TemplateWizardAsset wizard;
@@ -26,10 +27,15 @@ namespace CrossLink
         [ConditionalField("selectedModType", false, ModType.Scene)]public SceneModInfo sceneModInfo;
         [ConditionalField("selectedModType", false, ModType.Role)]public RoleModInfo roleModInfo;
         [ConditionalField("selectedModType", false, ModType.Skin)]public SkinInfo skinInfo;
+        [ConditionalField("selectedModType", false, ModType.Avatar)]public AvatarInfo avatarInfo;
 
         [EasyButtons.Button]
         void GenerateTemplate()
         {
+            if (newModFolderName == "") {
+                SetStatusMessage("Please enter a mod folder name.", MessageType.Warning);
+                return;
+            }
             if (newModFolderName.Contains(" ")) {
                 SetStatusMessage("Mod folder name should not contain spaces.", MessageType.Warning);
                 return;
@@ -67,6 +73,10 @@ namespace CrossLink
                 GenerateSkinTemplate(newModFolderPath);
             }
 
+            if(selectedModType == ModType.Avatar) {
+                GenerateAvatarTemplate(newModFolderPath);
+            }
+
             if(AddressableConfig.GetConfig().addressablePaths.Contains(newModFolderPath) == false) {
                 AddressableConfig.GetConfig().addressablePaths.Add(newModFolderPath);
             }
@@ -74,15 +84,6 @@ namespace CrossLink
             AddressableHelper.CreateAndRefreshAddressables();
             
             SetStatusMessage("Success!", MessageType.Info);
-        }
-
-        private ItemInfoConfig CreateItemInfoConfig(string newModFolderName)
-        {
-            ItemInfoConfig asset = CreateInstance<ItemInfoConfig>();
-            AssetDatabase.CreateAsset(asset, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
-            AssetDatabase.SaveAssets();
-
-            return asset;
         }
 
         private void CreateWeaponPrefab(string newModFolderName)
@@ -95,9 +96,10 @@ namespace CrossLink
 
         private void CreateRolePrefab(string newModFolderName)
         {
-            GameObject gameObject = new GameObject();
-            PrefabUtility.SaveAsPrefabAsset(gameObject, $"Assets/Build/{newModFolderName}/Role/{newModFolderName}.prefab");
-            DestroyImmediate(gameObject);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootRoleNode.prefab");
+            var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/Role/{newModFolderName}.prefab", InteractionMode.AutomatedAction);
+            DestroyImmediate(instantiatedPrefab);
         }
 
         private void CreateSkinPrefab(string newModFolderName)
@@ -105,6 +107,14 @@ namespace CrossLink
             GameObject gameObject = new GameObject();
             PrefabUtility.SaveAsPrefabAsset(gameObject, $"Assets/Build/{newModFolderName}/Skin/{newModFolderName}.prefab");
             DestroyImmediate(gameObject);
+        }
+
+        private void CreateAvatarPrefab(string newModFolderName)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootAvatarNode.prefab");
+            var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/Avatar/{newModFolderName}.prefab", InteractionMode.AutomatedAction);
+            DestroyImmediate(instantiatedPrefab);
         }
 
         private void CreateIcon(string newModFolderName)
@@ -170,6 +180,10 @@ namespace CrossLink
                 skinInfo.skinName = AddressableConfig.GetConfig().GetPrefix() + newModFolderName;
                 return;
             }
+            if(selectedModType == ModType.Avatar){
+                avatarInfo.avatarName = AddressableConfig.GetConfig().GetPrefix() + newModFolderName;
+                return;
+            }
         }
 
         void SetStatusMessage(string statusMessage, MessageType statusMessageType) {
@@ -188,9 +202,11 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateWeaponPrefab(newModFolderName);
             
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.storeItemInfo = new StoreItemInfo[1];
             itemInfoConfig.storeItemInfo[0] = storeItemInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateSongTemplate(string newModFolderPath){ 
@@ -200,9 +216,11 @@ namespace CrossLink
 
             CreateIcon(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.storeItemInfo = new StoreItemInfo[1];
             itemInfoConfig.storeItemInfo[0] = storeItemInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateSceneTemplate(string newModFolderPath){ 
@@ -213,9 +231,11 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateScene(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.sceneModInfo = new SceneModInfo[1];
             itemInfoConfig.sceneModInfo[0] = sceneModInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateRoleTemplate(string newModFolderPath){ 
@@ -227,9 +247,11 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateRolePrefab(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();  
             itemInfoConfig.roleModInfo = new RoleModInfo[1];
             itemInfoConfig.roleModInfo[0] = roleModInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
 
         void GenerateSkinTemplate(string newModFolderPath){ 
@@ -240,9 +262,26 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateSkinPrefab(newModFolderName);
 
-            var itemInfoConfig = CreateItemInfoConfig(newModFolderName);    
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();   
             itemInfoConfig.skinInfo = new SkinInfo[1];
             itemInfoConfig.skinInfo[0] = skinInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
+        }
+
+        void GenerateAvatarTemplate(string newModFolderPath){ 
+            AssetDatabase.CreateFolder(newModFolderPath, "ICon");
+            AssetDatabase.CreateFolder(newModFolderPath, "Config");
+            AssetDatabase.CreateFolder(newModFolderPath, "Avatar");
+
+            CreateIcon(newModFolderName);
+            CreateAvatarPrefab(newModFolderName);
+
+            ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>(); 
+            itemInfoConfig.avatarInfo = new AvatarInfo[1];
+            itemInfoConfig.avatarInfo[0] = avatarInfo;
+            AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
+            AssetDatabase.SaveAssets();
         }
     }
 }

@@ -90,3 +90,12 @@ local function AddStoreItemTemplate(weaponName, dependWeapon, name, desc)
     CL.UnlockContentConfig.AddItem(storeItem)
 end
 
+local function AddWaveTemplate(waveName, waveAddressable)
+    local playableWaves = CL.RoleGroupTable.GetConfig().playableWaves
+    local wave = CL.ResourceMgr.Instantiate(waveAddressable)
+    wave.name = waveName
+    playableWaves:Add(wave)
+end
+
+-- Example of adding a wave to the cheat menu.
+-- AddWaveTemplate("Your wave name here!", "Wave/WMD_SomeWaveAddressable")
