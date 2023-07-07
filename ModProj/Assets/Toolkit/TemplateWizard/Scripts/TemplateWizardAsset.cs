@@ -29,9 +29,10 @@ namespace CrossLink
         [ConditionalField("selectedModType", false, ModType.Role)]public RoleModInfo roleModInfo;
         [ConditionalField("selectedModType", false, ModType.Skin)]public SkinInfo skinInfo;
         [ConditionalField("selectedModType", false, ModType.Avatar)]public AvatarInfo avatarInfo;
+        private string statusMessage = "";
+        private MessageType statusMessageType;
 
-        [EasyButtons.Button]
-        void GenerateTemplate()
+        public void GenerateTemplate()
         {
             if (newModFolderName == "") {
                 SetStatusMessage("Please enter a mod folder name.", MessageType.Warning);
@@ -210,11 +211,22 @@ namespace CrossLink
         }
 
         void SetStatusMessage(string statusMessage, MessageType statusMessageType) {
+             this.statusMessage = statusMessage; 
+             this.statusMessageType = statusMessageType; 
+
             if(statusMessageType == MessageType.Info){
                 Debug.Log(statusMessage);
             } else {
                 Debug.LogError(statusMessage);
             }
+        }
+
+        public string GetStatusMessage() {
+            return statusMessage;
+        }
+
+        public string GetStatusMessageType() {
+            return statusMessageType.ToString();
         }
 
         void GenerateWeaponTemplate(string newModFolderPath){ 
@@ -307,6 +319,42 @@ namespace CrossLink
             itemInfoConfig.avatarInfo[0] = avatarInfo;
             AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
             AssetDatabase.SaveAssets();
+        }
+    }
+
+    [CustomEditor(typeof(TemplateWizardAsset))]
+    public class TestOnInspector : Editor
+    {
+        GUIStyle style = new GUIStyle();
+        string message = "";
+
+        public override void OnInspectorGUI()
+        {
+            var templateWizard = target as TemplateWizardAsset;        
+            DrawDefaultInspector ();
+
+            if (GUILayout.Button("Generate Template"))
+            {
+                templateWizard.GenerateTemplate();
+                var statusMessageType = templateWizard.GetStatusMessageType();
+
+                if(statusMessageType == "Warning") {
+                    style.normal.textColor = Color.yellow;
+                }
+
+                if(statusMessageType == "Error") {
+                    style.normal.textColor = Color.red;
+                }
+
+                if(statusMessageType == "Info") {
+                    style.normal.textColor = Color.white;
+                }
+                message = templateWizard.GetStatusMessage();
+            }
+
+            if(message != "") {
+                GUILayout.Label (templateWizard.GetStatusMessage(), style);
+            }
         }
     }
 }
