@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
+using System.IO;
 
 namespace CrossLink
 {
@@ -133,6 +134,28 @@ namespace CrossLink
             );
         }
 
+        private void CreateSceneInitIfNotAvailable()
+        {
+            var commonSceneFolder = "Assets/Build/CommonScene";
+
+            if (!Directory.Exists($"{commonSceneFolder}/Script")) {
+                Directory.CreateDirectory($"{commonSceneFolder}/Script");
+            }
+            
+            if (!File.Exists($"{commonSceneFolder}/Script/SceneInitScript.txt")) {
+                AssetDatabase.CopyAsset(
+                    "Assets/Toolkit/TemplateWizard/Dummy/SceneInitScript.txt", 
+                    $"{commonSceneFolder}/Script/SceneInitScript.txt"
+                );
+            }
+            
+            if(AddressableConfig.GetConfig().addressablePaths.Contains(commonSceneFolder) == false) {
+                AddressableConfig.GetConfig().addressablePaths.Add(commonSceneFolder);
+            }
+
+            AddressableHelper.CreateAndRefreshAddressables();
+        }
+
         static public TemplateWizardAsset GetWizard()
         {
             wizard = Resources.Load("TemplateWizard") as TemplateWizardAsset;
@@ -227,9 +250,11 @@ namespace CrossLink
             AssetDatabase.CreateFolder(newModFolderPath, "ICon");
             AssetDatabase.CreateFolder(newModFolderPath, "Config");
             AssetDatabase.CreateFolder(newModFolderPath, "Scene");
+            AssetDatabase.CreateFolder(newModFolderPath, "Script");
 
             CreateIcon(newModFolderName);
             CreateScene(newModFolderName);
+            CreateSceneInitIfNotAvailable();
 
             ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.sceneModInfo = new SceneModInfo[1];
