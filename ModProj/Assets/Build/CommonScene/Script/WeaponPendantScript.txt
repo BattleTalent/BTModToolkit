@@ -5,11 +5,13 @@ local WeaponPendant = {
 function WeaponPendant:Start()
     local spawnedWeapon = self.weapon
     if type(self.weapon) == "string" then
-        spawnedWeapon = CL.ResourceMgr.Instantiate(self.weapon)
+        spawnedWeapon = CL.ResourceMgr.Instantiate(
+            self.weapon,
+            self.host.gameObject.transform.position,
+            self.host.gameObject.transform.rotation
+        )
     end
 
-    spawnedWeapon.transform.position = self.host.gameObject.transform.position
-    
     CL.InteractBasePendant.MakeLoosePendant(spawnedWeapon)
 
     self.onSpawnStart = function()
