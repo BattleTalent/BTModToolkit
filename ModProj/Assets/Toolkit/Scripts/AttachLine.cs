@@ -65,22 +65,20 @@ namespace CrossLink
                 }
             }
         }
-
-
+#if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            Debug.DrawLine(transform.forward * (lineStartPoint) + transform.position,
-                transform.forward * (lineEndPoint) + transform.position,
-                Color.blue - DebugDraw.alpha05);
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(transform.forward * (lineStartPoint) + transform.position,
+                transform.forward * (lineEndPoint) + transform.position);
 
             if (lineOffset > 0)
             {
-                Gizmos.color = Color.blue - DebugDraw.alpha05;
                 //Gizmos.DrawSphere(transform.position + transform.forward * designCallingPos, 0.05f);
 
                 Gizmos.DrawSphere(transform.position, lineOffset);
             }
         }
+#endif
     }
-
 }

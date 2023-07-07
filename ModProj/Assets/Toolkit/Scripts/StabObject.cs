@@ -135,6 +135,48 @@ namespace CrossLink
 
 
 #if UNITY_EDITOR
+        // pos is center pos
+        public static void DrawGizmoBox(Vector3 pos, Quaternion rot, Vector3 size, Color c)
+        {
+            var forward = rot * Vector3.forward;
+            var right = rot * Vector3.right;
+            var up = rot * Vector3.up;
+
+            Gizmos.color =  c;
+            // forward and backward
+            Gizmos.DrawLine(pos + forward * size.z / 2f - right * size.x / 2f + up * size.y / 2f,
+                pos + forward * size.z / 2f + right * size.x / 2f + up * size.y / 2f);
+            Gizmos.DrawLine(pos + forward * size.z / 2f - right * size.x / 2f - up * size.y / 2f,
+                pos + forward * size.z / 2f + right * size.x / 2f - up * size.y / 2f);
+
+            Gizmos.DrawLine(pos - forward * size.z / 2f - right * size.x / 2f + up * size.y / 2f,
+        pos - forward * size.z / 2f + right * size.x / 2f + up * size.y / 2f);
+            Gizmos.DrawLine(pos - forward * size.z / 2f - right * size.x / 2f - up * size.y / 2f,
+                pos - forward * size.z / 2f + right * size.x / 2f - up * size.y / 2f);
+
+            // right and left
+            Gizmos.DrawLine(pos + forward * size.z / 2f - right * size.x / 2f + up * size.y / 2f,
+                pos - forward * size.z / 2f - right * size.x / 2f + up * size.y / 2f);
+            Gizmos.DrawLine(pos + forward * size.z / 2f - right * size.x / 2f - up * size.y / 2f,
+                pos - forward * size.z / 2f - right * size.x / 2f - up * size.y / 2f);
+
+            Gizmos.DrawLine(pos + forward * size.z / 2f + right * size.x / 2f + up * size.y / 2f,
+        pos - forward * size.z / 2f + right * size.x / 2f + up * size.y / 2f);
+            Gizmos.DrawLine(pos + forward * size.z / 2f + right * size.x / 2f - up * size.y / 2f,
+                pos - forward * size.z / 2f + right * size.x / 2f - up * size.y / 2f);
+
+            // up and down
+            Gizmos.DrawLine(pos + forward * size.z / 2f - right * size.x / 2f + up * size.y / 2f,
+                pos + forward * size.z / 2f - right * size.x / 2f - up * size.y / 2f);
+            Gizmos.DrawLine(pos + forward * size.z / 2f + right * size.x / 2f + up * size.y / 2f,
+                pos + forward * size.z / 2f + right * size.x / 2f - up * size.y / 2f);
+
+            Gizmos.DrawLine(pos - forward * size.z / 2f - right * size.x / 2f + up * size.y / 2f,
+                pos - forward * size.z / 2f - right * size.x / 2f - up * size.y / 2f);
+            Gizmos.DrawLine(pos - forward * size.z / 2f + right * size.x / 2f + up * size.y / 2f,
+                pos - forward * size.z / 2f + right * size.x / 2f - up * size.y / 2f);
+        }
+
         private void OnDrawGizmosSelected()
         {
 #if true
@@ -146,27 +188,32 @@ namespace CrossLink
                 var thickDir = geo.GetThickWorld(transform);
                 var forwardDir = geo.GetForwardWorld(transform);
 
-                DebugDraw.DrawBox(geoPos + forwardDir * geo.geoFwdDis / 2f,
+                DrawGizmoBox(
+                    geoPos + forwardDir * geo.geoFwdDis / 2f,
                     Quaternion.LookRotation(forwardDir, thickDir),
-                    new Vector3(geo.geoWidth, geo.thickness, geo.geoFwdDis), Color.yellow);
+                    new Vector3(geo.geoWidth, geo.thickness, geo.geoFwdDis), Color.yellow
+                );
 
                 var stabPos = geoPos + forwardDir * geo.geoFwdDis;
-                Debug.DrawLine(stabPos, stabPos + forwardDir * geo.stabMin, Color.black);
-                Debug.DrawLine(stabPos + forwardDir * geo.stabMin, stabPos + forwardDir * geo.stabMax, Color.red);
+                
+                Gizmos.color = Color.black;
+                Gizmos.DrawLine(stabPos, stabPos + forwardDir * geo.stabMin);
+
                 Gizmos.color = Color.red;
+                Gizmos.DrawLine(stabPos + forwardDir * geo.stabMin, stabPos + forwardDir * geo.stabMax);
+
                 Gizmos.DrawSphere(stabPos + forwardDir * geo.stabTie, 0.02f);
                 //Gizmos.DrawLine(geoPos + widthDir)
-
-                Debug.DrawLine(stabPos, stabPos + widthDir * 0.02f - forwardDir * 0.02f, Color.yellow);
-                Debug.DrawLine(stabPos, stabPos - widthDir * 0.02f - forwardDir * 0.02f, Color.yellow);
-                Debug.DrawLine(stabPos, stabPos + thickDir * 0.02f - forwardDir * 0.02f, Color.yellow);
-                Debug.DrawLine(stabPos, stabPos - thickDir * 0.02f - forwardDir * 0.02f, Color.yellow);
+                
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawLine(stabPos, stabPos + widthDir * 0.02f - forwardDir * 0.02f);
+                Gizmos.DrawLine(stabPos, stabPos - widthDir * 0.02f - forwardDir * 0.02f);
+                Gizmos.DrawLine(stabPos, stabPos + thickDir * 0.02f - forwardDir * 0.02f);
+                Gizmos.DrawLine(stabPos, stabPos - thickDir * 0.02f - forwardDir * 0.02f);
             }
 #endif
-
             //DebugDraw.DrawBox(transform.position, transform.rotation, Vector3.one, c);
         }
 #endif
     }
-
 }
