@@ -262,7 +262,6 @@ namespace CrossLink
             AssetDatabase.CreateFolder(newModFolderPath, "ICon");
             AssetDatabase.CreateFolder(newModFolderPath, "Config");
             AssetDatabase.CreateFolder(newModFolderPath, "Scene");
-            AssetDatabase.CreateFolder(newModFolderPath, "Script");
 
             CreateIcon(newModFolderName);
             CreateScene(newModFolderName);
