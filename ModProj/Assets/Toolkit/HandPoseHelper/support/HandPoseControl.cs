@@ -157,6 +157,8 @@ namespace CrossLink
             {
                 fingers[i].SaveOpenPose();
             }
+
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
         [EasyButtons.Button]
@@ -166,6 +168,7 @@ namespace CrossLink
             {
                 fingers[i].PasteOpenPose();
             }
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
         [EasyButtons.Button]
@@ -177,6 +180,7 @@ namespace CrossLink
             {
                 fingers[i].SaveClosePose();
             }
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
         [EasyButtons.Button]
@@ -186,6 +190,7 @@ namespace CrossLink
             {
                 fingers[i].PasteClosePose();
             }
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
         HandFinger ConvertToFinger(Transform fingerRoot, int nodeNum = 3)
@@ -250,6 +255,7 @@ namespace CrossLink
                     Object.DestroyImmediate(fingers[i].fingerTip.gameObject);
                 }
             }
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
 
@@ -276,6 +282,7 @@ namespace CrossLink
                 fingers[i].fingerTip = tip.transform;
                 fingers[i].fingerTipSize = tipSize;
             }
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
         private void OnDrawGizmos()
