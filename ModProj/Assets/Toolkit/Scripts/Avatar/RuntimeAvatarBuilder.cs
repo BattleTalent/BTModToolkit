@@ -28,49 +28,6 @@ namespace CrossLink
         public Transform handSlotRight;
         public Transform backSlots;
 
-
-
-        [Header("——————Cloth————————")]
-        [Tooltip("Root of the clothing skeleton")]
-        public List<Transform> rootList;
-
-        public CapsuleData[] capsuleColiderData;
-        public SphereData[] sphereColiderData;
-
-        [System.Serializable]
-        public class CapsuleData
-        {
-            public Transform trans;
-            public Vector3 center;
-            public int axis;
-            public float length;
-            public float startRadius;
-            public float endRadius;
-
-            public CapsuleData(Transform t, Vector3 c, int a, float l, float s, float e)
-            {
-                trans = t;
-                center = c;
-                axis = a;
-                length = l;
-                startRadius = s;
-                endRadius = e;
-            }
-        }
-        [System.Serializable]
-        public class SphereData
-        {
-            public Transform trans;
-            public Vector3 center;
-            public float radius;
-            public SphereData(Transform t, Vector3 c, float r)
-            {
-                trans = t;
-                center = c;
-                radius = r;
-            }
-        }
-
 #if UNITY_EDITOR
         [EasyButtons.Button]
         public void AutoConfigBuilder()
@@ -236,42 +193,6 @@ namespace CrossLink
                 DestroyImmediate(backSlots.gameObject);
                 backSlots = null;
             }
-        }
-
-
-        [EasyButtons.Button]
-        public void ApplyClothData()
-        {
-            var colliderList = transform.GetComponentsInChildren<ClothCollider>();
-
-            if (colliderList.Length <= 0)
-            {
-                Debug.Log("Please set the ClothCollider that collides with cloth.");
-                return;
-            }
-
-            var capsules = new List<CapsuleData>();
-            var spheres = new List<SphereData>();
-            foreach (var col in colliderList)
-            {
-                if (col is ClothCapsuleCollider)
-                {
-                    var capsule = col as ClothCapsuleCollider;
-                    var data = new CapsuleData(capsule.transform, capsule.center, (int)capsule.axis, capsule.length, capsule.startRadius, capsule.endRadius);
-                    capsules.Add(data);
-                }
-                else if (col is ClothSphereCollider)
-                {
-                    var sphere = col as ClothSphereCollider;
-                    var data = new SphereData(sphere.transform, sphere.center, sphere.radius);
-                    spheres.Add(data);
-                }
-            }
-
-            capsuleColiderData = capsules.ToArray();
-            sphereColiderData = spheres.ToArray();
-
-            UnityEditor.EditorUtility.SetDirty(this);
         }
 #endif
     }
