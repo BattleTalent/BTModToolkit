@@ -167,20 +167,38 @@ namespace CrossLink
         }
 
         [Header("Example Weapon Gizmo")]
+
         public bool showExampleWeaponGizmo = false;
+
         private Mesh mesh;
+        public enum gizmoTypes {
+            Sword,
+            Gun
+        };
+
+        public gizmoTypes gizmoType = gizmoTypes.Sword;
+        private gizmoTypes previousGizmoType = gizmoTypes.Sword;
+
 
         private void OnDrawGizmos()
         {
             if(!showExampleWeaponGizmo)
                 return;
 
-            if (!mesh) {
-                mesh = AssetDatabase.LoadAssetAtPath<Mesh>("Assets/Toolkit/Gizmos/weapon.fbx");
+            if (!mesh || gizmoType != previousGizmoType) {
+                previousGizmoType = gizmoType;
+                mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/{gizmoType.ToString()}.fbx");
             }
 
             Gizmos.color = Color.red;
-            Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(70,96,96));
+            
+            if(gizmoType == gizmoTypes.Sword) {
+                Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(70,96,96));
+            }
+
+            if(gizmoType == gizmoTypes.Gun) {
+                Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(0.5f,0.5f,0.5f));
+            }
         }
 #endif
     }
