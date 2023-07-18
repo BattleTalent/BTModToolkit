@@ -197,7 +197,7 @@ namespace CrossLink
             }
 
             if(gizmoType == gizmoTypes.Gun) {
-                Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(0.5f,0.5f,0.5f));
+                Gizmos.DrawWireMesh(mesh, new Vector3(0,0.05f,0.05f), new Quaternion(0,0,0,0).normalized, new Vector3(0.5f,0.5f,0.5f));
             }
         }
 #endif

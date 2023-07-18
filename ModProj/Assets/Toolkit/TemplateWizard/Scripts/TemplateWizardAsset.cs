@@ -17,6 +17,12 @@ namespace CrossLink
             Avatar
         }
 
+        public enum WeaponType
+        {
+            Sword,
+            Gun,
+        }
+
         static TemplateWizardAsset wizard;
 
         public string newModFolderName = "";
@@ -24,6 +30,7 @@ namespace CrossLink
 
         public ModType selectedModType = ModType.Weapon;
         ModType previousselectedModType = ModType.Weapon;
+        [ConditionalField("selectedModType", false, ModType.Weapon)]public WeaponType selectedWeaponType = WeaponType.Sword;
         [ConditionalField("selectedModType", false, ModType.Weapon, ModType.Song)]public StoreItemInfo storeItemInfo;
         [ConditionalField("selectedModType", false, ModType.Scene)]public SceneModInfo sceneModInfo;
         [ConditionalField("selectedModType", false, ModType.Role)]public RoleModInfo roleModInfo;
@@ -90,7 +97,7 @@ namespace CrossLink
 
         private void CreateWeaponPrefab(string newModFolderName)
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootWeaponNode.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Toolkit/TemplateWizard/Dummy/{selectedWeaponType.ToString()}.prefab");
             var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
             PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/Weapon/{newModFolderName}.prefab", InteractionMode.AutomatedAction);
             DestroyImmediate(instantiatedPrefab);
