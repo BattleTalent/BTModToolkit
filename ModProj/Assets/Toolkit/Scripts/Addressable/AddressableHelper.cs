@@ -29,6 +29,8 @@ namespace CrossLink
         { "Skin", "Skin/" },
         { "HandPose", "Attach/Mod/" },
         { "Role", "Role/" },
+        { "Wave", "Wave/"},
+        { "UI", "UI/" },
     };
 
 

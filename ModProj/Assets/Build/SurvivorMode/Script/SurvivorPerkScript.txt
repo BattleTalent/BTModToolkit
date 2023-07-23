@@ -1,0 +1,78 @@
+
+-- this script can disable cheating, modifiers and wall kick, and recover those states when leave
+
+local SurvivorMode = {
+	waveBattleIndex = 0,
+}
+
+local Waves = {
+	"WMD_SuvWav1",
+	"WMD_SuvWav2",
+}
+
+
+local function RandomWeaponPack1()
+	local list = {"Arming_Dagger"}
+	return CL.ResourceMgr.Instantiate("Weapon/" .. list[0])
+end
+
+local function RandomPerkPack1()
+
+end
+
+
+local ItemsDropEachRound = {
+	{ Perks = {"Role_Atk_Up", "Role_AtkRange_Up"}, Weapons = {"Arming_Dagger"} },
+	{ RandomWeaponPack1 }
+}
+
+
+function SurvivorMode:Start()
+
+	self.waveBattleIndex = 0
+
+	self.onSpawnStart = function()
+		print("Spawn Start")
+	end
+
+	self.onSpawnEnd = function()
+		print("Spawn End")
+		self.waveBattleIndex = self.waveBattleIndex + 1
+		if self.waveBattleIndex < #Waves then
+			self:ItemDropAndPrepare()
+		else
+			self:GameFinish()
+		end
+	end
+
+	-- setup wave event
+	CL.SpawnPointMgr.Instance:SpawnStartEvent("+", self.onSpawnStart)
+    CL.SpawnPointMgr.Instance:SpawnClearEvent("+", self.onSpawnEnd)
+
+	-- prepare for the first round
+	self:ItemDropAndPrepare()
+end
+
+function SurvivorMode:OnDestroy()
+	CL.SpawnPointMgr.Instance:SpawnStartEvent("-", self.onSpawnStart)
+    CL.SpawnPointMgr.Instance:SpawnClearEvent("-", self.onSpawnEnd)
+end
+
+
+-- spawn something in front of player
+function SurvivorMode:ItemDropAndPrepare()
+	-- drop items
+	-- drop next wave selector, with different perks
+end
+
+
+-- show tips
+function SurvivorMode:GameFinish()
+
+end
+
+
+
+
+
+return Class(nil, nil, SurvivorMode)

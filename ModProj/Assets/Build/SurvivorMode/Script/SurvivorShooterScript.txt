@@ -1,0 +1,380 @@
+
+-- this script can disable cheating, modifiers and wall kick, and recover those states when leave
+
+
+
+
+local AbilityTable = {
+	Lightning = {
+		name = "Lightning",
+
+		shootBone = "Spine2",
+		shootRelaPos = UE.Vector3.zero,
+		shootRelaForward = UE.Vector3.forward,
+
+		shootInterval = 5,
+		damageAdded = 0,
+		shootNum = 1,
+		shootFlyObj = "FlyThunderX_Shootable",
+
+		-- override the basic data
+		levelup = {
+			{shootInterval = 4.5, damageAdded = 1, shootNum = 1 },
+			{shootInterval = 4, damageAdded = 2, shootNum = 1 },
+			{shootInterval = 3.5, damageAdded = 3, shootNum = 1 },
+			{shootInterval = 3, damageAdded = 4, shootNum = 2 },
+			{shootInterval = 2.5, damageAdded = 5, shootNum = 2 },
+			{shootInterval = 2, damageAdded = 6, shootNum = 2 },
+			{shootInterval = 1.5, damageAdded = 7, shootNum = 3 },
+			{shootInterval = 1, damageAdded = 8, shootNum = 3 },
+			{shootInterval = 0.5, damageAdded = 9, shootNum = 3 },
+			{shootInterval = 5, damageAdded = 20, shootNum = 1, shootFlyObj = "FlyLightningBall" },
+		}
+	},
+	Fire = {
+		name = "Fire",
+
+		shootBone = "Head",
+		shootRelaPos = UE.Vector3.forward,
+		shootRelaForward = UE.Vector3.forward,
+
+		shootInterval = 10,
+		damageAdded = 0,
+		shootNum = 1,
+		shootFlyObj = "FlyFlame_Short",
+		follow = true,
+
+		levelup = {
+			{shootInterval = 9.5, damageAdded = 1, shootNum = 1 },
+			{shootInterval = 9, damageAdded = 2, shootNum = 1 },
+			{shootInterval = 8.5, damageAdded = 3, shootNum = 1 },
+			{shootInterval = 8, damageAdded = 4, shootNum = 1 },
+			{shootInterval = 7.5, damageAdded = 5, shootNum = 2 },
+			{shootInterval = 7, damageAdded = 6, shootNum = 2 },
+			{shootInterval = 5.5, damageAdded = 7, shootNum = 2 },
+			{shootInterval = 5, damageAdded = 8, shootNum = 2 },
+			{shootInterval = 4.5, damageAdded = 9, shootNum = 2 },
+			{shootInterval = 4, damageAdded = 10, shootNum = 2, shootFlyObj = "FlyFlame_Long" },
+		}
+	},
+	Slash = {
+		name = "Slash",
+
+		shootBone = "Pelvis",
+		shootRelaPos = UE.Vector3(0, -1, 2),
+		shootRelaForward = UE.Vector3.forward,
+
+		shootInterval = 15,
+		damageAdded = 0,
+		shootNum = 1,
+		shootFlyObj = "FlySlash",
+
+		levelup = {
+			{shootInterval = 14.5, damageAdded = 1, shootNum = 1 },
+			{shootInterval = 14, damageAdded = 2, shootNum = 1 },
+			{shootInterval = 13.5, damageAdded = 3, shootNum = 1 },
+			{shootInterval = 13, damageAdded = 4, shootNum = 1 },
+			{shootInterval = 12.5, damageAdded = 5, shootNum = 2 },
+			{shootInterval = 12, damageAdded = 6, shootNum = 2 },
+			{shootInterval = 11.5, damageAdded = 7, shootNum = 2 },
+			{shootInterval = 11, damageAdded = 8, shootNum = 2 },
+			{shootInterval = 10.5, damageAdded = 9, shootNum = 2 },
+			{shootInterval = 10, damageAdded = 10, shootNum = 2, shootFlyObj = "FlySlash_Enhance" },
+		}
+	},
+	RapierLight = {
+		name = "RapierLight",
+
+		shootBone = "Spine2",
+		shootRelaPos = UE.Vector3(0, 0, -1),
+		shootRelaForward = UE.Vector3.forward,
+		
+		shootXOffsetRandom = 0.3,
+		shootPosRandom = UE.Vector3(0.1, 0.1, 0.1),
+
+		shootInterval = 2,
+		damageAdded = 0,
+		shootNum = 1,
+		shootFlyObj = "FlyString",
+
+		levelup = {
+			{shootInterval = 2, damageAdded = 1, shootNum = 1 },
+			{shootInterval = 2, damageAdded = 2, shootNum = 2 },
+			{shootInterval = 2, damageAdded = 3, shootNum = 3 },
+			{shootInterval = 1.5, damageAdded = 4, shootNum = 4 },
+			{shootInterval = 1.5, damageAdded = 5, shootNum = 5 },
+			{shootInterval = 1.5, damageAdded = 6, shootNum = 6 },
+			{shootInterval = 1, damageAdded = 7, shootNum = 7 },
+			{shootInterval = 1, damageAdded = 8, shootNum = 8 },
+			{shootInterval = 0.5, damageAdded = 9, shootNum = 9 },
+			{shootInterval = 0.1, damageAdded = 20, shootNum = 10},
+		}
+	},
+	Meteorite = {
+		name = "Meteorite",
+
+		shootBone = "Spine2",
+		shootRelaPos = UE.Vector3(0, 0, -1),
+		shootRelaForward = UE.Vector3.forward,
+		shootPosRandom = UE.Vector3(2, 0, 0),
+
+		shootXOffsetRandom = 2,
+		shootPosRandom = UE.Vector3(0.1, 0.1, 0.1),
+
+		shootInterval = 10,
+		damageAdded = 0,
+		shootNum = 1,
+		shootFlyObj = "FlyMeteorite_Shootable",
+
+		levelup = {
+			{shootInterval = 9, damageAdded = 1, shootNum = 1 },
+			{shootInterval = 8, damageAdded = 2, shootNum = 1 },
+			{shootInterval = 7, damageAdded = 3, shootNum = 1 },
+			{shootInterval = 6, damageAdded = 4, shootNum = 2 },
+			{shootInterval = 5, damageAdded = 5, shootNum = 2 },
+			{shootInterval = 4, damageAdded = 6, shootNum = 2 },
+			{shootInterval = 3, damageAdded = 7, shootNum = 3 },
+			{shootInterval = 2, damageAdded = 8, shootNum = 3 },
+			{shootInterval = 1, damageAdded = 9, shootNum = 3 },
+			{shootInterval = 0.5, damageAdded = 10, shootNum = 4},
+		}	
+	},
+    --[[
+	Thunder = {
+		name = "Thunder",
+
+		shootBone = "Spine2",
+		shootRelaPos = UE.Vector3(0, 0, 0),
+		shootRelaForward = UE.Vector3.forward,
+
+		shootInterval = 12,
+		damageAdded = 0,
+		shootNum = 1,
+		shootFlyObj = "SkyThunder",
+
+		levelup = {
+			{shootInterval = 11, damageAdded = 1, shootNum = 1 },
+			{shootInterval = 10, damageAdded = 2, shootNum = 1 },
+			{shootInterval = 9, damageAdded = 3, shootNum = 1 },
+			{shootInterval = 8, damageAdded = 4, shootNum = 1 },
+			{shootInterval = 7, damageAdded = 5, shootNum = 1 },
+			{shootInterval = 6, damageAdded = 6, shootNum = 1 },
+			{shootInterval = 5, damageAdded = 7, shootNum = 1 },
+			{shootInterval = 4, damageAdded = 8, shootNum = 1 },
+			{shootInterval = 3, damageAdded = 9, shootNum = 1 },
+			{shootInterval = 2, damageAdded = 10, shootNum = 2},
+		}	
+	}
+    ]]
+
+}
+
+
+
+local function CopyAbilityFromTable(name, lv, data)
+	local abilityItem = AbilityTable[name]
+	if lv > 0 then
+		abilityItem = abilityItem.levelup[lv]
+	end
+	
+	data.name = name
+	data.shootBone = abilityItem.shootBone or data.shootBone
+	data.shootRelaPos = abilityItem.shootRelaPos or data.shootRelaPos
+	data.shootRelaForward = abilityItem.shootRelaForward or data.shootRelaForward
+	data.shootInterval = abilityItem.shootInterval or data.shootInterval
+	data.damageAdded = abilityItem.damageAdded or data.damageAdded
+	data.shootNum = abilityItem.shootNum or data.shootNum
+	data.shootFlyObj = abilityItem.shootFlyObj or data.shootFlyObj
+	data.follow = abilityItem.follow or data.follow
+end
+
+
+local function GetTableSize(tb)
+	local count = 0
+	for i,v in pairs(tb) do
+		count = count + 1
+	end
+	return count
+end
+
+local function GetTableElement(tb, index)
+	local count = 0.1
+	for i,v in pairs(tb) do
+		if index <= count then
+			return i
+		end
+		count = count + 1
+	end
+end
+
+local function RandomRangeInt(min, max)
+	return UE.Random.Range(UE.Mathf.Floor(min), UE.Mathf.Floor(max))
+end
+
+
+local SurvivorShooter = {
+	waveBattleIndex = 0,
+	AbilityTable = AbilityTable
+}
+
+
+local StateTable = {
+	ability = {
+		-- k,v of {name, lv}
+	},
+	itemKept = {
+		-- k,v of {name, num}
+	},
+	abilityState = {
+		-- list of {name, value(override data), installTime, lastTickTime, curTickTime}
+	}
+}
+
+
+function SurvivorShooter:Start()
+	self:Init()
+
+	-- tick each shooter
+	CL.Scheduler.Create(self, 
+		function(sche, t, s)
+			self:TickShooter(UE.Time.deltaTime)
+		end, 
+	0, -1)
+end
+
+function SurvivorShooter:OnDestroy()
+
+end
+
+function SurvivorShooter:GetRandomNeededAbility()
+    local tbSize = GetTableSize(AbilityTable)
+    for i=1, 50 do        
+        --print("Init TableSize:" .. tbSize)
+        local abilityName = GetTableElement(AbilityTable, RandomRangeInt(0, tbSize-1))
+        if self:IsAbilityLvMax(abilityName) == false then
+            return abilityName
+        end
+    end
+    return GetTableElement(AbilityTable, RandomRangeInt(0, tbSize-1))
+end
+
+
+
+function SurvivorShooter:GainItem(name)
+    print("GainItem:" .. name)
+	-- update data
+    local item = SurvivorModeInstance.itemTable[name]
+    if item.buff then
+        CL.BuffMgr.Instance:AddBuff(CL.InteractCharacter.PlayerInstance.attr, item.buff)
+    end
+
+	-- take effect
+end
+
+function SurvivorShooter:GainAbility(name)
+	-- update data
+	if self.state.ability[name] == nil then
+		self.state.ability[name] = 0
+		self.state.abilityState[name] = { lastShootTime = -100}
+	else
+		self.state.ability[name] = self.state.ability[name] + 1
+	end
+
+	-- take effect
+	CopyAbilityFromTable(name, self.state.ability[name], self.state.abilityState[name])
+	print("GainAbility:" .. name .. " lv=" .. self.state.ability[name])
+end
+
+function SurvivorShooter:GetAbilityLv(name)
+    if self.state.ability[name] == nil then
+        return 0
+    else
+        return self.state.ability[name]
+    end
+end
+
+function SurvivorShooter:IsAbilityLvMax(name)
+    return self:GetAbilityLv() >= (#AbilityTable[name].levelup - 1)
+end
+
+function SurvivorShooter:Init()
+	self.state = {
+		ability = {},
+		itemKept = {},
+		abilityState = {}
+	}
+	self.ra = CL.InteractCharacter.PlayerInstance.aiProxy.ra
+	self.characterTrans = CL.InteractCharacter.PlayerTrans
+	local tbSize = GetTableSize(AbilityTable)
+	print("Init TableSize:" .. tbSize)
+	local abilityName = GetTableElement(AbilityTable, RandomRangeInt(0, tbSize-1))
+	print("Init Ab:" .. abilityName)
+    --abilityName = "Fire" -- for debug
+	self:GainAbility(abilityName)
+end
+
+function SurvivorShooter:GetProperAbility()
+	-- random pick ability that's not max lv
+	
+end
+
+function SurvivorShooter:TickShooter(dt)
+	-- ite each ability and start to shoot
+	for i,v in pairs(self.state.abilityState) do
+		self:PlayShoot(v)	
+	end
+end
+
+function SurvivorShooter:PlayShoot(abState)
+	-- tick the time and start shooting
+	
+	-- check if it's time to shoot
+	local curTime = UE.Time.time
+	local timePass = curTime - abState.lastShootTime
+	--print("Shoot:" .. abState.name .. " TimePass:" .. timePass)
+	if timePass < abState.shootInterval then
+		return
+	end
+	abState.lastShootTime = curTime
+
+	-- access the bone and calc the shoot pos and shoot dir
+	local mu = self.ra:GetMuscle(abState.shootBone)
+    if mu == nil then
+        print("Mu not exists:" .. abState.shootBone .. " on pu:" .. self.ra.transform.root.name)
+    end
+    
+	local shootPos = mu.skl:TransformPoint(abState.shootRelaPos)
+	local shootDir = self.characterTrans:TransformDirection(abState.shootRelaForward)
+
+	for i=1, abState.shootNum, 1 do
+        local fo = CL.FlyObject.SpawnFlyObj(abState.shootFlyObj)
+		--local fo = CL.FlyObject.CreateFlyObj(abState.shootFlyObj, nil, shootPos, shootDir)
+        
+        
+		if fo then
+            fo.ownerHolder = CL.InteractCharacter.AIPlayerInstance
+            
+            fo.trans.position = shootPos
+            fo.trans.forward = shootDir
+            
+            -- follow
+			if abState.follow then
+				fo.transform.parent = self.characterTrans
+			end
+            -- adjusting for damage added attribute
+            local hitInfo = fo:GetRagdollHitInfo()
+            if hitInfo then
+                if hitInfo.additionalHitInfo.damageMlp ~= abState.damageAdded then
+                    hitInfo.additionalHitInfo.damageMlp = abState.damageAdded
+                    hitInfo:ResetTemplate()
+                end
+            end
+            
+            fo:OnSpawn(nil, shootDir)
+            fo:FlyStart(fo.force)
+		end		
+	end	
+end
+
+
+return Class(nil, nil, SurvivorShooter)

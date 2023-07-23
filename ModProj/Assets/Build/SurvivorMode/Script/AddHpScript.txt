@@ -1,0 +1,46 @@
+
+-- this script can disable cheating, modifiers and wall kick, and recover those states when leave
+
+local AddXp = {	
+	-- itemName
+}
+
+
+--[[
+function AutoGetItem:Start()
+	AutoGetItemMgrInstance = AutoGetItemMgrInstance or {}
+	table.insert(AutoGetItemMgrInstance, self)
+	AutoGetItemMgrId = CL.Scheduler.Create(SurvivorModeInstance, 
+		function(sche, t, s)
+			for i,v in pairs(AutoGetItemMgrInstance) do
+				if v then
+					v:TickAutoGetItem()
+				end
+			end
+		end
+	, 0.1, -1).actionId
+end
+
+
+function AutoGetItem:TickAutoGetItem()
+	local dir = CL.InteractCharacter.PlayerTrans.position - self.host.transform.position
+	if dir.sqrMagnitude < 4 then
+		
+	end
+end
+
+--]]
+
+function AddXp:OnTriggerEnter(otherCol)
+	if otherCol.transform.root ~= CL.InteractCharacter.PlayerTrans.root then
+		return
+	end
+	--SurvivorModeInstance.shooter:GainItem("AddXp")
+    CL.InteractCharacter.PlayerInstance.attr:AddHp(40)
+    UE.Object.Destroy(self.host.gameObject)
+    CL.SoundTable.PlaySound("TowerGet")
+end
+
+
+
+return Class(nil, nil, AddXp)

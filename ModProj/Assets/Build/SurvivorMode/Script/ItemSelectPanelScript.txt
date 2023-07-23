@@ -1,0 +1,43 @@
+
+-- this script can disable cheating, modifiers and wall kick, and recover those states when leave
+
+local itemSelectPanel = {	
+	-- itemName
+}
+
+function itemSelectPanel:OnEnable()
+    CL.InteractHand.EnableCheckUI(true)
+    -- freeze gameplay
+end
+
+function itemSelectPanel:OnDisable()
+    CL.InteractHand.EnableCheckUI(false)
+    -- recover gameplay
+end
+
+
+-- data ["a", "b", "c"]
+function itemSelectPanel:SetData(data)
+    for i=0,self.itemList.childCount-1 do
+        local item = self.itemList:GetChild(i)
+        local btn = item:GetComponent(typeof(CL.UIButton))
+        local btnData = data[i+1]
+        btn.text.text = btnData
+        local onSelect = function(b)
+            self:OnSelect(btnData)
+            --btn:SelectEvent("-", onSelect)
+        end
+        btn:SelectEvent("+", onSelect)
+    end    
+end
+
+function itemSelectPanel:OnSelect(data)
+    print("OnSelect:" .. data)
+    -- add ability to player
+    SurvivorModeInstance.shooter:GainAbility(data)
+    CL.HUDMgr.Instance:RemoveUI(self.host:GetComponent(typeof(CL.PanelBase)))
+end
+
+
+
+return Class(nil, nil, itemSelectPanel)

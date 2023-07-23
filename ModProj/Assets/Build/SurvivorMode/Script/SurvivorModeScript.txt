@@ -1,0 +1,420 @@
+
+-- this script can disable cheating, modifiers and wall kick, and recover those states when leave
+
+local SurvivorMode = {
+	waveBattleIndex = 0,
+	-- shooter(LuaBehaviour)
+}
+
+local Waves = {	
+	{ wave = "WMD_SuvWave1", startTime = 0, moveSpeedAdded = 4 },
+	{ wave = "WMD_SuvWave2", startTime = 0, moveSpeedAdded = 4 },
+	{ wave = "WMD_SuvWave3", startTime = 0, moveSpeedAdded = 4.5 },
+	{ wave = "WMD_SuvWave4", startTime = 0, moveSpeedAdded = 4.5 },
+	{ wave = "WMD_SuvWave5", startTime = 0, moveSpeedAdded = 5 },
+	{ wave = "WMD_SuvWave6", startTime = 0, moveSpeedAdded = 5 },
+	{ wave = "WMD_SuvWave7", startTime = 0, moveSpeedAdded = 6 },
+	{ wave = "WMD_SuvWave8", startTime = 0, moveSpeedAdded = 6 },
+	{ wave = "WMD_SuvWave9", startTime = 0, moveSpeedAdded = 7 },
+	{ wave = "WMD_SuvWave10", startTime = 0, moveSpeedAdded = 8 },
+}
+
+
+
+local ItemTable = {
+    -- config this name from lua prefab
+	AddXp = {
+		name = "AddXp",
+		--buff = "Role_Mp_Recv",
+		--autoGet = true,
+		dropWeight = 100,
+        --prefab = "WMD_AddXp",
+	},
+	AddHp = {
+		name = "AddHp",
+		--buff = "Role_Hp_Recv",
+		--autoGet = true,
+		dropWeight = 1,
+        --prefab = "WMD_AddXp",
+	},    
+--[[    
+	RecoverHp = {
+		name = "RecoverHp",
+		buff = "Role_Hp_Recv",
+		--autoGet = true,
+		dropWeight = 3,
+        prefab = "WMD_RecoverHp"
+	},    
+	AbilityUp = {
+		name = "AbilityUp",
+		-- abilityName
+		--autoGet = false,	
+		dropWeight = 1,
+        prefab = "WMD_AbilityUp",
+	}
+]]    
+
+	--[[
+	HpUp = {
+		name = "HpUp",
+		buff = "Role_Hp_Up_Big",
+		autoGet = false,
+		dropWeight = 1,
+	},
+	AtkUp = {
+		name = "AtkUp",
+		buff = "Role_AtkMagic_Up_Big",
+		autoGet = false,
+		dropWeight = 1,
+	},
+	-- the last item type is ability
+	AbilityUp = {
+		name = "AbilityUp",
+		-- abilityName
+		autoGet = false,	
+		dropWeight = 10,
+	},
+	]]
+}
+
+local ItemTableAutoGet = {}
+local ItemTableSelectToGet = {}
+for i,v in pairs(ItemTable) do
+	if v.autoGet then
+		ItemTableAutoGet[i] = v
+	else
+		ItemTableSelectToGet[i] = v
+	end
+end
+
+local function RandomRangeInt(min, max)
+	return UE.Random.Range(UE.Mathf.Floor(min), UE.Mathf.Floor(max))
+end
+
+local function RollForDropWeight(tb)
+	local sum = 0
+	for i,v in pairs(tb) do
+		sum = sum + v.dropWeight
+	end
+	local dice = RandomRangeInt(0, sum-1)
+	for i,v in pairs(tb) do
+		dice = dice - v.dropWeight
+		if dice <= 0 then
+			return i
+		end
+	end
+end
+
+
+
+
+function SurvivorMode:Start()
+	-- reg spawn event
+	self:SetupWaves(true)
+
+	-- prepare for the first round
+	--CreateFirstSelector()
+	local selectorPos = CL.InteractCharacter.PlayerTrans.position + CL.InteractCharacter.PlayerTrans.forward
+	selectorPos.y = selectorPos.y + 2
+	local wave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
+	self:CreateFirstSelector(selectorPos, wave)
+
+    self.itemTable = ItemTable
+	-- create shooter
+	self.shooter = self.shooter.script.self
+	--[[
+	local abilityTable = {}
+	for i,v in pairs(self.shooter.AbilityTable) do
+		table.insert(abilityTable, i)
+	end
+	self.abilityTable = abilityTable
+	]]
+
+
+    self.onMpChanged = function(cs)
+        if CL.InteractCharacter.PlayerInstance.attr.mp.BaseValue >= CL.InteractCharacter.PlayerInstance.attr.mpMax.BaseValue then
+            CL.InteractCharacter.PlayerInstance.attr.mp.BaseValue = 0             
+            CL.InteractCharacter.PlayerInstance.attr.mpMax.BaseValue = CL.InteractCharacter.PlayerInstance.attr.mpMax.BaseValue + 50
+            -- pop UI
+            self:PopUpgradeUI()
+        end        
+    end
+    -- init after player init
+    CL.Scheduler.Create(self.host, function(sche, t, s)
+        CL.InteractCharacter.PlayerInstance.attr.mpRecoverRate:SetBaseValue(0)
+        CL.InteractCharacter.PlayerInstance.attr.mp:SetBaseValue(0)
+        CL.InteractCharacter.PlayerInstance.attr.mpMax:SetBaseValue(100)
+        CL.SettingMgr.Instance.uiVisualLevel = CL.SettingMgr.UIVisualLevel.Full
+        CL.EventHub.CallEvent("UIVisualLevelUpdated")
+        CL.PlayerCombatAttr.LockHp = false
+        CL.PlayerCombatAttr.LockMp = false
+        CL.InteractCharacter.PlayerInstance.attr.mp:StatChangedEvent("+", self.onMpChanged)
+        CL.SpawnPointMgr.EndlessMode = true
+        
+        --[[
+        local panel = CL.HUDMgr.Instance:CreateHud("WMD_ItemSelectPanel")
+        local panelScript = panel:GetComponent(typeof(CL.LuaBehaviour)).script:GetSelf()
+        panelScript:SetData({"a", "b", "c"})
+        ]]
+    end, 0, 0, 1)
+
+	SurvivorModeInstance = self
+end
+
+function SurvivorMode:OnDestroy()
+	self:SetupWaves(false)
+end
+
+
+function SurvivorMode:SetupWaves(setup)    
+	if setup then
+		self.waveBattleIndex = 1
+        self.spawnCounter = 0
+        local curWaveData = Waves[self.waveBattleIndex]
+        self.currentWave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
+
+        self.StartNextWave = function()
+            self.waveBattleIndex = self.waveBattleIndex + 1
+			if self.waveBattleIndex < #Waves then
+                local wave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
+                self.currentWave = wave
+                print("Spawn Next:" .. self.waveBattleIndex)
+                CL.SpawnPointMgr.Instance:ResetSpawnClear()
+                CL.SpawnPointMgr.Instance:StartWaveDef(wave)
+                --[[
+				local wave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
+                CL.SpawnPointMgr.Instance:ResetSpawnClear()
+				CL.SpawnPointMgr.Instance:StartWaveDef(wave)
+                print("Spawn Next:" .. self.waveBattleIndex)
+                ]]
+			else
+                CL.SpawnPointMgr.Instance:ClearSpawn()
+				self:GameFinish()
+			end
+        end
+
+		self.onSpawnStart = function()
+			print("Spawn Start")
+		end
+
+		-- when spawn clear, we start the next wave
+		self.onSpawnClear = function()
+			print("Spawn Clear:" .. self.waveBattleIndex)
+            --[[
+			self.waveBattleIndex = self.waveBattleIndex + 1
+			if self.waveBattleIndex < #Waves then
+                local wave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
+                print("Spawn Next:" .. self.waveBattleIndex)
+                CL.Scheduler.Create(self.host, function(sche, t, s)
+                    CL.SpawnPointMgr.Instance:ResetSpawnClear()
+                    CL.SpawnPointMgr.Instance:StartWaveDef(wave)
+                end)
+
+				local wave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
+                CL.SpawnPointMgr.Instance:ResetSpawnClear()
+				CL.SpawnPointMgr.Instance:StartWaveDef(wave)
+                print("Spawn Next:" .. self.waveBattleIndex)
+
+			else
+				self:GameFinish()
+			end
+            ]]
+		end
+
+		self.onSpawnEnd = function()
+			print("Spawn End")
+			--[[
+			self.waveBattleIndex = self.waveBattleIndex + 1
+			if self.waveBattleIndex < #Waves then
+				self:ItemDropAndPrepare()
+			else
+				self:GameFinish()
+			end
+			--]]
+		end
+
+		self.onDead = function(pu)
+			-- might drop something
+			-- test later
+            local dropPos = pu:GetPositionTransform().position
+            dropPos.y = 0.5
+			self:DropItem(dropPos) 
+		end
+
+		self.onSpawnCount = function(pu)
+			pu:PreDeadEvent("+", self.onDead)
+            pu.controller:SetMoveSpeed(curWaveData.moveSpeedAdded)
+            self.spawnCounter = self.spawnCounter + 1
+            print("Spawn Count:" .. self.spawnCounter)
+            if self.spawnCounter + 1 >= self.currentWave.pool.Length then
+                self:StartNextWave()
+                self.spawnCounter = 0
+            end
+            
+            
+            local function onCollisionWithRagdoll(collision, mu)
+                if pu.attr:IsDead() then
+                    return
+                end
+                if collision.transform.root ~= CL.InteractCharacter.PlayerTrans.root then
+                    return
+                end
+                -- apply dmage per second
+                local ct = UE.Time.time
+                local lastHurtTime = self.lastHurtTime or 0
+                if ct - lastHurtTime < 1 then
+                    return
+                end
+                self.lastHurtTime = ct
+                CL.InteractCharacter.PlayerInstance.attr:AddHp(-10)
+            end
+            pu.ra:MuscleCollisionEvent("+", onCollisionWithRagdoll)            
+		end
+
+		-- setup wave event
+		CL.SpawnPointMgr.Instance:SpawnStartEvent("+", self.onSpawnStart)	
+		CL.SpawnPointMgr.Instance:SpawnFinishEvent("+", self.onSpawnClear)
+		CL.SpawnPointMgr.Instance:SpawnClearEvent("+", self.onSpawnEnd)
+		CL.SpawnPointMgr.Instance:SpawnCountEvent("+", self.onSpawnCount)		
+	else
+		CL.SpawnPointMgr.Instance:SpawnStartEvent("-", self.onSpawnStart)
+		CL.SpawnPointMgr.Instance:SpawnFinishEvent("-", self.onSpawnClear)
+		CL.SpawnPointMgr.Instance:SpawnClearEvent("-", self.onSpawnEnd)
+		CL.SpawnPointMgr.Instance:SpawnCountEvent("-", self.onSpawnCount)		
+	end
+end
+
+function SurvivorMode:PopUpgradeUI()
+    local panel = CL.HUDMgr.Instance:CreateHud("WMD_ItemSelectPanel")
+    local panelScript = panel:GetComponent(typeof(CL.LuaBehaviour)).script:GetSelf()
+    local abilityTable = {}
+    table.insert(abilityTable, self.shooter:GetRandomNeededAbility())        
+    table.insert(abilityTable, self.shooter:GetRandomNeededAbility())        
+    table.insert(abilityTable, self.shooter:GetRandomNeededAbility())        
+    panelScript:SetData(abilityTable) 
+end
+
+
+
+function SurvivorMode:CreateFirstSelector(pos, wave)
+    local selectorTemp = CL.ResourceMgr.Instantiate("Selector/SpawnTemplate")
+    local slp = selectorTemp:GetComponent(typeof(CL.SelectorSpawn))
+    local its = selectorTemp:GetComponent(typeof(CL.ItemSelector))
+
+    --// set track target
+    --its.trackTarget = trans
+	selectorTemp.transform.position = pos
+    slp.waveDef = wave
+
+    --// (optional)install statue(you can replace the statue you wanted)
+    local statue = CL.ResourceMgr.Instantiate("Selector/Statue/SkelStatue")
+    statue.transform.parent = selectorTemp.transform
+    statue.transform.localPosition = CL.Vector3.zero
+    statue.transform.localRotation = CL.Quaternion.identity
+end
+
+--[[
+function SurvivorMode:CreateAbilitySelector(pos, ability)
+    local selectorTemp = CL.ResourceMgr.Instantiate("Selector/SpawnTemplate")
+    local its = selectorTemp:GetComponent(typeof(CL.ItemSelector))
+
+    --// set track target
+    --its.trackTarget = trans
+	selectorTemp.transform.position = pos
+
+    --// (optional)install statue(you can replace the statue you wanted)
+    local statue = CL.ResourceMgr.Instantiate("Selector/Statue/SkelStatue")
+    statue.transform.parent = selectorTemp.transform
+    statue.transform.localPosition = CL.Vector3.zero
+    statue.transform.localRotation = CL.Quaternion.identity
+
+	local function onSelect()
+		self.shooter:GainAbility(ability)
+	end
+
+    --//  (optional)gain extra buff for activating this selector
+    its:ChargeReadyEvent("+", onSelect)
+end
+]]
+
+--[[
+function SurvivorMode:CreateBuffSelector(pos, buffs)
+    local selectorTemp = CL.ResourceMgr.Instantiate("Selector/SpawnTemplate")
+    local its = selectorTemp:GetComponent(typeof(CL.ItemSelector))
+
+    --// set track target
+    --its.trackTarget = trans
+	selectorTemp.transform.position = pos
+
+    --// (optional)install statue(you can replace the statue you wanted)
+    local statue = CL.ResourceMgr.Instantiate("Selector/Statue/SkelStatue")
+    statue.transform.parent = selectorTemp.transform
+    statue.transform.localPosition = CL.Vector3.zero
+    statue.transform.localRotation = CL.Quaternion.identity
+
+    --//  (optional)gain extra buff for activating this selector
+    local buffSelector = s:AddComponent(typeof(ArenaBuffSelector))
+    buffSelector.selector = its
+    buffSelector.buffs = buffs 
+end
+]]
+
+--[[
+function SurvivorMode:CreateAutoGetItem(pos, name)
+	local autoGetItem = CL.ResourceMgr.Instantiate("WMD_AutoGetItem")
+	autoGetItem.transform.position = pos
+	local agi = selectorTemp:GetComponent(typeof(CL.LuaBehaviour)).script.self
+	agi.itemName = name
+end
+]]
+
+
+
+
+function SurvivorMode:DropItem(pos)
+	-- drop selector or automatic item
+	
+    local dropItem = ItemTable[RollForDropWeight(ItemTable)]
+    
+	if dropItem == nil then
+		return
+	end
+    
+    local itemPrefab = CL.ResourceMgr.Instantiate(self[dropItem.name], pos, UE.Quaternion.identity)
+--[[
+	local randomValue = UE.Random.value
+	if randomValue < 0.5 then return end
+
+	if randomValue < 0.9 then
+		local dropItem = ItemTableAutoGet[RollForDropWeight(ItemTableAutoGet)]
+		--local dropItem = ItemTableAutoGet[UE.Random.RandomRangeInt(0, #ItemTableAutoGet - 1)]
+		if dropItem then
+			self:CreateAutoGetItem(pos, dropItem.name)
+		end
+	else
+		local dropItem = ItemTableSelectToGet[RollForDropWeight(ItemTableSelectToGet)]
+		if dropItem then
+			if dropItem.name == "AbilityUp" then
+				self:CreateAbilitySelector(pos, self.abilityTable[UE.Random.RandomRangeInt(0, #self.abilityTable)])
+			else
+				local buffs = {}
+				table.insert(buffs, dropItem.buff)
+				self:CreateBuffSelector(pos, buffs)
+			end			
+		end
+	end
+]]    
+end
+
+
+-- show tips
+function SurvivorMode:GameFinish()
+    print("Game Win!")
+    CL.HUDMgr.Instance:CreateHud("WMD_WinPanel")
+end
+
+
+
+
+
+return Class(nil, nil, SurvivorMode)
