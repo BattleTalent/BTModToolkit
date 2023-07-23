@@ -38,30 +38,30 @@ local AbilityTable = {
 		shootRelaPos = UE.Vector3.forward,
 		shootRelaForward = UE.Vector3.forward,
 
-		shootInterval = 10,
+		shootInterval = 14,
 		damageAdded = 0,
 		shootNum = 1,
 		shootFlyObj = "FlyFlame_Short",
 		follow = true,
 
 		levelup = {
-			{shootInterval = 9.5, damageAdded = 1, shootNum = 1 },
-			{shootInterval = 9, damageAdded = 2, shootNum = 1 },
-			{shootInterval = 8.5, damageAdded = 3, shootNum = 1 },
-			{shootInterval = 8, damageAdded = 4, shootNum = 1 },
-			{shootInterval = 7.5, damageAdded = 5, shootNum = 2 },
-			{shootInterval = 7, damageAdded = 6, shootNum = 2 },
-			{shootInterval = 5.5, damageAdded = 7, shootNum = 2 },
-			{shootInterval = 5, damageAdded = 8, shootNum = 2 },
-			{shootInterval = 4.5, damageAdded = 9, shootNum = 2 },
-			{shootInterval = 4, damageAdded = 10, shootNum = 2, shootFlyObj = "FlyFlame_Long" },
+			{shootInterval = 13.5, damageAdded = 1, shootNum = 1 },
+			{shootInterval = 12, damageAdded = 2, shootNum = 1 },
+			{shootInterval = 11.5, damageAdded = 3, shootNum = 1 },
+			{shootInterval = 11, damageAdded = 4, shootNum = 1 },
+			{shootInterval = 10.5, damageAdded = 5, shootNum = 2 },
+			{shootInterval = 10, damageAdded = 6, shootNum = 2 },
+			{shootInterval = 9.5, damageAdded = 7, shootNum = 2 },
+			{shootInterval = 9, damageAdded = 8, shootNum = 2 },
+			{shootInterval = 8.5, damageAdded = 9, shootNum = 2 },
+			{shootInterval = 6, damageAdded = 10, shootNum = 2, shootFlyObj = "FlyFlame_Long" },
 		}
 	},
 	Slash = {
 		name = "Slash",
 
 		shootBone = "Pelvis",
-		shootRelaPos = UE.Vector3(0, -1, 2),
+		shootRelaPos = UE.Vector3(0, 0, 2),
 		shootRelaForward = UE.Vector3.forward,
 
 		shootInterval = 15,
@@ -89,8 +89,8 @@ local AbilityTable = {
 		shootRelaPos = UE.Vector3(0, 0, -1),
 		shootRelaForward = UE.Vector3.forward,
 		
-		shootXOffsetRandom = 0.3,
-		shootPosRandom = UE.Vector3(0.1, 0.1, 0.1),
+		shootXOffsetRandom = 0.2,
+		shootPosRandom = UE.Vector3(0.2, 0.2, 0.2),
 
 		shootInterval = 2,
 		damageAdded = 0,
@@ -114,11 +114,11 @@ local AbilityTable = {
 		name = "Meteorite",
 
 		shootBone = "Spine2",
-		shootRelaPos = UE.Vector3(0, 0, -1),
+		shootRelaPos = UE.Vector3(0, 0, 2),
 		shootRelaForward = UE.Vector3.forward,
 		shootPosRandom = UE.Vector3(2, 0, 0),
 
-		shootXOffsetRandom = 2,
+		shootXOffsetRandom = 1,
 		shootPosRandom = UE.Vector3(0.1, 0.1, 0.1),
 
 		shootInterval = 10,
@@ -207,6 +207,15 @@ local function GetTableElement(tb, index)
 	end
 end
 
+local function IsExists(tb, ele)
+    for i,v in pairs(tb) do
+        if v == ele then
+            return true
+        end
+    end
+    return false
+end
+
 local function RandomRangeInt(min, max)
 	return UE.Random.Range(UE.Mathf.Floor(min), UE.Mathf.Floor(max))
 end
@@ -246,12 +255,12 @@ function SurvivorShooter:OnDestroy()
 
 end
 
-function SurvivorShooter:GetRandomNeededAbility()
+function SurvivorShooter:GetRandomNeededAbility(tb)
     local tbSize = GetTableSize(AbilityTable)
     for i=1, 50 do        
         --print("Init TableSize:" .. tbSize)
         local abilityName = GetTableElement(AbilityTable, RandomRangeInt(0, tbSize-1))
-        if self:IsAbilityLvMax(abilityName) == false then
+        if not IsExists(tb, abilityName) and self:IsAbilityLvMax(abilityName) == false then
             return abilityName
         end
     end
@@ -343,7 +352,16 @@ function SurvivorShooter:PlayShoot(abState)
         print("Mu not exists:" .. abState.shootBone .. " on pu:" .. self.ra.transform.root.name)
     end
     
-	local shootPos = mu.skl:TransformPoint(abState.shootRelaPos)
+    local shootRelaPos = abState.shootRelaPos
+    if abState.shootXOffsetRandom then
+        shootRelaPos.x = UE.Random.value > 0.5 and abState.shootXOffsetRandom or -abState.shootXOffsetRandom
+    end
+    if abState.shootPosRandom then
+        shootRelaPos.x = shootRelaPos.x + UE.Random.Range(-abState.shootPosRandom.x, abState.shootPosRandom.x)
+        shootRelaPos.y = shootRelaPos.y + UE.Random.Range(-abState.shootPosRandom.y, abState.shootPosRandom.y)
+        shootRelaPos.z = shootRelaPos.z + UE.Random.Range(-abState.shootPosRandom.z, abState.shootPosRandom.z)
+    end
+	local shootPos = mu.skl.position + self.characterTrans:TransformDirection(shootRelaPos)-- :TransformPoint(abState.shootRelaPos)
 	local shootDir = self.characterTrans:TransformDirection(abState.shootRelaForward)
 
 	for i=1, abState.shootNum, 1 do
@@ -371,7 +389,7 @@ function SurvivorShooter:PlayShoot(abState)
             end
             
             fo:OnSpawn(nil, shootDir)
-            fo:FlyStart(fo.force)
+            fo:FlyStart(shootDir * fo.force)
 		end		
 	end	
 end

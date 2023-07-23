@@ -7,16 +7,16 @@ local SurvivorMode = {
 }
 
 local Waves = {	
-	{ wave = "WMD_SuvWave1", startTime = 0, moveSpeedAdded = 4 },
-	{ wave = "WMD_SuvWave2", startTime = 0, moveSpeedAdded = 4 },
-	{ wave = "WMD_SuvWave3", startTime = 0, moveSpeedAdded = 4.5 },
-	{ wave = "WMD_SuvWave4", startTime = 0, moveSpeedAdded = 4.5 },
-	{ wave = "WMD_SuvWave5", startTime = 0, moveSpeedAdded = 5 },
-	{ wave = "WMD_SuvWave6", startTime = 0, moveSpeedAdded = 5 },
-	{ wave = "WMD_SuvWave7", startTime = 0, moveSpeedAdded = 6 },
-	{ wave = "WMD_SuvWave8", startTime = 0, moveSpeedAdded = 6 },
-	{ wave = "WMD_SuvWave9", startTime = 0, moveSpeedAdded = 7 },
-	{ wave = "WMD_SuvWave10", startTime = 0, moveSpeedAdded = 8 },
+	{ wave = "WMD_SuvWave1", startTime = 0, moveSpeedAdded = 6 },
+	{ wave = "WMD_SuvWave2", startTime = 0, moveSpeedAdded = 7 },
+	{ wave = "WMD_SuvWave3", startTime = 0, moveSpeedAdded = 8 },
+	{ wave = "WMD_SuvWave4", startTime = 0, moveSpeedAdded = 9 },
+	{ wave = "WMD_SuvWave5", startTime = 0, moveSpeedAdded = 10 },
+	{ wave = "WMD_SuvWave6", startTime = 0, moveSpeedAdded = 11 },
+	{ wave = "WMD_SuvWave7", startTime = 0, moveSpeedAdded = 12 },
+	{ wave = "WMD_SuvWave8", startTime = 0, moveSpeedAdded = 13 },
+	{ wave = "WMD_SuvWave9", startTime = 0, moveSpeedAdded = 14 },
+	{ wave = "WMD_SuvWave10", startTime = 0, moveSpeedAdded = 15 },
 }
 
 
@@ -27,7 +27,7 @@ local ItemTable = {
 		name = "AddXp",
 		--buff = "Role_Mp_Recv",
 		--autoGet = true,
-		dropWeight = 100,
+		dropWeight = 25,
         --prefab = "WMD_AddXp",
 	},
 	AddHp = {
@@ -115,7 +115,7 @@ function SurvivorMode:Start()
 	-- prepare for the first round
 	--CreateFirstSelector()
 	local selectorPos = CL.InteractCharacter.PlayerTrans.position + CL.InteractCharacter.PlayerTrans.forward
-	selectorPos.y = selectorPos.y + 2
+	selectorPos.y = selectorPos.y + 1
 	local wave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
 	self:CreateFirstSelector(selectorPos, wave)
 
@@ -244,6 +244,7 @@ function SurvivorMode:SetupWaves(setup)
 		self.onSpawnCount = function(pu)
 			pu:PreDeadEvent("+", self.onDead)
             pu.controller:SetMoveSpeed(curWaveData.moveSpeedAdded)
+            pu.ai.bestAtkDistance = 0.8
             self.spawnCounter = self.spawnCounter + 1
             print("Spawn Count:" .. self.spawnCounter)
             if self.spawnCounter + 1 >= self.currentWave.pool.Length then
@@ -288,9 +289,9 @@ function SurvivorMode:PopUpgradeUI()
     local panel = CL.HUDMgr.Instance:CreateHud("WMD_ItemSelectPanel")
     local panelScript = panel:GetComponent(typeof(CL.LuaBehaviour)).script:GetSelf()
     local abilityTable = {}
-    table.insert(abilityTable, self.shooter:GetRandomNeededAbility())        
-    table.insert(abilityTable, self.shooter:GetRandomNeededAbility())        
-    table.insert(abilityTable, self.shooter:GetRandomNeededAbility())        
+    table.insert(abilityTable, self.shooter:GetRandomNeededAbility(abilityTable))        
+    table.insert(abilityTable, self.shooter:GetRandomNeededAbility(abilityTable))        
+    table.insert(abilityTable, self.shooter:GetRandomNeededAbility(abilityTable))        
     panelScript:SetData(abilityTable) 
 end
 
@@ -301,6 +302,10 @@ function SurvivorMode:CreateFirstSelector(pos, wave)
     local slp = selectorTemp:GetComponent(typeof(CL.SelectorSpawn))
     local its = selectorTemp:GetComponent(typeof(CL.ItemSelector))
 
+    local onUsed = function()
+        UE.Object.Destroy(selectorTemp)
+    end
+    its:ChargeReadyEvent("+", onUsed)
     --// set track target
     --its.trackTarget = trans
 	selectorTemp.transform.position = pos
@@ -311,6 +316,8 @@ function SurvivorMode:CreateFirstSelector(pos, wave)
     statue.transform.parent = selectorTemp.transform
     statue.transform.localPosition = CL.Vector3.zero
     statue.transform.localRotation = CL.Quaternion.identity
+    
+    CL.InteractBasePendant.MakeLoosePendant(selectorTemp, selectorTemp:GetComponent(typeof(CL.InteractBase)))
 end
 
 --[[
