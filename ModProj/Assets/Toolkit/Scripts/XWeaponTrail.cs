@@ -23,17 +23,20 @@ namespace XftWeapon
         public Material MyMaterial;
         #endregion
 
-        private void OnDrawGizmosSelected()
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
         {
             if (PointStart == null || PointEnd == null)
                 return;
 
             Gizmos.color = Color.red;
-            Gizmos.DrawSphere(PointEnd.position, 0.05f);
+            Gizmos.DrawWireSphere(PointEnd.position, 0.05f);
             Gizmos.color = Color.blue;
-            Gizmos.DrawSphere(PointStart.position, 0.05f);
+            Gizmos.DrawWireSphere(PointStart.position, 0.05f);
+            Gizmos.color = Color.white;
+            Gizmos.DrawLine(PointStart.position, PointEnd.position);
         }
-
+#endif
     }
 
 }

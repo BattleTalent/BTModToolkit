@@ -29,6 +29,16 @@ namespace CrossLink
         public string showName;
         public string showInfo;
         public GazeMgr.GazeType gazeType = GazeMgr.GazeType.NormalGaze;
+
+#if UNITY_EDITOR
+        [Button]
+        void PullGazeInfo()
+        {
+            showName = $"{AddressableConfig.GetConfig().GetPrefix()}{gameObject.name}";
+            showInfo = $"{AddressableConfig.GetConfig().GetPrefix()}{gameObject.name}_Desc";
+            EditorUtility.SetDirty(gameObject);
+        }
+#endif
     }
 
 }

@@ -1,0 +1,96 @@
+
+local WeaponFlyObj = {
+    recoilVector = UE.Vector3(0, 0.1, -0.3),
+    recoilCurve = UE.AnimationCurve(UE.Keyframe(0, 1000), UE.Keyframe(0.1, 0)),
+    
+    dontShootOnInstant = 0,
+    shootOnCharge = 1,
+    shootOnActivateEnd = 0,
+    autoSetupBulletIgnore = 0,
+    
+    flyObjName = "",
+    
+    shootVel = -1,
+    recoilRotate = -15,
+    recoilRandomBias = 3,
+    
+    shootInterval = 0.1,
+    shootPosition = nil,
+}
+
+function WeaponFlyObj:PlayShootAction()
+	local interact = self.host.interact
+    local ph = interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = self.shootPosition.forward
+    local bulletScript = self.host:CreateFlyObj(self.flyObjName, self.shootPosition.position, aimDir, self.shootVel)
+    
+    if self.autoSetupBulletIgnore == 1 then
+        CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), true)
+        
+        CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(bulletScript) and not IsNullOrDestroyed(interact) then
+                CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), false)
+            end
+        end
+        , 0, 0, 0.2)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+
+    if (self.shootSound ~= nil) then
+        self.shootSound:PlaySound()
+    end
+    
+    local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
+    local addForce = function (sche, t, s)
+        interact.rb:AddForce(self.shootPosition:TransformVector(self.recoilVector) *
+            self.recoilCurve:Evaluate(t), UE.ForceMode.Acceleration)
+            
+        interact.rb:AddRelativeTorque(UE.Vector3(self.recoilRotate, bias, 0), UE.ForceMode.Impulse)
+    end
+    
+    self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
+    self.recoilActId = CL.Scheduler.Create(self.host, 
+        addForce
+    , 0, self.recoilCurve.keys[self.recoilCurve.length - 1].time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    interact:CostDurability()
+    self.shootTime = UE.Time.time
+    
+    return bulletScript
+end
+
+function WeaponFlyObj:UpdateSkill()
+    local st = self.shootTime or 0
+    local ct = UE.Time.time
+    if ct - st < self.shootInterval then
+        return
+    end
+    if self.dontShootOnInstant == 0 then
+        self:PlayShootAction()
+    end
+    self:OnUpdateSkill()
+end
+
+function WeaponFlyObj:OnUpdateSkill()
+end
+
+function WeaponFlyObj:OnChargeRelease()
+    if self.shootOnCharge == 1 then
+        self:PlayShootAction()
+    end
+end
+
+function WeaponFlyObj:OnActivateEnd()
+    if self.shootOnActivateEnd == 1 then
+        self:PlayShootAction()
+    end
+end
+
+return Class(nil, nil, WeaponFlyObj)

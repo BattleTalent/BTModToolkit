@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
+using UnityEditor;
 using EasyButtons;
 #endif
 
@@ -9,7 +10,6 @@ namespace CrossLink
 {
     public class InteractWeapon : InteractBase
     {
-
 
 #if UNITY_EDITOR
         [Button]
@@ -164,6 +164,41 @@ namespace CrossLink
             singleHandSpeed = 0.18f;
             twoHandSpeed = 0.45f;
             Debug.Log("Done, please adjust CenterMass and InertiaTensor in RigidbodyInit as you need");
+        }
+
+        [Header("Example Weapon Gizmo")]
+
+        public bool showExampleWeaponGizmo = false;
+
+        private Mesh mesh;
+        public enum gizmoTypes {
+            Sword,
+            Gun
+        };
+
+        public gizmoTypes gizmoType = gizmoTypes.Sword;
+        private gizmoTypes previousGizmoType = gizmoTypes.Sword;
+
+
+        private void OnDrawGizmos()
+        {
+            if(!showExampleWeaponGizmo)
+                return;
+
+            if (!mesh || gizmoType != previousGizmoType) {
+                previousGizmoType = gizmoType;
+                mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/{gizmoType.ToString()}.fbx");
+            }
+
+            Gizmos.color = Color.red;
+            
+            if(gizmoType == gizmoTypes.Sword) {
+                Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(70,96,96));
+            }
+
+            if(gizmoType == gizmoTypes.Gun) {
+                Gizmos.DrawWireMesh(mesh, new Vector3(0,0.05f,0.05f), new Quaternion(0,0,0,0).normalized, new Vector3(0.5f,0.5f,0.5f));
+            }
         }
 #endif
     }

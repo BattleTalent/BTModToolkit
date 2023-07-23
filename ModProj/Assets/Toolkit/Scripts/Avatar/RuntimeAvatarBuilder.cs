@@ -113,9 +113,17 @@ namespace CrossLink
             var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/AvatarBuilder/SlotTool.prefab");
             GameObject slots = Instantiate(prefab);
 
-            handSlotLeft = slots.transform.Find("HandSlot_Left");
-            handSlotRight = slots.transform.Find("HandSlot_Right");
-            backSlots = slots.transform.Find("BackSlots");
+            if(!handSlotLeft){
+                handSlotLeft = slots.transform.Find("HandSlot_Left");
+            }
+
+            if(!handSlotRight){
+                handSlotRight = slots.transform.Find("HandSlot_Right");
+            }
+
+            if(!backSlots){
+                backSlots = slots.transform.Find("BackSlots");
+            }
 
             PutSlots();
 

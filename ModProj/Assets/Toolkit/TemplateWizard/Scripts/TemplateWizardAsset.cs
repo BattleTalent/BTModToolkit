@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
+using System.IO;
 
 namespace CrossLink
 {
@@ -16,6 +17,12 @@ namespace CrossLink
             Avatar
         }
 
+        public enum WeaponType
+        {
+            Sword,
+            Gun,
+        }
+
         static TemplateWizardAsset wizard;
 
         public string newModFolderName = "";
@@ -23,14 +30,16 @@ namespace CrossLink
 
         public ModType selectedModType = ModType.Weapon;
         ModType previousselectedModType = ModType.Weapon;
+        [ConditionalField("selectedModType", false, ModType.Weapon)]public WeaponType selectedWeaponType = WeaponType.Sword;
         [ConditionalField("selectedModType", false, ModType.Weapon, ModType.Song)]public StoreItemInfo storeItemInfo;
         [ConditionalField("selectedModType", false, ModType.Scene)]public SceneModInfo sceneModInfo;
         [ConditionalField("selectedModType", false, ModType.Role)]public RoleModInfo roleModInfo;
         [ConditionalField("selectedModType", false, ModType.Skin)]public SkinInfo skinInfo;
         [ConditionalField("selectedModType", false, ModType.Avatar)]public AvatarInfo avatarInfo;
+        private string statusMessage = "";
+        private MessageType statusMessageType;
 
-        [EasyButtons.Button]
-        void GenerateTemplate()
+        public void GenerateTemplate()
         {
             if (newModFolderName == "") {
                 SetStatusMessage("Please enter a mod folder name.", MessageType.Warning);
@@ -88,7 +97,7 @@ namespace CrossLink
 
         private void CreateWeaponPrefab(string newModFolderName)
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootWeaponNode.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Toolkit/TemplateWizard/Dummy/{selectedWeaponType.ToString()}.prefab");
             var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
             PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/Weapon/{newModFolderName}.prefab", InteractionMode.AutomatedAction);
             DestroyImmediate(instantiatedPrefab);
@@ -131,6 +140,28 @@ namespace CrossLink
                 $"Assets/Toolkit/TemplateWizard/Dummy/scene.unity", 
                 $"Assets/Build/{newModFolderName}/Scene/{newModFolderName}.unity"
             );
+        }
+
+        private void CreateSceneInitIfNotAvailable()
+        {
+            var commonSceneFolder = "Assets/Build/CommonScene";
+
+            if (!Directory.Exists($"{commonSceneFolder}/Script")) {
+                Directory.CreateDirectory($"{commonSceneFolder}/Script");
+            }
+            
+            if (!File.Exists($"{commonSceneFolder}/Script/SceneInitScript.txt")) {
+                AssetDatabase.CopyAsset(
+                    "Assets/Toolkit/TemplateWizard/Dummy/SceneInitScript.txt", 
+                    $"{commonSceneFolder}/Script/SceneInitScript.txt"
+                );
+            }
+            
+            if(AddressableConfig.GetConfig().addressablePaths.Contains(commonSceneFolder) == false) {
+                AddressableConfig.GetConfig().addressablePaths.Add(commonSceneFolder);
+            }
+
+            AddressableHelper.CreateAndRefreshAddressables();
         }
 
         static public TemplateWizardAsset GetWizard()
@@ -187,11 +218,22 @@ namespace CrossLink
         }
 
         void SetStatusMessage(string statusMessage, MessageType statusMessageType) {
+             this.statusMessage = statusMessage; 
+             this.statusMessageType = statusMessageType; 
+
             if(statusMessageType == MessageType.Info){
                 Debug.Log(statusMessage);
             } else {
                 Debug.LogError(statusMessage);
             }
+        }
+
+        public string GetStatusMessage() {
+            return statusMessage;
+        }
+
+        public string GetStatusMessageType() {
+            return statusMessageType.ToString();
         }
 
         void GenerateWeaponTemplate(string newModFolderPath){ 
@@ -230,6 +272,7 @@ namespace CrossLink
 
             CreateIcon(newModFolderName);
             CreateScene(newModFolderName);
+            CreateSceneInitIfNotAvailable();
 
             ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.sceneModInfo = new SceneModInfo[1];
@@ -282,6 +325,42 @@ namespace CrossLink
             itemInfoConfig.avatarInfo[0] = avatarInfo;
             AssetDatabase.CreateAsset(itemInfoConfig, $"Assets/Build/{newModFolderName}/Config/{newModFolderName}.asset");
             AssetDatabase.SaveAssets();
+        }
+    }
+
+    [CustomEditor(typeof(TemplateWizardAsset))]
+    public class TestOnInspector : Editor
+    {
+        GUIStyle style = new GUIStyle();
+        string message = "";
+
+        public override void OnInspectorGUI()
+        {
+            var templateWizard = target as TemplateWizardAsset;        
+            DrawDefaultInspector ();
+
+            if (GUILayout.Button("Generate Template"))
+            {
+                templateWizard.GenerateTemplate();
+                var statusMessageType = templateWizard.GetStatusMessageType();
+
+                if(statusMessageType == "Warning") {
+                    style.normal.textColor = Color.yellow;
+                }
+
+                if(statusMessageType == "Error") {
+                    style.normal.textColor = Color.red;
+                }
+
+                if(statusMessageType == "Info") {
+                    style.normal.textColor = Color.white;
+                }
+                message = templateWizard.GetStatusMessage();
+            }
+
+            if(message != "") {
+                GUILayout.Label (templateWizard.GetStatusMessage(), style);
+            }
         }
     }
 }
