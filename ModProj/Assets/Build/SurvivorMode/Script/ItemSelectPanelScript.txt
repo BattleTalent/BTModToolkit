@@ -5,6 +5,23 @@ local itemSelectPanel = {
 	-- itemName
 }
 
+local btnMap = {}
+
+function itemSelectPanel:Start()    
+    self.OnSelect = function(btn)
+        local btnData = btnMap[btn]
+        self:Select(btnData)
+    end
+    for i=0, self.itemList.childCount-1 do
+        local item = self.itemList:GetChild(i)
+        local btn = item:GetComponent(typeof(CL.UIButton))
+        btn:SelectEvent("+", self.OnSelect)
+    end  
+    
+end
+
+
+
 function itemSelectPanel:OnEnable()
     CL.InteractHand.EnableCheckUI(true)
     -- freeze gameplay
@@ -18,20 +35,19 @@ end
 
 -- data ["a", "b", "c"]
 function itemSelectPanel:SetData(data)
+    local shooter = SurvivorModeInstance.shooter
+    --self.btnMap = {}
     for i=0,self.itemList.childCount-1 do
         local item = self.itemList:GetChild(i)
         local btn = item:GetComponent(typeof(CL.UIButton))
-        local btnData = data[i+1]
-        btn.text.text = btnData
-        local onSelect = function(b)
-            self:OnSelect(btnData)
-            --btn:SelectEvent("-", onSelect)
-        end
-        btn:SelectEvent("+", onSelect)
+        local abName = data[i+1]
+        btn.text.text = abName .. " Lv: (" .. (shooter:GetAbilityLv(abName)+1) .. "/" .. (shooter:GetAbilityLvMax(abName)+1) .. ")"
+        btnMap[btn] = abName
     end    
+    self.lvText.text = "Lv: " .. (shooter.lv + 1)
 end
 
-function itemSelectPanel:OnSelect(data)
+function itemSelectPanel:Select(data)
     print("OnSelect:" .. data)
     -- add ability to player
     SurvivorModeInstance.shooter:GainAbility(data)

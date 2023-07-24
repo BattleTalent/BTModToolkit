@@ -7,22 +7,29 @@ local SurvivorMode = {
 }
 
 local Waves = {	
-	{ wave = "WMD_SuvWave1", startTime = 0, moveSpeedAdded = 6 },
-	{ wave = "WMD_SuvWave2", startTime = 0, moveSpeedAdded = 7 },
-	{ wave = "WMD_SuvWave3", startTime = 0, moveSpeedAdded = 8 },
-	{ wave = "WMD_SuvWave4", startTime = 0, moveSpeedAdded = 9 },
-	{ wave = "WMD_SuvWave5", startTime = 0, moveSpeedAdded = 10 },
-	{ wave = "WMD_SuvWave6", startTime = 0, moveSpeedAdded = 11 },
-	{ wave = "WMD_SuvWave7", startTime = 0, moveSpeedAdded = 12 },
-	{ wave = "WMD_SuvWave8", startTime = 0, moveSpeedAdded = 13 },
-	{ wave = "WMD_SuvWave9", startTime = 0, moveSpeedAdded = 14 },
-	{ wave = "WMD_SuvWave10", startTime = 0, moveSpeedAdded = 15 },
+	{ wave = "WMD_SuvWave1", moveSpeedAdded = 2 },
+	{ wave = "WMD_SuvWave2", moveSpeedAdded = 2.5 },
+	{ wave = "WMD_SuvWave3", moveSpeedAdded = 3 },
+	{ wave = "WMD_SuvWave4", moveSpeedAdded = 3.5 },
+	{ wave = "WMD_SuvWave5", moveSpeedAdded = 4 },
+	{ wave = "WMD_SuvWave6", moveSpeedAdded = 4.5 },
+	{ wave = "WMD_SuvWave7", moveSpeedAdded = 5 },
+	{ wave = "WMD_SuvWave8", moveSpeedAdded = 5.5 },
+	{ wave = "WMD_SuvWave9", moveSpeedAdded = 6 },
+	{ wave = "WMD_SuvWave10", moveSpeedAdded = 7 },
 }
 
 
 
 local ItemTable = {
     -- config this name from lua prefab
+	AddHp = {
+		name = "AddHp",
+		--buff = "Role_Hp_Recv",
+		--autoGet = true,
+		dropWeight = 1,
+        --prefab = "WMD_AddXp",
+	},     
 	AddXp = {
 		name = "AddXp",
 		--buff = "Role_Mp_Recv",
@@ -30,13 +37,7 @@ local ItemTable = {
 		dropWeight = 25,
         --prefab = "WMD_AddXp",
 	},
-	AddHp = {
-		name = "AddHp",
-		--buff = "Role_Hp_Recv",
-		--autoGet = true,
-		dropWeight = 1,
-        --prefab = "WMD_AddXp",
-	},    
+
 --[[    
 	RecoverHp = {
 		name = "RecoverHp",
@@ -96,7 +97,7 @@ local function RollForDropWeight(tb)
 	for i,v in pairs(tb) do
 		sum = sum + v.dropWeight
 	end
-	local dice = RandomRangeInt(0, sum-1)
+	local dice = RandomRangeInt(0, sum)
 	for i,v in pairs(tb) do
 		dice = dice - v.dropWeight
 		if dice <= 0 then
@@ -134,7 +135,7 @@ function SurvivorMode:Start()
     self.onMpChanged = function(cs)
         if CL.InteractCharacter.PlayerInstance.attr.mp.BaseValue >= CL.InteractCharacter.PlayerInstance.attr.mpMax.BaseValue then
             CL.InteractCharacter.PlayerInstance.attr.mp.BaseValue = 0             
-            CL.InteractCharacter.PlayerInstance.attr.mpMax.BaseValue = CL.InteractCharacter.PlayerInstance.attr.mpMax.BaseValue + 50
+            CL.InteractCharacter.PlayerInstance.attr.mpMax.BaseValue = CL.InteractCharacter.PlayerInstance.attr.mpMax.BaseValue + 25
             -- pop UI
             self:PopUpgradeUI()
         end        
@@ -144,6 +145,8 @@ function SurvivorMode:Start()
         CL.InteractCharacter.PlayerInstance.attr.mpRecoverRate:SetBaseValue(0)
         CL.InteractCharacter.PlayerInstance.attr.mp:SetBaseValue(0)
         CL.InteractCharacter.PlayerInstance.attr.mpMax:SetBaseValue(100)
+        CL.InteractCharacter.PlayerInstance.attr.hp:SetBaseValue(200)
+        CL.InteractCharacter.PlayerInstance.attr.hpMax:SetBaseValue(200)
         CL.SettingMgr.Instance.uiVisualLevel = CL.SettingMgr.UIVisualLevel.Full
         CL.EventHub.CallEvent("UIVisualLevelUpdated")
         CL.PlayerCombatAttr.LockHp = false
@@ -170,12 +173,14 @@ function SurvivorMode:SetupWaves(setup)
 	if setup then
 		self.waveBattleIndex = 1
         self.spawnCounter = 0
+        self.totalSpawnCounter = 0
+        self.totalKilledCounter = 0
         local curWaveData = Waves[self.waveBattleIndex]
         self.currentWave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
 
         self.StartNextWave = function()
             self.waveBattleIndex = self.waveBattleIndex + 1
-			if self.waveBattleIndex < #Waves then
+			if self.waveBattleIndex <= #Waves then
                 local wave = CL.ResourceMgr.Load("Wave/" .. Waves[self.waveBattleIndex].wave)
                 self.currentWave = wave
                 print("Spawn Next:" .. self.waveBattleIndex)
@@ -188,8 +193,14 @@ function SurvivorMode:SetupWaves(setup)
                 print("Spawn Next:" .. self.waveBattleIndex)
                 ]]
 			else
+                --[[
                 CL.SpawnPointMgr.Instance:ClearSpawn()
 				self:GameFinish()
+                ]]
+                CL.SpawnPointMgr.EndlessMode = false
+                if CL.SpawnPointMgr.Instance then
+                    UE.Object.Destroy(CL.SpawnPointMgr.Instance)
+                end
 			end
         end
 
@@ -239,6 +250,19 @@ function SurvivorMode:SetupWaves(setup)
             local dropPos = pu:GetPositionTransform().position
             dropPos.y = 0.5
 			self:DropItem(dropPos) 
+            if pu.muscleState:IsPowerfulCharacter() then
+                for i=1, 6 do
+                    dropPos = dropPos + UE.Random.insideUnitSphere
+                    dropPos.y = 0.5
+                    self:DropItem(dropPos) 
+                end
+            end
+            
+            self.totalKilledCounter = self.totalKilledCounter + 1
+            if self.totalKilledCounter >= self.totalSpawnCounter and self.waveBattleIndex > #Waves then
+                --CL.SpawnPointMgr.Instance:ClearSpawn()
+				self:GameFinish()
+            end
 		end
 
 		self.onSpawnCount = function(pu)
@@ -246,15 +270,16 @@ function SurvivorMode:SetupWaves(setup)
             pu.controller:SetMoveSpeed(curWaveData.moveSpeedAdded)
             pu.ai.bestAtkDistance = 0.8
             self.spawnCounter = self.spawnCounter + 1
-            print("Spawn Count:" .. self.spawnCounter)
-            if self.spawnCounter + 1 >= self.currentWave.pool.Length then
-                self:StartNextWave()
+            self.totalSpawnCounter = self.totalSpawnCounter + 1
+            print(self.currentWave.name .. " Spawn Count:" .. (self.spawnCounter) .. " Len:" .. self.currentWave.pool.Length)
+            if self.spawnCounter >= self.currentWave.pool.Length then
                 self.spawnCounter = 0
+                self:StartNextWave()                
             end
             
             
             local function onCollisionWithRagdoll(collision, mu)
-                if pu.attr:IsDead() then
+                if pu.attr:IsDead() or pu.motion:IsKnockoutDown() then
                     return
                 end
                 if collision.transform.root ~= CL.InteractCharacter.PlayerTrans.root then
@@ -286,6 +311,7 @@ function SurvivorMode:SetupWaves(setup)
 end
 
 function SurvivorMode:PopUpgradeUI()
+    print("PopUpgradeUI")
     local panel = CL.HUDMgr.Instance:CreateHud("WMD_ItemSelectPanel")
     local panelScript = panel:GetComponent(typeof(CL.LuaBehaviour)).script:GetSelf()
     local abilityTable = {}
