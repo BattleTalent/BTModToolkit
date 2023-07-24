@@ -13,8 +13,9 @@ GameObject:
   - component: {fileID: 4877010733691657743}
   - component: {fileID: 7874304148287134788}
   - component: {fileID: 403141757962360355}
-  - component: {fileID: 6827588594812889095}
   - component: {fileID: 1777138785513879982}
+  - component: {fileID: 6827588594812889095}
+  - component: {fileID: 6209917969018963797}
   m_Layer: 15
   m_Name: Bullet
   m_TagString: Untagged
@@ -112,21 +113,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 2
---- !u!114 &6827588594812889095
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8313434202632931867}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ed02ad330bebe744b52781c925a08c0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hitInfo:
-    templateName: Bullet
-    weightAmongMultiple: 1
 --- !u!114 &1777138785513879982
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -178,3 +164,31 @@ MonoBehaviour:
   resetParticles: []
   playImpactOnTimeout: 0
   ignoreDamageList: 
+--- !u!114 &6827588594812889095
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8313434202632931867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ed02ad330bebe744b52781c925a08c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hitInfo:
+    templateName: Bullet
+    weightAmongMultiple: 1
+--- !u!114 &6209917969018963797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8313434202632931867}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df710fb68de61bb4989f3f822c6787de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  materialName: Metal
