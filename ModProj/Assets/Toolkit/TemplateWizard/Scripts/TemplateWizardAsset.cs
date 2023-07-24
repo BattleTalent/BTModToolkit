@@ -103,6 +103,14 @@ namespace CrossLink
             DestroyImmediate(instantiatedPrefab);
         }
 
+        private void CreateBulletPrefab(string newModFolderName)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Toolkit/TemplateWizard/Dummy/Bullet.prefab");
+            var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/FlyObj/Bullet.prefab", InteractionMode.AutomatedAction);
+            DestroyImmediate(instantiatedPrefab);
+        }
+
         private void CreateRolePrefab(string newModFolderName)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootRoleNode.prefab");
@@ -142,23 +150,23 @@ namespace CrossLink
             );
         }
 
-        private void CreateSceneInitIfNotAvailable()
+        private void CreateScriptIfNotAvailable(string folder, string script)
         {
-            var commonSceneFolder = "Assets/Build/CommonScene";
+            var commonFolder = $"Assets/Build/{folder}";
 
-            if (!Directory.Exists($"{commonSceneFolder}/Script")) {
-                Directory.CreateDirectory($"{commonSceneFolder}/Script");
+            if (!Directory.Exists($"{commonFolder}/Script")) {
+                Directory.CreateDirectory($"{commonFolder}/Script");
             }
             
-            if (!File.Exists($"{commonSceneFolder}/Script/SceneInitScript.txt")) {
+            if (!File.Exists($"{commonFolder}/Script/{script}")) {
                 AssetDatabase.CopyAsset(
-                    "Assets/Toolkit/TemplateWizard/Dummy/SceneInitScript.txt", 
-                    $"{commonSceneFolder}/Script/SceneInitScript.txt"
+                    $"Assets/Toolkit/TemplateWizard/Dummy/{script}", 
+                    $"{commonFolder}/Script/{script}"
                 );
             }
             
-            if(AddressableConfig.GetConfig().addressablePaths.Contains(commonSceneFolder) == false) {
-                AddressableConfig.GetConfig().addressablePaths.Add(commonSceneFolder);
+            if(AddressableConfig.GetConfig().addressablePaths.Contains(commonFolder) == false) {
+                AddressableConfig.GetConfig().addressablePaths.Add(commonFolder);
             }
 
             AddressableHelper.CreateAndRefreshAddressables();
@@ -236,13 +244,19 @@ namespace CrossLink
             return statusMessageType.ToString();
         }
 
-        void GenerateWeaponTemplate(string newModFolderPath){ 
+        void GenerateWeaponTemplate(string newModFolderPath) {
             AssetDatabase.CreateFolder(newModFolderPath, "ICon");
             AssetDatabase.CreateFolder(newModFolderPath, "Config");
             AssetDatabase.CreateFolder(newModFolderPath, "Weapon");
 
             CreateIcon(newModFolderName);
             CreateWeaponPrefab(newModFolderName);
+
+            if(selectedWeaponType == WeaponType.Gun) {
+                AssetDatabase.CreateFolder(newModFolderPath, "FlyObj");
+                CreateBulletPrefab(newModFolderName);
+                CreateScriptIfNotAvailable("Common", "WeaponFlyObjBaseScript.txt");
+            }
             
             ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.storeItemInfo = new StoreItemInfo[1];
@@ -272,7 +286,7 @@ namespace CrossLink
 
             CreateIcon(newModFolderName);
             CreateScene(newModFolderName);
-            CreateSceneInitIfNotAvailable();
+            CreateScriptIfNotAvailable("CommonScene", "SceneInitScript.txt");
 
             ItemInfoConfig itemInfoConfig = CreateInstance<ItemInfoConfig>();
             itemInfoConfig.sceneModInfo = new SceneModInfo[1];
