@@ -1,0 +1,30 @@
+
+local AvatarSoundPlayer = {
+}
+
+function AvatarSoundPlayer:Awake()
+    self.trans:SetParent(nil)
+    
+    self.OnFootStepSound = function(velSqrt)
+        local vel = UE.Mathf.Sqrt(velSqrt)
+        self.footStepSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+    end
+    self.OnJumpStartSound = function(velSqrt)
+        local vel = UE.Mathf.Sqrt(velSqrt)
+        self.jumpStartSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+    end
+    self.OnJumpEndSound = function(velSqrt)
+        local vel = UE.Mathf.Sqrt(velSqrt)
+        self.jumpEndSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+    end
+end
+
+function AvatarSoundPlayer:Start()
+    CL.InteractCharacter.PlayerInstance:StepSoundEvent("+", self.OnFootStepSound)
+    CL.InteractCharacter.PlayerInstance:JumpStartSoundEvent("+", self.OnJumpStartSound)
+    CL.InteractCharacter.PlayerInstance:JumpEndSoundEvent("+", self.OnJumpEndSound)
+    
+    self.trans:SetParent(CL.InteractCharacter.PlayerInstance.trans)
+end
+
+return Class(nil, nil, AvatarSoundPlayer)
