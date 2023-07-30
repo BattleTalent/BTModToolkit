@@ -88,7 +88,7 @@ namespace CrossLink
             AddressableHelper.AutoCompleteGazeObj();
 
 
-            Check();
+            ValidateAddressables();
             //AddressableHelper.ModelSetUp();
         }
 
@@ -101,7 +101,7 @@ namespace CrossLink
             AddressableHelper.AutoCompleteGazeObj();
 
 
-            Check();
+            ValidateAddressables();
             //AddressableHelper.ModelSetUp();
         }
 
@@ -136,9 +136,12 @@ namespace CrossLink
         }
 
         [EasyButtons.Button]
-        void Check()
+        void ValidateAddressables()
         {
-            AddressableHelper.CheckItemInfoConfig();
+            if (AddressableHelper.ValidateAddressables())
+            {
+                Debug.Log("Passed all checks.");
+            }
         }
 #endif
     }

@@ -466,7 +466,7 @@ namespace CrossLink
             }
         }
 
-        public static void CheckItemInfoConfig()
+        public static bool CheckItemInfoConfig()
         {
             bool isPass = true;
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -488,12 +488,7 @@ namespace CrossLink
 
                 foreach (var item in info.storeItemInfo)
                 {
-                    if (string.IsNullOrEmpty(item.addStoreItemName))
-                    {
-                        Debug.LogError("an addStoreItemName is Empty in ItemInfoConfig: " + assetPath);
-                        isPass = false;
-                    }
-                    else if (!names.ContainsKey(item.addStoreItemName))
+                    if (!names.ContainsKey(item.addStoreItemName))
                     {
                         names.Add(item.addStoreItemName, assetPath);
                     }
@@ -502,12 +497,7 @@ namespace CrossLink
                 {
                     foreach (var item in info.sceneModInfo)
                     {
-                        if (string.IsNullOrEmpty(item.sceneName))
-                        {
-                            Debug.LogError("an sceneName is Empty in ItemInfoConfig: " + assetPath);
-                            isPass = false;
-                        }
-                        else if(!names.ContainsKey(item.sceneName))
+                        if(!names.ContainsKey(item.sceneName))
                         {
                             names.Add(item.sceneName, assetPath);
                         }
@@ -518,12 +508,7 @@ namespace CrossLink
                 {
                     foreach (var item in info.skinInfo)
                     {
-                        if (string.IsNullOrEmpty(item.skinName))
-                        {
-                            Debug.LogError("an skinName is Empty in ItemInfoConfig: " + assetPath);
-                            isPass = false;
-                        }
-                        else if(!names.ContainsKey(item.skinName))
+                        if(!names.ContainsKey(item.skinName))
                         {
                             names.Add(item.skinName, assetPath);
                         }
@@ -533,12 +518,7 @@ namespace CrossLink
                 {
                     foreach (var item in info.roleModInfo)
                     {
-                        if (string.IsNullOrEmpty(item.roleName))
-                        {
-                            Debug.LogError("an roleName is Empty in ItemInfoConfig: " + assetPath);
-                            isPass = false;
-                        }
-                        else if(!names.ContainsKey(item.roleName))
+                        if(!names.ContainsKey(item.roleName))
                         {
                             names.Add(item.roleName, assetPath);
                         }
@@ -559,17 +539,93 @@ namespace CrossLink
 
             foreach(var item in names)
             {
-                if (CheckAddressableExistItem(item.Key) == false)
-                {
-                    Debug.LogError("The item:"+ item.Key + " in ItemInfoConfig:" + item.Value + " did not find a matching file in Addressables.");
+                if (!ValidateAddressable(item.Key, "ItemInfoConfig: "+ item.Value)) {
                     isPass = false;
                 }
             }
 
-            if (isPass)
+            return isPass;
+        }
+
+        public static bool CheckPrefabScripts()
+        {
+            bool isPass = true;
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            AddressableAssetGroup group = settings.DefaultGroup;
+
+            Dictionary<string, string> names = new Dictionary<string, string>();
+            var eIte = group.entries.GetEnumerator();
+            while (eIte.MoveNext())
             {
-                Debug.Log("Pass");
+                string assetPath = eIte.Current.AssetPath;
+
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                if (prefab == null)
+                {
+                    continue;
+                }
+                
+                foreach(var asset in prefab.GetComponentsInChildren<InteractTriggerX>()) {
+                    if (!names.ContainsKey(asset.script.GetLuaScript())) 
+                    {
+                        names.Add(asset.script.GetLuaScript(), assetPath+"<InteractTriggerX>");
+                    }
+                }
+
+                foreach(var asset in prefab.GetComponentsInChildren<LuaBehaviour>()) {
+                    if (!names.ContainsKey(asset.script.GetLuaScript())) 
+                    {
+                        names.Add(asset.script.GetLuaScript(), assetPath+"<LuaBehaviour>");
+                    }
+                }
+
+                foreach(var asset in prefab.GetComponentsInChildren<FlyObjectX>()) {
+                    if (!names.ContainsKey(asset.script.GetLuaScript())) 
+                    {
+                        names.Add(asset.script.GetLuaScript(), assetPath+"<FlyObjectX>");
+                    }
+                }
             }
+
+            foreach(var item in names)
+            {
+                if(!ValidateAddressable(item.Key, "Prefab: " + item.Value)){
+                    isPass = false;
+                }
+            }
+
+            return isPass;
+        }
+
+        static bool ValidateAddressable(string addressableName, string origin)
+        {
+            if (addressableName == "")
+            {
+                Debug.LogError("Script ID in " + origin + " is empty. Please enter a script ID.");
+                return false;
+            }
+
+            if (CheckAddressableExistItem(addressableName) == false)
+            {
+                Debug.LogError("The addressable: "+ addressableName + " in " + origin + " did not find a matching file in Addressables.");
+                return false;
+            }
+
+            return true;
+        }
+
+        
+        public static bool ValidateAddressables()
+        {
+            bool isPass = true;
+            if(!CheckItemInfoConfig()){
+                isPass = false;
+            }
+            if(!CheckPrefabScripts()){
+                isPass = false;
+            }
+
+            return isPass;
         }
 
         private static bool CheckAddressableExistItem(string name)
