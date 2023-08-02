@@ -129,7 +129,7 @@ end
 
 function HandPoseToolPanel:RefleshData(value, origin)
     if self.selectList[self.selectIdx].Type == SelectType_Controller then
-        if origin > 0.5 and UE.Time.unscaledTime > self.nextSwitchTime then
+        if (origin > 0.5 or origin < -0.5) and UE.Time.unscaledTime > self.nextSwitchTime then
             self:SwitchItemsType()
             self.nextSwitchTime = UE.Time.unscaledTime + 0.2
         end

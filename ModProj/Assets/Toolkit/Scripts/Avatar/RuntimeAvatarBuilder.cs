@@ -83,9 +83,14 @@ namespace CrossLink
                 Debug.LogError("Some Bone has not been assigned, please check it by clicking \"ConfigureAvatar\" in the model.");
             }
 
+            UnityEditor.EditorUtility.SetDirty(this);
+
+            UnityEditor.PrefabUtility.UnpackPrefabInstance(this.gameObject, UnityEditor.PrefabUnpackMode.OutermostRoot, UnityEditor.InteractionMode.AutomatedAction);
+
             PutSlots();
 
             AutoCorrectRenderer();
+
 
             Debug.LogWarning("Please check if this is correct after use. If not, " +
                 "please assign the handTrans of the handPoseControl manually.");
@@ -103,19 +108,24 @@ namespace CrossLink
 
             if (handSlotLeft)
             {
+                handSlotLeft.SetParent(transform);
+                handSlotLeft.localScale = Vector3.one;
                 handSlotLeft.SetParent(handposeControlLeft.handTrans);
             }
             if (handSlotRight)
             {
+                handSlotRight.SetParent(transform);
+                handSlotRight.localScale = Vector3.one;
                 handSlotRight.SetParent(handposeControlRight.handTrans);
             }
             if (backSlots)
             {
+                backSlots.SetParent(transform);
+                backSlots.localScale = Vector3.one;
                 backSlots.SetParent(animator.GetBoneTransform(HumanBodyBones.Chest));
             }
         }
 
-        [EasyButtons.Button]
         public void AutoCorrectRenderer()
         {
             if (fbxPrefab == null)
