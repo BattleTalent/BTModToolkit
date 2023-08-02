@@ -76,6 +76,10 @@ namespace CrossLink
         [MenuItem("BuildTools/BuildAllBundles", false, 0)]
         public static void BuildAll()
         {
+            if (!AddressableHelper.ValidateAddressables()) {
+                return;
+            }
+
             ClearOldFiles();
             //BuildWithProfile("Windows");
             //BuildWithProfile("Android");                             
