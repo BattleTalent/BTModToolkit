@@ -106,6 +106,8 @@ namespace CrossLink
         public const int RingFinger = 3;
         public const int PinkieFinger = 4;
 
+        const int FINGER_COUNT = 5;
+
         [Header("——————Saved can be undo——————")]
         public HandFinger[] fingers;
     
@@ -127,7 +129,7 @@ namespace CrossLink
 
 #if UNITY_EDITOR
         [EasyButtons.Button]
-        void AutoConfigFingers()
+        void AutoConfigFingers(int fingerNodeDepth = 3)
         {
             if (handTrans == null)
             {
@@ -136,9 +138,9 @@ namespace CrossLink
             }
 
             List<HandFinger> fingerList = new List<HandFinger>();
-            for (int i = 0; i < handTrans.childCount; ++i)
+            for (int i = 0; i < FINGER_COUNT; ++i)
             {
-                var finger = ConvertToFinger(handTrans.GetChild(i));
+                var finger = ConvertToFingerRunTime(handTrans.GetChild(i), fingerNodeDepth);
                 if (finger.fingerNodes == null || finger.fingerNodes.Length == 0)
                     continue;
                 fingerList.Add(finger);
@@ -147,6 +149,39 @@ namespace CrossLink
             UnityEditor.EditorUtility.SetDirty(this);
         }
 
+        HandFinger ConvertToFingerRunTime(Transform fingerRoot, int fingerNodeDepth = 3)
+        {
+            HandFinger finger = new HandFinger();
+
+            int fingerDepth = 1;
+            Transform fingerNode = fingerRoot;
+            while (fingerNode.childCount != 0)
+            {
+                ++fingerDepth;
+                fingerNode = fingerNode.GetChild(0);
+            }
+
+            fingerNodeDepth = fingerDepth < fingerNodeDepth ? fingerDepth : fingerNodeDepth;
+
+            finger.fingerNodes = new Transform[fingerNodeDepth];
+            fingerNode = fingerRoot;
+            for (int i = 0; i < fingerNodeDepth; ++i)
+            {
+                finger.fingerNodes[i] = fingerNode;
+                if (fingerNode.childCount != 0)
+                {
+                    fingerNode = fingerNode.GetChild(0);
+                }
+            }
+
+            var tipTrans = FindChildRecursive(fingerRoot, "Tip");
+            if (tipTrans != null)
+            {
+                finger.fingerTip = tipTrans;
+            }
+
+            return finger;
+        }
 
         [EasyButtons.Button]
         void SaveFingersOpenPose()
@@ -193,43 +228,6 @@ namespace CrossLink
             UnityEditor.EditorUtility.SetDirty(this);
         }
 
-        HandFinger ConvertToFinger(Transform fingerRoot, int nodeNum = 3)
-        {
-            HandFinger finger = new HandFinger();
-
-            int fingerDepth = 1;
-            Transform fingerNode = fingerRoot;
-            while (fingerNode.childCount != 0)
-            {
-                ++fingerDepth;
-                fingerNode = fingerNode.GetChild(0);
-            }
-
-            nodeNum = fingerDepth < nodeNum ? fingerDepth : nodeNum;
-
-            finger.fingerNodes = new Transform[nodeNum];
-            fingerNode = fingerRoot;
-            for (int i = 0; i < nodeNum; ++i)
-            {
-                finger.fingerNodes[i] = fingerNode;
-                if (fingerNode.childCount != 0)
-                {
-                    fingerNode = fingerNode.GetChild(0);
-                }
-            }
-
-            //TransformHelper.FindAReasonableName            
-            var tipTrans = FindChildRecursive(fingerRoot, "Tip");
-            if (tipTrans != null)
-            {
-                finger.fingerTip = tipTrans;
-                // }else
-                // {
-                //     finger.fingerTip = finger.fingerNodes[finger.fingerNodes.Length - 1];
-            }
-
-            return finger;
-        }
 
         public static Transform FindChildRecursive(Transform parent, string name)
         {
