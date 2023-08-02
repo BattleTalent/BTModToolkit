@@ -1,13 +1,25 @@
-
 local HandPoseToolPanel = {
     curHandPoseTrans = nil,
-    tips = "1. Press Trigger to select the parameter to be adjusted. Use joystick to control the value of the currently selected parameter.",
+    tips = "1. Press Trigger to select the parameter to be adjusted.\n2. Use joystick to control the value of the currently selected parameter.\n3. Long press on trigger to disable movement, press and hold again to cancel.",
     
     cachePosition = UE.Vector3.zero,
     cacheEuler = UE.Vector3.zero,
     
-    selectIdx = 1,    
+    selectIdx = 1,
+    
+    --[[
+        1 : hand pose position and hand pose rotation
+        2 : default hand direction
+    ]]
+    curItemType = 1,
+    
+    nextSwitchTime = 0,
 }
+
+SelectType_Controller = 2
+SelectType_Setter = 1
+SelectItemType_HandPose = 1
+SelectItemType_HandIK = 2
 
 function HandPoseToolPanel:Init(trans, hand)
     self.hand = hand
@@ -16,48 +28,69 @@ function HandPoseToolPanel:Init(trans, hand)
         return
     end
     
+    --[[
+        Type 1:Func  2:Setter
+    ]]
     self.selectList = { 
         [1] = 
             {
-                ["value"] = 0,
+                ["Type"] = SelectType_Setter,
+                ["Value"] = 0,
                 ["Text"] = self.posX,
             }, 
         [2] = 
             {
-                ["value"] = 0,
+                ["Type"] = SelectType_Setter,
+                ["Value"] = 0,
                 ["Text"] = self.posY, 
             },
         [3] = 
             {
-                ["value"] = 0,
+                ["Type"] = SelectType_Setter,
+                ["Value"] = 0,
                 ["Text"] = self.posZ,  
             },
         [4] = 
             {
-                ["value"] = 0,
+                ["Type"] = SelectType_Setter,
+                ["Value"] = 0,
                 ["Text"] = self.rotX,  
             },
         [5] = 
             {
-                ["value"] = 0,
+                ["Type"] = SelectType_Setter,
+                ["Value"] = 0,
                 ["Text"] = self.rotY, 
             },
         [6] = 
             {
-                ["value"] = 0,
+                ["Type"] = SelectType_Setter,
+                ["Value"] = 0,
                 ["Text"] = self.rotZ,
             },
+        [7] =
+            {
+                ["Type"] = SelectType_Controller,
+                ["Text"] = self.switch,
+            },
         }
+    
+    
+    self.groupMlp = {}
+    self.groupMlp[SelectItemType_HandPose] = {[1] = 0.7, [2] = 2}
+    self.groupMlp[SelectItemType_HandIK] = {[1] = 0.2, [2] = 0.2}
     
     self.headset = self.hand.character:GetHeadset()
     RemoveSchedule(self, self.updateTimer)
     
     self.targetHand = self.hand:GetAnotherHand()
-
+    
     self:SelectHandPose()
     
     self.grabFunc = function()
-        self:SelectHandPose()
+        if self.curItemType == SelectItemType_HandPose then
+            self:SelectHandPose()
+        end
     end
     self.targetHand:GrabEvent("+", self.grabFunc)
     
@@ -81,7 +114,12 @@ function HandPoseToolPanel:UpdateSelectHand(hand)
         self.targetHand:GrabEvent("-", self.grabFunc)
     end
     self.targetHand = self.hand:GetAnotherHand()
-    self:SelectHandPose()
+    
+    if self.curItemType == SelectItemType_HandPose then
+        self:SelectHandPose()
+    elseif self.curItemType == SelectItemType_HandIK then
+        self:SelectHandIK()
+    end
     self.targetHand:GrabEvent("+", self.grabFunc)
 end
 
@@ -89,14 +127,29 @@ function HandPoseToolPanel:Show(isShow)
     self.trans.gameObject:SetActive(isShow)
 end
 
-function HandPoseToolPanel:RefleshData(value)
-    if not self.curHandPose then
-        return
+function HandPoseToolPanel:RefleshData(value, origin)
+    if self.selectList[self.selectIdx].Type == SelectType_Controller then
+        if origin > 0.5 and UE.Time.unscaledTime > self.nextSwitchTime then
+            self:SwitchItemsType()
+            self.nextSwitchTime = UE.Time.unscaledTime + 0.2
+        end
+    elseif self.selectList[self.selectIdx].Type == SelectType_Setter then
+        local mlp = self.groupMlp[self.curItemType][self:GetGroupByIdx(self.selectIdx)]
+        if self.curItemType == SelectItemType_HandPose then
+            if self.curHandPose then
+                self.selectList[self.selectIdx].Value = self.selectList[self.selectIdx].Value + value * mlp
+                self.selectList[self.selectIdx].Text.text = self.selectList[self.selectIdx].Value
+                
+                self:PasteDataTohand()
+            end
+        elseif self.curItemType == SelectItemType_HandIK then
+            --hand dir
+            self.selectList[self.selectIdx].Value = self.selectList[self.selectIdx].Value + value * mlp
+            self.selectList[self.selectIdx].Text.text = self.selectList[self.selectIdx].Value
+            
+            self:PasteDataToHandIK()
+        end
     end
-    self.selectList[self.selectIdx].Value = self.selectList[self.selectIdx].Value + value
-    self.selectList[self.selectIdx].Text.text = self.selectList[self.selectIdx].Value
-    
-    self:PasteDataTohand()
 end
 
 function HandPoseToolPanel:ResetConsoleTips()
@@ -108,6 +161,31 @@ function HandPoseToolPanel:HapticPulse()
         self.hand:HapticPulse(self.hand.character.skillChargeHapticCurve, 0.2, 0.8)
     end
 end
+
+
+
+function HandPoseToolPanel:SelectNext()
+    if not self.targetHand then
+        return
+    end
+    
+    self.selectIdx = self.selectIdx % #self.selectList + 1
+    
+    self.arrowTrans.position = self.selectList[self.selectIdx].Text.transform.position
+end
+
+function HandPoseToolPanel:UpdatePositionFollow(pos, headset)
+    if IsNullOrDestroyed(headset) then
+        return
+    end
+    
+    self.trans.position = pos
+    self.trans.rotation = UE.Quaternion.LookRotation(pos - headset.position)
+end
+
+
+
+--------------------------------------Hand Pose---------------------------------------
 
 function HandPoseToolPanel:SelectHandPose()
     if not self.targetHand and IsNullOrDestroyed(self.targetHand.attachTo) then
@@ -124,39 +202,27 @@ function HandPoseToolPanel:SelectHandPose()
     self.curHandPoseTrans = self.curHandPose.transform
     
     --3. reflesh panel
-    self.console.text = " Cur hand pose: "..attachObj.handPose
+    local idx = self.targetHand:GetHandIndex()
+    local str = idx == CL.RagdollBoneInfo.RIGHT_HAND and "Right" or "Left"
+    self.console.text = " Cur hand：" .. str .. "  Pose: "..attachObj.handPose
     
-    self:PasteFromPosition(self.curHandPoseTrans.localPosition)
-    self:PasteFromRotation(self.curHandPoseTrans.localRotation)
+    self:PasteGroupFromVector(1, self.curHandPoseTrans.localPosition)
+    self:PasteGroupFromVector(2, self.curHandPoseTrans.localRotation.eulerAngles)
 end
 
-function HandPoseToolPanel:SelectNext()
-    if not self.targetHand then
-        return
-    end
-    
-    self.selectIdx = self.selectIdx % #self.selectList + 1
-    self.arrowTrans.position = self.selectList[self.selectIdx].Text.transform.position
+function HandPoseToolPanel:GetGroupByIdx(idx)
+    return math.ceil(idx / 3)
 end
 
-function HandPoseToolPanel:PasteFromPosition(vec)
-    self.selectList[1].Value = vec.x
-    self.selectList[2].Value = vec.y
-    self.selectList[3].Value = vec.z
+function HandPoseToolPanel:PasteGroupFromVector(group, vec)
+    local idx = (group - 1) * 3
+    self.selectList[idx + 1].Value = vec.x
+    self.selectList[idx + 2].Value = vec.y
+    self.selectList[idx + 3].Value = vec.z
     
-    self.selectList[1].Text.text = vec.x
-    self.selectList[2].Text.text = vec.y
-    self.selectList[3].Text.text = vec.z
-end
-
-function HandPoseToolPanel:PasteFromRotation(rot)
-    self.selectList[4].Value = rot.eulerAngles.x
-    self.selectList[5].Value = rot.eulerAngles.y
-    self.selectList[6].Value = rot.eulerAngles.z
-    
-    self.selectList[4].Text.text = rot.eulerAngles.x
-    self.selectList[5].Text.text = rot.eulerAngles.y
-    self.selectList[6].Text.text = rot.eulerAngles.z
+    self.selectList[idx + 1].Text.text = vec.x
+    self.selectList[idx + 2].Text.text = vec.y
+    self.selectList[idx + 3].Text.text = vec.z
 end
 
 function HandPoseToolPanel:PasteDataTohand()
@@ -167,15 +233,62 @@ function HandPoseToolPanel:PasteDataTohand()
         self.selectList[5].Value, self.selectList[6].Value)
 end
 
-function HandPoseToolPanel:UpdatePositionFollow(pos, headset)
-    if IsNullOrDestroyed(headset) then
+
+--------------------------------------Hand IK---------------------------------------
+function HandPoseToolPanel:SelectHandIK()
+    if not self.targetHand then
         return
     end
     
-    self.trans.position = pos
-    self.trans.rotation = UE.Quaternion.LookRotation(pos - headset.position)
+    --3. reflesh panel
+    local idx = self.targetHand:GetHandIndex()
+    local str = idx == CL.RagdollBoneInfo.RIGHT_HAND and "Right" or "Left"
+    self.console.text = " Cur hand：" .. str .. "  WristToPalmAxis and PalmToThumbAxis"
+    
+    if idx == CL.RagdollBoneInfo.RIGHT_HAND then
+        self:PasteGroupFromVector(1, CL.InteractCharacter.PlayerInstance.ik.solver.rightArm.wristToPalmAxis)
+        self:PasteGroupFromVector(2, CL.InteractCharacter.PlayerInstance.ik.solver.rightArm.palmToThumbAxis)
+    else
+        self:PasteGroupFromVector(1, CL.InteractCharacter.PlayerInstance.ik.solver.leftArm.wristToPalmAxis)
+        self:PasteGroupFromVector(2, CL.InteractCharacter.PlayerInstance.ik.solver.leftArm.palmToThumbAxis)
+    end
 end
 
+
+function HandPoseToolPanel:PasteDataToHandIK()
+    local idx = self.targetHand:GetHandIndex()
+    if idx == CL.RagdollBoneInfo.RIGHT_HAND then
+        CL.InteractCharacter.PlayerInstance.ik.solver.rightArm.wristToPalmAxis = UE.Vector3(self.selectList[1].Value, 
+            self.selectList[2].Value, self.selectList[3].Value)
+        CL.InteractCharacter.PlayerInstance.ik.solver.rightArm.palmToThumbAxis = UE.Vector3(self.selectList[4].Value, 
+            self.selectList[5].Value, self.selectList[6].Value)
+    else
+        CL.InteractCharacter.PlayerInstance.ik.solver.leftArm.wristToPalmAxis = UE.Vector3(self.selectList[1].Value, 
+            self.selectList[2].Value, self.selectList[3].Value)
+        CL.InteractCharacter.PlayerInstance.ik.solver.leftArm.palmToThumbAxis = UE.Vector3(self.selectList[4].Value, 
+            self.selectList[5].Value, self.selectList[6].Value)
+    end
+    CL.InteractCharacter.PlayerInstance:UpdateVRIKHandDir()
+end
+
+------------------------------------------------------------------------------------
+
+
+function HandPoseToolPanel:SwitchItemsType()
+    self.curItemType = self.curItemType % 2 + 1
+    if self.curItemType == SelectItemType_HandPose then
+        self.selectList[self.selectIdx].Text.text = "Adjust HANDPOSE"
+        self.title1.text = "Position:"
+        self.title2.text = "ROtation:"
+        self:SelectHandPose()
+    elseif self.curItemType == SelectItemType_HandIK then
+        self.selectList[self.selectIdx].Text.text = "Adjust HAND Orientation"
+        
+        self.title1.text = "WristToPalmAxis:"
+        self.title2.text = "PalmToThumbAxis:"
+        self:SelectHandIK()
+    end
+end
 
 function HandPoseToolPanel:ResetState()
 end
