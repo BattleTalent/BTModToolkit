@@ -371,6 +371,21 @@ namespace CrossLink
                 }
             }
 
+            //Avatar
+            if (avatarInfo != null)
+            {
+                foreach (var item in avatarInfo)
+                {
+                    if (string.IsNullOrEmpty(item.avatarName))
+                        continue;
+
+                    if (!item.avatarName.Contains(prefix))
+                    {
+                        item.avatarName = prefix + item.avatarName;
+                    }
+                }
+            }
+
             //HandPose
             if (handPoseInfo != null)
             {
@@ -424,6 +439,8 @@ namespace CrossLink
                     break;
                 }
             }
+
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
         [EasyButtons.Button]

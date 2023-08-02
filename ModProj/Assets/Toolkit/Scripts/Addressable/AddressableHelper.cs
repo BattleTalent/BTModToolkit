@@ -451,6 +451,24 @@ namespace CrossLink
                         item.weapon = item.weapon.Replace(oldPrefix, curPrefix);
                     }
                 }
+
+                //Avatar
+                if (info.avatarInfo != null)
+                {
+                    foreach (var item in info.avatarInfo)
+                    {
+                        item.avatarName = item.avatarName.Replace(oldPrefix, curPrefix);
+                    }
+                }
+
+                //HandPose
+                if (info.handPoseInfo != null)
+                {
+                    foreach (var item in info.handPoseInfo)
+                    {
+                        item.name = item.name.Replace(oldPrefix, curPrefix);
+                    }
+                }
             }
 
             AssetDatabase.SaveAssets();

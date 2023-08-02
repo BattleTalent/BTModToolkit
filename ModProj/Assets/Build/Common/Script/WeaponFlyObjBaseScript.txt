@@ -29,6 +29,10 @@ function WeaponFlyObj:PlayShootAction()
     local aimDir = self.shootPosition.forward
     local bulletScript = self.host:CreateFlyObj(self.flyObjName, self.shootPosition.position, aimDir, self.shootVel)
     
+    if not IsNullOrDestroyed(bulletScript) then
+        TryAerialStay(ph)
+    end
+    
     if self.autoSetupBulletIgnore == 1 then
         CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), true)
         

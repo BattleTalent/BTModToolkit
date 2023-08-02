@@ -8,11 +8,19 @@ local HandPoseTool = {
 function HandPoseTool:SlotSpell(slot)
     self:ShowMenu()
     self:StartUpdate()
+    
+    if self.disable then
+        self:DisableAction(self.disable)
+    end
 end
 
 function HandPoseTool:UnSlotSpell(slot)
     self:HideMenu()
     self:StopUpdate()
+    
+    if self.disable then
+        self:DisableAction(not self.disable)
+    end
 end
 
 function HandPoseTool:ShowMenu()
@@ -61,13 +69,16 @@ end
 function HandPoseTool:UpdateInput()
     local v = self.slotHand.inputs[CL.VRTKInputButton.ButtonType.Touchpad].Axis
     local value = nil
+    local originValue = nil
     if v.y ~= 0 then
+        originValue = v.y
         value = -v.y * self.dragSpeed * UE.Time.deltaTime
         self.dragSpeed = self.dragSpeed + UE.Time.deltaTime * self.accSpeed
     end
     
     v = UE.Input.GetAxis("Mouse ScrollWheel")
     if v ~= 0 then
+        originValue = v
         value = v * self.dragSpeed * UE.Time.deltaTime * 400
         self.dragSpeed = self.dragSpeed + UE.Time.deltaTime * self.accSpeed
     end
@@ -75,16 +86,22 @@ function HandPoseTool:UpdateInput()
     
     if value then
         if self.panel then
-            self.panel:RefleshData(value)
+            self.panel:RefleshData(value, originValue)
         end
     else
         self.dragSpeed = self.baseSpeed
     end
 end
 
-function HandPoseTool:DisableMovement(disable)
+function HandPoseTool:DisableAction(disable)
     CL.InteractCharacter.PlayerInstance:SetDisableMoveCommand(disable)
     CL.InteractCharacter.PlayerInstance:ToggleKinematic(disable)
+    if disable then
+        self.cacheRotateType = CL.SettingMgr.Instance.rotateType
+        CL.SettingMgr.Instance.rotateType = CL.SettingMgr.RotateType.Disabled
+    else
+        CL.SettingMgr.Instance.rotateType = self.cacheRotateType
+    end
     
     CL.TextPanel.ShowTips("Disable movement: " .. tostring(disable) , 2)
 end
@@ -111,7 +128,7 @@ end
 function HandPoseTool:OnChargeReady()
     self.orderType = 2
     self.disable = not self.disable
-    self:DisableMovement(self.disable)
+    self:DisableAction(self.disable)
     
     self.host:CloseSkill()
 end

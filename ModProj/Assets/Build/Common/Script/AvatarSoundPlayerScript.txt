@@ -1,0 +1,66 @@
+
+local AvatarSoundPlayer = {
+}
+
+function AvatarSoundPlayer:Awake()
+    self.trans:SetParent(nil)
+    
+    self.OnFootStepSound = function(velSqrt)
+        if IsNullOrDestroyed(self.trans) then
+            self:RemoveEvent()
+            return
+        end
+        local vel = UE.Mathf.Sqrt(velSqrt)
+        self.footStepSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+    end
+    self.OnJumpStartSound = function(velSqrt)
+        if IsNullOrDestroyed(self.trans) then
+            self:RemoveEvent()
+            return
+        end
+        local vel = UE.Mathf.Sqrt(velSqrt)
+        self.jumpStartSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+    end
+    self.OnJumpEndSound = function(velSqrt)
+        if IsNullOrDestroyed(self.trans) then
+            self:RemoveEvent()
+            return
+        end
+        local vel = UE.Mathf.Sqrt(velSqrt)
+        self.jumpEndSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+    end
+end
+
+function AvatarSoundPlayer:Start()
+    if self.footStepSound ~= nil and self.footStepSound.soundInfo.soundNames ~= nil
+        and self.footStepSound.soundInfo.soundNames.Length > 0 then
+        CL.InteractCharacter.PlayerInstance:StepSoundEvent("+", self.OnFootStepSound)
+    end
+    if self.jumpStartSound ~= nil and self.jumpStartSound.soundInfo.soundNames ~= nil
+        and self.jumpStartSound.soundInfo.soundNames.Length > 0 then
+        CL.InteractCharacter.PlayerInstance:JumpStartSoundEvent("+", self.OnJumpStartSound)
+    end
+    if self.jumpEndSound ~= nil and self.jumpEndSound.soundInfo.soundNames ~= nil
+        and self.jumpEndSound.soundInfo.soundNames.Length > 0 then
+        CL.InteractCharacter.PlayerInstance:JumpEndSoundEvent("+", self.OnJumpEndSound)
+    end
+    
+    self.trans:SetParent(CL.InteractCharacter.PlayerInstance.trans)
+end
+
+function AvatarSoundPlayer:RemoveEvent()
+    if self.footStepSound ~= nil and self.footStepSound.soundInfo.soundNames ~= nil
+        and self.footStepSound.soundInfo.soundNames.Length > 0 then
+        CL.InteractCharacter.PlayerInstance:StepSoundEvent("-", self.OnFootStepSound)
+    end
+    if self.jumpStartSound ~= nil and self.jumpStartSound.soundInfo.soundNames ~= nil
+        and self.jumpStartSound.soundInfo.soundNames.Length > 0 then
+        CL.InteractCharacter.PlayerInstance:JumpStartSoundEvent("-", self.OnJumpStartSound)
+    end
+    if self.jumpEndSound ~= nil and self.jumpEndSound.soundInfo.soundNames ~= nil
+        and self.jumpEndSound.soundInfo.soundNames.Length > 0 then
+        CL.InteractCharacter.PlayerInstance:JumpEndSoundEvent("-", self.OnJumpEndSound)
+    end
+end
+
+return Class(nil, nil, AvatarSoundPlayer)
