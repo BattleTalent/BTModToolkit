@@ -1,0 +1,30 @@
+
+local table = {}
+
+function table:FlyStart()
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if fc.attr.hp.BaseValue < CL.CombatAttr.MiniAmountHpLeft or fc.attr:IsDead() then
+            local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+            CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag
+        end
+    end
+    
+    self.hitInfoObj = self.host:GetRagdollHitInfoObj()
+    
+    if self.hitInfoObj then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    end
+end
+
+function table:OnCollision(collision, pu)
+    if (pu ~= null and pu.unitType == CL.Tagger.Tag.FlyObject) then    
+        local fo = pu
+        if (fo ~= null) then
+            fo:OnCollisionUpdate(collision)
+            fo:OnFinish()
+        end
+    end
+
+end
+
+return Class(nil,nil,table)
