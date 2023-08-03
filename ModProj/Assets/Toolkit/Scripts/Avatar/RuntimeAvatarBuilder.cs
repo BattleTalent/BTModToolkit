@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace CrossLink
 {
     public class RuntimeAvatarBuilder : MonoBehaviour
@@ -87,6 +91,7 @@ namespace CrossLink
 
             UnityEditor.PrefabUtility.UnpackPrefabInstance(this.gameObject, UnityEditor.PrefabUnpackMode.OutermostRoot, UnityEditor.InteractionMode.AutomatedAction);
 
+            GenerateSlots(animator);
             PutSlots();
 
             AutoCorrectRenderer();
@@ -94,6 +99,48 @@ namespace CrossLink
 
             Debug.LogWarning("Please check if this is correct after use. If not, " +
                 "please assign the handTrans of the handPoseControl manually.");
+        }
+
+        void GenerateSlots(Animator animator)
+        {
+            var slotToolPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/AvatarBuilder/SlotTool.prefab");
+            var instantiatedPrefab = Instantiate(slotToolPrefab, fbxPrefab.transform) as GameObject;
+        
+            if(!handSlotLeft) {
+                Transform handTransformLeft = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+                handSlotLeft = instantiatedPrefab.transform.Find("HandSlot_Left").transform;
+                handSlotLeft.transform.parent = handTransformLeft;
+                handSlotLeft.transform.localPosition = new Vector3(0,0,0);
+                handSlotLeft.transform.localRotation = new Quaternion(0,0,0,0);
+                handSlotLeft.transform.localScale = new Vector3(1,1,1);
+            }
+
+            if(!handSlotRight) {
+                Transform handTransformRight = animator.GetBoneTransform(HumanBodyBones.RightHand);
+                handSlotRight = instantiatedPrefab.transform.Find("HandSlot_Right").transform;
+                handSlotRight.parent = handTransformRight;
+                handSlotRight.localPosition = new Vector3(0,0,0);
+                handSlotRight.localRotation = new Quaternion(0,0,0,0);
+                handSlotRight.localScale = new Vector3(1,1,1);
+            }
+
+            if(!backSlots) {
+                Transform shoulderTransformLeft = animator.GetBoneTransform(HumanBodyBones.Chest);
+                backSlots = instantiatedPrefab.transform.Find("BackSlots").transform;
+                backSlots.parent = shoulderTransformLeft;
+                backSlots.localPosition = new Vector3(0,0,0);
+                backSlots.localRotation = new Quaternion(0,0,0,0);
+                backSlots.localScale = new Vector3(1,1,1);
+                
+                backSlotLeft = backSlots.Find("LeftBackSlot").transform;
+                backSlotRight = backSlots.Find("RightBackSlot").transform;
+                sideSlotLeft = backSlots.Find("LeftSideSlot").transform;
+                sideSlotRight = backSlots.Find("RightSideSlot").transform;
+                sideItemSlotLeft = backSlots.Find("LeftSideSlotItem").transform;
+                sideItemSlotRight = backSlots.Find("RightSideSlotItem").transform; 
+            }
+
+            DestroyImmediate(instantiatedPrefab);
         }
 
         public void PutSlots()
