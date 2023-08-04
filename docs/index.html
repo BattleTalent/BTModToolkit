@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">V10</span>
+   &#160;<span id="projectnumber">V11</span>
    </div>
   </td>
  </tr>
@@ -86,17 +86,17 @@ $(function() {
 </li>
 </ul>
 </div>
-<div class="textblock"><p><a class="anchor" id="md_D__WorkSpace_ProjSAO_ProjSAO_Assets_Scripts_doc"></a></p>
+<div class="textblock"><p><a class="anchor" id="md_D__ProjSAO_ProjSAO_Assets_Scripts_doc"></a></p>
 <h1><a class="anchor" id="autotoc_md0"></a>
 Welcome to the Scripting Document</h1>
 <p>Hello, this is the scripting document, you can query these API, then use them in lua.</p>
 <h3><a class="anchor" id="autotoc_md1"></a>
 Quick Start to build the mods from this project</h3>
-<p><a href="https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview">https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview</a></p>
+<p><a href="https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/tutorials/modtoolkit-overview">https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/tutorials/modtoolkit-overview</a></p>
 <p>if you just want to try play this mod, you can download it from <a href="https://github.com/fonzieyang/BTModToolkit/releases/download/V0.0.1/ModProj.zip">HERE</a></p>
 <h3><a class="anchor" id="autotoc_md2"></a>
 Modding tutorial</h3>
-<p><a href="https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview">https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview</a></p>
+<p><a href="https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/tutorials/modtoolkit-overview">https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/tutorials/modtoolkit-overview</a></p>
 <h3><a class="anchor" id="autotoc_md3"></a>
 Commonly used classes</h3>
 <h4><a class="anchor" id="autotoc_md4"></a>
@@ -151,27 +151,27 @@ Commonly used components</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">InteractWeapon   </td><td class="markdownTableBodyNone">represent the entity of weapon   </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">InteractTrigger / InteractTriggerX   </td><td class="markdownTableBodyNone">define how weapon works when player pressing trigger button   </td><td class="markdownTableBodyNone"><a href="https://battletalent.github.io/community-docs/docs/details/skill-system">https://battletalent.github.io/community-docs/docs/details/skill-system</a>    </td></tr>
+<td class="markdownTableBodyNone">InteractTrigger / InteractTriggerX   </td><td class="markdownTableBodyNone">define how weapon works when player pressing trigger button   </td><td class="markdownTableBodyNone"><a href="https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/skill-system">https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/skill-system</a>    </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">StabObj   </td><td class="markdownTableBodyNone">define how your weapon penetrate others   </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">RagdollHitInfoObj   </td><td class="markdownTableBodyNone">define how to calculate damage   </td><td class="markdownTableBodyNone"><a href="https://battletalent.github.io/community-docs/docs/details/hitinfo-and-collisioneffect">https://battletalent.github.io/community-docs/docs/details/hitinfo-and-collisioneffect</a>    </td></tr>
+<td class="markdownTableBodyNone">RagdollHitInfoObj   </td><td class="markdownTableBodyNone">define how to calculate damage   </td><td class="markdownTableBodyNone"><a href="https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/hitinfo-and-collisioneffect">https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/hitinfo-and-collisioneffect</a>    </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">RagdollHitInfoRef   </td><td class="markdownTableBodyNone">it'll define a group of RagdollHitInfoObj as a whole, so that they won't hit multiple times   </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">RigidbodyInit   </td><td class="markdownTableBodyNone">define intertia tensor and center mass, if it's zero, then it'll not take effect on the rigidbody   </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">CollisionEffect   </td><td class="markdownTableBodyNone">simulate physics collision effect   </td><td class="markdownTableBodyNone"><a href="https://battletalent.github.io/community-docs/docs/details/hitinfo-and-collisioneffect">https://battletalent.github.io/community-docs/docs/details/hitinfo-and-collisioneffect</a>    </td></tr>
+<td class="markdownTableBodyNone">CollisionEffect   </td><td class="markdownTableBodyNone">simulate physics collision effect   </td><td class="markdownTableBodyNone"><a href="https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/hitinfo-and-collisioneffect">https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/hitinfo-and-collisioneffect</a>    </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">AttachLine / AttachPoint   </td><td class="markdownTableBodyNone">define how player grabs it   </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">Mount Point   </td><td class="markdownTableBodyNone">define how player put it in the pocket   </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">FlyObj / FlyObjX   </td><td class="markdownTableBodyNone">attached on Fly Object, such as bullet, magic   </td><td class="markdownTableBodyNone"><a href="https://battletalent.github.io/community-docs/docs/details/flyobject">https://battletalent.github.io/community-docs/docs/details/flyobject</a>   </td></tr>
+<td class="markdownTableBodyNone">FlyObj / FlyObjX   </td><td class="markdownTableBodyNone">attached on Fly Object, such as bullet, magic   </td><td class="markdownTableBodyNone"><a href="https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/flyobject">https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/flyobject</a>   </td></tr>
 </table>
 <h4><a class="anchor" id="autotoc_md8"></a>
 Damage Pipeline</h4>
-<p><a href="https://battletalent.github.io/community-docs/docs/details/damage-pipeline">https://battletalent.github.io/community-docs/docs/details/damage-pipeline</a></p>
+<p><a href="https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/damage-pipeline">https://brothersonline.gitlab.io/xlua-battletalent-docs/docs/details/damage-pipeline</a></p>
 <h4><a class="anchor" id="autotoc_md9"></a>
 Background Knowledge</h4>
 <table class="markdownTable">

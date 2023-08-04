@@ -53,10 +53,12 @@ var searchData=
   ['audiomgr_50',['AudioMgr',['../class_cross_link_1_1_audio_mgr.html',1,'CrossLink']]],
   ['audioobj_51',['AudioObj',['../class_cross_link_1_1_audio_obj.html',1,'CrossLink']]],
   ['autodestroy_52',['AutoDestroy',['../class_cross_link_1_1_auto_destroy.html',1,'CrossLink']]],
-  ['avoidobstacle_53',['AvoidObstacle',['../class_cross_link_1_1_avoid_obstacle.html',1,'CrossLink']]],
-  ['avoidobstaclecol_54',['AvoidObstacleCol',['../class_cross_link_1_1_avoid_obstacle_col.html',1,'CrossLink']]],
-  ['awake_55',['Awake',['../class_cross_link_1_1_gif_texture.html#adc9620ef14091fde67f594cb36a8d028',1,'CrossLink::GifTexture']]],
-  ['axis_56',['Axis',['../class_cross_link_1_1_v_r_t_k_input_button.html#a429be4e44f6f42ff5fbce22011fb4ba2',1,'CrossLink::VRTKInputButton']]],
-  ['editor_57',['Editor',['../namespace_android_ultimate_plugin_1_1_helpers_1_1_editor.html',1,'AndroidUltimatePlugin::Helpers']]],
-  ['helpers_58',['Helpers',['../namespace_android_ultimate_plugin_1_1_helpers.html',1,'AndroidUltimatePlugin']]]
+  ['avatarbuilderhelper_53',['AvatarBuilderHelper',['../class_cross_link_1_1_avatar_builder_helper.html',1,'CrossLink']]],
+  ['avatardatamgr_54',['AvatarDataMgr',['../class_cross_link_1_1_avatar_data_mgr.html',1,'CrossLink']]],
+  ['avoidobstacle_55',['AvoidObstacle',['../class_cross_link_1_1_avoid_obstacle.html',1,'CrossLink']]],
+  ['avoidobstaclecol_56',['AvoidObstacleCol',['../class_cross_link_1_1_avoid_obstacle_col.html',1,'CrossLink']]],
+  ['awake_57',['Awake',['../class_cross_link_1_1_gif_texture.html#adc9620ef14091fde67f594cb36a8d028',1,'CrossLink::GifTexture']]],
+  ['axis_58',['Axis',['../class_cross_link_1_1_v_r_t_k_input_button.html#a429be4e44f6f42ff5fbce22011fb4ba2',1,'CrossLink::VRTKInputButton']]],
+  ['editor_59',['Editor',['../namespace_android_ultimate_plugin_1_1_helpers_1_1_editor.html',1,'AndroidUltimatePlugin::Helpers']]],
+  ['helpers_60',['Helpers',['../namespace_android_ultimate_plugin_1_1_helpers.html',1,'AndroidUltimatePlugin']]]
 ];
