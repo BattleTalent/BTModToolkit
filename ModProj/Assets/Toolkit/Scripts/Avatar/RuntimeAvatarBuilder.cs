@@ -85,7 +85,10 @@ namespace CrossLink
 
             UnityEditor.EditorUtility.SetDirty(this);
 
-            UnityEditor.PrefabUtility.UnpackPrefabInstance(this.gameObject, UnityEditor.PrefabUnpackMode.OutermostRoot, UnityEditor.InteractionMode.AutomatedAction);
+            var type = UnityEditor.PrefabUtility.GetPrefabAssetType(this.gameObject);
+            var status = UnityEditor.PrefabUtility.GetPrefabInstanceStatus(this.gameObject);
+            if (!(type == UnityEditor.PrefabAssetType.NotAPrefab || status == UnityEditor.PrefabInstanceStatus.NotAPrefab))
+                UnityEditor.PrefabUtility.UnpackPrefabInstance(this.gameObject, UnityEditor.PrefabUnpackMode.OutermostRoot, UnityEditor.InteractionMode.AutomatedAction);
 
             PutSlots();
 
