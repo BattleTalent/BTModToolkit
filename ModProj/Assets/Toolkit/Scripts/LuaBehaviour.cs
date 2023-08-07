@@ -55,6 +55,16 @@ namespace CrossLink
         {
             return stringList;
         }
+
+        public Injection[] GetObjList()
+        {
+            return objList;
+        }
+
+        public void SetObjList(Injection[] list)
+        {
+            objList = list;
+        }
     }
 
     public class LuaBehaviour : MonoBehaviour

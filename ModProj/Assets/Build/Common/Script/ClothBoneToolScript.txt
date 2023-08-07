@@ -1,0 +1,204 @@
+
+local ClothBoneTool = {
+    cols = {},
+    
+    updateRate = 60,
+    damping = 0.1,
+    --dampingDistrib = UE.AnimationCurve(UE.Keyframe(0, 0), UE.Keyframe(0, 0)),
+    elasticity = 0.1,
+    --elasticityDistrib = UE.AnimationCurve(UE.Keyframe(0, 0), UE.Keyframe(0, 0)),
+    stiffness = 0.1,
+    --stiffnessDistrib = UE.AnimationCurve(UE.Keyframe(0, 0), UE.Keyframe(0, 0)),
+    inert = 0,
+    --inertDistrib = UE.AnimationCurve(UE.Keyframe(0, 0), UE.Keyframe(0, 0)),
+    radius = 0,
+    --radiusDistrib = UE.AnimationCurve(UE.Keyframe(0, 0), UE.Keyframe(0, 0)),
+    endLength = 0,
+    endOffset = UE.Vector3(0, 0, 0),
+    gravity = UE.Vector3(0, 0, 0),
+    force = UE.Vector3(0, 0, 0),
+    freezeAxis = 0, --   0 none, 1 XAxis, 2 YAxis, 3 ZAxis
+    distantDisable = false,
+    distanceToObject = 20,
+    
+    
+    --[[
+        SoltSkirt
+    ]]
+    dynamicBoneStyle = nil,
+    
+    
+    isSetCloth = false,
+}
+
+
+function ClothBoneTool:Start()
+    if self.isSetCloth then
+        return
+    end
+    
+    if self.trans.root == CL.InteractCharacter.PlayerInstance.trans.root and self.trans.name == "Ragdoll" then
+        return
+    end
+    
+    self.isSetCloth = true
+    
+    
+    local db = self.trans.gameObject:AddComponent(typeof(CS.DynamicBone))
+    
+    if db.m_Colliders == nil then
+        db.m_Colliders = CS.System.Collections.Generic.List(CS.DynamicBoneCollider)()
+    end
+    
+    local idx = 1
+    local cols = {}
+    local clothCol = nil
+    local center = nil
+    local dir = nil
+    local dotX = 0
+    local dotY = 0
+    local dotZ = 0
+    while(self["colliderGroup" .. idx]) do
+        if self["colliderGroup" .. idx]:GetType() == typeof(UE.Transform) then
+            cols = self["colliderGroup" .. idx].gameObject:GetComponentsInChildren(typeof(UE.SphereCollider))
+            
+            if cols.Length == 2 then
+                clothCol = self["colliderGroup" .. idx].gameObject:AddComponent(typeof(CS.DynamicBoneCollider))
+                clothCol.m_Radius = cols[0].radius
+                local center = (cols[0].transform.position + cols[1].transform.position)/2
+                clothCol.m_Center = clothCol.transform:InverseTransformPoint(center)
+                local dir = cols[0].transform.position - cols[1].transform.position
+                clothCol.m_Height = (dir).magnitude + clothCol.m_Radius * 2
+                
+                dotX = math.abs(UE.Vector3.Dot(dir, clothCol.transform.right))
+                dotY = math.abs(UE.Vector3.Dot(dir, clothCol.transform.up))
+                dotZ = math.abs(UE.Vector3.Dot(dir, clothCol.transform.forward))
+                
+                if dotX > dotY and dotX > dotZ then
+                    clothCol.m_Direction = CS.DynamicBoneCollider.Direction.X
+                elseif dotY > dotX and dotY > dotZ then
+                    clothCol.m_Direction = CS.DynamicBoneCollider.Direction.Y
+                elseif dotZ > dotX and dotZ > dotY then
+                    clothCol.m_Direction = CS.DynamicBoneCollider.Direction.Z
+                end
+                
+                db.m_Colliders:Add(clothCol)
+            end
+        end
+        idx = idx + 1
+    end
+    
+    idx = 1
+    while self["exclusion" .. idx] do
+        if self["exclusion" .. idx]:GetType() == typeof(UE.Transform) then
+            db.mExclusions:Add(self["exclusion" .. idx])
+        end
+        idx = idx + 1
+    end
+    
+    self:ApplyDynamicBoneStyle()
+    
+    --set DynamicBone
+    if self.root:GetType() == typeof(UE.Transform) then
+        db.m_Root = self.root
+    end
+    db.m_UpdateRate = self.updateRate
+    
+    db.m_Damping = self.damping
+    --db.m_DampingDistrib = self.dampingDistrib
+    
+    db.m_Elasticity = self.elasticity
+    --db.m_ElasticityDistrib = self.elasticityDistrib
+    
+    db.m_Stiffness = self.stiffness
+    --db.m_StiffnessDistrib = self.stiffnessDistrib
+    
+    db.m_Inert = self.inert
+    --db.m_InertDistrib = self.inertDistrib
+    
+    db.m_Radius = self.radius
+    --db.m_RadiusDistrib = self.radiusDistrib
+    
+    
+    db.m_EndLength = self.endLength
+    db.m_EndOffset = self.endOffset
+    db.m_Gravity = self.gravity
+    db.m_Force = self.force
+    
+    if self.freezeAxis == 0 then
+        db.m_FreezeAxis = CS.DynamicBone.FreezeAxis.None
+    elseif self.freezeAxis == 1 then
+        db.m_FreezeAxis = CS.DynamicBone.FreezeAxis.X
+    elseif self.freezeAxis == 2 then
+        db.m_FreezeAxis = CS.DynamicBone.FreezeAxis.Y
+    elseif self.freezeAxis == 3 then
+        db.m_FreezeAxis = CS.DynamicBone.FreezeAxis.Z
+    end
+    
+    db.m_DistantDisable = self.distantDisable
+    
+    if self.referenceObject and self.referenceObject:GetType() == typeof(UE.Transform) then
+        db.m_ReferenceObject = self.referenceObject
+    end
+    
+    db.m_DistanceToObject = self.distanceToObject
+    
+    if self.outputTrans and self.outputTrans:GetType() == typeof(UE.Transform) then
+        db.outputTrans = self.outputTrans
+    end
+end
+
+
+function ClothBoneTool:ApplyDynamicBoneStyle()
+    if self.dynamicBoneStyle == "SoltSkirt" then ----------------------
+        self.damping = 0.2
+        self.elasticity = 0.077
+        self.stiffness = 0.005
+        self.inert = 0.15
+        self.radius = 0.01
+        self.gravity = UE.Vector3(0, -0.05, 0)
+    elseif self.dynamicBoneStyle == "NormalSkirt" then ------------------------
+        self.damping = 0.25
+        self.elasticity = 0.077
+        self.stiffness = 0.03
+        self.inert = 0.03
+        self.radius = 0.01
+        self.gravity = UE.Vector3(0, -0.05, 0)
+    elseif self.dynamicBoneStyle == "HardSkirt" then
+        self.damping = 0.3
+        self.elasticity = 0.1
+        self.stiffness = 0.005
+        self.inert = 0.1
+        self.radius = 0.01
+        self.gravity = UE.Vector3(0, -0.05, 0)
+    elseif self.dynamicBoneStyle == "LongHair" then  -----------------
+        self.damping = 0.2
+        self.elasticity = 0.077
+        self.stiffness = 0.03
+        self.inert = 0.077
+        self.radius = 0.01
+        self.gravity = UE.Vector3(0, -0.01, 0)
+    elseif self.dynamicBoneStyle == "ShortHair" then  ------------------
+        self.damping = 0.2
+        self.elasticity = 0.077
+        self.stiffness = 0.03
+        self.inert = 0.3
+        self.radius = 0.01
+        self.gravity = UE.Vector3(0, -0.02, 0)
+    elseif self.dynamicBoneStyle == "Tail" then  -------------------
+        self.damping = 0.2
+        self.elasticity = 0.05
+        self.stiffness = 0.7
+        self.inert = 0.5
+        self.radius = 0.03
+        self.gravity = UE.Vector3(0, -0.002, 0)
+    elseif self.dynamicBoneStyle == "Breasts" then  ---------------------
+        self.damping = 0.2
+        self.elasticity = 0.1
+        self.stiffness = 0.8
+        self.inert = 0.5
+        self.endOffset = UE.Vector3(-0.1, -0.1, 0.3)
+    end
+end
+
+return Class(nil, nil, ClothBoneTool)
