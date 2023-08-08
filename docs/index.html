@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">V10</span>
+   &#160;<span id="projectnumber">V11</span>
    </div>
   </td>
  </tr>
@@ -69,37 +69,34 @@ $(function() {
 <div class="contents">
 <div class="toc"><h3>Table of Contents</h3>
 <ul><li class="level1"><a href="#autotoc_md0">Welcome to the Scripting Document</a><ul><ul><li class="level3"><a href="#autotoc_md1">Quick Start to build the mods from this project</a></li>
-<li class="level3"><a href="#autotoc_md2">Modding tutorial</a></li>
-<li class="level3"><a href="#autotoc_md3">Commonly used classes</a><ul><li class="level4"><a href="#autotoc_md4">Basic Classes</a></li>
-<li class="level4"><a href="#autotoc_md5">GamePlay Related Classes</a></li>
-<li class="level4"><a href="#autotoc_md6">Lua Host Classes</a></li>
-<li class="level4"><a href="#autotoc_md7">Commonly used components</a></li>
-<li class="level4"><a href="#autotoc_md8">Damage Pipeline</a></li>
-<li class="level4"><a href="#autotoc_md9">Background Knowledge</a></li>
-<li class="level4"><a href="#autotoc_md10">DebugTools</a></li>
-<li class="level4"><a href="#autotoc_md11">Shotcut</a></li>
-<li class="level4"><a href="#autotoc_md12">Log Path</a></li>
+<li class="level3"><a href="#autotoc_md2">Commonly used classes</a><ul><li class="level4"><a href="#autotoc_md3">Basic Classes</a></li>
+<li class="level4"><a href="#autotoc_md4">GamePlay Related Classes</a></li>
+<li class="level4"><a href="#autotoc_md5">Lua Host Classes</a></li>
+<li class="level4"><a href="#autotoc_md6">Commonly used components</a></li>
+<li class="level4"><a href="#autotoc_md7">Damage Pipeline</a></li>
+<li class="level4"><a href="#autotoc_md8">Background Knowledge</a></li>
+<li class="level4"><a href="#autotoc_md9">DebugTools</a></li>
+<li class="level4"><a href="#autotoc_md10">Shortcut</a></li>
+<li class="level4"><a href="#autotoc_md11">Log Path</a></li>
 </ul>
 </li>
+<li class="level3"><a href="#autotoc_md12">Attributions</a></li>
 </ul>
 </ul>
 </li>
 </ul>
 </div>
-<div class="textblock"><p><a class="anchor" id="md_D__WorkSpace_ProjSAO_ProjSAO_Assets_Scripts_doc"></a></p>
+<div class="textblock"><p><a class="anchor" id="md_D__ProjSAO_ProjSAO_Assets_Scripts_doc"></a></p>
 <h1><a class="anchor" id="autotoc_md0"></a>
 Welcome to the Scripting Document</h1>
 <p>Hello, this is the scripting document, you can query these API, then use them in lua.</p>
 <h3><a class="anchor" id="autotoc_md1"></a>
 Quick Start to build the mods from this project</h3>
-<p><a href="https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview">https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview</a></p>
+<p><a href="https://battletalent.github.io/community-docs/docs/getting-started/modtoolkit-overview">https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview</a></p>
 <p>if you just want to try play this mod, you can download it from <a href="https://github.com/fonzieyang/BTModToolkit/releases/download/V0.0.1/ModProj.zip">HERE</a></p>
 <h3><a class="anchor" id="autotoc_md2"></a>
-Modding tutorial</h3>
-<p><a href="https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview">https://battletalent.github.io/community-docs/docs/tutorials/modtoolkit-overview</a></p>
-<h3><a class="anchor" id="autotoc_md3"></a>
 Commonly used classes</h3>
-<h4><a class="anchor" id="autotoc_md4"></a>
+<h4><a class="anchor" id="autotoc_md3"></a>
 Basic Classes</h4>
 <ul>
 <li><a href="class_cross_link_1_1_scheduler.html">Scheduler</a></li>
@@ -110,7 +107,7 @@ Basic Classes</h4>
 <li><a href="class_cross_link_1_1_game_data_mgr.html">GameDataMgr</a></li>
 <li><a href="class_cross_link_1_1_x_lua_mgr.html">XLuaMgr</a></li>
 </ul>
-<h4><a class="anchor" id="autotoc_md5"></a>
+<h4><a class="anchor" id="autotoc_md4"></a>
 GamePlay Related Classes</h4>
 <ul>
 <li><a href="class_cross_link_1_1_hit_info_config.html">HitInfoConfig</a></li>
@@ -118,13 +115,13 @@ GamePlay Related Classes</h4>
 <li><a href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a></li>
 <li><a href="class_cross_link_1_1_character_combat_attr.html">CharacterCombatAttr</a></li>
 <li><a href="class_cross_link_1_1_full_body_muscle_state.html">FullBodyMuscleState</a></li>
-<li><a href="class_cross_link_1_1_buffer_mgr.html">BuffMgr</a></li>
+<li><a href="class_cross_link_1_1_buff_mgr.html">BuffMgr</a></li>
 <li><a href="class_cross_link_1_1_interact_base.html">InteractBase</a></li>
-<li><a href="class_cross_link_1_1_hud_mgr.html">HUDMgr</a></li>
+<li><a href="class_cross_link_1_1_h_u_d_mgr.html">HUDMgr</a></li>
 <li><a href="class_cross_link_1_1_player_data_mgr.html">PlayerDataMgr</a></li>
 <li><a href="class_cross_link_1_1_level_data_mgr.html">LevelDataMgr</a></li>
 </ul>
-<h4><a class="anchor" id="autotoc_md6"></a>
+<h4><a class="anchor" id="autotoc_md5"></a>
 Lua Host Classes</h4>
 <ul>
 <li><a href="class_cross_link_1_1_lua_behaviour.html">LuaBehaviour</a></li>
@@ -143,7 +140,7 @@ Lua Host Classes</h4>
 <td class="markdownTableBodyCenter">StartInit   </td><td class="markdownTableBodyCenter">Start   </td></tr>
 </table>
 <p>For example, InteractTriggerX has luaAwakeInit, but it'll receive Awake Event instead of AwakeInit</p>
-<h4><a class="anchor" id="autotoc_md7"></a>
+<h4><a class="anchor" id="autotoc_md6"></a>
 Commonly used components</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -169,10 +166,10 @@ Commonly used components</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">FlyObj / FlyObjX   </td><td class="markdownTableBodyNone">attached on Fly Object, such as bullet, magic   </td><td class="markdownTableBodyNone"><a href="https://battletalent.github.io/community-docs/docs/details/flyobject">https://battletalent.github.io/community-docs/docs/details/flyobject</a>   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md8"></a>
+<h4><a class="anchor" id="autotoc_md7"></a>
 Damage Pipeline</h4>
 <p><a href="https://battletalent.github.io/community-docs/docs/details/damage-pipeline">https://battletalent.github.io/community-docs/docs/details/damage-pipeline</a></p>
-<h4><a class="anchor" id="autotoc_md9"></a>
+<h4><a class="anchor" id="autotoc_md8"></a>
 Background Knowledge</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -195,7 +192,7 @@ Background Knowledge</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">coordinate   </td><td class="markdownTableBodyNone">z is forward, x is right, y is up   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md10"></a>
+<h4><a class="anchor" id="autotoc_md9"></a>
 DebugTools</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -203,18 +200,18 @@ DebugTools</h4>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">edit in Editor + debug in Windows Simulator   </td><td class="markdownTableBodyNone">1. dosen't need a gaming PC<br  />
  2. iterate very fast, because you don't need to put on headset<br  />
- 3. you can make use of shotcut to debug faster   </td><td class="markdownTableBodyNone">1. the feeling is different from in VR    </td></tr>
+ 3. you can make use of shortcut to debug faster   </td><td class="markdownTableBodyNone">1. the feeling is different from in VR    </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">edit in Editor + debug in SteamVR   </td><td class="markdownTableBodyNone">1. you can check the real size in headset<br  />
- 2. you can make use of shotcut to debug faster   </td><td class="markdownTableBodyNone">1. need to install mod and put on headset everytime    </td></tr>
+ 2. you can make use of shortcut to debug faster   </td><td class="markdownTableBodyNone">1. need to install mod and put on headset everytime    </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">edit in Editor + debug in Quest   </td><td class="markdownTableBodyNone">1. you can check the real size in headset   </td><td class="markdownTableBodyNone">1. need to install mod and put on headset everytime   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md11"></a>
-Shotcut</h4>
+<h4><a class="anchor" id="autotoc_md10"></a>
+Shortcut</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Shotcut   </th><th class="markdownTableHeadNone">Function at Body Mode   </th><th class="markdownTableHeadNone">Function at Hand Mode    </th></tr>
+<th class="markdownTableHeadNone">Shortcut   </th><th class="markdownTableHeadNone">Function at Body Mode   </th><th class="markdownTableHeadNone">Function at Hand Mode    </th></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">WASD   </td><td class="markdownTableBodyNone">walk   </td><td class="markdownTableBodyNone">walk    </td></tr>
 <tr class="markdownTableRowEven">
@@ -230,7 +227,7 @@ Shotcut</h4>
 </table>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Shotcut   </th><th class="markdownTableHeadNone">Function    </th></tr>
+<th class="markdownTableHeadNone">Shortcut   </th><th class="markdownTableHeadNone">Function    </th></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone">F12   </td><td class="markdownTableBodyNone">open or close MainMenu    </td></tr>
 <tr class="markdownTableRowEven">
@@ -264,7 +261,7 @@ Shotcut</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">V   </td><td class="markdownTableBodyNone">dash(no cooldown)   </td></tr>
 </table>
-<h4><a class="anchor" id="autotoc_md12"></a>
+<h4><a class="anchor" id="autotoc_md11"></a>
 Log Path</h4>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -274,6 +271,11 @@ Log Path</h4>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">Quest   </td><td class="markdownTableBodyNone">read it on <b>in-game console</b> or using <b>adb log command</b> or using <b>sidequest's adb window</b>   </td></tr>
 </table>
+<h3><a class="anchor" id="autotoc_md12"></a>
+Attributions</h3>
+<ul>
+<li>Song used in the song mod: Spinning Monkeys - Kevin Macleod under license: <a href="https://creativecommons.org/licenses/by/3.0/">https://creativecommons.org/licenses/by/3.0/</a> </li>
+</ul>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- start footer part -->

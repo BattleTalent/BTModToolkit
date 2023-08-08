@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">V10</span>
+   &#160;<span id="projectnumber">V11</span>
    </div>
   </td>
  </tr>
@@ -110,6 +110,12 @@ Public Types</h2></td></tr>
 , <b>Cheating</b>
  }</td></tr>
 <tr class="separator:a1809c30626425fa9d7e403a7cb5d26be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a8b0eb0b83f404c7236495abc3f7885"><td class="memItemLeft" align="right" valign="top"><a id="a5a8b0eb0b83f404c7236495abc3f7885"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>ControlType</b> { <b>Oculus</b> = 0
+, <b>Vive</b> = 1
+, <b>Knuckle</b> = 2
+, <b>WMR</b> = 3
+ }</td></tr>
+<tr class="separator:a5a8b0eb0b83f404c7236495abc3f7885"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afec3b26514f7d4d08bb08963c5b92f99"><td class="memItemLeft" align="right" valign="top"><a id="afec3b26514f7d4d08bb08963c5b92f99"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>DifficultyMode</b> { <br />
 &#160;&#160;<b>Default</b> = Challenge
 , <b>Challenge</b> = 0
@@ -162,6 +168,15 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>NoneHud</b> ()</td></
 <tr class="memitem:aa507450ad7f3b8937fab90f06d7ac222"><td class="memItemLeft" align="right" valign="top"><a id="aa507450ad7f3b8937fab90f06d7ac222"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>SimpleTips</b> ()</td></tr>
 <tr class="separator:aa507450ad7f3b8937fab90f06d7ac222"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a280264f439627372ce05b1f6a844f22e"><td class="memItemLeft" align="right" valign="top"><a id="a280264f439627372ce05b1f6a844f22e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDefaultType</b> (ControlType ct, int idx)</td></tr>
+<tr class="separator:a280264f439627372ce05b1f6a844f22e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a070d7a79ce125b1892a943030dc2e175"><td class="memItemLeft" align="right" valign="top"><a id="a070d7a79ce125b1892a943030dc2e175"></a>
+VRTK.SDK_BaseController.ControllerType&#160;</td><td class="memItemRight" valign="bottom"><b>ConvertToControllerType</b> (ControlType ct)</td></tr>
+<tr class="separator:a070d7a79ce125b1892a943030dc2e175"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ed29e69898c82b2a66e6c360a8fa220"><td class="memItemLeft" align="right" valign="top"><a id="a9ed29e69898c82b2a66e6c360a8fa220"></a>
+VRTK.SDK_BaseController.ControllerType&#160;</td><td class="memItemRight" valign="bottom"><b>GetVRTKControllerType</b> (int idx)</td></tr>
+<tr class="separator:a9ed29e69898c82b2a66e6c360a8fa220"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b03e66143f1d6fdfaed2a6e2a4cbbf6"><td class="memItemLeft" align="right" valign="top"><a id="a1b03e66143f1d6fdfaed2a6e2a4cbbf6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SaveReplacementCharacterData</b> ()</td></tr>
 <tr class="separator:a1b03e66143f1d6fdfaed2a6e2a4cbbf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -287,6 +302,9 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>vibration</b> = 1f</
 <tr class="memitem:ab6f8cbb109767493c8c7c5a540087edf"><td class="memItemLeft" align="right" valign="top"><a id="ab6f8cbb109767493c8c7c5a540087edf"></a>
 TipsLevel&#160;</td><td class="memItemRight" valign="bottom"><b>tipsLevel</b></td></tr>
 <tr class="separator:ab6f8cbb109767493c8c7c5a540087edf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3303830b0f82a63b7351cb11ca816e75"><td class="memItemLeft" align="right" valign="top"><a id="a3303830b0f82a63b7351cb11ca816e75"></a>
+ControlType[]&#160;</td><td class="memItemRight" valign="bottom"><b>defaultControlType</b> = { ControlType.Vive, ControlType.Vive }</td></tr>
+<tr class="separator:a3303830b0f82a63b7351cb11ca816e75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7347e6cd4f39b0f5bb6da6843cc6bc78"><td class="memItemLeft" align="right" valign="top"><a id="a7347e6cd4f39b0f5bb6da6843cc6bc78"></a>
 DifficultyMode&#160;</td><td class="memItemRight" valign="bottom"><b>difficulty</b> = DifficultyMode.Default</td></tr>
 <tr class="separator:a7347e6cd4f39b0f5bb6da6843cc6bc78"><td class="memSeparator" colspan="2">&#160;</td></tr>
