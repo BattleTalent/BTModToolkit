@@ -141,6 +141,7 @@ MonoBehaviour:
   selfRB: {fileID: 4662471839499279455}
   dependAttachObj: {fileID: 0}
   handPose: HoldPose
+  autoUpdateHandPose: 0
   handSide: 2
   allowTrigger: 1
   isClimbAttach: 0
@@ -238,6 +239,8 @@ MonoBehaviour:
   mountAttachs:
   - {fileID: 3860933518999234820}
   canPaint: 1
+  enhanceLevel: -1
+  showExampleWeaponGizmo: 0
 --- !u!114 &4575053303693875636
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -427,7 +430,9 @@ MonoBehaviour:
   chargeColor: {r: 0.943, g: 0.952, b: 0.588, a: 1}
   script:
     luaScript: WMD_DaggerBleedScript
-    objList: []
+    objList:
+    - name: hitInfoObj
+      value: {fileID: 4575053303693875636}
     numberList: []
     stringList: []
 --- !u!1 &4669108192500119230
