@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">V10</span>
+   &#160;<span id="projectnumber">V11</span>
    </div>
   </td>
  </tr>
@@ -91,9 +91,9 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a4ed94e1d00882d62afb61426798b2034"><td class="memItemLeft" align="right" valign="top"><a id="a4ed94e1d00882d62afb61426798b2034"></a>
-delegate void&#160;</td><td class="memItemRight" valign="bottom"><b>OnPlayerRotateDelegate</b> (Quaternion quaternion)</td></tr>
-<tr class="separator:a4ed94e1d00882d62afb61426798b2034"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c19752cf76e5597b5e6d82ca137ec6e"><td class="memItemLeft" align="right" valign="top"><a id="a2c19752cf76e5597b5e6d82ca137ec6e"></a>
+delegate void&#160;</td><td class="memItemRight" valign="bottom"><b>OnPlayerInitFinishDelegate</b> ()</td></tr>
+<tr class="separator:a2c19752cf76e5597b5e6d82ca137ec6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3af5130389ea9f3539a94e9caf436fb"><td class="memItemLeft" align="right" valign="top"><a id="ae3af5130389ea9f3539a94e9caf436fb"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDeflectSuccLately</b> (float interval=0.3f)</td></tr>
 <tr class="separator:ae3af5130389ea9f3539a94e9caf436fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -280,6 +280,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SuperPower</b> ()</td
 <tr class="memitem:afa133dc7f89983b6918985ac9c978ceb"><td class="memItemLeft" align="right" valign="top"><a id="afa133dc7f89983b6918985ac9c978ceb"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>SuperPowerProgress</b> ()</td></tr>
 <tr class="separator:afa133dc7f89983b6918985ac9c978ceb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae67d1e97e716756cacfc447ee0d3963"><td class="memItemLeft" align="right" valign="top"><a id="aae67d1e97e716756cacfc447ee0d3963"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnChargeAttack</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
+<tr class="separator:aae67d1e97e716756cacfc447ee0d3963"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:addb3b497d812f5478f698194c290f87f"><td class="memItemLeft" align="right" valign="top"><a id="addb3b497d812f5478f698194c290f87f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnChargeAttackDeflect</b> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fc)</td></tr>
+<tr class="separator:addb3b497d812f5478f698194c290f87f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9909da0a36f1f3d2880a0452d9cc3d20"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_interact_character.html#a9909da0a36f1f3d2880a0452d9cc3d20">IsDoingStuckAction</a> ()</td></tr>
 <tr class="memdesc:a9909da0a36f1f3d2880a0452d9cc3d20"><td class="mdescLeft">&#160;</td><td class="mdescRight">for checking if there's an action that stucking player  <a href="class_cross_link_1_1_interact_character.html#a9909da0a36f1f3d2880a0452d9cc3d20">More...</a><br /></td></tr>
 <tr class="separator:a9909da0a36f1f3d2880a0452d9cc3d20"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -352,6 +358,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDownSpeed</b> ()
 <tr class="memitem:a92a36a2756f96350d8f0b70fce61c5a1"><td class="memItemLeft" align="right" valign="top"><a id="a92a36a2756f96350d8f0b70fce61c5a1"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>NoEnemyAround</b> ()</td></tr>
 <tr class="separator:a92a36a2756f96350d8f0b70fce61c5a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3394bf704909d169e57b3b10ca0ce1b0"><td class="memItemLeft" align="right" valign="top"><a id="a3394bf704909d169e57b3b10ca0ce1b0"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetHeightScale</b> ()</td></tr>
+<tr class="separator:a3394bf704909d169e57b3b10ca0ce1b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa722d7282c7af57082efc98c013c5c64"><td class="memItemLeft" align="right" valign="top"><a id="aa722d7282c7af57082efc98c013c5c64"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateVRIKHandDir</b> ()</td></tr>
+<tr class="separator:aa722d7282c7af57082efc98c013c5c64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac13fb9c52153647068d7ed676ad9466d"><td class="memItemLeft" align="right" valign="top"><a id="ac13fb9c52153647068d7ed676ad9466d"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsVRDesktop</b> ()</td></tr>
 <tr class="separator:ac13fb9c52153647068d7ed676ad9466d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -734,6 +746,12 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>dashMinSpeed</b> = 1
 <tr class="memitem:a12d0f61ec4216d132d0eb218173b5fa7"><td class="memItemLeft" align="right" valign="top"><a id="a12d0f61ec4216d132d0eb218173b5fa7"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>superModeCoolDown</b> = 30</td></tr>
 <tr class="separator:a12d0f61ec4216d132d0eb218173b5fa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08f13a71378f6599739b677bcae0bc41"><td class="memItemLeft" align="right" valign="top"><a id="a08f13a71378f6599739b677bcae0bc41"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>cameraForwardOffset</b> = 0.0f</td></tr>
+<tr class="separator:a08f13a71378f6599739b677bcae0bc41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5f93a7b0f70c040b2f0bce395c3ddba"><td class="memItemLeft" align="right" valign="top"><a id="ae5f93a7b0f70c040b2f0bce395c3ddba"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>characterHeight</b> = 2.0f</td></tr>
+<tr class="separator:ae5f93a7b0f70c040b2f0bce395c3ddba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aacbdd02b5e44ab8645239c02b22a55cc"><td class="memItemLeft" align="right" valign="top"><a id="aacbdd02b5e44ab8645239c02b22a55cc"></a>
 <a class="el" href="class_cross_link_1_1_hand_toggle.html">HandToggle</a>&#160;</td><td class="memItemRight" valign="bottom"><b>lefthandToggle</b></td></tr>
 <tr class="separator:aacbdd02b5e44ab8645239c02b22a55cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1005,7 +1023,7 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>HeadsetOffset<
 static float&#160;</td><td class="memItemRight" valign="bottom"><b>TallAdd</b> = -1</td></tr>
 <tr class="separator:a9decbd54281ec89d816001c6c366913c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5bed3bf687517864ff02612b5174d3c3"><td class="memItemLeft" align="right" valign="top"><a id="a5bed3bf687517864ff02612b5174d3c3"></a>
-const float&#160;</td><td class="memItemRight" valign="bottom"><b>AirStaySec</b> = 0.45f</td></tr>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>AirStaySec</b> = 0.35f</td></tr>
 <tr class="separator:a5bed3bf687517864ff02612b5174d3c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a876488cf64f404e1c47e1b0a6adae2aa"><td class="memItemLeft" align="right" valign="top"><a id="a876488cf64f404e1c47e1b0a6adae2aa"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>InSuperMode</b> = false</td></tr>
@@ -1020,21 +1038,36 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IgnoreMovePosi
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>
-<tr class="memitem:a0fb72c3a1d69a4e87bf9a1f5ca39c384"><td class="memItemLeft" align="right" valign="top"><a id="a0fb72c3a1d69a4e87bf9a1f5ca39c384"></a>
-OnPlayerRotateDelegate&#160;</td><td class="memItemRight" valign="bottom"><b>OnPlayerRotate</b></td></tr>
-<tr class="separator:a0fb72c3a1d69a4e87bf9a1f5ca39c384"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ceab3338d28130ad9d1adab2712b825"><td class="memItemLeft" align="right" valign="top"><a id="a9ceab3338d28130ad9d1adab2712b825"></a>
+static OnPlayerInitFinishDelegate&#160;</td><td class="memItemRight" valign="bottom"><b>OnPlayerInitFinish</b></td></tr>
+<tr class="separator:a9ceab3338d28130ad9d1adab2712b825"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca3c35cde0f2730338b9b185f9995159"><td class="memItemLeft" align="right" valign="top"><a id="aca3c35cde0f2730338b9b185f9995159"></a>
 System.Action&lt; <a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a>, <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>DeflectEvent</b></td></tr>
 <tr class="separator:aca3c35cde0f2730338b9b185f9995159"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a960afe66c564953cff7d9310814cae58"><td class="memItemLeft" align="right" valign="top"><a id="a960afe66c564953cff7d9310814cae58"></a>
 System.Action&lt; <a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a>, <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ParryEvent</b></td></tr>
 <tr class="separator:a960afe66c564953cff7d9310814cae58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a993a2d608ef15db2a743566c350e2050"><td class="memItemLeft" align="right" valign="top"><a id="a993a2d608ef15db2a743566c350e2050"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ChargeAtkBeginEvent</b></td></tr>
+<tr class="separator:a993a2d608ef15db2a743566c350e2050"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c57e7773d0830227aef7d5f9e861b17"><td class="memItemLeft" align="right" valign="top"><a id="a7c57e7773d0830227aef7d5f9e861b17"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ChargeDeflectEvent</b></td></tr>
+<tr class="separator:a7c57e7773d0830227aef7d5f9e861b17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b5cbfd64878357e1c529a0c42fc39ac"><td class="memItemLeft" align="right" valign="top"><a id="a9b5cbfd64878357e1c529a0c42fc39ac"></a>
 System.Action&lt; Vector3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>TransportBeginEvent</b></td></tr>
 <tr class="separator:a9b5cbfd64878357e1c529a0c42fc39ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad948ebb6a60ee699fa50564e9f7f72c0"><td class="memItemLeft" align="right" valign="top"><a id="ad948ebb6a60ee699fa50564e9f7f72c0"></a>
 System.Action&lt; Vector3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>TransportEndEvent</b></td></tr>
 <tr class="separator:ad948ebb6a60ee699fa50564e9f7f72c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee5595d779c2991ec39b184f133eca85"><td class="memItemLeft" align="right" valign="top"><a id="aee5595d779c2991ec39b184f133eca85"></a>
+System.Action&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StepSoundEvent</b></td></tr>
+<tr class="separator:aee5595d779c2991ec39b184f133eca85"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a95d979b9d8abbba2e6c9837616847756"><td class="memItemLeft" align="right" valign="top"><a id="a95d979b9d8abbba2e6c9837616847756"></a>
+System.Action&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>JumpStartSoundEvent</b></td></tr>
+<tr class="separator:a95d979b9d8abbba2e6c9837616847756"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab514329f6aca4c217758f7227b306164"><td class="memItemLeft" align="right" valign="top"><a id="ab514329f6aca4c217758f7227b306164"></a>
+System.Action&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>JumpEndSoundEvent</b></td></tr>
+<tr class="separator:ab514329f6aca4c217758f7227b306164"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header events_class_cross_link_1_1_character_controller_base"><td colspan="2" onclick="javascript:toggleInherit('events_class_cross_link_1_1_character_controller_base')"><img src="closed.png" alt="-"/>&#160;Events inherited from <a class="el" href="class_cross_link_1_1_character_controller_base.html">CrossLink.CharacterControllerBase</a></td></tr>
 <tr class="memitem:a4dddf7eda1692824040a6bfef793b13d inherit events_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a4dddf7eda1692824040a6bfef793b13d"></a>
 System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>JumpEvent</b></td></tr>

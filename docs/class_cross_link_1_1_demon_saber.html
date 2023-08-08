@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">V10</span>
+   &#160;<span id="projectnumber">V11</span>
    </div>
   </td>
  </tr>
@@ -95,6 +95,12 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>impactSaberStayEffe
 <tr class="memitem:a91d7d09794398345dec095926a6ae7ae"><td class="memItemLeft" align="right" valign="top"><a id="a91d7d09794398345dec095926a6ae7ae"></a>
 <a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>impactSaberStaySound</b></td></tr>
 <tr class="separator:a91d7d09794398345dec095926a6ae7ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbbb3a8de57d5bceb170700377382ec7"><td class="memItemLeft" align="right" valign="top"><a id="acbbb3a8de57d5bceb170700377382ec7"></a>
+int[]&#160;</td><td class="memItemRight" valign="bottom"><b>bladeStabGeoIndex</b></td></tr>
+<tr class="separator:acbbb3a8de57d5bceb170700377382ec7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa66703584251d5a8c53914d4c9d3a6ff"><td class="memItemLeft" align="right" valign="top"><a id="aa66703584251d5a8c53914d4c9d3a6ff"></a>
+<a class="el" href="class_cross_link_1_1_stab_object.html">StabObject</a>&#160;</td><td class="memItemRight" valign="bottom"><b>stabObject</b></td></tr>
+<tr class="separator:aa66703584251d5a8c53914d4c9d3a6ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_sword_saber"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_sword_saber')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_sword_saber.html">CrossLink.SwordSaber</a></td></tr>
 <tr class="memitem:aa86ca5da0ec64dd470cdcf7bf3e0891a inherit pub_attribs_class_cross_link_1_1_sword_saber"><td class="memItemLeft" align="right" valign="top"><a id="aa86ca5da0ec64dd470cdcf7bf3e0891a"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>lightSaber</b></td></tr>
@@ -178,6 +184,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>dontNeedUpdate</b> = 
 <tr class="memitem:a1b2e1ca95253153ce36422555aeaa577 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a1b2e1ca95253153ce36422555aeaa577"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>needUpdateOnce</b> = false</td></tr>
 <tr class="separator:a1b2e1ca95253153ce36422555aeaa577 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e29c0ee74b76e0386a716cf95fde304 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a8e29c0ee74b76e0386a716cf95fde304"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>savePointLoadInfo</b> = string.Empty</td></tr>
+<tr class="separator:a8e29c0ee74b76e0386a716cf95fde304 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b8bcd147a282f549cf8b4be7244c0fd inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a5b8bcd147a282f549cf8b4be7244c0fd"></a>
 Renderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>skillChangeColors</b></td></tr>
 <tr class="separator:a5b8bcd147a282f549cf8b4be7244c0fd inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -403,9 +412,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHitScanIgno
 <tr class="memitem:afab1ad21e579836c3a02a097e4bda3ea inherit pub_static_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="afab1ad21e579836c3a02a097e4bda3ea"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHitScanIgnore</b> (Tagger.Tag[] tags)</td></tr>
 <tr class="separator:afab1ad21e579836c3a02a097e4bda3ea inherit pub_static_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a957c380e296ecbecf115f185e19f9e08 inherit pub_static_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a957c380e296ecbecf115f185e19f9e08"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyHitScanDamage</b> (Collider beHitTarget, <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> self, Rigidbody rb, Collider col, Vector3 hitDir, string hitterCamp)</td></tr>
-<tr class="separator:a957c380e296ecbecf115f185e19f9e08 inherit pub_static_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afd02df102197c68229cdec8d44400f9b inherit pub_static_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="afd02df102197c68229cdec8d44400f9b"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyHitScanDamage</b> (Collider beHitTarget, <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> self, Rigidbody rb, Collider col, Vector3 hitDir, string hitterCamp, bool addForce=true)</td></tr>
+<tr class="separator:afd02df102197c68229cdec8d44400f9b inherit pub_static_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_static_attribs_class_cross_link_1_1_interact_trigger"><td colspan="2" onclick="javascript:toggleInherit('pub_static_attribs_class_cross_link_1_1_interact_trigger')"><img src="closed.png" alt="-"/>&#160;Static Public Attributes inherited from <a class="el" href="class_cross_link_1_1_interact_trigger.html">CrossLink.InteractTrigger</a></td></tr>
 <tr class="memitem:accd119e7226b3ed282264048ec921b07 inherit pub_static_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="accd119e7226b3ed282264048ec921b07"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>WeaponPath</b> = &quot;Weapon/&quot;</td></tr>

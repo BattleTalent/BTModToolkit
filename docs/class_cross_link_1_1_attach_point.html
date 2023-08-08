@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">V10</span>
+   &#160;<span id="projectnumber">V11</span>
    </div>
   </td>
  </tr>
@@ -194,6 +194,9 @@ Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>selfRB</b></td><
 <tr class="memitem:ae6d7a477cb3df172b9ed2392d47edd8b inherit pub_attribs_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="ae6d7a477cb3df172b9ed2392d47edd8b"></a>
 <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a>&#160;</td><td class="memItemRight" valign="bottom"><b>attachedHand</b></td></tr>
 <tr class="separator:ae6d7a477cb3df172b9ed2392d47edd8b inherit pub_attribs_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecbc3ec59818ee2a4e5afc93a8a54437 inherit pub_attribs_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="aecbc3ec59818ee2a4e5afc93a8a54437"></a>
+<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a>&#160;</td><td class="memItemRight" valign="bottom"><b>lastAttachedHand</b></td></tr>
+<tr class="separator:aecbc3ec59818ee2a4e5afc93a8a54437 inherit pub_attribs_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2728c6c7ff14b6015d3f7c5031424c72 inherit pub_attribs_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="a2728c6c7ff14b6015d3f7c5031424c72"></a>
 <a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>dependAttachObj</b></td></tr>
 <tr class="separator:a2728c6c7ff14b6015d3f7c5031424c72 inherit pub_attribs_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -264,6 +267,10 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>UnLinkJoint</b> (Conf
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_static_methods_class_cross_link_1_1_attach_obj"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_class_cross_link_1_1_attach_obj')"><img src="closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_attach_obj.html">CrossLink.AttachObj</a></td></tr>
+<tr class="memitem:aed81afaa84a0d8454ff8caafdd3e39bd inherit pub_static_methods_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="aed81afaa84a0d8454ff8caafdd3e39bd"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetAllFixers</b> ()</td></tr>
+<tr class="separator:aed81afaa84a0d8454ff8caafdd3e39bd inherit pub_static_methods_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_class_cross_link_1_1_attach_obj"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_cross_link_1_1_attach_obj')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_cross_link_1_1_attach_obj.html">CrossLink.AttachObj</a></td></tr>
 <tr class="memitem:a6747b6b4ecfc4b6284733f2987113805 inherit pro_attribs_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="a6747b6b4ecfc4b6284733f2987113805"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>flyControlEnabled</b> = true</td></tr>
@@ -282,16 +289,16 @@ ConfigurableJoint&#160;</td><td class="memItemRight" valign="bottom"><b>reactJoi
 <tr class="separator:aa449d41f9630f5e4405f05c16af88629 inherit pro_attribs_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_static_attribs_class_cross_link_1_1_attach_obj"><td colspan="2" onclick="javascript:toggleInherit('pro_static_attribs_class_cross_link_1_1_attach_obj')"><img src="closed.png" alt="-"/>&#160;Static Protected Attributes inherited from <a class="el" href="class_cross_link_1_1_attach_obj.html">CrossLink.AttachObj</a></td></tr>
 <tr class="memitem:a5d88d8177a2930dbdaa8148109322daa inherit pro_static_attribs_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="a5d88d8177a2930dbdaa8148109322daa"></a>
-static Quaternion&#160;</td><td class="memItemRight" valign="bottom"><b>rightFixer</b> = new Quaternion(-0.0177f, 0.0679f, -0.2445f, 0.96708f)</td></tr>
+static Quaternion&#160;</td><td class="memItemRight" valign="bottom"><b>rightFixer</b> = Quaternion.identity</td></tr>
 <tr class="separator:a5d88d8177a2930dbdaa8148109322daa inherit pro_static_attribs_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acd73ba1c58b2ece4a1ed40498ca30cb6 inherit pro_static_attribs_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="acd73ba1c58b2ece4a1ed40498ca30cb6"></a>
-static Quaternion&#160;</td><td class="memItemRight" valign="bottom"><b>leftFixer</b> = new Quaternion(0.08408f, -0.0162f, -0.9610f, 0.26259f)</td></tr>
+static Quaternion&#160;</td><td class="memItemRight" valign="bottom"><b>leftFixer</b> = Quaternion.identity</td></tr>
 <tr class="separator:acd73ba1c58b2ece4a1ed40498ca30cb6 inherit pro_static_attribs_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac1c81e5dbed36b420db240f2a0e55bfe inherit pro_static_attribs_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="ac1c81e5dbed36b420db240f2a0e55bfe"></a>
-static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>rightOffset</b> = new Vector3(0, 0, 0)</td></tr>
+static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>rightOffset</b> = Vector3.zero</td></tr>
 <tr class="separator:ac1c81e5dbed36b420db240f2a0e55bfe inherit pro_static_attribs_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a413c076b1749875a52d49c8f32caac05 inherit pro_static_attribs_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="a413c076b1749875a52d49c8f32caac05"></a>
-static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>leftOffset</b> = new Vector3(0.0176f - 0.008f, -0.0023f - 0.008f, -0.002f - 0.008f)</td></tr>
+static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>leftOffset</b> = Vector3.zero</td></tr>
 <tr class="separator:a413c076b1749875a52d49c8f32caac05 inherit pro_static_attribs_class_cross_link_1_1_attach_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header properties_class_cross_link_1_1_attach_obj"><td colspan="2" onclick="javascript:toggleInherit('properties_class_cross_link_1_1_attach_obj')"><img src="closed.png" alt="-"/>&#160;Properties inherited from <a class="el" href="class_cross_link_1_1_attach_obj.html">CrossLink.AttachObj</a></td></tr>
 <tr class="memitem:aefa8f4ba73b8c35991a90f10a5159c3e inherit properties_class_cross_link_1_1_attach_obj"><td class="memItemLeft" align="right" valign="top"><a id="aefa8f4ba73b8c35991a90f10a5159c3e"></a>

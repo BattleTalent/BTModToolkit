@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Battle Talent
-   &#160;<span id="projectnumber">V10</span>
+   &#160;<span id="projectnumber">V11</span>
    </div>
   </td>
  </tr>
@@ -82,6 +82,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a052e8e527aba288636c232f1f51e7155"><td class="memItemLeft" align="right" valign="top"><a id="a052e8e527aba288636c232f1f51e7155"></a>
+GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>GetConsole</b> ()</td></tr>
+<tr class="separator:a052e8e527aba288636c232f1f51e7155"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8a4c902d910c2d4ef09cd5909c9c1d1a"><td class="memItemLeft" align="right" valign="top"><a id="a8a4c902d910c2d4ef09cd5909c9c1d1a"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnInit</b> ()</td></tr>
 <tr class="separator:a8a4c902d910c2d4ef09cd5909c9c1d1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -226,6 +229,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>AddEventToScene</b> (
 <tr class="memitem:a64cbc12e138b9d46f3149b9a72173c09"><td class="memItemLeft" align="right" valign="top"><a id="a64cbc12e138b9d46f3149b9a72173c09"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveCurSceneEvent</b> ()</td></tr>
 <tr class="separator:a64cbc12e138b9d46f3149b9a72173c09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33abf516dc39da6305bf60d78c01892a"><td class="memItemLeft" align="right" valign="top"><a id="a33abf516dc39da6305bf60d78c01892a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RefleshAvatarOption</b> ()</td></tr>
+<tr class="separator:a33abf516dc39da6305bf60d78c01892a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1405e859c613ee956371962fe1fc9d0f"><td class="memItemLeft" align="right" valign="top"><a id="a1405e859c613ee956371962fe1fc9d0f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReplacementAvatar</b> (<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a> select)</td></tr>
+<tr class="separator:a1405e859c613ee956371962fe1fc9d0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac8bd2821451d68445c03b6a7253c8808"><td class="memItemLeft" align="right" valign="top"><a id="ac8bd2821451d68445c03b6a7253c8808"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetAvatar</b> ()</td></tr>
+<tr class="separator:ac8bd2821451d68445c03b6a7253c8808"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06237dad8d9997f7bf0abdff3a52e083"><td class="memItemLeft" align="right" valign="top"><a id="a06237dad8d9997f7bf0abdff3a52e083"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ReSkinCharacter</b> (<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a> select)</td></tr>
 <tr class="separator:a06237dad8d9997f7bf0abdff3a52e083"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -275,12 +287,33 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Exit</b> ()</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a671ad04982a78b5cb36091ca3cf2e0cb"><td class="memItemLeft" align="right" valign="top"><a id="a671ad04982a78b5cb36091ca3cf2e0cb"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetKillAllCoolDown</b> ()</td></tr>
+<tr class="separator:a671ad04982a78b5cb36091ca3cf2e0cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a77a5fbc7417e298f496eb6861f26f396"><td class="memItemLeft" align="right" valign="top"><a id="a77a5fbc7417e298f496eb6861f26f396"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnWeapon</b> (string weaponToSpawn)</td></tr>
 <tr class="separator:a77a5fbc7417e298f496eb6861f26f396"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e1a7dae042f4bec8851eee9f62b3b79"><td class="memItemLeft" align="right" valign="top"><a id="a4e1a7dae042f4bec8851eee9f62b3b79"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnRole</b> (string roleToSpawn)</td></tr>
 <tr class="separator:a4e1a7dae042f4bec8851eee9f62b3b79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8245fa31fb3918d7e218c9a7b8d0ea1"><td class="memItemLeft" align="right" valign="top"><a id="ab8245fa31fb3918d7e218c9a7b8d0ea1"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>ReplacementAvatar</b> (string name)</td></tr>
+<tr class="separator:ab8245fa31fb3918d7e218c9a7b8d0ea1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a679ce3081996c9f3c55537b0674ffa04"><td class="memItemLeft" align="right" valign="top"><a id="a679ce3081996c9f3c55537b0674ffa04"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>CacheEvents&lt; TComponent, THandler &gt;</b> (TComponent source, string eventName)</td></tr>
+<tr class="separator:a679ce3081996c9f3c55537b0674ffa04"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53fa96fef7ca4e9d5ddca5ef698b357f"><td class="memItemLeft" align="right" valign="top"><a id="a53fa96fef7ca4e9d5ddca5ef698b357f"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>CacheEvents&lt; TComponent &gt;</b> (TComponent source, string eventName)</td></tr>
+<tr class="separator:a53fa96fef7ca4e9d5ddca5ef698b357f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c576ba0790fdffd21b901a4aa470f68"><td class="memItemLeft" align="right" valign="top"><a id="a9c576ba0790fdffd21b901a4aa470f68"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>CacheEvents&lt; TComponent &gt;</b> (TComponent source)</td></tr>
+<tr class="separator:a9c576ba0790fdffd21b901a4aa470f68"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73dc486cb1ee5c1125789cdb2a6caf86"><td class="memItemLeft" align="right" valign="top"><a id="a73dc486cb1ee5c1125789cdb2a6caf86"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>RestoreEvents&lt; TComponent &gt;</b> (TComponent target)</td></tr>
+<tr class="separator:a73dc486cb1ee5c1125789cdb2a6caf86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d68799f22c94ed348adc06212f9e597"><td class="memItemLeft" align="right" valign="top"><a id="a4d68799f22c94ed348adc06212f9e597"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>RestoreEvents&lt; TComponent, TEvent &gt;</b> (TComponent target, string eventName)</td></tr>
+<tr class="separator:a4d68799f22c94ed348adc06212f9e597"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a541209ce1e767a90e762840e72a04be7"><td class="memItemLeft" align="right" valign="top"><a id="a541209ce1e767a90e762840e72a04be7"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>OnPlayerLoaded</b> ()</td></tr>
 <tr class="separator:a541209ce1e767a90e762840e72a04be7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -332,6 +365,9 @@ Object&#160;</td><td class="memItemRight" valign="bottom"><b>consolePrefab</b></
 <tr class="memitem:a14f4d7ba8f727d84bf8cf1686add0aba"><td class="memItemLeft" align="right" valign="top"><a id="a14f4d7ba8f727d84bf8cf1686add0aba"></a>
 <a class="el" href="class_cross_link_1_1_option_item.html">OptionItem</a>&#160;</td><td class="memItemRight" valign="bottom"><b>roleModOption</b></td></tr>
 <tr class="separator:a14f4d7ba8f727d84bf8cf1686add0aba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0149d12c9cd1ee5efcc519a3b04cad53"><td class="memItemLeft" align="right" valign="top"><a id="a0149d12c9cd1ee5efcc519a3b04cad53"></a>
+<a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>avatarSelect</b></td></tr>
+<tr class="separator:a0149d12c9cd1ee5efcc519a3b04cad53"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf18e2599f921a18d124cd579e24e394"><td class="memItemLeft" align="right" valign="top"><a id="abf18e2599f921a18d124cd579e24e394"></a>
 <a class="el" href="class_cross_link_1_1_u_i_option_text.html">UIOptionText</a>&#160;</td><td class="memItemRight" valign="bottom"><b>skinSelect</b></td></tr>
 <tr class="separator:abf18e2599f921a18d124cd579e24e394"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -414,6 +450,18 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreFadeEffect</b> 
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:a4aa35208b75241773a97c670dfa014fb"><td class="memItemLeft" align="right" valign="top"><a id="a4aa35208b75241773a97c670dfa014fb"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>characterPath</b> = &quot;Character&quot;</td></tr>
+<tr class="separator:a4aa35208b75241773a97c670dfa014fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab21b731506a689339c324543ffc74be9"><td class="memItemLeft" align="right" valign="top"><a id="ab21b731506a689339c324543ffc74be9"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>avatarDefault</b> = &quot;[VRTK_Scripts]&quot;</td></tr>
+<tr class="separator:ab21b731506a689339c324543ffc74be9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e33424557cc3c21a8f275a57f67174e"><td class="memItemLeft" align="right" valign="top"><a id="a0e33424557cc3c21a8f275a57f67174e"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>avatarTemplate</b> = &quot;[VRTK_Scripts]ModTemplate&quot;</td></tr>
+<tr class="separator:a0e33424557cc3c21a8f275a57f67174e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9747fcffabf937cb94253d8e242d2d9"><td class="memItemLeft" align="right" valign="top"><a id="ae9747fcffabf937cb94253d8e242d2d9"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>avatarHandPoseLibrary</b> = &quot;HandPoseLibrary_Mod&quot;</td></tr>
+<tr class="separator:ae9747fcffabf937cb94253d8e242d2d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7c0114eb4a78cb7712db325a44713376"><td class="memItemLeft" align="right" valign="top"><a id="a7c0114eb4a78cb7712db325a44713376"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>PlaySkinTag</b> = &quot;Player&quot;</td></tr>
 <tr class="separator:a7c0114eb4a78cb7712db325a44713376"><td class="memSeparator" colspan="2">&#160;</td></tr>
