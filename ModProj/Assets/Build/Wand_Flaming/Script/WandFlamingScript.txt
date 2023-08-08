@@ -1,0 +1,193 @@
+local WandFire = {
+    chargeValue = {0, 0.6, 1.3},
+    readyValue = {1.5, 1.4, 1.4},
+    releaseValue = {40, 1.4, 1.4},    
+}
+
+function WandFire:OnGrab(a, g)
+    if not g then
+        self:SetHandTrackerSpeed(1)
+        self.slowHand = nil
+    end
+    
+    if self.cacheAttachData then
+        if not IsNullOrDestroyed(self.host) and not IsNullOrDestroyed(self.host.interact) then
+            for i = 0, self.host.interact.attachList.Length - 1 do
+                if not IsNullOrDestroyed(self.host.interact.attachList[i]) then
+                    if self.cacheAttachData[self.host.interact.attachList[i]] then
+                        self.host.interact.attachList[i].indexLimit = self.cacheAttachData[self.host.interact.attachList[i]].indexLimit
+                        self.host.interact.attachList[i].thumbLimit = self.cacheAttachData[self.host.interact.attachList[i]].thumbLimit
+                        self.host.interact.attachList[i].palmLimit = self.cacheAttachData[self.host.interact.attachList[i]].palmLimit
+                    end
+                end
+            end
+        end
+        self.cacheAttachData = nil
+    end
+end
+
+function WandFire:OnSlot(slot, t)
+    if t then
+        self.cacheAttachData = {}
+        if not IsNullOrDestroyed(self.host) and not IsNullOrDestroyed(self.host.interact) then
+            local GrabRotLimitType = CL.AttachLine.GrabRotLimitType
+            local GrabThumbLimitType = CL.AttachLine.GrabThumbLimitType
+            local GrabPalmLimitType = CL.AttachLine.GrabPalmLimitType
+
+            for i = 0, self.host.interact.attachList.Length - 1 do
+                if not IsNullOrDestroyed(self.host.interact.attachList[i]) then
+                    self.cacheAttachData[self.host.interact.attachList[i]] = {}
+                    
+                    self.cacheAttachData[self.host.interact.attachList[i]].indexLimit = self.host.interact.attachList[i].indexLimit
+                    self.cacheAttachData[self.host.interact.attachList[i]].thumbLimit = self.host.interact.attachList[i].thumbLimit
+                    self.cacheAttachData[self.host.interact.attachList[i]].palmLimit = self.host.interact.attachList[i].palmLimit
+                    
+                    self.host.interact.attachList[i].indexLimit = GrabRotLimitType.Right
+                    self.host.interact.attachList[i].thumbLimit = GrabThumbLimitType.Forward
+                    self.host.interact.attachList[i].palmLimit = GrabPalmLimitType.None
+                end
+            end
+        end
+    end
+end
+
+function WandFire:OnChargeBegin()   
+    if self.onSpit then
+        self.host:CloseSkill()
+        return
+    end
+    
+    self:ShowChargeEffect(true)
+end
+
+function WandFire:OnChargeCancel()
+    self:ShowChargeEffect(false)
+end
+
+function WandFire:OnChargeReady()
+    if self.readySound then
+        self.readySound:PlaySound()
+    end
+end
+
+function WandFire:OnChargeRelease()
+    local name = self.flyObjName
+    local time = self.time
+    if self.host.interact:IsEnhance() then
+        name = self.enhanceObjName
+        time = self.enhanceTime
+    end
+    
+    --handLerpspeed
+    self:SetHandTrackerSpeed(0.03)
+    
+    self.onSpit = true
+    self:SpitFire(name, self.shootPosition, time)
+    
+    self.host.interact:CostDurability()
+    
+    self:ShowChargeEffect(false)
+end
+
+function WandFire:ShowChargeEffect(show)
+    if show then
+        self.fireEffect:Play()
+        
+        if not self.fireballSoundInfo then
+            self.fireballSoundInfo = self.fireballSound:PlaySoundInfo()
+            self.fireballSoundInfo.ao.transform:SetParent(self.shootPosition)
+        end
+    else
+        self.fireEffect:Stop()
+        
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.fireballSoundInfo)
+        self.fireballSoundInfo = nil
+    end
+end
+
+
+function WandFire:SetHandTrackerSpeed(value)
+    if self.slowHand and not IsNullOrDestroyed(self.slowHand) then
+        self.slowHand.handTracker.trackSpeedState = value
+    end
+end
+
+function WandFire:SpitFire(name, trans, time)
+    local fire = CL.FlyObject.SpawnFlyObj(name)
+    local as = fire.trans:GetComponent(typeof(UE.AudioSource))
+    if as then
+        as:Stop()
+    end
+    fire.trans.position = trans.position
+    fire.trans.rotation = trans.rotation
+    fire.trans:SetParent(trans)
+    
+    local shootEffect = fire.shootEffect
+    fire.shootEffect = nil
+    
+    local soundInfo = self.fireSound:PlaySoundInfo()
+    soundInfo.ao.transform:SetParent(trans)
+    
+    local flyTime = fire.maxFlyTime
+    --fire.maxFlyTime = time
+    
+    local eff = CL.EffectMgr.Instance:PlayEffect(shootEffect, self.shootPosition.position, self.shootPosition.rotation)
+    eff.trans:SetParent(trans)
+    local particles = self:GetParticles(eff)
+    local particlesValue = {}
+    for i = 0, particles.Length - 1 do
+        particlesValue[i] = particles[i].main.maxParticles
+    end
+    
+    fire:OnSpawn(self.host.interact, trans.forward, 0)
+    
+    --fire.maxFlyTime = flyTime
+    
+    fire.shootEffect = shootEffect
+    
+    local slowTime = 2
+    local r = nil
+    local main = nil
+    self.slowHand = self.host.interact:GetPrimaryHand()
+    CL.Scheduler.Create(self,
+        function(sche, t, s)
+            r = t/s
+            self:SetHandTrackerSpeed(0.03 + 0.97 * r)
+            
+            for i = 0, particles.Length - 1 do
+                main = particles[i].main
+                main.maxParticles = particlesValue[i]/5 * (1 - r)
+            end
+            
+            soundInfo.audio.volume = 0.1 + 0.4 * (1 - r)
+            --sound.audio.pitch = 0.95 + f * 0.3
+            
+            if t >= s then
+                for i = 0, particles.Length - 1 do
+                    main = particles[i].main
+                    main.maxParticles = particlesValue[i]
+                    particles[i]:Stop()
+                end
+                fire.trans:SetParent(nil)
+                
+                CL.AudioMgr.Instance:GiveBackAndLerpToZero(soundInfo)
+                eff.trans:SetParent(nil)
+                CL.EffectMgr.Instance:GiveBack(eff)
+                self:SetHandTrackerSpeed(1)
+                
+                self:ResetState()
+            end
+        end
+    ,0, slowTime, flyTime - slowTime)
+end
+
+
+function WandFire:ResetState()
+    self.onSpit = false
+end
+
+function WandFire:GetParticles(effectNode)
+    return effectNode.trans:GetComponentsInChildren(typeof(UE.ParticleSystem))
+end
+
+return Class(nil, nil, WandFire)

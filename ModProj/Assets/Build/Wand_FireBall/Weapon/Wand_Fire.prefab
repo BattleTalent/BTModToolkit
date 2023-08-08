@@ -140,6 +140,7 @@ MonoBehaviour:
   selfRB: {fileID: 4662471839499279455}
   dependAttachObj: {fileID: 0}
   handPose: HoldPose
+  autoUpdateHandPose: 0
   handSide: 2
   allowTrigger: 1
   isClimbAttach: 0
@@ -267,6 +268,8 @@ MonoBehaviour:
   mountAttachs:
   - {fileID: 3860933518999234820}
   canPaint: 1
+  enhanceLevel: -1
+  showExampleWeaponGizmo: 0
 --- !u!114 &4575053303693875636
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -356,7 +359,7 @@ MonoBehaviour:
   manaCostOnCharge: 20
   skillDamage: 0
   instantSkill: 1
-  skillChargeEndTime: 1
+  skillChargeEndTime: 0.3
   chargeEffect: 
   chargeEndEffect: 
   chargeSound:
@@ -400,7 +403,7 @@ MonoBehaviour:
     - name: dontShootOnInstant
       value: 1
     - name: shootOnCharge
-      value: 0
+      value: 1
     - name: shootOnActivateEnd
       value: 0
     - name: autoSetupBulletIgnore
