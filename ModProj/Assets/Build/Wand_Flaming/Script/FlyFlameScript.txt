@@ -37,7 +37,7 @@ function FlyFlame:OnSpawn()
             self:Update()
         end
     , 0.2, -1)
-    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
 end
 
 function FlyFlame:Update()
