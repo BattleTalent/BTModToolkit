@@ -1,0 +1,277 @@
+local PotionBase = {
+    capacity = 100,
+    curValue = 0,
+    
+    effectInterval = 0.2,  --recover every xx seconds.
+    perValue = 10,  --recover hp each effectInterval.
+    
+    lastTime = 0,
+    
+    isOpen = false,
+    poseValue = {0.4, 0.7, 0.7, 0.6, 0.45},
+    --downPoseValue = {0.3, 0.4, 0.4, 0.7, 0.7},
+    
+    lastSoundTime = 0,
+}
+
+function PotionBase:Awake()
+    self.curValue = self.capacity
+    self.initPos = self.coverTrans.localPosition
+    self.anchorPos = self.joint.anchor
+end
+
+function PotionBase:OnSlot(slot, t)
+    if t then
+        RemoveSchedule(self, self.adjectTimer)
+        self.adjectTimer = CL.Scheduler.Create(self,
+            function(sche, t, s)
+                if IsNullOrDestroyed(self.coverTrans) then
+                    RemoveSchedule(self, self.adjectTimer)
+                    return
+                end
+                self.coverTrans.localPosition = self.initPos
+                self.coverTrans.localRotation = UE.Quaternion.identity
+            end
+        , 0, -1)
+    else
+        RemoveSchedule(self, self.adjectTimer)
+    end
+end
+
+function PotionBase:OnGrab(a, g)
+    if g then
+        self.character = a.attachedHand.character
+    else
+        self.character = nil
+        
+        if self.isOpen then
+            self:CloseBottle()
+            self.isOpen = false
+        end
+    end
+end
+
+function PotionBase:OpenSkill()
+    if not self.isOpen then
+        self:OpenBottle()
+        self.isOpen = true
+    else
+        self:CloseBottle()
+    end
+end
+
+--function PotionBase:CloseSkill()
+--    self:CloseBottle()
+--end
+
+function PotionBase:OpenBottle()
+    self:AddJoint(self.coverMaxAngle)
+    self:CoverAddForce(self.coverTrans.up)
+    
+    if self.openCoverSound then
+        self.openCoverSound:PlaySound()
+    end
+    
+    self:StartMotionDetect()
+end
+
+function PotionBase:CoverAddForce(dir)
+    self.coverRb:AddForceAtPosition(dir * 5, 
+        self.coverTrans.position + self.coverTrans.right * -0.02, UE.ForceMode.VelocityChange)
+end
+
+function PotionBase:AddJoint(limitAngle)
+    if not IsNullOrDestroyed(self.joint) then
+        UE.Object.Destroy(self.joint)
+    end
+    
+    if limitAngle then
+        self.coverTrans.localRotation = UE.Quaternion.Euler(UE.Vector3(0, 0, -limitAngle))
+    else
+        self.coverTrans.localRotation = UE.Quaternion.identity
+    end
+    
+    self.joint = self.host.interact.trans.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.joint.autoConfigureConnectedAnchor = false
+    self.joint.connectedBody = self.coverRb
+    self.joint.connectedAnchor = UE.Vector3.zero
+    self.joint.anchor = self.anchorPos
+    
+
+    self.joint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.zMotion = UE.ConfigurableJointMotion.Locked
+    
+    self.joint.angularXMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularYMotion = UE.ConfigurableJointMotion.Locked
+    
+    if limitAngle then
+        self.joint.angularZMotion = UE.ConfigurableJointMotion.Limited
+        
+        local al = self.joint.angularZLimit
+        al.limit = limitAngle
+        self.joint.angularZLimit = al
+        
+        self.coverTrans.localRotation = UE.Quaternion.identity
+    else
+        self.joint.angularZMotion = UE.ConfigurableJointMotion.Locked
+    end
+    
+    self.joint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.joint.projectionDistance = 0.01
+    self.joint.projectionAngle = 0.01
+end
+
+function PotionBase:CloseBottle()
+    self:ClosePourWater()
+    
+    self:CoverAddForce(-self.coverTrans.up)
+    
+    CL.Scheduler.RemoveSchedule(self, self.coverActTimeId)
+    self.coverActTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if UE.Vector3.Dot(self.coverTrans.up, self.host.interact.trans.up) > 0.98 then
+                self:AddJoint(nil)
+                sche:Stop()
+                
+                
+                if self.closeCoverSound then
+                    self.closeCoverSound:PlaySound()
+                    print("play close sound----------")
+                end
+                
+                self.isOpen = false
+            end
+        end
+    , 0, 2)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self:CloseMotionDetect()
+end
+
+function PotionBase:StartMotionDetect()
+    if self:IsEmpty() then
+        return
+    end
+    
+    local onPour = false
+    local dot = 0
+    self.motionTimer = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            dot = UE.Vector3.Dot(self.host.interact.trans.up, UE.Vector3.down)
+            if dot > 0.3 then
+                if not onPour then
+                    self:StartPourWater()
+                    onPour = true
+                else
+                    self:UpdatePourWater(dot)
+                end
+            else
+                if onPour then
+                    self:ClosePourWater()
+                    onPour = false
+                end
+            end
+        end,
+    0, -1)
+end
+
+function PotionBase:CloseMotionDetect()
+    RemoveSchedule(self, self.motionTimer)
+end
+
+function PotionBase:StartPourWater()
+    self:StartRecordValue()
+    
+    self.waterEffect:Play()
+    
+    if self.waterSound then
+        self.waterSoundInfo = self.waterSound:PlaySoundInfo()
+        self.waterSoundInfo.ao.trans:SetParent(self.coverTrans)
+    end
+end
+
+function PotionBase:UpdatePourWater(value)
+    local count = self.maxParticles * (value - 0.3)/0.7
+    
+    local em = self.waterEffect.emission
+    local mmc = em.rateOverTime
+    mmc.constant = count
+    em.rateOverTime = mmc
+    self:RecordValue()
+end
+
+function PotionBase:ClosePourWater()
+    self:StopRecordValue()
+    
+    self.waterEffect:Stop()
+    
+    if self.waterSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.waterSoundInfo)
+        self.waterSoundInfo = nil
+    end
+end
+
+function PotionBase:StartRecordValue()
+    self.lastTime = UE.Time.time
+end
+
+function PotionBase:RecordValue()
+    if self.lastTime < 0 then
+        return
+    end
+    
+    if UE.Time.time - self.lastTime < self.effectInterval then
+        return
+    end
+    
+    self.lastTime = UE.Time.time
+    self.curValue = self.curValue - self.perValue
+    if self:IsEmpty() then
+        --Play Empty Sound
+        self:SetEmpty()
+        
+        self:ClosePourWater()
+        self:CloseMotionDetect()
+        return
+    end
+    
+    if IsNullOrDestroyed(self.character) then
+        return
+    end
+    
+    self:TryAffectCharacter(self.perValue)
+end
+
+function PotionBase:SetEmpty()
+    SetMaterialEmissionWithinTime(self, {self.bodyRenderer}, UE.Color.clear, 0.5)
+    self.curValue = 0
+end
+
+function PotionBase:StopRecordValue()
+    self.lastTime = -1
+end
+
+function PotionBase:TryAffectCharacter(value)
+    local dir = (self.character.trans.position - self.host.interact.trans.position).normalized
+    if UE.Vector3.Dot(dir, UE.Vector3.down) < 0.977 then
+        return
+    end
+    
+    if self.drinkSound and UE.Time.time - self.lastSoundTime > 0.8 then
+        self.drinkSound:PlaySound()
+        self.lastSoundTime = UE.Time.time
+    end
+    
+    self:AddCharacterAttr(value)
+end
+
+function PotionBase:AddCharacterAttr(value)
+    
+end
+
+function PotionBase:IsEmpty()
+    return self.curValue <= 0
+end
+
+return Class(nil, nil, PotionBase)
