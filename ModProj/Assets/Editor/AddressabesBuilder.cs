@@ -17,7 +17,7 @@ namespace CrossLink
         {
             EditorUtility.RevealInFinder(GetPCModPath());
         }
-        
+
         static string GetPCModPath()
         {
             var targetpath = Application.persistentDataPath;
@@ -41,7 +41,7 @@ namespace CrossLink
             ClearOldFiles();
 
             BuildWithProfile(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows);
-            
+
             InstallModOnWindows();
         }
 
@@ -73,12 +73,123 @@ namespace CrossLink
         }
 #endif
 
+        #region check if all shaders support singlepassinstanced
+        [MenuItem("BuildTools/CheckShaders")]
+        public static bool CheckAllShadersSupport()
+        {
+            // Get all the shader guids in the project
+            string[] guids = AssetDatabase.FindAssets("t:Shader");
+            List<Shader> shaders = new List<Shader>();
+
+            float progress = 0f;
+            int count = 0;
+
+            foreach (string guid in guids)
+            {
+                count += 1;
+                progress = count / guids.Length;
+                // Get the asset path from the guid
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+
+                // Load the shader from the path
+                Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(path);
+
+                // Check if the shader is not null and does not support singlepass instanced rendering
+                if (shader != null && !IsSinglePassInstancedSupported(shader))
+                {
+                    // Add the shader and its path to the lists
+                    shaders.Add(shader);
+                }
+
+                EditorUtility.DisplayProgressBar("processing", "checking shaders...", progress);
+            }
+
+            EditorUtility.ClearProgressBar();
+
+            if (shaders.Count <= 0)
+            {
+                Debug.Log("[CheckShaders] All shaders support SinglePassInstanced!!!");
+                return true;
+            }
+
+            // Create a new asset object and assign the shader list to it
+            var asset = ScriptableObject.CreateInstance<ShaderListAsset>();
+            asset.shaders = shaders;
+
+            // Get a path from the user to save the asset
+            string savepath = EditorUtility.SaveFilePanelInProject("Save Unsupported Shader List", "ShaderList", "asset", "Please enter a file name to save the shader list");
+
+            // If the path is not empty, save the asset
+            if (!string.IsNullOrEmpty(savepath))
+            {
+                try
+                {
+                    AssetDatabase.CreateAsset(asset, savepath);
+                    AssetDatabase.SaveAssets();
+
+                    Debug.Log($"[CheckShaders] Save {savepath} succeed!!!");
+                }
+                catch(System.Exception e)
+                {
+                    Debug.LogError(e);
+                    Debug.LogError("Invaild path or filename");
+                }
+            }
+
+            return false;
+        }
+
+        private const string UNITY_VERTEX_INPUT_INSTANCE_ID = "UNITY_VERTEX_INPUT_INSTANCE_ID";
+        private const string UNITY_VERTEX_OUTPUT_STEREO = "UNITY_VERTEX_OUTPUT_STEREO";
+        private const string UNITY_SETUP_INSTANCE_ID = "UNITY_SETUP_INSTANCE_ID";
+        private const string UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO = "UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO";
+
+        private static bool IsSinglePassInstancedSupported(Shader shader)
+        {
+            string[] symbols = {
+            UNITY_VERTEX_INPUT_INSTANCE_ID,
+            UNITY_VERTEX_OUTPUT_STEREO,
+            UNITY_SETUP_INSTANCE_ID,
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO
+        };
+
+            // Check if the shader has these symbols
+            var path = AssetDatabase.GetAssetPath(shader);
+            var text = File.ReadAllText(path);
+
+            if (path.Contains("Editor") //exclude editor shaders
+            || path.Contains("probuilder") //exclude probuilder shaders
+            || path.Contains("com.unity.render-pipelines.universal")) //exclude urp shaders
+            {
+                return true;
+            }
+            else
+            {
+                foreach (var symbol in symbols)
+                {
+                    if (text.Contains(symbol))
+                        continue;
+                    else
+                        return false;
+                }
+
+                return true;
+            }
+        }
+        #endregion
+
         [MenuItem("BuildTools/BuildAllBundles", false, 0)]
         public static void BuildAll()
         {
             if (!AddressableHelper.ValidateAddressables()) {
                 return;
             }
+
+            /*if (!CheckAllShadersSupport())
+            {
+                Debug.LogWarning("Please make sure all shades support singlepassinstanced!!!");
+                return;
+            }*/
 
             ClearOldFiles();
             //BuildWithProfile("Windows");
@@ -296,6 +407,13 @@ namespace CrossLink
         }
 
 
+    }
+
+    // A scriptable object class to store a list of shaders as an asset
+    [CreateAssetMenu(fileName = "ShaderList", menuName = "Shader List", order = 1)]
+    public class ShaderListAsset : ScriptableObject
+    {
+        public List<Shader> shaders;
     }
 }
 
