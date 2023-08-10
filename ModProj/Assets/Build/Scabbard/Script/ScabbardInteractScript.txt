@@ -3,49 +3,5 @@ local ScabbardInteract = {
 
 }
 
-function ScabbardInteract:Awake()
-    self.col = self.host.gameObject:GetComponent("BoxCollider")
-    self.rb = self.host.gameObject:GetComponent("Rigidbody")
-    
-    self.putCb = function(st, hand)
-        self:OnPutIn(st, hand)
-    end
-end
-
-function ScabbardInteract:OnGrab(a, g)
-    if (g) then
-        local lastPlayer = self.player
-        self.player = a.attachedHand.character
-        if IsNullOrDestroyed(self.player) then
-            return
-        end
-        
-        if not IsNullOrDestroyed(lastPlayer) then
-            if self.player ~= lastPlayer then
-                for i = 0, lastPlayer.bodySlots.Length - 1 do
-                    lastPlayer.bodySlots[i]:PutInEvent("-", self.putCb)
-                end
-            end
-        else
-            for i = 0, self.player.bodySlots.Length - 1 do
-                self.player.bodySlots[i]:PutInEvent("+", self.putCb)
-            end
-        end
-    end
-end
-
-function ScabbardInteract:OnPutIn(st, hand)
-    self.col.enabled = true
-    self.rb.detectCollisions = true
-end
-
-
-function ScabbardInteract:OnDestroy()
-    if not IsNullOrDestroyed(self.player) then
-        for i = 0, self.player.bodySlots.Length - 1 do
-            self.player.bodySlots[i]:PutInEvent("-", self.putCb)
-        end
-    end
-end
 
 return Class(nil, nil, ScabbardInteract)

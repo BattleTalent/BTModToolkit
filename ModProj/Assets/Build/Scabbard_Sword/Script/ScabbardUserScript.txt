@@ -2,14 +2,97 @@
 local ScabbardUser = {
     isScabbardUser = true,
     swordIsHeld = false,
+    
+    fristOut = true,
 }
 
 function ScabbardUser:GetSwordType()
     return self.swordType
 end
 
+function ScabbardUser:Awake()
+    self.OnPendantRelease = function(ibp)
+        if self.sb then
+            self.BreakHang()
+        end
+        
+        if ibp then
+            ibp:ReleaseEvent("-", self.OnPendantRelease)
+        end
+    end
+end
+
+function ScabbardUser:Start()
+    if self.spawnScabbard ~= 0 then
+        local sgo = CL.ResourceMgr.Instantiate(CL.InteractTrigger.WeaponPath .. self.scabbardName)
+        if not IsNullOrDestroyed(sgo) then
+            sgo.transform.position = self.rootPoint.position
+            sgo.transform.rotation = self.rootPoint.rotation
+            
+            local lb = sgo:GetComponent(typeof(CL.LuaBehaviour))
+            self.sb = lb.script:GetSelf()
+            self.sb:ConnectWithSword(self, lb)
+            
+            self:ConvertSlotToScabbard(self.sb)
+            
+            local ibp = self.trans.gameObject:GetComponent(typeof(CL.InteractBasePendant))
+            if ibp then
+                self.sb.transform:SetParent(self.trans)
+                ibp:ReleaseEvent("+", self.OnPendantRelease)
+                self.mountFc = self.ib.trans.root:GetComponent(typeof(CL.FullCharacterControl))
+                if self.mountFc then
+                    CL.PhysicsHelper.IgnoreCollsions(self.sb.ib:GetCols(), self.mountFc.ra:GetCols(), true)
+                end
+                
+                self.sb.ib.beAbleToShowGrab = false
+            end
+        end
+    end
+end
+
+function ScabbardUser:OnSheath(sb, isOn, time)
+    if not self.isOn and self.fristOut then
+        self:BreakHang()
+        self.fristOut = false
+    end
+    
+    if self.isOn then
+        self.ib:MarkRecovery()
+    else
+        self.ib:SetRecovery()
+    end
+end
+
 function ScabbardUser:OnGrab(a, g)
     self.swordIsHeld = g
+end
+
+function ScabbardUser:BreakHang()
+    if self.sb then
+        if self.sb.trans.parent == self.trans then
+            self.sb.trans:SetParent(nil)
+        end
+        self.sb.ib.beAbleToShowGrab = true
+    end
+    
+    if self.mountFc then
+        CL.PhysicsHelper.IgnoreCollisions(self.sb.ib:GetCols(), self.mountFc.ra:GetCols(), false)
+    end
+end
+
+function ScabbardUser:ConvertSlotToScabbard(sb)
+    if IsNullOrDestroyed(self.ib.mountedSlot) then
+        return
+    end
+    
+    local slot = self.ib.mountedSlot
+    
+    self.ib.mountedSlot:DoUnMount()
+    self.ib.beAbleToShowGrab = true
+    self.ib:SetRBCols(true)
+    self.ib:SetRecovery()
+    
+    slot:DoMount(sb.ib)
 end
 
 return Class(nil, nil, ScabbardUser)

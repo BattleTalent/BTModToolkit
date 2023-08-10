@@ -225,6 +225,7 @@ GameObject:
   - component: {fileID: 8936091663641255990}
   - component: {fileID: 1017930409891926529}
   - component: {fileID: -4534834360494415829}
+  - component: {fileID: 3622108925485087967}
   m_Layer: 15
   m_Name: Scabbard
   m_TagString: Untagged
@@ -343,6 +344,8 @@ MonoBehaviour:
   mountAttachs:
   - {fileID: 6938157764128341654}
   canPaint: 1
+  enhanceLevel: -1
+  showExampleWeaponGizmo: 0
 --- !u!114 &1903866573830700520
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -452,6 +455,21 @@ MonoBehaviour:
     objList: []
     numberList: []
     stringList: []
+--- !u!114 &3622108925485087967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6594792081471664128}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af4e3d63becab584296c3eb3646d9f98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  geos: []
+  ib: {fileID: 6061593807304118770}
+  trackback: 0
 --- !u!1 &6594792081728424736
 GameObject:
   m_ObjectHideFlags: 0
@@ -657,6 +675,7 @@ MonoBehaviour:
   selfRB: {fileID: 6594792081471664186}
   dependAttachObj: {fileID: 0}
   handPose: HoldPose
+  autoUpdateHandPose: 0
   handSide: 2
   allowTrigger: 1
   isClimbAttach: 0
@@ -1033,6 +1052,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e5b98c5f705a399448efb529a8111bdd, type: 3}
+--- !u!4 &4222865688045456928 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+    type: 3}
+  m_PrefabInstance: {fileID: 2198989113054768587}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &5651914220986129381 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5830968527570335278, guid: e5b98c5f705a399448efb529a8111bdd,
@@ -1051,9 +1076,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 888349f3ca4e57d4296b2e278cdc5138, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!4 &4222865688045456928 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
-    type: 3}
-  m_PrefabInstance: {fileID: 2198989113054768587}
-  m_PrefabAsset: {fileID: 0}
