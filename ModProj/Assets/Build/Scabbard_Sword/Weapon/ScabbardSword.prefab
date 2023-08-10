@@ -141,6 +141,7 @@ MonoBehaviour:
   selfRB: {fileID: 4776852020622854597}
   dependAttachObj: {fileID: 0}
   handPose: HoldPose
+  autoUpdateHandPose: 0
   handSide: 2
   allowTrigger: 1
   isClimbAttach: 0
@@ -244,6 +245,8 @@ MonoBehaviour:
   mountAttachs:
   - {fileID: 617808517555436204}
   canPaint: 1
+  enhanceLevel: -1
+  showExampleWeaponGizmo: 0
 --- !u!114 &1710585085291333398
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -438,10 +441,14 @@ MonoBehaviour:
       value: {fileID: 9157160590254121626}
     - name: bladeColliders
       value: {fileID: 5302532036759140322}
-    numberList: []
+    numberList:
+    - name: spawnScabbard
+      value: 1
     stringList:
     - name: swordType
       value: testSword
+    - name: scabbardName
+      value: WMD_Scabbard
 --- !u!1 &4984378594042899529
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,13 @@
+local PotionHP = {
+}
+
+
+function PotionHP:AddCharacterAttr(value)
+    if IsNullOrDestroyed(self.character) then
+        return
+    end
+    
+    self.character.attr:AddHp(value)
+end
+
+return Class(Require("WMD_PotionBaseScript"), nil, PotionHP)

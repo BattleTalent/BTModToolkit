@@ -1,0 +1,77 @@
+local FlyFlame = {
+    hitDistance = 5,
+    hitWidth = 0.5,
+    hitHeight = 0.5,
+    hitStartOffset = 0.5,
+    
+    checkInterval = 0.2,
+    checkCounter = 0,
+    
+    destroyBody = false,
+}
+
+function FlyFlame:OnSpawn()
+    self.checkCounter = 0
+    
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if fc.muscleState:IsPowerfulCharacter() then
+            return
+        end
+        
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu:GetProxyMuscleName(), point)
+        if frag then
+            CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+        end
+        CL.FullBodyMuscleState.dmgEffectData.ripApart = true
+    end
+    
+    if self.destroyBody then
+        local hitInfo = CL.RagdollHitMgr.Instance:GetHitInfoCol(self.host.col)
+        if hitInfo then
+            hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+        end
+    end
+    CL.Scheduler.RemoveSchedule(self.lifeTimerId)
+    self.lifeTimerId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0.2, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function FlyFlame:Update()
+    self.checkCounter = self.checkCounter + 1
+    self:DoFireCheck()
+end
+
+function FlyFlame:DoFireCheck()
+    local center = self.host.trans.position + self.host.trans.forward * (self.hitDistance/2 + self.hitStartOffset)
+    local halfExt = UE.Vector3(self.hitWidth/2, self.hitHeight/2, self.hitDistance/2)
+    local raycastHit = UE.Physics.OverlapBox(center, halfExt,
+        self.host.trans.rotation, CL.LayerDefine.BodyMask.value)
+    
+    --CL.DebugDraw.DrawBox(center, self.host.trans.rotation,
+    --            UE.Vector3(self.hitWidth, self.hitHeight, self.hitDistance), UE.Color.red, 0.05)
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.SetHitScanIgnore(self.host.ignoreDamageList)
+    
+    for i = 0, raycastHit.Length - 1 do
+        CL.InteractTrigger.ApplyHitScanDamage(raycastHit[i], self.host, self.host.rb, self.host.col, self.host.trans.forward, CL.AIProxy.CampNone)
+    end
+    
+    self:AfterHitScan()
+    
+    CL.InteractTrigger.EndHitScan()
+end
+
+function FlyFlame:AfterHitScan()
+
+end
+
+function FlyFlame:ResetState()
+    CL.Scheduler.RemoveSchedule(self.lifeTimerId)
+end
+
+return Class(nil, nil, FlyFlame)

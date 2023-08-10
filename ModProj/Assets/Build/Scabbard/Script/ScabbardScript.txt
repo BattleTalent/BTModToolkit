@@ -4,6 +4,9 @@ local Scabbard = {
     
     pForce = 1000,
     eForce = 200,
+    maxScrollForce = 10000,
+    scrollForceOnSlot = 15000,
+    breakForce = 10000,
     scrollForce = 1000,
     dragLength = 0.05,
     
@@ -12,8 +15,20 @@ local Scabbard = {
     jointXOffset = 0.3,
     
     isConnect = false,
-
-    scabbardIsHeld = false,
+    
+    isLock = false,
+    isEnter = false,
+    isIn = false,
+    inTimeStamp = 0,
+    
+    relaSpeed = 0,
+    
+    lastGrabHand = nil,
+    isScabbardGrab = false,
+    
+    scabbardHolder = nil,
+    
+    isTwoSide = true,
 }
 
 -- entryPoint detectPoint
@@ -24,12 +39,143 @@ function Scabbard:Awake()
         self:ScabbardOnGrab(a, g)
     end
     self.ib:GrabEvent("+", self.scabbardGrabCb)
+    self.OnCallBegin = function(hand)
+        if self.isIn and self.su and self.su.ib:IsGrabbed() and not self.su.ib:IsSlotEquiped() then
+            self:LockWithSword(true)
+        end
+    end
+    self.ib:CallBeginEvent("+", self.OnCallBegin)
+    
+    self.OnSlotBegin = function(st, mount)
+        if self.isConnect and self.su and mount then
+            self.su.trans:SetParent(self.trans)
+        end
+    end
+    self.ib:SlotBeginEvent("+", self.OnSlotBegin)
+    
+    self.OnSlot = function(st, mount)
+        self.isMount = mount
+        if self.isConnect then
+            if self.su then
+                if mount and self.su.ib:IsGrabbed() then
+                    self:LockWithSword(true)
+                end
+                
+                if not mount then
+                    self.su.ib.trans:SetParent(nil)
+                end
+            end
+        end
+    end
+    self.ib:SlotEvent("+", self.OnSlot)
+    
+    if CL.InteractCharacter.AIPlayerInstance then
+        self.TransportBegin = function(pos)
+            if not self.isConnect then
+                return
+            end
+            if self.su then
+                if self.isScabbardGrab and not self.isSwordGrab then
+                    self.su.ib.trans:SetParent(self.trans)
+                elseif self.isSwordGrab and not self.isScabbardGrab then
+                    self.trans:SetParent(self.su.ib.trans)
+                end
+            end 
+        end
+        
+        self.TransportEnd = function(pos)
+            if not self.isConnect then
+                return
+            end
+            if self.su then
+                if self.isScabbardGrab and not self.isSwordGrab then
+                    self.su.ib.trans:SetParent(nil)
+                elseif self.isSwordGrab and not self.isScabbardGrab then
+                    self.trans:SetParent(nil)
+                end
+            end 
+        end
+        
+        CL.InteractCharacter.AIPlayerInstance.character:TransportBeginEvent("+", self.TransportBegin)
+        CL.InteractCharacter.AIPlayerInstance.character:TransportEndEvent("+", self.TransportEnd)
+    end
+    
     
     self.col = self.host.gameObject:GetComponent("Collider")
     self.rb = self.host.gameObject:GetComponent("Rigidbody")
 
     self.z_e = self.entryPoint.localPosition.z
     self.z_t = self.detectPoint.localPosition.z
+    
+    
+    self.SwordOnGrab = function(a, g)
+        if g then
+            self.swordHolder = a.attachedHand.character
+        end
+        if self.isConnect then
+            if self.su then
+                CL.InteractMgr.Instance:UnregInteractDrop(self.su.ib)
+                if self.isIn then
+                    if g then
+                        if self.isScabbardGrab or self.isMount then
+                            self:LockWithSword(false)
+                        end
+                    else
+                        self:LockWithSword(true)
+                    end
+                end
+                
+                CL.Scheduler.Create(self.host.gameObject, 
+                    function(sche, t, s)
+                        if not g then
+                            local swordCols = self.ib:GetCols()
+                            if self.isScabbardGrab then
+                                self:IgnoreCollisionWithScabbardGrabHand(swordCols, true)
+                                self.scabbardHolder.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
+                            end
+                        end
+                    end
+                , 0, 0, 0.51)
+            end
+            if self.isMount then
+                self.su.ib.trans:SetParent(g and nil or self.trans)
+            end
+        end
+        
+        if not g then
+            self.swordHolder = nil
+        end
+        self.isSwordGrab = g
+    end 
+    
+    self.OnPutIn = function(st, interact)
+        if not self.scabbardHolder then
+            return
+        end
+        
+        if interact ~= self.ib then
+            return
+        end
+        
+        self.col.enabled = true
+        self.rb.detectCollisions = true
+        self.isPutIn = true
+        
+        local cols = self.su.ib:GetCols()
+        if self.isConnect and self.su then
+            for i = 0, cols.Length - 1 do
+                cols[i].enabled = false
+            end
+            
+            if self.su.targetCol then
+                self.su.targetCol.enabled = true
+            end
+            
+            --if st.slotName:Contains("Slot_Back") then
+            --    self:SetBreakForce(self.breakForce)
+            --end
+        end
+    end
     
     self.scabbardCols = self.ib:GetCols()
 end
@@ -52,7 +198,7 @@ function Scabbard:OnTriggerStay(other)
                 self.leftOffset = UE.Vector3(self.jointXOffset, 0, -self.jointZOffset)
                 self.rightOffset = UE.Vector3(-self.jointXOffset, 0, -self.jointZOffset)
                 
-                self.sword = sword
+                --self.sword = sword
                 self.su = lua
                 self.peakPoint = self.su.peakPoint
                 self.rootPoint = self.su.rootPoint
@@ -60,12 +206,7 @@ function Scabbard:OnTriggerStay(other)
                 self.swordLength = self.peakPoint.localPosition.z - self.rootPoint.localPosition.z
                 self.z_d = self.entryPoint.localPosition.z + self.swordLength
                 
-                
-                self.swordGrabCb = function(a, g)
-                        self:SwordOnGrab(a, g)
-                    end
-                    
-                self.su.ib:GrabEvent("+", self.swordGrabCb)
+                self.su.ib:GrabEvent("+", self.SwordOnGrab)
                 
                 self:BuildConnect(other.attachedRigidbody)
                 self.isConnect = true
@@ -88,31 +229,93 @@ function Scabbard:ConnectUpdate()
         return
     end
     
-    if IsNullOrDestroyed(self.sword) then
+    if not self.su then
         self.isConnect = false
         return
     end
     local localPos = self.host.transform:InverseTransformPoint(self.peakPoint.position)
     local z_p = localPos.z
-
-    local disToEntry = UE.Vector3.Distance(self.rootPoint.position, self.entryPoint.position)
-    self.shouldLockToBottom = self.isIn and disToEntry <= self.maxConnectDis
+    self:RefleshRelaSpeed()
 
     if z_p > self.z_e then
+        if self.relaSpeed > 1 and not self.isMount and not self.isIn then
+            local f = math.min(5, self.relaSpeed) / 5
+            if self.slideSound then
+                self.sound = self.slideSound:Play(self.su.ib.trans.position)
+                if self.sound then
+                    self.sound.audio.volume = f * 0.15
+                    self.sound.audio.pitch = 0.85 + f * 0.3
+                end
+            end
+            if self.metalSound then
+                self.sound = self.metalSound:Play(self.su.ib.trans.position)
+                if self.sound then
+                    self.sound.audio.volume = f * 0.4
+                end
+            end
+        end
+        
         if not self.isLock then
             self:LockJoint()
             self.isLock = true
         end
-        self.isIn = true
+        self.isEnter = true
         if z_p > self.z_d - self.dragLength then
-            local prog = 1 -(self.z_d - z_p)/self.dragLength
-            local needForce = self.scrollForce * prog
+            if not self.isIn then
+                self.isIn = true
+                self.su:OnSheath(self, true, -1)
             
+                if self.su and not self.su.ib:IsGrabbed() then
+                    self:LockWithSword(true)
+                end
+                
+                local f = math.min(10, self.relaSpeed) / 50
+                if self.onSheathSound then
+                    self.sound = self.onSheathSound:Play(self.su.ib.trans.position)
+                    if self.sound then
+                        self.sound.audio.volume = 0.1 + f * 0.35
+                        self.sound.audio.pitch = 0.9 + f * 0.3
+                    end
+                end
+            end
+
+            --add force to drag the sword
+            if IsNullOrDestroyed(self.cJoint) then
+                return
+            end
             local jd = self.cJoint.xDrive
-            jd.positionSpring = needForce
-            self.lJoint.zDrive = jd
-            self.rJoint.zDrive = jd
+            
+            if not self.isPutIn then
+                if self.isScabbardGrab then
+                    local hand = self.ib:GetPrimaryHand() and self.ib:GetSecondaryHand()
+                    local force = self.maxScrollForce
+                    if not IsNullOrDestroyed(hand) then
+                        local speed = hand.velocityEstimator:GetVelocityEstimateLocal().magnitude
+                        speed = math.min(speed, 50)
+                        force = force * (1 - speed / 50)
+                    end
+                    
+                    jd.positionSpring = force
+                end
+            else
+                jd.positionSpring = self.scrollForceOnSlot
+                --self:SetBreakForce(self.breakForce)
+            end
+            if not IsNullOrDestroyed(self.lJoint) then
+                self.lJoint.zDrive = jd
+            end
+            if not IsNullOrDestroyed(self.rJoint) then
+                self.rJoint.zDrive = jd
+            end
         else
+            if self.isIn then
+                self.inTimeStamp = UE.Time.time
+            end
+            self.isIn = false
+            
+            if IsNullOrDestroyed(self.cJoint) then
+                return
+            end
             local jd = self.cJoint.xDrive
             jd.positionSpring = 0
             self.lJoint.zDrive = jd
@@ -125,13 +328,26 @@ function Scabbard:ConnectUpdate()
             self.isLock = false
         end
         
-        if self.isIn or (z_p < self.z_t - 0.03 ) then
+        if self.isEnter or (z_p < self.z_t - 0.03 ) then
             if self.su then
-                self.su.ib:GrabEvent("-", self.swordGrabCb)
+                self.su.ib:GrabEvent("-", self.SwordOnGrab)
             end
             
             self:Disconnect()
+            self.su:OnSheath(self, false, UE.Time.time - self.inTimeStamp)
+            
             self.isConnect = false
+            
+            if self.isEnter then
+                if self.outScabbardSound then
+                    self.sound = self.outScabbardSound:Play(self.su.trans.position)
+                    if self.sound then
+                        self.sound.audio.volume = f * 0.5
+                        self.sound.audio.pitch = 0.85 + f * 0.3
+                    end
+                end
+            end
+            self.isEnter = false
             self.isIn = false
             return
         end
@@ -140,6 +356,10 @@ function Scabbard:ConnectUpdate()
             
             local prog = 1 - ((self.z_e - z_p)/(self.z_e - self.z_t))
             local needForce = self.pForce * prog
+            
+            if IsNullOrDestroyed(self.cJoint) then
+                return
+            end
             
             local jd = self.cJoint.xDrive
             jd.positionSpring = needForce
@@ -152,12 +372,34 @@ function Scabbard:ConnectUpdate()
             needForce = self.eForce * prog
             jd.positionSpring = needForce
             jd.positionDamper = needForce * 0.001
-            self.lJoint.xDrive = jd
-            self.lJoint.yDrive = jd
             
-            self.rJoint.xDrive = jd
-            self.rJoint.yDrive = jd
+            if not IsNullOrDestroyed(self.lJoint) then
+                self.lJoint.xDrive = jd
+                self.lJoint.yDrive = jd
+            end
+            
+            if not IsNullOrDestroyed(self.rJoint) then
+                self.rJoint.xDrive = jd
+                self.rJoint.yDrive = jd
+            end
         end
+    end
+end
+
+function Scabbard:RecordRelaVec()
+    if not self.su then
+        return
+    end
+    self.lastRelaVec = self.su.trans.position - self.trans.position
+end
+
+function Scabbard:RefleshRelaSpeed()
+    if not self.su then
+        self.relaSpeed = 0
+    else
+        self.curRelaVec = self.su.trans.position - self.trans.position
+        self.relaSpeed = (self.curRelaVec - self.lastRelaVec).magnitude / UE.Time.deltaTime
+        self.lastRelaVec = self.curRelaVec
     end
 end
 
@@ -174,13 +416,13 @@ function Scabbard:BuildConnect(rb)
     self.cJoint.connectedBody = rb
     self.cJoint.connectedAnchor = self.peakPoint.localPosition
     
-    self.bottomJoint = self.host.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
-    self.bottomJoint.autoConfigureConnectedAnchor = false
-    self.bottomJoint.connectedBody = rb
-    self.bottomJoint.connectedAnchor = self.rootPoint.localPosition
+    --self.bottomJoint = self.host.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    --self.bottomJoint.autoConfigureConnectedAnchor = false
+    --self.bottomJoint.connectedBody = rb
+    --self.bottomJoint.connectedAnchor = self.rootPoint.localPosition
 
-    local bottomlCPoint = UE.Vector3(0, 0, self.entryPoint.localPosition.z)
-    self.bottomJoint.anchor = bottomlCPoint
+    --local bottomlCPoint = UE.Vector3(0, 0, self.entryPoint.localPosition.z)
+    --self.bottomJoint.anchor = bottomlCPoint
     
     local lCPoint = UE.Vector3(0, 0, self.entryPoint.localPosition.z)
     self.cJoint.anchor = lCPoint
@@ -190,7 +432,7 @@ function Scabbard:BuildConnect(rb)
     ll.limit = self.swordLength
     self.cJoint.linearLimit = ll
 
-    self.bottomJoint.linearLimit = ll
+    --self.bottomJoint.linearLimit = ll
 
     local leftPoint = lCPoint + self.leftOffset
     local rightPoint = lCPoint + self.rightOffset
@@ -205,58 +447,148 @@ function Scabbard:BuildConnect(rb)
     self.lJoint.connectedBody = rb
     self.rJoint.connectedBody = rb
     
-    if (wlPoint - wLlp).sqrMagnitude < (wrPoint - wLlp).sqrMagnitude then
-        
+    if self.isTwoSide then
+        if (wlPoint - wLlp).sqrMagnitude < (wrPoint - wLlp).sqrMagnitude then
+            self.lJoint.connectedAnchor = connectLeftPoint
+            self.lJoint.anchor = leftPoint
+            --self.point1.transform.localPosition = leftPoint;
+            --self.swordPoint1.transform.localPosition = connectLeftPoint
+            
+            self.rJoint.connectedAnchor = connectRightPoint
+            self.rJoint.anchor = rightPoint
+            --self.point2.transform.localPosition = rightPoint;
+            --self.swordPoint2.transform.localPosition = connectRightPoint
+        else
+            self.lJoint.connectedAnchor = connectRightPoint
+            self.lJoint.anchor = leftPoint
+            --self.point1.transform.localPosition = rightPoint;
+            --self.swordPoint1.transform.localPosition = connectRightPoint
+            
+            self.rJoint.connectedAnchor = connectLeftPoint
+            self.rJoint.anchor = rightPoint
+            --self.point2.transform.localPosition = leftPoint;
+            --self.swordPoint2.transform.localPosition = connectLeftPoint
+        end
+    else
         self.lJoint.connectedAnchor = connectLeftPoint
         self.lJoint.anchor = leftPoint
-        self.point1.transform.localPosition = leftPoint;
-        self.swordPoint1.transform.localPosition = connectLeftPoint
-        
         self.rJoint.connectedAnchor = connectRightPoint
         self.rJoint.anchor = rightPoint
-        self.point2.transform.localPosition = rightPoint;
-        self.swordPoint2.transform.localPosition = connectRightPoint
-    else
-       
-        self.lJoint.connectedAnchor = connectRightPoint
-        self.lJoint.anchor = leftPoint
-        self.point1.transform.localPosition = rightPoint;
-        self.swordPoint1.transform.localPosition = connectRightPoint
-        
-        self.rJoint.connectedAnchor = connectLeftPoint
-        self.rJoint.anchor = rightPoint
-        self.point2.transform.localPosition = leftPoint;
-        self.swordPoint2.transform.localPosition = connectLeftPoint
-        
     end
     
-    local swordCols = self.su.ib:GetCols()
-    if not swordCols then
+    if self.su then
+        local swordCols = self.su.ib:GetCols()
+        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, true)
+        self:IgnoreCollisionWithScabbardGrabHand(swordCols, true)
+        
+        if self.isScabbardGrab then
+            self.scabbardHolder.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
+        end
+        
+        local rhir = self.su.ib:GetRagdollHitInfoRef()
+        if not IsNullOrDestroyed(rhir) and rhir.refs.Length > 0 then
+            for i = 0, rhir.refs.Length - 1 do
+                if not IsNullOrDestroyed(rhir.refs[i]) then
+                    CL.RagdollHitMgr.Instance:UnRegHitInfoRef(rhir.refs[i].hitInfo)
+                end
+            end
+            
+            if not self.scabbardHitInfoGroup then
+                self.scabbardHitInfoGroup = CS.System.Array.CreateInstance(typeof(CL.RagdollHitInfo), rhir.refs.Length)
+            end
+            for i = 0, rhir.refs.Length - 1 do
+                self.scabbardHitInfoGroup[i] = rhir.refs[i].hitInfo
+            end
+            self.scabbardHitInfoGroup[self.scabbardHitInfoGroup.Length - 1] = self.ib:GetRagdollHitInfo()
+            CL.RagdollHitMgr.Instance:RegHitInfoRef(self.scabbardHitInfoGroup)
+        end
+        
+        self:DisableStab()
+        
+        if self.isPutIn then
+            for i = 0, swordCols.Length - 1 do
+                swordCols[i].enabled = false
+            end
+            
+            if self.su.targetCol then
+                self.su.tagetCol.enabled = true
+            end
+        end
+        
+        if self.isMount then
+            self.su.ib.trans:SetParent(self.trans)
+        else
+            self.su.ib.trans:SetParent(nil)
+        end
+        
+        if not self.su.ib:IsSlotEquiped() then
+            self:ActiveScabbardMount(self.su.ib, false)
+        end
+        
+        self:RecordRelaVec()
+    end
+end
+
+function Scabbard:ActiveScabbardMount(ib, enable)
+    if not ib.mountAttachs then
         return
     end
-    if not IsNullOrDestroyed(self.player) then
-        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, true)
-        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, true)
+    
+    if enable then
+        if self.mount then
+            ib.mountAttachs[0] = self.mount
+        end
+    else
+        self.mount = ib.mountAttachs[0]
+        ib.mountAttachs[0] = nil
     end
-    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, true)
-    CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
+end
+
+function Scabbard:DisableStab()
+    if not self.su then
+        return
+    end
+    local so = self.su.ib:GetStabObject()
+    if IsNullOrDestroyed(so) then
+        return
+    end
+    for i = 0, so.geos.Length - 1 do
+        so.geos[i].stabMax = math.abs(so.geos[i].stabMax)
+    end
+    
+    so.enabled = false
+end
+
+function Scabbard:EnableStab()
+    if not self.su then
+        return
+    end
+    local so = self.su.ib:GetStabObject()
+    if IsNullOrDestroyed(so) then
+        return
+    end
+    for i = 0, so.geos.Length - 1 do
+        so.geos[i].stabMax = -math.abs(so.geos[i].stabMax)
+    end
+    
+    so.enabled = true
 end
 
 function Scabbard:LockJoint()
     self.cJoint.xMotion = UE.ConfigurableJointMotion.Locked
     self.cJoint.yMotion = UE.ConfigurableJointMotion.Locked
     self.cJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
-    self.cJoint.projectionDistance = 0.5
+    self.cJoint.projectionDistance = 0.1
     
     self.lJoint.xMotion = UE.ConfigurableJointMotion.Locked
     self.lJoint.yMotion = UE.ConfigurableJointMotion.Locked
     self.lJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
-    self.lJoint.projectionDistance = 0.5
+    self.lJoint.projectionDistance = 0.1
     
     self.rJoint.xMotion = UE.ConfigurableJointMotion.Locked
     self.rJoint.yMotion = UE.ConfigurableJointMotion.Locked
     self.rJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
-    self.rJoint.projectionDistance = 0.5
+    self.rJoint.projectionDistance = 0.1
 end
 
 function Scabbard:UnlockJoint()
@@ -270,127 +602,146 @@ function Scabbard:UnlockJoint()
     self.rJoint.yMotion = UE.ConfigurableJointMotion.Free
 end
 
-function Scabbard:LockOrUnlockSwordToScabbard()
-    if not IsNullOrDestroyed(self.bottomJoint) and self.su then
-        if self.scabbardIsHeld and self.su.swordIsHeld then
-            self:UnlockSwordFromScabbard()
-        else
-            if self.shouldLockToBottom then
-                self:LockSwordToScabbard()
-            end
+function Scabbard:LockWithSword(isLock)
+    if isLock then
+        if not IsNullOrDestroyed(self.lJoint) then
+            self.lJoint.zMotion = UE.ConfigurableJointMotion.Locked
+        end
+        if not IsNullOrDestroyed(self.rJoint) then
+            self.rJoint.zMotion = UE.ConfigurableJointMotion.Locked
+        end
+    else
+        if not IsNullOrDestroyed(self.lJoint) then
+            self.lJoint.zMotion = UE.ConfigurableJointMotion.Free
+        end
+        if not IsNullOrDestroyed(self.rJoint) then
+            self.rJoint.zMotion = UE.ConfigurableJointMotion.Free
         end
     end
-end
-
-function Scabbard:LockSwordToScabbard()
-    self.bottomJoint.xMotion = UE.ConfigurableJointMotion.Locked
-    self.bottomJoint.yMotion = UE.ConfigurableJointMotion.Locked
-    self.bottomJoint.zMotion = UE.ConfigurableJointMotion.Locked
-
-    self.su.bladeColliders:SetActive(false)
-end
-
-function Scabbard:UnlockSwordFromScabbard()
-    self.bottomJoint.xMotion = UE.ConfigurableJointMotion.Free
-    self.bottomJoint.yMotion = UE.ConfigurableJointMotion.Free
-    self.bottomJoint.zMotion = UE.ConfigurableJointMotion.Free
-
-    self.su.bladeColliders:SetActive(true)
 end
 
 function Scabbard:Disconnect()
     if not IsNullOrDestroyed(self.cJoint) then
-        UE.Object.Destroy(self.cJoint)
+        self.cJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.cJoint.yMotion = UE.ConfigurableJointMotion.Free
+        UE.Object.DestroyImmediate(self.cJoint)
     end
     if not IsNullOrDestroyed(self.lJoint) then
-        UE.Object.Destroy(self.lJoint)
+        self.lJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.lJoint.yMotion = UE.ConfigurableJointMotion.Free
+        UE.Object.DestroyImmediate(self.lJoint)
     end
     if not IsNullOrDestroyed(self.rJoint) then
-        UE.Object.Destroy(self.rJoint)
+        self.rJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.rJoint.yMotion = UE.ConfigurableJointMotion.Free
+        UE.Object.DestroyImmediate(self.rJoint)
     end
-    if not IsNullOrDestroyed(self.bottomJoint) then
-        UE.Object.Destroy(self.bottomJoint)
-    end
+    --if not IsNullOrDestroyed(self.bottomJoint) then
+    --    UE.Object.Destroy(self.bottomJoint)
+    --end
 
-    self.su.bladeColliders:SetActive(true)
+    if self.su then
+        local swordCols = self.su.ib:GetCols()
+        if not swordCols then
+            return
+        end
+        
+        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, false) 
+        self:IgnoreCollisionWithScabbardGrabHand(swordCols, false)
+        if self.isPutIn then
+            for i = 0, swordCols.Length - 1 do
+                swordCols[i].enabled = true
+            end
+        end
+        
+        self:EnableStab()
+        if self.su.ib.trans.parent == self.trans then
+            self.su.ib.trans:SetParent(nil)
+        end
+        self:ActiveScabbardMount(self.su.ib, true)
+    end
     
-    local pHand = self.su.ib:GetPrimaryHand();
-    local sHand = self.su.ib:GetSecondaryHand();
-    local swordCols = self.su.ib:GetCols()
-    if not swordCols then
+    CL.Scheduler.RemoveSchedule(self.timerId)
+end
+
+function Scabbard:SetBreakForce(breakForce)
+    if not IsNullOrDestroyed(self.cJoint) then
+        self.cJoint.breakForce = breakForce
+    end
+    if not IsNullOrDestroyed(self.lJoint) then
+        self.lJoint.breakForce = breakForce
+    end
+    if not IsNullOrDestroyed(self.rJoint) then
+        self.rJoint.breakForce = breakForce
+    end
+end
+
+function Scabbard:IgnoreCollisionWithScabbardGrabHand(cols, isIgnore)
+    if IsNullOrDestroyed(self.ib) then
         return
     end
-    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.scabbardCols, false)
-        
-    if IsNullOrDestroyed(pHand) and IsNullOrDestroyed(sHand) then
-        if not IsNullOrDestroyed(self.player) then
-            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, false)
-            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, false)
-        end
-    else
-        local rIg, lIg = true, true
-        if (not IsNullOrDestroyed(pHand) and pHand:GetHandIndex() == 0) or (not IsNullOrDestroyed(sHand) and sHand:GetHandIndex() == 0) then
-            lIg = false
-        elseif (not IsNullOrDestroyed(pHand) and pHand:GetHandIndex() == 1) or (not IsNullOrDestroyed(sHand) and sHand:GetHandIndex() == 1) then
-            rIg = false
-        end
-        if not IsNullOrDestroyed(self.player) then
-            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, lIg)
-            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, rIg)
-        end
+    
+    local ph = self.ib:GetPrimaryHand()
+    local sh = self.ib:GetSecondaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        CL.PhysicsHelper.IgnoreCollisions(cols, ph.physicsHand.colliders, isIgnore)
     end
-
-
-end
-
-function Scabbard:SwordOnGrab(a, g)
-
-    self:LockOrUnlockSwordToScabbard()
-
-    local swordCols = self.su.ib:GetCols()
-    if self.isConnect then
-        local handIdx = a.attachedHand:GetHandIndex()
-        CL.Scheduler.Create(self,
-            function(sche, t, s)
-                if not IsNullOrDestroyed(self.player) then
-                    if handIdx == 0 then
-                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
-                    else
-                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
-                    end
-                end
-                CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
-            end
-        , 0, 0, 0.51)
-    else
-        if not g then
-            CL.Scheduler.Create(self,
-            function(sche, t, s)
-                if not IsNullOrDestroyed(self.player) then
-                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, false)
-                    CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, false)
-                end
-                CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, false)
-            end
-            , 0, 0, 0.51)
-        end
+    
+    if not IsNullOrDestroyed(sh) then
+        CL.PhysicsHelper.IgnoreCollisions(cols, sh.physicsHand.colliders, isIgnore)
     end
 end
-
 
 function Scabbard:ScabbardOnGrab(a, g)
-
-    self.scabbardIsHeld = g
-    self:LockOrUnlockSwordToScabbard()
-
     if g then
-        self.player = a.attachedHand.character
-        self.lHandCols = self.player.hands[1].physicsHand.colliders
-        self.rHandCols = self.player.hands[0].physicsHand.colliders
+        self.lastGrabHand = a.attachedHand
+        if not self.scabbardHolder then
+            self.scabbardHolder = a.attachedHand.character
+            for i = 0, self.scabbardHolder.bodySlots.Length - 1 do
+                self.scabbardHolder.bodySlots[i]:PutInEvent("+", self.OnPutIn)
+            end
+        else
+            if self.scabbardHolder ~= a.attachedHand.character then
+                for i = 0, self.scabbardHolder.bodySlots.Length do
+                    self.scabbardHolder.bodySlots[i]:PutInEvent("-", self.OnPutIn)
+                end
+                self.scabbardHolder = a.attachedHand.character
+                for i = 0, self.scabbardHolder.bodySlots.Length - 1 do
+                    self.scabbardHolder.bodySlots[i]:PutInEvent("+", self.OnPutIn)
+                end
+            end
+        end
+        
+        if self.isPutIn then
+            if self.isConnect then
+               if self.su then
+                    local cols = self.su.ib:GetCols()
+                    for i = 0, cols.Length - 1 do
+                        cols[i].enabled = true
+                    end
+                end
+                
+                --self:SetBreakForce(UE.Mathf.Infinity)
+            end
+            self.isPutIn = false
+        end
     end      
     
+    
     if self.isConnect then
-        local handIdx = a.attachedHand:GetHandIndex()
+        if self.su then
+            if self.isIn then
+                if g then
+                    if self.isSwordGrab then
+                        self:LockWithSword(false)
+                    end
+                else
+                    self:LockWithSword(true)
+                end
+            end
+        end
+        
         CL.Scheduler.Create(self,
             function(sche, t, s)
                 local swordCols = self.su.ib:GetCols()
@@ -398,27 +749,92 @@ function Scabbard:ScabbardOnGrab(a, g)
                     return
                 end
                 if g then
-                    if not IsNullOrDestroyed(self.player) then
-                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
-                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
+                    if not IsNullOrDestroyed(self.scabbardHolder) then
+                        self:IgnoreCollisionWithScabbardGrabHand(swordCols, g)
                     end
                 else
-                    if not IsNullOrDestroyed(self.player) then
-                        if handIdx == 0 then
-                            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lHandCols, g)
-                        else
-                            CL.PhysicsHelper.IgnoreCollisions(swordCols, self.rHandCols, g)
-                        end
+                    if not self.isPutIn and not IsNullOrDestroyed(self.lastGrabHand) then
+                        CL.PhysicsHelper.IgnoreCollisions(swordCols, self.lastGrabHand.physicsHand.colliders, g)
                     end
                 end
                 CL.InteractCharacter.PlayerInstance.aiProxy.ra:SetCollisionIgnoreWith(swordCols, true)
             end
         , 0, 0, 0.51)
     end
+    
+    self.isScabbardGrab = g
 end
 
 function Scabbard:OnDestroy()
     self.ib:GrabEvent("-", self.scabbardGrabCb)
+    self.ib:CallBeginEvent("-", self.OnCallBegin)
+    self.ib:SlotBeginEvent("-", self.OnSlotBegin)
+    self.ib:SlotEvent("-", self.OnSlot)
+    
+    if CL.InteractCharacter.AIPlayerInstance then
+        CL.InteractCharacter.AIPlayerInstance.character:TransportBeginEvent("-", self.TransportBegin)
+        CL.InteractCharacter.AIPlayerInstance.character:TransportEndEvent("-", self.TransportEnd)
+    end
+    
+    if self.scabbardHolder then
+        for i = 0, self.scabbardHolder.bodySlots.Length - 1 do
+            self.scabbardHolder.bodySlots[i]:PutInEvent("-", self.OnPutIn)
+        end
+    end
+    
+    if self.su then
+        self:ActiveScabbardMount(self.su.ib, true)
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.timerId)
+end
+
+function Scabbard:ConnectWithSword(user, lb)
+    if not user then
+        return
+    end
+    
+    if not self.host then
+        self.host = lb
+        self.trans = lb.transform
+    end
+    
+    self.leftOffset = UE.Vector3(self.jointXOffset, 0, -self.jointZOffset)
+    self.rightOffset = UE.Vector3(-self.jointXOffset, 0, -self.jointZOffset)
+    
+    self.peakPoint = user.peakPoint
+    self.rootPoint = user.rootPoint
+    
+    self.su = user
+    
+    self.swordLength = self.peakPoint.localPosition.z - self.rootPoint.localPosition.z
+    self.z_d = self.entryPoint.localPosition.z + self.swordLength
+    
+    user.ib:GrabEvent("+", self.SwordOnGrab)
+    
+    self:BuildConnect(user.ib.rb)
+    self.isConnect = true
+    self.isEnter = true
+    self.isIn = true
+    self:LockJoint()
+    self.isLock = true
+    
+    self:LockWithSword(true)
+    
+    if not IsNullOrDestroyed(self.cJoint) then
+        local jd = self.cJoint.xDrive
+        jd.positionSpring = self.maxScrollForce
+        self.lJoint.zDrive = jd
+        self.rJoint.zDrive = jd
+    end
+    
+    self.timerId = CL.Scheduler.RemoveSchedule(self.timerId)
+    self.timerId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            self:ConnectUpdate()
+        end
+    , UE.Time.unscaledDeltaTime, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
 end
 
 return Class(nil, nil, Scabbard)

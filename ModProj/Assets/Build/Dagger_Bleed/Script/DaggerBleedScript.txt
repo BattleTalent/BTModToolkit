@@ -14,6 +14,17 @@ function DaggerBleed:Awake()
     end
     so:StabEnterEvent("+", self.onStabEnterHandler)
     so:StabExitEvent("+", self.OnStabExitHandler)
+    
+    
+    self.OnHit = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult > 0 and not fc:IsDead() then
+            CL.BuffMgr.Instance:AddBuff(fc.attr, "Role_Bleed_Short")
+        end
+    end
+
+    if self.hitInfoObj then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.OnHit)
+    end
 end
 
 function DaggerBleed:OnStabEnter(si)
