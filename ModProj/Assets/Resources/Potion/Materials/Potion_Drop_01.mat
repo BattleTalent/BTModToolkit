@@ -1,0 +1,166 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Potion_Drop_01
+  m_Shader: {fileID: 4800000, guid: 690bf1ff410f0d24aa031ea35889671e, type: 3}
+  m_ShaderKeywords: SPECULAR_REFLECTION_OFF _FLIPU_ON _FLIPV_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - NoiseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BackTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DownTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _FrontTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LeftTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 10300, guid: 0000000000000000f000000000000000, type: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Mask:
+        m_Texture: {fileID: 2800000, guid: 472c208cb1bb4f248820a92b475b0e70, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Noise:
+        m_Texture: {fileID: 2800000, guid: 11868e4144e4ed541a6ae3cd71db9121, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NoiseTex:
+        m_Texture: {fileID: 2800000, guid: 676dc61850f55cb43b386278a31f41fb, type: 3}
+        m_Scale: {x: 0.5, y: 0.5}
+        m_Offset: {x: -0.2, y: 0.08}
+    - _Normal:
+        m_Texture: {fileID: 2800000, guid: 3337b8a37d0a07441bc0291dee0c2142, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ReflectionTex:
+        m_Texture: {fileID: 2800000, guid: 2d0d6c2f82b84c545b7ab2ec21d914e6, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0.11, y: 0.09}
+    - _RightTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _UpTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Warp:
+        m_Texture: {fileID: 2800000, guid: 676dc61850f55cb43b386278a31f41fb, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WarpTex:
+        m_Texture: {fileID: 2800000, guid: 676dc61850f55cb43b386278a31f41fb, type: 3}
+        m_Scale: {x: 0.5, y: 0.5}
+        m_Offset: {x: -0.13, y: 0.23}
+    m_Floats:
+    - _AlphaClipMin: 1.53
+    - _AlphaClipSoft: 0.37
+    - _AlphaMin: 0.1
+    - _AlphaSoft: 0.022
+    - _BumpScale: 1
+    - _Columns: 1
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 0
+    - _EdgeDarken: 1
+    - _Fall: 0
+    - _FallOffset: -0.35
+    - _FallRandomness: 0.25
+    - _FlattenNormal: 0.5
+    - _FlipU: 1
+    - _FlipV: 1
+    - _FlipbookX: 1
+    - _FlipbookY: 1
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
+    - _GlossyReflections: 1
+    - _LightStr: 0.85
+    - _LightingStr: 3.31
+    - _MaskStr: 0.4
+    - _Metallic: 0
+    - _Mode: 0
+    - _NoiseAlphaStr: 1
+    - _NoiseColorStr: 0.01
+    - _NormalStr: 2.32
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _ParticleToggle: 1
+    - _ProcMask: 1
+    - _Randomize: 1
+    - _ReflectionSat: 0.5
+    - _Rows: 1
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _UVSec: 0
+    - _WarpStr: 0.25
+    - _ZWrite: 1
+    - __NormalStr: 1
+    m_Colors:
+    - _BaseColor: {r: 7.4642644, g: 7.4642644, b: 7.4642644, a: 1}
+    - _BloodSpecHighlightColor: {r: 1, g: 1, b: 1, a: 0}
+    - _ChannelMask: {r: 0.5, g: 0.5, b: 0, a: 0}
+    - _ChannelMask2: {r: 0, g: 1, b: 0, a: 0}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _SpecularColor: {r: 1.7, g: 1.7, b: 1.7, a: 0.8}
