@@ -106,7 +106,8 @@ namespace CrossLink
         public const int RingFinger = 3;
         public const int PinkieFinger = 4;
 
-        const int FINGER_COUNT = 5;
+        //const int FINGER_COUNT = 5;
+        public int numOfFinger = 5;
 
         [Header("——————Saved can be undo——————")]
         public HandFinger[] fingers;
@@ -138,7 +139,7 @@ namespace CrossLink
             }
 
             List<HandFinger> fingerList = new List<HandFinger>();
-            for (int i = 0; i < FINGER_COUNT; ++i)
+            for (int i = 0; i < numOfFinger; ++i)
             {
                 var finger = ConvertToFingerRunTime(handTrans.GetChild(i), fingerNodeDepth);
                 if (finger.fingerNodes == null || finger.fingerNodes.Length == 0)
