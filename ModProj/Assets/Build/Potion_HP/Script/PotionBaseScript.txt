@@ -132,15 +132,13 @@ function PotionBase:CloseBottle()
         function(sche, t, s)
             if UE.Vector3.Dot(self.coverTrans.up, self.host.interact.trans.up) > 0.98 then
                 self:AddJoint(nil)
-                sche:Stop()
-                
                 
                 if self.closeCoverSound then
                     self.closeCoverSound:PlaySound()
-                    print("play close sound----------")
                 end
                 
                 self.isOpen = false
+                sche:Stop()
             end
         end
     , 0, 2)
