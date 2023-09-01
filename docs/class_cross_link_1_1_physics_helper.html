@@ -81,6 +81,9 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:ab2e0a44f95a27e3d664d37516f26d213"><td class="memItemLeft" align="right" valign="top"><a id="ab2e0a44f95a27e3d664d37516f26d213"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>Pin</b> (Transform target, Rigidbody follow, Vector3 localFollowPoint, float deltaTime, float forceMlp)</td></tr>
 <tr class="separator:ab2e0a44f95a27e3d664d37516f26d213"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8f4063ee3d06ff9ce9162b7c7dff455"><td class="memItemLeft" align="right" valign="top"><a id="ab8f4063ee3d06ff9ce9162b7c7dff455"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>RotateRigidBodyAroundPointBy</b> (Rigidbody rb, Vector3 origin, Vector3 axis, float angle)</td></tr>
+<tr class="separator:ab8f4063ee3d06ff9ce9162b7c7dff455"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af922f12514b4d35810607560388eb935"><td class="memItemLeft" align="right" valign="top"><a id="af922f12514b4d35810607560388eb935"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>AddForceLimit</b> (this Rigidbody rb, Vector3 force, float limit=350)</td></tr>
 <tr class="separator:af922f12514b4d35810607560388eb935"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -126,6 +129,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetPhysicsTime
 <tr class="memitem:a7a9bdbccb54c15c45ee2d05f04dd8476"><td class="memItemLeft" align="right" valign="top"><a id="a7a9bdbccb54c15c45ee2d05f04dd8476"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetTimeScale</b> (float scale)</td></tr>
 <tr class="separator:a7a9bdbccb54c15c45ee2d05f04dd8476"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af49bf91a553f1061c9a96cfecaaad8a1"><td class="memItemLeft" align="right" valign="top"><a id="af49bf91a553f1061c9a96cfecaaad8a1"></a>
+static Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>CalcLastPointVelocity</b> (Vector3 hitPointToMassVector, Vector3 lastLinearVelocity, Vector3 lastAngularVelocity)</td></tr>
+<tr class="separator:af49bf91a553f1061c9a96cfecaaad8a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acd621731927c3fe50bb9bf045171c9ce"><td class="memItemLeft" align="right" valign="top"><a id="acd621731927c3fe50bb9bf045171c9ce"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetGravity</b> (float g)</td></tr>
 <tr class="separator:acd621731927c3fe50bb9bf045171c9ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -214,7 +220,7 @@ static float&#160;</td><td class="memItemRight" valign="bottom"><b>OriginalMaxim
 static float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultTimeScale</b> = 1</td></tr>
 <tr class="separator:a2c0755148a36438bf87d22663131bbae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad57bf33b390c1c447d6291fc23438ce5"><td class="memItemLeft" align="right" valign="top"><a id="ad57bf33b390c1c447d6291fc23438ce5"></a>
-static float&#160;</td><td class="memItemRight" valign="bottom"><b>SlowTimeScale</b> = 0.3333f</td></tr>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>SlowTimeScale</b> = 0.4f</td></tr>
 <tr class="separator:ad57bf33b390c1c447d6291fc23438ce5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a00eea6f7718a8530d652c0c6f7cc2d1e"><td class="memItemLeft" align="right" valign="top">static float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_helper.html#a00eea6f7718a8530d652c0c6f7cc2d1e">LogicTimeScale</a> = 1</td></tr>
 <tr class="memdesc:a00eea6f7718a8530d652c0c6f7cc2d1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">for fast access timescale, faster than Time.timescale  <a href="class_cross_link_1_1_physics_helper.html#a00eea6f7718a8530d652c0c6f7cc2d1e">More...</a><br /></td></tr>
