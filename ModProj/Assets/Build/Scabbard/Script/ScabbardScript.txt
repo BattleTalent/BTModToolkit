@@ -12,7 +12,7 @@ local Scabbard = {
     
     maxAngle = 70,
     jointZOffset = 0.2,
-    jointXOffset = 0.3,
+    jointXOffset = 0.4,
     
     isConnect = false,
     
@@ -578,17 +578,25 @@ function Scabbard:LockJoint()
     self.cJoint.xMotion = UE.ConfigurableJointMotion.Locked
     self.cJoint.yMotion = UE.ConfigurableJointMotion.Locked
     self.cJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
-    self.cJoint.projectionDistance = 0.1
+    self.cJoint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.cJoint.projectionDistance = 0.1   
+    self.cJoint.projectionAngle = 0
+
     
     self.lJoint.xMotion = UE.ConfigurableJointMotion.Locked
     self.lJoint.yMotion = UE.ConfigurableJointMotion.Locked
     self.lJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.lJoint.rotationDriveMode = UE.RotationDriveMode.Slerp
     self.lJoint.projectionDistance = 0.1
+    self.lJoint.projectionAngle = 0
+
     
     self.rJoint.xMotion = UE.ConfigurableJointMotion.Locked
     self.rJoint.yMotion = UE.ConfigurableJointMotion.Locked
     self.rJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.rJoint.rotationDriveMode = UE.RotationDriveMode.Slerp
     self.rJoint.projectionDistance = 0.1
+    self.rJoint.projectionAngle = 0
 end
 
 function Scabbard:UnlockJoint()
