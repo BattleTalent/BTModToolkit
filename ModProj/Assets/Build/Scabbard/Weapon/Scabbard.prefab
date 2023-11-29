@@ -224,7 +224,6 @@ GameObject:
   - component: {fileID: 1903866573830700520}
   - component: {fileID: 8936091663641255990}
   - component: {fileID: 1017930409891926529}
-  - component: {fileID: -4534834360494415829}
   - component: {fileID: 3622108925485087967}
   m_Layer: 15
   m_Name: Scabbard
@@ -346,6 +345,7 @@ MonoBehaviour:
   canPaint: 1
   enhanceLevel: -1
   showExampleWeaponGizmo: 0
+  gizmoType: 0
 --- !u!114 &1903866573830700520
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -409,52 +409,6 @@ MonoBehaviour:
     stringList:
     - name: swordType
       value: testSword
---- !u!114 &-4534834360494415829
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6594792081471664128}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1bcfa15fbd2daa143b22ebdd57a0b5b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  interact: {fileID: 6061593807304118770}
-  manaCost: -1
-  manaCostOnCharge: -1
-  skillDamage: 0
-  instantSkill: 0
-  skillChargeEndTime: -1
-  chargeEffect: 
-  chargeEndEffect: 
-  chargeSound:
-    templateName: 
-    soundNames: []
-    vol: 0.5
-    volRandomRange: 0
-    pitchMax: -1
-    pitchMin: 0.8
-  chargeEndSound:
-    templateName: 
-    soundNames: []
-    vol: 0.5
-    volRandomRange: 0
-    pitchMax: -1
-    pitchMin: 0.8
-  activateTime: -1
-  activateEffect: 
-  dontNeedUpdate: 1
-  skillChangeColors: []
-  weaponColorField: _EmissionColor
-  enableChargeColor: 0
-  chargeColor: {r: 0.943, g: 0.952, b: 0.588, a: 1}
-  script:
-    luaScript: WMD_ScabbardInteractScript
-    objList: []
-    numberList: []
-    stringList: []
 --- !u!114 &3622108925485087967
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1052,12 +1006,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e5b98c5f705a399448efb529a8111bdd, type: 3}
---- !u!4 &4222865688045456928 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
-    type: 3}
-  m_PrefabInstance: {fileID: 2198989113054768587}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &5651914220986129381 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5830968527570335278, guid: e5b98c5f705a399448efb529a8111bdd,
@@ -1076,3 +1024,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 888349f3ca4e57d4296b2e278cdc5138, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!4 &4222865688045456928 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+    type: 3}
+  m_PrefabInstance: {fileID: 2198989113054768587}
+  m_PrefabAsset: {fileID: 0}

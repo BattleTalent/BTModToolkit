@@ -15,10 +15,30 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_Data:
     m_SerializedData: []
-  m_GUID: ca4023dffb35c3d43a3d3f1721d76ff3
+  m_GUID: 71cfa210a03a7c945a003b7da1af1edf
   m_SerializeEntries:
+  - m_GUID: 2984de54a2f121146a48075682699fe6
+    m_Address: LuaScript/WMD_AvatarSoundPlayerScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 3447a2c7fcc76f2408690e1049e8a11e
+    m_Address: LuaScript/WMD_BulletScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 6defddeeb2d67634387478302b40808a
+    m_Address: LuaScript/WMD_BulletWithBlowUpScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 36e2c661b0ad1c14fafd4c0955696ada
+    m_Address: LuaScript/WMD_ClothBoneToolScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
   - m_GUID: 3576ef4a941c6ce459ec7edab98b6502
     m_Address: LuaScript/WMD_FlySpellBaseScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: fe9e8989fcc1be84da16b173b04bbdb3
+    m_Address: LuaScript/WMD_JumpForwardScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: 9cecc510ebfac284cb17271941dda0af
@@ -315,10 +335,6 @@ MonoBehaviour:
     m_SerializedLabels: []
   - m_GUID: 2afb21bf2e13bbb4b949d62a07e4a580
     m_Address: Weapon/WMD_Scabbard
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 8929de27f9340ab4585bc55cdbf10f5b
-    m_Address: LuaScript/WMD_ScabbardInteractScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: ab4059368ea04dc419cb6271cf683b61
@@ -645,40 +661,40 @@ MonoBehaviour:
     m_Address: Config/WMD_Tower_Turret_Info
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 2e7ff9be893ec674cae02b95b447a34e
-    m_Address: Weapon/WMD_Wand_Fire
+  - m_GUID: 1e3dc17097aee9d468a8e9f4ef8a9192
+    m_Address: Weapon/WMD_Wand_FireBall
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 3d77b1f8a414f274382ca39f7473c9c6
+  - m_GUID: 4ddb9a732a7b48c44a9c9c6c49bf2064
     m_Address: LuaScript/WMD_FlyExplodeScript
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 27a65e2c08f80ff4e898fde119913ec8
+  - m_GUID: 400a785228559a042904433670274d2e
     m_Address: LuaScript/WMD_FlyFireBallScript
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 8391102cc66690b49b1c70feda22e33e
-    m_Address: ICon/WMD_Wand_Fire
+  - m_GUID: a703fd088c22cc146af4cab06c8e0c85
+    m_Address: ICon/WMD_Wand_FireBall
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: b3a112967e17c2c45bfd9b7e849767b7
+  - m_GUID: a9acb841a8e08ab4aba890756ab08959
     m_Address: Effect/WMD_BigExplosion
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 4dd723c2e3f676349b23820b87ad9576
+  - m_GUID: 0a345c5a0a12e624485f3124cbb95834
     m_Address: FlyObj/WMD_FlyExplodeX
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 18a9dcd80d1e67c4c94f1dfb73cd5692
+  - m_GUID: 44a8fde0b4dd15e48a3a5848d371f31b
     m_Address: FlyObj/WMD_FlyFireBall
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: ed56827701a5cc64f9bc895bc0254042
+  - m_GUID: 5c1b7969ef26208469b76aeb14e716b4
     m_Address: Audio/Sound/WMD_bomb
     m_ReadOnly: 0
     m_SerializedLabels: []
-  - m_GUID: 737db93eed12209478fdfb1822d73328
-    m_Address: Config/WMD_Wand_Fire_Info
+  - m_GUID: 3cb74270840f18846ae9126f354116f3
+    m_Address: Config/WMD_Wand_FireBall_Info
     m_ReadOnly: 0
     m_SerializedLabels: []
   - m_GUID: 271067f5e976b8d49b73e8a29d66a0ad
@@ -829,20 +845,104 @@ MonoBehaviour:
     m_Address: Avatar/WMD_SimpleAvatar
     m_ReadOnly: 0
     m_SerializedLabels: []
+  - m_GUID: b1c26b5a258cda240a2a38b9a1d55d21
+    m_Address: ICon/WMD_SimpleAvatar_Huge
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 124c46533565fbf4f9eeffab32998537
+    m_Address: Audio/Sound/WMD_JumpEndSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 2aeac11d51f28554283d078be2005438
+    m_Address: Audio/Sound/WMD_JumpStartSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 2b1e7c9637d748847a4b0aecb6e778d0
+    m_Address: Audio/Sound/WMD_StepSound
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 54954796b0f160a4ca92ed85b6180d86
+    m_Address: Config/WMD_SimpleAvatar_Huge_Info
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: ebb57ce781e9e2b46aa9da79e17d3f88
+    m_Address: Avatar/WMD_SimpleAvatar_Huge
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 88672619f01b1e642adf5551105e7a5c
+    m_Address: Weapon/WMD_Gun_AK47_BlowUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 6c34181f88f2ca341b2d58fcccad74cb
+    m_Address: LuaScript/WMD_GunAKScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 21b47af852f2a764bad52bfc336e88a8
+    m_Address: ICon/WMD_Gun_AK47_BlowUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 78d7f3ece9621f642bea3de197fc9732
+    m_Address: Effect/WMD_BasicSpark
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 96aac58b1eea3b7458bed902a64f6218
+    m_Address: Effect/WMD_BirthdaySpark
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 57d7c66ec62667140abbff6a3097781a
+    m_Address: FlyObj/WMD_BulletAK_BlowUp
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 49a73a4e43da4ba48b17957bde722f8d
+    m_Address: Audio/Sound/WMD_akimpact
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: cc855761ce23f73479a92b5896e75160
+    m_Address: Audio/Sound/WMD_akshot
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: f546c01a803ae0348ace09b81e282326
+    m_Address: Config/WMD_Gun_AK47_BlowUp_Info
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 2e7ff9be893ec674cae02b95b447a34e
+    m_Address: Weapon/WMD_Wand_Flaming
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: a00848a1092f68141808249295018803
+    m_Address: LuaScript/WMD_FlyFlameScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 9df02241ad3ff2d4aad9ff76e50c5543
+    m_Address: LuaScript/WMD_WandFlamingScript
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 8391102cc66690b49b1c70feda22e33e
+    m_Address: ICon/WMD_Wand_Flaming
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 75c13b35fcbc6ec46a13149103694d5d
+    m_Address: Effect/WMD_FlyFlame_Short
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: f4271c95277200740b289d7db2e4189a
+    m_Address: FlyObj/WMD_FlyFlame_Short
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: cd5699de600aafc40a06337d93a4be2d
+    m_Address: Audio/Sound/WMD_FireLoop
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 48051006d17e1d6459444aa6f2c3629f
+    m_Address: Audio/Sound/WMD_FireOn
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+  - m_GUID: 737db93eed12209478fdfb1822d73328
+    m_Address: Config/WMD_Wand_Flaming_Info
+    m_ReadOnly: 0
+    m_SerializedLabels: []
   - m_GUID: 55653c56c8432504f93e3f371b4d924c
     m_Address: Entry
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 3447a2c7fcc76f2408690e1049e8a11e
-    m_Address: LuaScript/WMD_BulletScript
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: fe9e8989fcc1be84da16b173b04bbdb3
-    m_Address: LuaScript/WMD_JumpForwardScript
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-  - m_GUID: 36e2c661b0ad1c14fafd4c0955696ada
-    m_Address: LuaScript/WMD_ClothBoneToolScript
     m_ReadOnly: 0
     m_SerializedLabels: []
   m_ReadOnly: 0
