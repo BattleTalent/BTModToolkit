@@ -90,6 +90,10 @@ Public Types</h2></td></tr>
 , <b>Simple</b>
  }</td></tr>
 <tr class="separator:a72eb550af77f16a963c7dfd1e55f1019"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a040797ca91a0fc1505d4c54b98243839"><td class="memItemLeft" align="right" valign="top"><a id="a040797ca91a0fc1505d4c54b98243839"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>PhysicsSolverLevel</b> { <b>Medium</b>
+, <b>High</b>
+ }</td></tr>
+<tr class="separator:a040797ca91a0fc1505d4c54b98243839"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adbf073c03ddc8474f841da03809a35c5"><td class="memItemLeft" align="right" valign="top"><a id="adbf073c03ddc8474f841da03809a35c5"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>MoveType</b> { <b>SwingArm</b>
 , <b>EasySwing</b>
 , <b>NoSwing</b>
@@ -110,10 +114,15 @@ Public Types</h2></td></tr>
 , <b>Cheating</b>
  }</td></tr>
 <tr class="separator:a1809c30626425fa9d7e403a7cb5d26be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a8b0eb0b83f404c7236495abc3f7885"><td class="memItemLeft" align="right" valign="top"><a id="a5a8b0eb0b83f404c7236495abc3f7885"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>ControlType</b> { <b>Oculus</b> = 0
+<tr class="memitem:a5a8b0eb0b83f404c7236495abc3f7885"><td class="memItemLeft" align="right" valign="top"><a id="a5a8b0eb0b83f404c7236495abc3f7885"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>ControlType</b> { <br />
+&#160;&#160;<b>Oculus</b> = 0
 , <b>Vive</b> = 1
 , <b>Knuckle</b> = 2
 , <b>WMR</b> = 3
+, <br />
+&#160;&#160;<b>Pico</b> = 4
+, <b>PSVR2</b> = 5
+<br />
  }</td></tr>
 <tr class="separator:a5a8b0eb0b83f404c7236495abc3f7885"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afec3b26514f7d4d08bb08963c5b92f99"><td class="memItemLeft" align="right" valign="top"><a id="afec3b26514f7d4d08bb08963c5b92f99"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>DifficultyMode</b> { <br />
@@ -171,12 +180,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>SimpleTips</b> ()</td
 <tr class="memitem:a280264f439627372ce05b1f6a844f22e"><td class="memItemLeft" align="right" valign="top"><a id="a280264f439627372ce05b1f6a844f22e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDefaultType</b> (ControlType ct, int idx)</td></tr>
 <tr class="separator:a280264f439627372ce05b1f6a844f22e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a070d7a79ce125b1892a943030dc2e175"><td class="memItemLeft" align="right" valign="top"><a id="a070d7a79ce125b1892a943030dc2e175"></a>
-VRTK.SDK_BaseController.ControllerType&#160;</td><td class="memItemRight" valign="bottom"><b>ConvertToControllerType</b> (ControlType ct)</td></tr>
-<tr class="separator:a070d7a79ce125b1892a943030dc2e175"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ed29e69898c82b2a66e6c360a8fa220"><td class="memItemLeft" align="right" valign="top"><a id="a9ed29e69898c82b2a66e6c360a8fa220"></a>
-VRTK.SDK_BaseController.ControllerType&#160;</td><td class="memItemRight" valign="bottom"><b>GetVRTKControllerType</b> (int idx)</td></tr>
-<tr class="separator:a9ed29e69898c82b2a66e6c360a8fa220"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a981b009af44859b55432b67e8fb4c648"><td class="memItemLeft" align="right" valign="top"><a id="a981b009af44859b55432b67e8fb4c648"></a>
+<a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">VRTKInputDevice.ControllerType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ConvertToControllerType</b> (ControlType ct)</td></tr>
+<tr class="separator:a981b009af44859b55432b67e8fb4c648"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9437af4e926d083445547fa517450e1"><td class="memItemLeft" align="right" valign="top"><a id="aa9437af4e926d083445547fa517450e1"></a>
+<a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">VRTKInputDevice.ControllerType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetVRTKControllerType</b> (int idx)</td></tr>
+<tr class="separator:aa9437af4e926d083445547fa517450e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b03e66143f1d6fdfaed2a6e2a4cbbf6"><td class="memItemLeft" align="right" valign="top"><a id="a1b03e66143f1d6fdfaed2a6e2a4cbbf6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SaveReplacementCharacterData</b> ()</td></tr>
 <tr class="separator:a1b03e66143f1d6fdfaed2a6e2a4cbbf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -192,6 +201,12 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>GetReplacementChara
 <tr class="memitem:a31807bf0d8b6cc7860e1e48de9b58e0e"><td class="memItemLeft" align="right" valign="top"><a id="a31807bf0d8b6cc7860e1e48de9b58e0e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveAllReplacementCharacter</b> (string name)</td></tr>
 <tr class="separator:a31807bf0d8b6cc7860e1e48de9b58e0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b8a87216dc4e02d405387e7f5de1052"><td class="memItemLeft" align="right" valign="top"><a id="a4b8a87216dc4e02d405387e7f5de1052"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearAllReplacementCharacter</b> ()</td></tr>
+<tr class="separator:a4b8a87216dc4e02d405387e7f5de1052"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59ceebed48034f4b0ca615145c37073a"><td class="memItemLeft" align="right" valign="top"><a id="a59ceebed48034f4b0ca615145c37073a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SaveModDependencies</b> ()</td></tr>
+<tr class="separator:a59ceebed48034f4b0ca615145c37073a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -222,11 +237,12 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:ae06059146c7077d68202558c8f38700d"><td class="memItemLeft" align="right" valign="top"><a id="ae06059146c7077d68202558c8f38700d"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>resolution</b> = 1</td></tr>
 <tr class="separator:ae06059146c7077d68202558c8f38700d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a278942df0f6cb6e9ae4660d8437b7279"><td class="memItemLeft" align="right" valign="top"><a id="a278942df0f6cb6e9ae4660d8437b7279"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>postprocess</b> = true</td></tr>
+<tr class="memitem:a2f7f9017524f827df3dd5ba05e45878d"><td class="memItemLeft" align="right" valign="top"><a id="a2f7f9017524f827df3dd5ba05e45878d"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>winResolutionIdx</b> = 0</td></tr>
+<tr class="separator:a2f7f9017524f827df3dd5ba05e45878d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a278942df0f6cb6e9ae4660d8437b7279"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><b>postprocess</b></td></tr>
 <tr class="separator:a278942df0f6cb6e9ae4660d8437b7279"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac4e520dd6a431854f6dc6883ed606dec"><td class="memItemLeft" align="right" valign="top"><a id="ac4e520dd6a431854f6dc6883ed606dec"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>renderShadows</b> = true</td></tr>
+<tr class="memitem:ac4e520dd6a431854f6dc6883ed606dec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><b>renderShadows</b></td></tr>
 <tr class="separator:ac4e520dd6a431854f6dc6883ed606dec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a92aa436f1933a76874c99947507ecdc9"><td class="memItemLeft" align="right" valign="top"><a id="a92aa436f1933a76874c99947507ecdc9"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>PCFOV</b> = 85</td></tr>
@@ -272,6 +288,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSpawnMaxHp</b> = fa
 <tr class="memitem:a8f694604a00be27573fddcb70a1feb39"><td class="memItemLeft" align="right" valign="top"><a id="a8f694604a00be27573fddcb70a1feb39"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSpawnNoAI</b> = false</td></tr>
 <tr class="separator:a8f694604a00be27573fddcb70a1feb39"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aace7fd35569503d9b7462ba7be7dd0ed"><td class="memItemLeft" align="right" valign="top"><a id="aace7fd35569503d9b7462ba7be7dd0ed"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSpawnModRole</b> = false</td></tr>
+<tr class="separator:aace7fd35569503d9b7462ba7be7dd0ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae92f9751e2177107a93d614384151bf6"><td class="memItemLeft" align="right" valign="top"><a id="ae92f9751e2177107a93d614384151bf6"></a>
 SystemLanguage&#160;</td><td class="memItemRight" valign="bottom"><b>language</b> = SystemLanguage.English</td></tr>
 <tr class="separator:ae92f9751e2177107a93d614384151bf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -293,21 +312,33 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>unlockCheatingByJump<
 <tr class="memitem:afbcd9fbbcf0b6a52933aa7ef8aa3b508"><td class="memItemLeft" align="right" valign="top"><a id="afbcd9fbbcf0b6a52933aa7ef8aa3b508"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>unlockCheatingProgress</b></td></tr>
 <tr class="separator:afbcd9fbbcf0b6a52933aa7ef8aa3b508"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99d5245fc17f1bc601690f9d436f405c"><td class="memItemLeft" align="right" valign="top"><a id="a99d5245fc17f1bc601690f9d436f405c"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>unlockExtraTaskMode</b> = false</td></tr>
+<tr class="separator:a99d5245fc17f1bc601690f9d436f405c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6d1e372434185df79a55d46a0194e626"><td class="memItemLeft" align="right" valign="top"><a id="a6d1e372434185df79a55d46a0194e626"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>keepCorpseNum</b> = 1</td></tr>
 <tr class="separator:a6d1e372434185df79a55d46a0194e626"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac512a2f42fcc2aa5bd514e2ff36739b2"><td class="memItemLeft" align="right" valign="top"><a id="ac512a2f42fcc2aa5bd514e2ff36739b2"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>vibration</b> = 1f</td></tr>
 <tr class="separator:ac512a2f42fcc2aa5bd514e2ff36739b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a62bdd15781dce768bc1ac7cca4bb2353"><td class="memItemLeft" align="right" valign="top"><a id="a62bdd15781dce768bc1ac7cca4bb2353"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isModDependencies</b> = false</td></tr>
+<tr class="separator:a62bdd15781dce768bc1ac7cca4bb2353"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab6f8cbb109767493c8c7c5a540087edf"><td class="memItemLeft" align="right" valign="top"><a id="ab6f8cbb109767493c8c7c5a540087edf"></a>
 TipsLevel&#160;</td><td class="memItemRight" valign="bottom"><b>tipsLevel</b></td></tr>
 <tr class="separator:ab6f8cbb109767493c8c7c5a540087edf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0e09d0d2f7604c5730d7f04d96c0802"><td class="memItemLeft" align="right" valign="top"><a id="ab0e09d0d2f7604c5730d7f04d96c0802"></a>
+PhysicsSolverLevel&#160;</td><td class="memItemRight" valign="bottom"><b>physicsSolverLevel</b></td></tr>
+<tr class="separator:ab0e09d0d2f7604c5730d7f04d96c0802"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3303830b0f82a63b7351cb11ca816e75"><td class="memItemLeft" align="right" valign="top"><a id="a3303830b0f82a63b7351cb11ca816e75"></a>
 ControlType[]&#160;</td><td class="memItemRight" valign="bottom"><b>defaultControlType</b> = { ControlType.Vive, ControlType.Vive }</td></tr>
 <tr class="separator:a3303830b0f82a63b7351cb11ca816e75"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7347e6cd4f39b0f5bb6da6843cc6bc78"><td class="memItemLeft" align="right" valign="top"><a id="a7347e6cd4f39b0f5bb6da6843cc6bc78"></a>
 DifficultyMode&#160;</td><td class="memItemRight" valign="bottom"><b>difficulty</b> = DifficultyMode.Default</td></tr>
 <tr class="separator:a7347e6cd4f39b0f5bb6da6843cc6bc78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa5aa3a66b04431b1225fda8656f5ff7"><td class="memItemLeft" align="right" valign="top"><a id="afa5aa3a66b04431b1225fda8656f5ff7"></a>
+GameMode&#160;</td><td class="memItemRight" valign="bottom"><b>gamemode</b> = GameMode.Story</td></tr>
+<tr class="separator:afa5aa3a66b04431b1225fda8656f5ff7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -481,6 +512,44 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>CheatingItemCo
 <div class="line"> </div>
 <div class="line"> </div>
 <div class="line">            <span class="keyword">true</span></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a278942df0f6cb6e9ae4660d8437b7279"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a278942df0f6cb6e9ae4660d8437b7279">&#9670;&nbsp;</a></span>postprocess</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool CrossLink.SettingMgr.postprocess</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line">            <span class="keyword">false</span></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="ac4e520dd6a431854f6dc6883ed606dec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac4e520dd6a431854f6dc6883ed606dec">&#9670;&nbsp;</a></span>renderShadows</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool CrossLink.SettingMgr.renderShadows</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line"> </div>
+<div class="line">            <span class="keyword">false</span></div>
 </div><!-- fragment -->
 </div>
 </div>

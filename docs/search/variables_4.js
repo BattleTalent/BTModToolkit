@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['setting_1630',['setting',['../class_cross_link_1_1_dynamic_modifier.html#ad54d0854b0cf1329cdcd918322303235',1,'CrossLink::DynamicModifier']]]
+  ['richcolorreg_1879',['RichColorReg',['../class_rich_text_alpha_updater.html#a9627c2e68f0a583eeaa1c8be762c8ab0',1,'RichTextAlphaUpdater']]]
 ];

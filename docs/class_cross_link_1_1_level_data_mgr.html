@@ -70,7 +70,9 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_level_data_mgr-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.LevelDataMgr Class Reference</div>  </div>
@@ -84,12 +86,12 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a4f8220620d2f0b83686b5c970dd58e8f"><td class="memItemLeft" align="right" valign="top"><a id="a4f8220620d2f0b83686b5c970dd58e8f"></a>
-string&#160;</td><td class="memItemRight" valign="bottom"><b>GetLatestLevel</b> ()</td></tr>
-<tr class="separator:a4f8220620d2f0b83686b5c970dd58e8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a737f0972d54f4e39aaedeb16ea7426e7"><td class="memItemLeft" align="right" valign="top"><a id="a737f0972d54f4e39aaedeb16ea7426e7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SaveLatestLevel</b> (string ls)</td></tr>
-<tr class="separator:a737f0972d54f4e39aaedeb16ea7426e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e56f3275b294b8ab345382945cef1e6"><td class="memItemLeft" align="right" valign="top"><a id="a6e56f3275b294b8ab345382945cef1e6"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetLatestLevel</b> (TaskModeType taskModeType)</td></tr>
+<tr class="separator:a6e56f3275b294b8ab345382945cef1e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76953c327b0e7052440c560a7ac8f1f7"><td class="memItemLeft" align="right" valign="top"><a id="a76953c327b0e7052440c560a7ac8f1f7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SaveLatestLevel</b> (TaskModeType taskModeType, string ls)</td></tr>
+<tr class="separator:a76953c327b0e7052440c560a7ac8f1f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fe27dc168dd7587e82d86036a7e7afb"><td class="memItemLeft" align="right" valign="top"><a id="a8fe27dc168dd7587e82d86036a7e7afb"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsLevelPass</b> (string lv)</td></tr>
 <tr class="separator:a8fe27dc168dd7587e82d86036a7e7afb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -102,6 +104,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetLevelState</b> (st
 <tr class="memitem:ae5805a01ec9ec4b0369d4333372c9f90"><td class="memItemLeft" align="right" valign="top"><a id="ae5805a01ec9ec4b0369d4333372c9f90"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>GetCurrentScene</b> ()</td></tr>
 <tr class="separator:ae5805a01ec9ec4b0369d4333372c9f90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70b7dc329bbb6dd6bde64908e5e19e57"><td class="memItemLeft" align="right" valign="top"><a id="a70b7dc329bbb6dd6bde64908e5e19e57"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetHomeScene</b> ()</td></tr>
+<tr class="separator:a70b7dc329bbb6dd6bde64908e5e19e57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73e4c3b0045cbb187535b71f4410b9a2"><td class="memItemLeft" align="right" valign="top"><a id="a73e4c3b0045cbb187535b71f4410b9a2"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHomeScene</b> (string sceneName)</td></tr>
+<tr class="separator:a73e4c3b0045cbb187535b71f4410b9a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c02e392c8ad16cdca177dfef92c229a"><td class="memItemLeft" align="right" valign="top"><a id="a2c02e392c8ad16cdca177dfef92c229a"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsLoginScene</b> (string sceneName=null)</td></tr>
 <tr class="separator:a2c02e392c8ad16cdca177dfef92c229a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -120,6 +128,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsSplashScene</b> (st
 <tr class="memitem:a0661f15c3fc701dc03f185c3c46c7a88"><td class="memItemLeft" align="right" valign="top"><a id="a0661f15c3fc701dc03f185c3c46c7a88"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsRogueScene</b> (string sceneName=null)</td></tr>
 <tr class="separator:a0661f15c3fc701dc03f185c3c46c7a88"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf8897ba08fea8945a953d4b0ccb578b"><td class="memItemLeft" align="right" valign="top"><a id="acf8897ba08fea8945a953d4b0ccb578b"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsAdventrueRogueLevel</b> ()</td></tr>
+<tr class="separator:acf8897ba08fea8945a953d4b0ccb578b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3cf3ceb55616f557c58906dc806f724b"><td class="memItemLeft" align="right" valign="top"><a id="a3cf3ceb55616f557c58906dc806f724b"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsSandboxScene</b> (string sceneName=null)</td></tr>
 <tr class="separator:a3cf3ceb55616f557c58906dc806f724b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -132,12 +143,24 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsTrialScene</b> (str
 <tr class="memitem:a65dadfe0e7c3ac25a518adedd15ea16d"><td class="memItemLeft" align="right" valign="top"><a id="a65dadfe0e7c3ac25a518adedd15ea16d"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPlayingLevel</b> ()</td></tr>
 <tr class="separator:a65dadfe0e7c3ac25a518adedd15ea16d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3fa08bcc374ab91a64e32367fd563882"><td class="memItemLeft" align="right" valign="top"><a id="a3fa08bcc374ab91a64e32367fd563882"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>StartPlay</b> (string lv)</td></tr>
-<tr class="separator:a3fa08bcc374ab91a64e32367fd563882"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b2a35894de77a11c4e402332a0d09f0"><td class="memItemLeft" align="right" valign="top"><a id="a2b2a35894de77a11c4e402332a0d09f0"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Replay</b> ()</td></tr>
+<tr class="separator:a2b2a35894de77a11c4e402332a0d09f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0700146a5200e49a029f52f6dadf811a"><td class="memItemLeft" align="right" valign="top"><a id="a0700146a5200e49a029f52f6dadf811a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StartPlay</b> (TaskModeType taskModeType, string lv)</td></tr>
+<tr class="separator:a0700146a5200e49a029f52f6dadf811a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af93ae88ad0b11dfbc7f8e3cc29a1a4ea"><td class="memItemLeft" align="right" valign="top"><a id="af93ae88ad0b11dfbc7f8e3cc29a1a4ea"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>GoHome</b> ()</td></tr>
 <tr class="separator:af93ae88ad0b11dfbc7f8e3cc29a1a4ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88d25b48f9ae833585a0a51a99f46581"><td class="memItemLeft" align="right" valign="top"><a id="a88d25b48f9ae833585a0a51a99f46581"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReturnToLogin</b> ()</td></tr>
+<tr class="separator:a88d25b48f9ae833585a0a51a99f46581"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a750b6d93cc0d46d7abe5c360e40573a6"><td class="memItemLeft" align="right" valign="top"><a id="a750b6d93cc0d46d7abe5c360e40573a6"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>HomeScene</b> = &quot;Home&quot;</td></tr>
+<tr class="separator:a750b6d93cc0d46d7abe5c360e40573a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -147,15 +170,21 @@ static <a class="el" href="class_cross_link_1_1_level_data_mgr.html">LevelDataMg
 <tr class="memitem:a9de212eaaa666320082a27fc580c00b7"><td class="memItemLeft" align="right" valign="top"><a id="a9de212eaaa666320082a27fc580c00b7"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>TutorialScene</b> = &quot;Tutorial&quot;</td></tr>
 <tr class="separator:a9de212eaaa666320082a27fc580c00b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31081f9d15023ac37b8dcf282c335203"><td class="memItemLeft" align="right" valign="top"><a id="a31081f9d15023ac37b8dcf282c335203"></a>
-const string&#160;</td><td class="memItemRight" valign="bottom"><b>HomeScene</b> = &quot;Home&quot;</td></tr>
-<tr class="separator:a31081f9d15023ac37b8dcf282c335203"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af87e937c263a5c16287d54612eb053db"><td class="memItemLeft" align="right" valign="top"><a id="af87e937c263a5c16287d54612eb053db"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>StoryHomeScene</b> = &quot;Home&quot;</td></tr>
+<tr class="separator:af87e937c263a5c16287d54612eb053db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d84c7c651bd1d75f770fd2fa3ed61db"><td class="memItemLeft" align="right" valign="top"><a id="a7d84c7c651bd1d75f770fd2fa3ed61db"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>SandboxScene</b> = &quot;Sandbox&quot;</td></tr>
 <tr class="separator:a7d84c7c651bd1d75f770fd2fa3ed61db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1d6fda611b0d4af2b93135e1d0965b64"><td class="memItemLeft" align="right" valign="top"><a id="a1d6fda611b0d4af2b93135e1d0965b64"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>LoginScene</b> = &quot;Login&quot;</td></tr>
 <tr class="separator:a1d6fda611b0d4af2b93135e1d0965b64"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:a13ef95e4db175d59af6c62978a819fd9"><td class="memItemLeft" align="right" valign="top"><a id="a13ef95e4db175d59af6c62978a819fd9"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>ReplayEvent</b></td></tr>
+<tr class="separator:a13ef95e4db175d59af6c62978a819fd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -81,27 +81,36 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ae9f571fa3fdd4de80224c8c98b232b6c"><td class="memItemLeft" align="right" valign="top"><a id="ae9f571fa3fdd4de80224c8c98b232b6c"></a>
-static <a class="el" href="class_cross_link_1_1_task_graph.html">TaskGraph</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetFullTaskData</b> ()</td></tr>
-<tr class="separator:ae9f571fa3fdd4de80224c8c98b232b6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a62582ff809efaaf5ff5a47fe9e8ceb6a"><td class="memItemLeft" align="right" valign="top"><a id="a62582ff809efaaf5ff5a47fe9e8ceb6a"></a>
-static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetChapterByLv</b> (string lv)</td></tr>
-<tr class="separator:a62582ff809efaaf5ff5a47fe9e8ceb6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af965d15cc8ab3c0d0585e322a1b32280"><td class="memItemLeft" align="right" valign="top"><a id="af965d15cc8ab3c0d0585e322a1b32280"></a>
+static <a class="el" href="class_cross_link_1_1_task_graph.html">TaskGraph</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetFullTaskData</b> (TaskModeType taskModeType=TaskModeType.Story)</td></tr>
+<tr class="separator:af965d15cc8ab3c0d0585e322a1b32280"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac4c8742e919eb5e12b5b1c41282db345"><td class="memItemLeft" align="right" valign="top"><a id="ac4c8742e919eb5e12b5b1c41282db345"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetChapterByLv</b> (TaskModeType taskModeType, string lv)</td></tr>
+<tr class="separator:ac4c8742e919eb5e12b5b1c41282db345"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85632dbacf45f74c809dfbfb001bc1b6"><td class="memItemLeft" align="right" valign="top"><a id="a85632dbacf45f74c809dfbfb001bc1b6"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsLastLevelOfChapter</b> (string lv)</td></tr>
 <tr class="separator:a85632dbacf45f74c809dfbfb001bc1b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:a5331b4c4a1d42090b280126dee3ad7fc"><td class="memItemLeft" align="right" valign="top"><a id="a5331b4c4a1d42090b280126dee3ad7fc"></a>
+TaskModeType&#160;</td><td class="memItemRight" valign="bottom"><b>taskModeType</b> = TaskModeType.Story</td></tr>
+<tr class="separator:a5331b4c4a1d42090b280126dee3ad7fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a23b41bc05951af317326ba74fc783b35"><td class="memItemLeft" align="right" valign="top"><a id="a23b41bc05951af317326ba74fc783b35"></a>
 <a class="el" href="class_cross_link_1_1_chapter_data.html">ChapterData</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>chapterDatas</b></td></tr>
 <tr class="separator:a23b41bc05951af317326ba74fc783b35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a365fd9ab001ca7300a2a1bfe21214819"><td class="memItemLeft" align="right" valign="top"><a id="a365fd9ab001ca7300a2a1bfe21214819"></a>
-const string&#160;</td><td class="memItemRight" valign="bottom"><b>TaskGraphPath</b> = &quot;Levels/FullTaskData&quot;</td></tr>
-<tr class="separator:a365fd9ab001ca7300a2a1bfe21214819"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a130b3464bc99b6d87914782b7fd509a9"><td class="memItemLeft" align="right" valign="top"><a id="a130b3464bc99b6d87914782b7fd509a9"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>StoryTaskGraphPath</b> = &quot;Levels/StoryTaskData&quot;</td></tr>
+<tr class="separator:a130b3464bc99b6d87914782b7fd509a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8c0c49b4a583e69366e53ec6044a911"><td class="memItemLeft" align="right" valign="top"><a id="aa8c0c49b4a583e69366e53ec6044a911"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>RogueTaskGraphPath</b> = &quot;Levels/RogueTaskData&quot;</td></tr>
+<tr class="separator:aa8c0c49b4a583e69366e53ec6044a911"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9b4e1f1488d30edf8f44146dabd282a"><td class="memItemLeft" align="right" valign="top"><a id="ae9b4e1f1488d30edf8f44146dabd282a"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>SandboxTaskGraphPath</b> = &quot;Levels/SandboxTaskData&quot;</td></tr>
+<tr class="separator:ae9b4e1f1488d30edf8f44146dabd282a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

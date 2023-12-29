@@ -106,6 +106,9 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>RecoverMp</b
 <tr class="memitem:a418db7ca0afba028437b641c41da6d13 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a418db7ca0afba028437b641c41da6d13"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>ChangeCamp</b> ()</td></tr>
 <tr class="separator:a418db7ca0afba028437b641c41da6d13 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18521cc9d47090a23dd1574d821641a9 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a18521cc9d47090a23dd1574d821641a9"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>ChangeCamp</b> (string c)</td></tr>
+<tr class="separator:a18521cc9d47090a23dd1574d821641a9 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5634b2e3c153b6284504a3ea17473b1 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="ad5634b2e3c153b6284504a3ea17473b1"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetDeadTime</b> ()</td></tr>
 <tr class="separator:ad5634b2e3c153b6284504a3ea17473b1 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,6 +124,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> (<a class="e
 <tr class="memitem:a81c3674b50fee1f41b55a9b05dc3d6ec inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a81c3674b50fee1f41b55a9b05dc3d6ec"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>InitBuff</b> ()</td></tr>
 <tr class="separator:a81c3674b50fee1f41b55a9b05dc3d6ec inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84a74e14d2fed5ce063455b24fa465a7 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a84a74e14d2fed5ce063455b24fa465a7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>InitModifiers</b> ()</td></tr>
+<tr class="separator:a84a74e14d2fed5ce063455b24fa465a7 inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a06da048f26f953b30de73c3b33d3661c inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a06da048f26f953b30de73c3b33d3661c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDead</b> ()</td></tr>
 <tr class="separator:a06da048f26f953b30de73c3b33d3661c inherit pub_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -221,12 +227,18 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>configName</b></td>
 <tr class="memitem:acc3979833aac3cfcb4f527a1bbb8e283 inherit pub_attribs_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="acc3979833aac3cfcb4f527a1bbb8e283"></a>
 <a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>&#160;</td><td class="memItemRight" valign="bottom"><b>massMlp</b> = new <a class="el" href="class_cross_link_1_1_character_stat.html">CharacterStat</a>(1)</td></tr>
 <tr class="separator:acc3979833aac3cfcb4f527a1bbb8e283 inherit pub_attribs_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad83c428ac8c5aaaf03bece1c5b2f7a90 inherit pub_attribs_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="ad83c428ac8c5aaaf03bece1c5b2f7a90"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>rebornCount</b> = 0</td></tr>
+<tr class="separator:ad83c428ac8c5aaaf03bece1c5b2f7a90 inherit pub_attribs_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac768574a857b21239fe79d4127792338 inherit pub_attribs_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="ac768574a857b21239fe79d4127792338"></a>
 string[]&#160;</td><td class="memItemRight" valign="bottom"><b>defaultBuffs</b></td></tr>
 <tr class="separator:ac768574a857b21239fe79d4127792338 inherit pub_attribs_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:af06897545800fcb9c7e91b5a1801cbd5"><td class="memItemLeft" align="right" valign="top"><a id="af06897545800fcb9c7e91b5a1801cbd5"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheatStun</b> = false</td></tr>
+<tr class="separator:af06897545800fcb9c7e91b5a1801cbd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1dd153dc30a3e9c2341c37f51a0fc556"><td class="memItemLeft" align="right" valign="top"><a id="a1dd153dc30a3e9c2341c37f51a0fc556"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>LockHp</b> = false</td></tr>
 <tr class="separator:a1dd153dc30a3e9c2341c37f51a0fc556"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -252,6 +264,10 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>MiddleAmountHp
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_methods_class_cross_link_1_1_combat_attr"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_class_cross_link_1_1_combat_attr')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="class_cross_link_1_1_combat_attr.html">CrossLink.CombatAttr</a></td></tr>
+<tr class="memitem:ac04f7af36aeba6ce2c58ede3d0b71993 inherit pro_methods_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="ac04f7af36aeba6ce2c58ede3d0b71993"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnRebornCountChanged</b> (<a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a> vp, string stateName)</td></tr>
+<tr class="separator:ac04f7af36aeba6ce2c58ede3d0b71993 inherit pro_methods_class_cross_link_1_1_combat_attr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header events_class_cross_link_1_1_combat_attr"><td colspan="2" onclick="javascript:toggleInherit('events_class_cross_link_1_1_combat_attr')"><img src="closed.png" alt="-"/>&#160;Events inherited from <a class="el" href="class_cross_link_1_1_combat_attr.html">CrossLink.CombatAttr</a></td></tr>
 <tr class="memitem:a82637dfa828f3d241312373855cc620e inherit events_class_cross_link_1_1_combat_attr"><td class="memItemLeft" align="right" valign="top"><a id="a82637dfa828f3d241312373855cc620e"></a>
 System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>DeadEvent</b></td></tr>

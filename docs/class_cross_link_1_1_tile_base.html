@@ -112,6 +112,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>StartBoss</b> ()</td>
 <tr class="separator:a2abb89e7f84e618c1a270d483b1b36c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1a2c9633c4551eacfa9d1422829f386"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_tile_base.html#ad1a2c9633c4551eacfa9d1422829f386">TryPlayStyleMod</a> ()</td></tr>
 <tr class="separator:ad1a2c9633c4551eacfa9d1422829f386"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af4d643b17530b20ac1a8bdb330bb33a9"><td class="memItemLeft" align="right" valign="top"><a id="af4d643b17530b20ac1a8bdb330bb33a9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetTileTotalSoul</b> (<a class="el" href="class_cross_link_1_1_wave_generator.html">WaveGenerator</a> wave, Vector2 range)</td></tr>
+<tr class="separator:af4d643b17530b20ac1a8bdb330bb33a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a309c2d2a75b386f18499784cee12fc0e"><td class="memItemLeft" align="right" valign="top"><a id="a309c2d2a75b386f18499784cee12fc0e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnRecenter</b> (Vector3 offset)</td></tr>
 <tr class="separator:a309c2d2a75b386f18499784cee12fc0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -133,12 +136,27 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SpawnSinglePoint</b> 
 <tr class="memitem:ac08477f246cd366ccaf8c42e6698a736"><td class="memItemLeft" align="right" valign="top"><a id="ac08477f246cd366ccaf8c42e6698a736"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCullByBridge</b> ()</td></tr>
 <tr class="separator:ac08477f246cd366ccaf8c42e6698a736"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a05007b604287700d3d424402f294e105"><td class="memItemLeft" align="right" valign="top"><a id="a05007b604287700d3d424402f294e105"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsNearMainLootRoom</b> ()</td></tr>
+<tr class="separator:a05007b604287700d3d424402f294e105"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae66de187a1be6efbc4ad4a457e0d2e7f"><td class="memItemLeft" align="right" valign="top"><a id="ae66de187a1be6efbc4ad4a457e0d2e7f"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsThisRoomHasLoot</b> ()</td></tr>
 <tr class="separator:ae66de187a1be6efbc4ad4a457e0d2e7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46c3d48f4ea1cc3aa9ffd77b710ac7b1"><td class="memItemLeft" align="right" valign="top"><a id="a46c3d48f4ea1cc3aa9ffd77b710ac7b1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnNearDoorIsClose</b> (DunGen.Doorway nearDoor)</td></tr>
+<tr class="separator:a46c3d48f4ea1cc3aa9ffd77b710ac7b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6cec5a8c6e10baed40b02e53eb89847"><td class="memItemLeft" align="right" valign="top"><a id="aa6cec5a8c6e10baed40b02e53eb89847"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDoorClosed</b> (DunGen.Doorway door)</td></tr>
+<tr class="separator:aa6cec5a8c6e10baed40b02e53eb89847"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b06ecb3df9f8f8434a0bbfb01962dfe"><td class="memItemLeft" align="right" valign="top"><a id="a3b06ecb3df9f8f8434a0bbfb01962dfe"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>CloseDoor</b> (DunGen.Doorway door)</td></tr>
+<tr class="separator:a3b06ecb3df9f8f8434a0bbfb01962dfe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5363e6052c4b7a69004a96bfda708b74"><td class="memItemLeft" align="right" valign="top"><a id="a5363e6052c4b7a69004a96bfda708b74"></a>
 override bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDeadEnd</b> ()</td></tr>
 <tr class="separator:a5363e6052c4b7a69004a96bfda708b74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2b364e9cee4954ccc2006383f167cbc"><td class="memItemLeft" align="right" valign="top"><a id="ab2b364e9cee4954ccc2006383f167cbc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PropagateDeadEnd</b> ()</td></tr>
+<tr class="separator:ab2b364e9cee4954ccc2006383f167cbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -178,12 +196,18 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>removeSpawnPointPob<
 <tr class="memitem:adac338e71e627ca187fe853e5c250885"><td class="memItemLeft" align="right" valign="top"><a id="adac338e71e627ca187fe853e5c250885"></a>
 EventToConfigCombat&#160;</td><td class="memItemRight" valign="bottom"><b>combatConfig</b></td></tr>
 <tr class="separator:adac338e71e627ca187fe853e5c250885"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a627c3eec19ade928c02c11ecdbf52d2f"><td class="memItemLeft" align="right" valign="top"><a id="a627c3eec19ade928c02c11ecdbf52d2f"></a>
+<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a>&#160;</td><td class="memItemRight" valign="bottom"><b>spawnedBoss</b></td></tr>
+<tr class="separator:a627c3eec19ade928c02c11ecdbf52d2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a831669a9da466d398f184370476d59bb"><td class="memItemLeft" align="right" valign="top"><a id="a831669a9da466d398f184370476d59bb"></a>
 EventToBase&#160;</td><td class="memItemRight" valign="bottom"><b>bossDeadEvent</b></td></tr>
 <tr class="separator:a831669a9da466d398f184370476d59bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a46733dd6baff953bb72481792501c11c"><td class="memItemLeft" align="right" valign="top"><a id="a46733dd6baff953bb72481792501c11c"></a>
 EventToBase&#160;</td><td class="memItemRight" valign="bottom"><b>reloadEvent</b></td></tr>
 <tr class="separator:a46733dd6baff953bb72481792501c11c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a474b0686812e59d5cb6aa820beffce"><td class="memItemLeft" align="right" valign="top"><a id="a7a474b0686812e59d5cb6aa820beffce"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>tileSoulNum</b> = 0</td></tr>
+<tr class="separator:a7a474b0686812e59d5cb6aa820beffce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08c01d3dcfb1c51ec0e296ca0f465658"><td class="memItemLeft" align="right" valign="top"><a id="a08c01d3dcfb1c51ec0e296ca0f465658"></a>
 EventToBase&#160;</td><td class="memItemRight" valign="bottom"><b>initEvent</b></td></tr>
 <tr class="separator:a08c01d3dcfb1c51ec0e296ca0f465658"><td class="memSeparator" colspan="2">&#160;</td></tr>

@@ -106,6 +106,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerParryEvent</b>
 <tr class="memitem:ab92a185c175df1ba4bd98ac8966cc868"><td class="memItemLeft" align="right" valign="top"><a id="ab92a185c175df1ba4bd98ac8966cc868"></a>
 <a class="el" href="class_cross_link_1_1_player_unit.html">PlayerUnit</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetPlayerUnit</b> ()</td></tr>
 <tr class="separator:ab92a185c175df1ba4bd98ac8966cc868"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab714d26ae650ba4382c1fe69d06f20f5"><td class="memItemLeft" align="right" valign="top"><a id="ab714d26ae650ba4382c1fe69d06f20f5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetPlayerSoul</b> ()</td></tr>
+<tr class="separator:ab714d26ae650ba4382c1fe69d06f20f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf902545df300f108631c3efc7d024d5"><td class="memItemLeft" align="right" valign="top"><a id="acf902545df300f108631c3efc7d024d5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReActiveCameraRig</b> ()</td></tr>
+<tr class="separator:acf902545df300f108631c3efc7d024d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab00e8284c3c4c0ffc8aaeadc40b83cd9"><td class="memItemLeft" align="right" valign="top"><a id="ab00e8284c3c4c0ffc8aaeadc40b83cd9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateUnlockAbilities</b> ()</td></tr>
 <tr class="separator:ab00e8284c3c4c0ffc8aaeadc40b83cd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -274,6 +280,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsSlowMoing</b> ()</t
 <tr class="memitem:a796e9c60a115a36790c1945faab15dc6"><td class="memItemLeft" align="right" valign="top"><a id="a796e9c60a115a36790c1945faab15dc6"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SlowMo</b> (float len=2f, float delay=0.2f, System.Action onFinish=null)</td></tr>
 <tr class="separator:a796e9c60a115a36790c1945faab15dc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab986a78b95a25d0c6b9629eac9ce5bda"><td class="memItemLeft" align="right" valign="top"><a id="ab986a78b95a25d0c6b9629eac9ce5bda"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearTimeScale</b> ()</td></tr>
+<tr class="separator:ab986a78b95a25d0c6b9629eac9ce5bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a894b9bd5174428a7afde1dc9e4c46a90"><td class="memItemLeft" align="right" valign="top"><a id="a894b9bd5174428a7afde1dc9e4c46a90"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SuperPower</b> ()</td></tr>
 <tr class="separator:a894b9bd5174428a7afde1dc9e4c46a90"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -643,12 +652,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayJumpEndSound</b> 
 <tr class="memitem:ad95462e69b2edb7f42f29d40daf62eb8 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ad95462e69b2edb7f42f29d40daf62eb8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetLatestHitGround</b> (bool hit)</td></tr>
 <tr class="separator:ad95462e69b2edb7f42f29d40daf62eb8 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab64ab78566ece747bc3b82a58392cfda inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ab64ab78566ece747bc3b82a58392cfda"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsMidAir</b> (float diff=0.5f)</td></tr>
-<tr class="separator:ab64ab78566ece747bc3b82a58392cfda inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a367625dbcb9b08f62ac33a42137fdb62 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a367625dbcb9b08f62ac33a42137fdb62"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CheckGround</b> ()</td></tr>
-<tr class="separator:a367625dbcb9b08f62ac33a42137fdb62 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3cf652f2615d89b7449d139c37c6009 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="ab3cf652f2615d89b7449d139c37c6009"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsMidAir</b> (float diff=0.5f, Transform checkTrans=null)</td></tr>
+<tr class="separator:ab3cf652f2615d89b7449d139c37c6009 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa490f4dbd22ae4c149b6067a6e7edfe1 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="aa490f4dbd22ae4c149b6067a6e7edfe1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>CheckGround</b> (Transform checkTrans=null)</td></tr>
+<tr class="separator:aa490f4dbd22ae4c149b6067a6e7edfe1 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9438f3de6dd65d5b865076fe36b27bd5 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memItemLeft" align="right" valign="top"><a id="a9438f3de6dd65d5b865076fe36b27bd5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheckGroundFall</b> ()</td></tr>
 <tr class="separator:a9438f3de6dd65d5b865076fe36b27bd5 inherit pub_methods_class_cross_link_1_1_character_controller_base"><td class="memSeparator" colspan="2">&#160;</td></tr>

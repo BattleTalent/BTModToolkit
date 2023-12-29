@@ -77,7 +77,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p>Inherits <a class="el" href="interface_cross_link_1_1_i_u_i_button_data.html">CrossLink.IUIButtonData</a>.</p>
+<p>Inherits <a class="el" href="interface_cross_link_1_1_i_u_i_button_data.html">CrossLink.IUIButtonData</a>, and System.IComparable&lt; UnlockContentItem &gt;.</p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -89,12 +89,15 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:aceab471897be4a594a5b90eb05a94fa7"><td class="memItemLeft" align="right" valign="top"><a id="aceab471897be4a594a5b90eb05a94fa7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetCopy</b> (<a class="el" href="class_cross_link_1_1_unlock_content_item.html">UnlockContentItem</a> item)</td></tr>
+<tr class="separator:aceab471897be4a594a5b90eb05a94fa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af2ca76e6de078785f8b0f40bbcdbc9c8"><td class="memItemLeft" align="right" valign="top"><a id="af2ca76e6de078785f8b0f40bbcdbc9c8"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetAttrbuteLevel</b> ()</td></tr>
 <tr class="separator:af2ca76e6de078785f8b0f40bbcdbc9c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6f54a03c8246133a2f3512b86c6adef2"><td class="memItemLeft" align="right" valign="top"><a id="a6f54a03c8246133a2f3512b86c6adef2"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsExist</b> ()</td></tr>
-<tr class="separator:a6f54a03c8246133a2f3512b86c6adef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3501f64d9f0cd64a21b701531dda2c18"><td class="memItemLeft" align="right" valign="top"><a id="a3501f64d9f0cd64a21b701531dda2c18"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsExist</b> (GameMode gameMode)</td></tr>
+<tr class="separator:a3501f64d9f0cd64a21b701531dda2c18"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac57c27b408154e43c2ab417b4ba90bef"><td class="memItemLeft" align="right" valign="top"><a id="ac57c27b408154e43c2ab417b4ba90bef"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsShownInStore</b> ()</td></tr>
 <tr class="separator:ac57c27b408154e43c2ab417b4ba90bef"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -104,9 +107,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnlocked</b> ()</td
 <tr class="memitem:af781351b8fd93c1d0547634e0629de4b"><td class="memItemLeft" align="right" valign="top"><a id="af781351b8fd93c1d0547634e0629de4b"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsEnabled</b> ()</td></tr>
 <tr class="separator:af781351b8fd93c1d0547634e0629de4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc3a46bb2b7e8b6b3dde4cbf051d5747"><td class="memItemLeft" align="right" valign="top"><a id="afc3a46bb2b7e8b6b3dde4cbf051d5747"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnlockedAndEnabled</b> ()</td></tr>
-<tr class="separator:afc3a46bb2b7e8b6b3dde4cbf051d5747"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c03fd25861308768b8fd880ab579f28"><td class="memItemLeft" align="right" valign="top"><a id="a0c03fd25861308768b8fd880ab579f28"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnlockedAndEnabled</b> (GameMode gamemode=GameMode.Story)</td></tr>
+<tr class="separator:a0c03fd25861308768b8fd880ab579f28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a76330f66c372d1d1838c82e32f293161"><td class="memItemLeft" align="right" valign="top"><a id="a76330f66c372d1d1838c82e32f293161"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>GetRequireCoin</b> ()</td></tr>
 <tr class="separator:a76330f66c372d1d1838c82e32f293161"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -137,6 +140,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsDefaultItem</b> ()<
 <tr class="memitem:acad7ca67bc0dc8c84f07fcdcc89cd1f4"><td class="memItemLeft" align="right" valign="top"><a id="acad7ca67bc0dc8c84f07fcdcc89cd1f4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDefaultItem</b> (bool isDefault=true)</td></tr>
 <tr class="separator:acad7ca67bc0dc8c84f07fcdcc89cd1f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01da0f77c9486fd0e2de59d26653d0bc"><td class="memItemLeft" align="right" valign="top"><a id="a01da0f77c9486fd0e2de59d26653d0bc"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>CompareTo</b> (<a class="el" href="class_cross_link_1_1_unlock_content_item.html">UnlockContentItem</a> other)</td></tr>
+<tr class="separator:a01da0f77c9486fd0e2de59d26653d0bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -155,12 +161,24 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>dependLevelName</b>
 <tr class="memitem:a251a107cec08750333a131ce696d2d37"><td class="memItemLeft" align="right" valign="top"><a id="a251a107cec08750333a131ce696d2d37"></a>
 UnlockContentConfig.UnlockContentType&#160;</td><td class="memItemRight" valign="bottom"><b>contentType</b></td></tr>
 <tr class="separator:a251a107cec08750333a131ce696d2d37"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af29cf2c0629229a7142e5ca09ba4704f"><td class="memItemLeft" align="right" valign="top"><a id="af29cf2c0629229a7142e5ca09ba4704f"></a>
+UnlockContentConfig.ContentWeaponType&#160;</td><td class="memItemRight" valign="bottom"><b>weaponType</b> = UnlockContentConfig.ContentWeaponType.Other</td></tr>
+<tr class="separator:af29cf2c0629229a7142e5ca09ba4704f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a16f127fb4f49ddc03ca356a1ca33e04f"><td class="memItemLeft" align="right" valign="top"><a id="a16f127fb4f49ddc03ca356a1ca33e04f"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>unlockRequireCoinNum</b></td></tr>
 <tr class="separator:a16f127fb4f49ddc03ca356a1ca33e04f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c229b9573a72f5e98fafe2a617ffabe"><td class="memItemLeft" align="right" valign="top"><a id="a2c229b9573a72f5e98fafe2a617ffabe"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>eachSegmentCoinNum</b></td></tr>
 <tr class="separator:a2c229b9573a72f5e98fafe2a617ffabe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:accbe086dc6a1296210b7088dc277dc4e"><td class="memItemLeft" align="right" valign="top"><a id="accbe086dc6a1296210b7088dc277dc4e"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>buySoulNum</b></td></tr>
+<tr class="separator:accbe086dc6a1296210b7088dc277dc4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74d187a024cdaff3aa4126c96c0e2a16"><td class="memItemLeft" align="right" valign="top"><a id="a74d187a024cdaff3aa4126c96c0e2a16"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>sellSoulNum</b></td></tr>
+<tr class="separator:a74d187a024cdaff3aa4126c96c0e2a16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0a7554a6ec6ec37ead8eaf34ce9fecb6"><td class="memItemLeft" align="right" valign="top"><a id="a0a7554a6ec6ec37ead8eaf34ce9fecb6"></a>
+List&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>localSellCoe</b> = new List&lt;float&gt;() { 0f, 0f, 0f }</td></tr>
+<tr class="separator:a0a7554a6ec6ec37ead8eaf34ce9fecb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa386ed1b8b9a85e8a2f91b92005b90b1"><td class="memItemLeft" align="right" valign="top"><a id="aa386ed1b8b9a85e8a2f91b92005b90b1"></a>
 <a class="el" href="class_cross_link_1_1_fragment_info.html">FragmentInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>unlockRequireFragment</b></td></tr>
 <tr class="separator:aa386ed1b8b9a85e8a2f91b92005b90b1"><td class="memSeparator" colspan="2">&#160;</td></tr>

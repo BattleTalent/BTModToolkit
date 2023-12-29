@@ -73,6 +73,7 @@ $(function() {
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_full_body_muscle_state-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -219,12 +220,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFreezeRecently</b> 
 <tr class="memitem:ae06fd0205ebff5c4b6ab7977aa6251be"><td class="memItemLeft" align="right" valign="top"><a id="ae06fd0205ebff5c4b6ab7977aa6251be"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFreeze</b> ()</td></tr>
 <tr class="separator:ae06fd0205ebff5c4b6ab7977aa6251be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3593037be4ba6bfc9e11830c2b23aa0"><td class="memItemLeft" align="right" valign="top"><a id="ae3593037be4ba6bfc9e11830c2b23aa0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableFreeze</b> (bool e)</td></tr>
-<tr class="separator:ae3593037be4ba6bfc9e11830c2b23aa0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aec53b61c776302058534e596a486b4b9"><td class="memItemLeft" align="right" valign="top"><a id="aec53b61c776302058534e596a486b4b9"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>UnFreezeAgain</b> (float sec)</td></tr>
-<tr class="separator:aec53b61c776302058534e596a486b4b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae44fedf57208b36359476bfe87496c2f"><td class="memItemLeft" align="right" valign="top"><a id="ae44fedf57208b36359476bfe87496c2f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableFreeze</b> (bool e, RagdollMuscle mu=null)</td></tr>
+<tr class="separator:ae44fedf57208b36359476bfe87496c2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac2e89d5a192253c09fd110575fbbf0ee"><td class="memItemLeft" align="right" valign="top"><a id="ac2e89d5a192253c09fd110575fbbf0ee"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UnFreezeAgain</b> (float sec, RagdollMuscle mu=null)</td></tr>
+<tr class="separator:ac2e89d5a192253c09fd110575fbbf0ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3b1bc44a3b543fe7f3d510c249cf97a"><td class="memItemLeft" align="right" valign="top"><a id="af3b1bc44a3b543fe7f3d510c249cf97a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PushMuscle</b> (RagdollMuscle mu, <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> src, float extraTime=0)</td></tr>
 <tr class="separator:af3b1bc44a3b543fe7f3d510c249cf97a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -526,9 +527,6 @@ static string&#160;</td><td class="memItemRight" valign="bottom"><b>deadEffect</
 <tr class="separator:acfb5b19290b5544196a45a40c327eab8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a60cbafb2a0eedd1b9cf3714eeb010d17"><td class="memItemLeft" align="right" valign="top">static string[]&#160;</td><td class="memItemRight" valign="bottom"><b>deadEffectSounds</b></td></tr>
 <tr class="separator:a60cbafb2a0eedd1b9cf3714eeb010d17"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa71782ce8264c50fed8c5a63ab46e52"><td class="memItemLeft" align="right" valign="top"><a id="afa71782ce8264c50fed8c5a63ab46e52"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>StayDmg</b> = false</td></tr>
-<tr class="separator:afa71782ce8264c50fed8c5a63ab46e52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef49a6a6b44368e4023e92e0e986a989"><td class="memItemLeft" align="right" valign="top"><a id="aef49a6a6b44368e4023e92e0e986a989"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>TryStayStab</b> = false</td></tr>
 <tr class="separator:aef49a6a6b44368e4023e92e0e986a989"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -553,6 +551,12 @@ static <a class="el" href="class_cross_link_1_1_damage_hit_data.html">DamageHitD
 <tr class="memitem:a3b36cb7753795cb3458bb5a72251750c"><td class="memItemLeft" align="right" valign="top"><a id="a3b36cb7753795cb3458bb5a72251750c"></a>
 static <a class="el" href="class_cross_link_1_1_damage_effect_data.html">DamageEffectData</a>&#160;</td><td class="memItemRight" valign="bottom"><b>dmgEffectData</b> = new <a class="el" href="class_cross_link_1_1_damage_effect_data.html">DamageEffectData</a>() { basicData = dmgBasicData }</td></tr>
 <tr class="separator:a3b36cb7753795cb3458bb5a72251750c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:afa71782ce8264c50fed8c5a63ab46e52"><td class="memItemLeft" align="right" valign="top"><a id="afa71782ce8264c50fed8c5a63ab46e52"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>StayDmg</b><code> [get, set]</code></td></tr>
+<tr class="separator:afa71782ce8264c50fed8c5a63ab46e52"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>

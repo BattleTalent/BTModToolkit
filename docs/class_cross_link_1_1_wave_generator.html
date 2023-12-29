@@ -86,12 +86,24 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPoolContain</b> (st
 <tr class="memitem:a3507e490bc4fb52a862176b67027758b"><td class="memItemLeft" align="right" valign="top"><a id="a3507e490bc4fb52a862176b67027758b"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>RandomPickFromPool</b> ()</td></tr>
 <tr class="separator:a3507e490bc4fb52a862176b67027758b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44526a52928b8b37a20bbc5477b05cea"><td class="memItemLeft" align="right" valign="top"><a id="a44526a52928b8b37a20bbc5477b05cea"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>RandomPickFromPool</b> (out RoleEffector re)</td></tr>
+<tr class="separator:a44526a52928b8b37a20bbc5477b05cea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa6db4ea43c3f249d85ba2a4cbf2fbc5e"><td class="memItemLeft" align="right" valign="top"><a id="aa6db4ea43c3f249d85ba2a4cbf2fbc5e"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>GetRoleFromPool</b> (int index)</td></tr>
 <tr class="separator:aa6db4ea43c3f249d85ba2a4cbf2fbc5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3cb738ad16b9e03501a3b018a81076d7"><td class="memItemLeft" align="right" valign="top"><a id="a3cb738ad16b9e03501a3b018a81076d7"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>GetRoleFromPool</b> (int index, out RoleEffector re)</td></tr>
+<tr class="separator:a3cb738ad16b9e03501a3b018a81076d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34e86a611f75d9c2e8119176cd5d3ea3"><td class="memItemLeft" align="right" valign="top"><a id="a34e86a611f75d9c2e8119176cd5d3ea3"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>GetPoolNum</b> ()</td></tr>
 <tr class="separator:a34e86a611f75d9c2e8119176cd5d3ea3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69b4c0e875d3ccbf1b6854254070d718"><td class="memItemLeft" align="right" valign="top"><a id="a69b4c0e875d3ccbf1b6854254070d718"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsContainRole</b> (string name)</td></tr>
+<tr class="separator:a69b4c0e875d3ccbf1b6854254070d718"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d80b33036c19006c063eaf1882eb8e1"><td class="memItemLeft" align="right" valign="top"><a id="a0d80b33036c19006c063eaf1882eb8e1"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>GetTotalRoleNum</b> ()</td></tr>
+<tr class="separator:a0d80b33036c19006c063eaf1882eb8e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -107,6 +119,12 @@ string[]&#160;</td><td class="memItemRight" valign="bottom"><b>pool</b></td></tr
 <tr class="memitem:a02690cd93ab3b9a5cd4a771554ddfaf3"><td class="memItemLeft" align="right" valign="top"><a id="a02690cd93ab3b9a5cd4a771554ddfaf3"></a>
 <a class="el" href="class_cross_link_1_1_pipeline_define.html">PipelineDefine</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>waveData</b></td></tr>
 <tr class="separator:a02690cd93ab3b9a5cd4a771554ddfaf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66ecef0d7c20de47d6c960e668ad5d60"><td class="memItemLeft" align="right" valign="top"><a id="a66ecef0d7c20de47d6c960e668ad5d60"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>tickRate</b> = 0</td></tr>
+<tr class="separator:a66ecef0d7c20de47d6c960e668ad5d60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac084f07cde3e472a2f7a653851a7a81"><td class="memItemLeft" align="right" valign="top"><a id="aac084f07cde3e472a2f7a653851a7a81"></a>
+Dictionary&lt; int, RoleEffector &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>roleEffect</b></td></tr>
+<tr class="separator:aac084f07cde3e472a2f7a653851a7a81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

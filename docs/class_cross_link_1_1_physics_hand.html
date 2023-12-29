@@ -83,6 +83,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a25096aeb9e27d687ae3655144a593266"><td class="memItemLeft" align="right" valign="top"><a id="a25096aeb9e27d687ae3655144a593266"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateFollow</b> ()</td></tr>
 <tr class="separator:a25096aeb9e27d687ae3655144a593266"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1943e18c09bd5eeec40789e9b8eef266"><td class="memItemLeft" align="right" valign="top"><a id="a1943e18c09bd5eeec40789e9b8eef266"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetTrackingObj</b> (Transform obj)</td></tr>
+<tr class="separator:a1943e18c09bd5eeec40789e9b8eef266"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af264a82d0ad900e4e00a6a49cac1b7d0"><td class="memItemLeft" align="right" valign="top"><a id="af264a82d0ad900e4e00a6a49cac1b7d0"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>GetFollowTarget</b> ()</td></tr>
 <tr class="separator:af264a82d0ad900e4e00a6a49cac1b7d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -107,6 +110,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDmgEnable</b> (boo
 <tr class="memitem:a3eb38491f60af963c2d25fe9c0b82843"><td class="memItemLeft" align="right" valign="top"><a id="a3eb38491f60af963c2d25fe9c0b82843"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetColliderEnable</b> (bool e)</td></tr>
 <tr class="separator:a3eb38491f60af963c2d25fe9c0b82843"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a67fed1145910adf29827485001b7dd43"><td class="memItemLeft" align="right" valign="top"><a id="a67fed1145910adf29827485001b7dd43"></a>
+ConfigurableJoint&#160;</td><td class="memItemRight" valign="bottom"><b>AddFollowJoint</b> ()</td></tr>
+<tr class="separator:a67fed1145910adf29827485001b7dd43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a765b55a4e97ad862f10395acb573e9ba"><td class="memItemLeft" align="right" valign="top"><a id="a765b55a4e97ad862f10395acb573e9ba"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveFollowJoint</b> ()</td></tr>
+<tr class="separator:a765b55a4e97ad862f10395acb573e9ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
 <tr class="memitem:a4392c3ed80106d1f480325d5841270c5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a4392c3ed80106d1f480325d5841270c5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStaticScene</b> ()</td></tr>
@@ -252,6 +261,9 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a15a277672c6ecbf3ddecb3b6bf5c8aca"><td class="memItemLeft" align="right" valign="top"><a id="a15a277672c6ecbf3ddecb3b6bf5c8aca"></a>
 <a class="el" href="class_cross_link_1_1_physics_follow.html">PhysicsFollow</a>&#160;</td><td class="memItemRight" valign="bottom"><b>follow</b></td></tr>
 <tr class="separator:a15a277672c6ecbf3ddecb3b6bf5c8aca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f100e2768754853fcf56e261978684c"><td class="memItemLeft" align="right" valign="top"><a id="a9f100e2768754853fcf56e261978684c"></a>
+ConfigurableJoint&#160;</td><td class="memItemRight" valign="bottom"><b>followJoint</b></td></tr>
+<tr class="separator:a9f100e2768754853fcf56e261978684c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a17e8cb7f8bb061bc1330aa0563d761d6"><td class="memItemLeft" align="right" valign="top"><a id="a17e8cb7f8bb061bc1330aa0563d761d6"></a>
 <a class="el" href="class_cross_link_1_1_joint_follow.html">JointFollow</a>&#160;</td><td class="memItemRight" valign="bottom"><b>jointFollow</b></td></tr>
 <tr class="separator:a17e8cb7f8bb061bc1330aa0563d761d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -270,6 +282,9 @@ GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>palm</b></td></
 <tr class="memitem:a9f50de60f2bdbf924c6078447c140894"><td class="memItemLeft" align="right" valign="top"><a id="a9f50de60f2bdbf924c6078447c140894"></a>
 <a class="el" href="class_cross_link_1_1_ragdoll_hit_info_obj.html">RagdollHitInfoObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>hitInfoObj</b></td></tr>
 <tr class="separator:a9f50de60f2bdbf924c6078447c140894"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad59635e775d07817f44ffde0cecb39ae"><td class="memItemLeft" align="right" valign="top"><a id="ad59635e775d07817f44ffde0cecb39ae"></a>
+Transform&#160;</td><td class="memItemRight" valign="bottom"><b>trackingObj</b> = null</td></tr>
+<tr class="separator:ad59635e775d07817f44ffde0cecb39ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa14dc239a7516d92691ea11e6135b566"><td class="memItemLeft" align="right" valign="top"><a id="aa14dc239a7516d92691ea11e6135b566"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>NeedToCheckHandPulling</b> = false</td></tr>
 <tr class="separator:aa14dc239a7516d92691ea11e6135b566"><td class="memSeparator" colspan="2">&#160;</td></tr>

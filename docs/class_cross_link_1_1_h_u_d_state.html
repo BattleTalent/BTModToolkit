@@ -80,6 +80,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:aca397d3fa03aa142d73c39218f9046a8"><td class="memItemLeft" align="right" valign="top"><a id="aca397d3fa03aa142d73c39218f9046a8"></a>
+override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnInit</b> ()</td></tr>
+<tr class="separator:aca397d3fa03aa142d73c39218f9046a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac7d53fc5b6398c28074a38a536b49c2d"><td class="memItemLeft" align="right" valign="top"><a id="ac7d53fc5b6398c28074a38a536b49c2d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateState</b> (<a class="el" href="class_cross_link_1_1_combat_attr.html">CombatAttr</a> attr)</td></tr>
 <tr class="separator:ac7d53fc5b6398c28074a38a536b49c2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -89,6 +92,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateLvExp</b> (int 
 <tr class="memitem:a81cb9d2273dd2572b719255c5d260973"><td class="memItemLeft" align="right" valign="top"><a id="a81cb9d2273dd2572b719255c5d260973"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateCoin</b> (int cd=0)</td></tr>
 <tr class="separator:a81cb9d2273dd2572b719255c5d260973"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76dc65338052a4b0cce857e5cbd924a9"><td class="memItemLeft" align="right" valign="top"><a id="a76dc65338052a4b0cce857e5cbd924a9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateSoul</b> ()</td></tr>
+<tr class="separator:a76dc65338052a4b0cce857e5cbd924a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a703987c5e92399234d734587df1fa295"><td class="memItemLeft" align="right" valign="top"><a id="a703987c5e92399234d734587df1fa295"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateSuperPower</b> (float progress)</td></tr>
 <tr class="separator:a703987c5e92399234d734587df1fa295"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -99,9 +105,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>FadeIn</b> (System.Ac
 <tr class="memitem:a21dc63d6a351ee0f85c456e34ef4c5f2 inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="a21dc63d6a351ee0f85c456e34ef4c5f2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>FadeOut</b> (System.Action onFin=null)</td></tr>
 <tr class="separator:a21dc63d6a351ee0f85c456e34ef4c5f2 inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a215b590db71c8e71d38e51eeca8dccf7 inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="a215b590db71c8e71d38e51eeca8dccf7"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnInit</b> ()</td></tr>
-<tr class="separator:a215b590db71c8e71d38e51eeca8dccf7 inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a702eba4fb5c7206ee5f17528fb8d3c80 inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="a702eba4fb5c7206ee5f17528fb8d3c80"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnRelease</b> ()</td></tr>
 <tr class="separator:a702eba4fb5c7206ee5f17528fb8d3c80 inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -135,6 +138,15 @@ Text&#160;</td><td class="memItemRight" valign="bottom"><b>lvNum</b></td></tr>
 <tr class="memitem:aa123fcc996a81069ab5f35c939bf45aa"><td class="memItemLeft" align="right" valign="top"><a id="aa123fcc996a81069ab5f35c939bf45aa"></a>
 Text&#160;</td><td class="memItemRight" valign="bottom"><b>coinNum</b></td></tr>
 <tr class="separator:aa123fcc996a81069ab5f35c939bf45aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68fc4b995a633fadbe0d17f1ec60490d"><td class="memItemLeft" align="right" valign="top"><a id="a68fc4b995a633fadbe0d17f1ec60490d"></a>
+Text&#160;</td><td class="memItemRight" valign="bottom"><b>soulNum</b></td></tr>
+<tr class="separator:a68fc4b995a633fadbe0d17f1ec60490d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77b1d33d92e429f5b974b2208999b49c"><td class="memItemLeft" align="right" valign="top"><a id="a77b1d33d92e429f5b974b2208999b49c"></a>
+GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>coinUI</b></td></tr>
+<tr class="separator:a77b1d33d92e429f5b974b2208999b49c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a98361b6521066485deb04f2c565943f8"><td class="memItemLeft" align="right" valign="top"><a id="a98361b6521066485deb04f2c565943f8"></a>
+GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>soulUI</b></td></tr>
+<tr class="separator:a98361b6521066485deb04f2c565943f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_panel_base"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_panel_base')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_panel_base.html">CrossLink.PanelBase</a></td></tr>
 <tr class="memitem:a9a24f430d66dd383c441fce0e2f6033e inherit pub_attribs_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="a9a24f430d66dd383c441fce0e2f6033e"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>panelName</b></td></tr>

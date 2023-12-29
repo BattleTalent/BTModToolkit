@@ -111,6 +111,9 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnHitOtherSu
 <tr class="memitem:a31048d93e20adb3ed2945831ba675d96"><td class="memItemLeft" align="right" valign="top"><a id="a31048d93e20adb3ed2945831ba675d96"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>RespawnAndAlive</b> ()</td></tr>
 <tr class="separator:a31048d93e20adb3ed2945831ba675d96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a294b9e3681c4a11ee764148e8c057df5"><td class="memItemLeft" align="right" valign="top"><a id="a294b9e3681c4a11ee764148e8c057df5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Reborn</b> (float hp)</td></tr>
+<tr class="separator:a294b9e3681c4a11ee764148e8c057df5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f99128df2e103e45390c0fa4ad5ac59"><td class="memItemLeft" align="right" valign="top"><a id="a0f99128df2e103e45390c0fa4ad5ac59"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollision</b> (Collision collision, RagdollMuscle hitedMu)</td></tr>
 <tr class="separator:a0f99128df2e103e45390c0fa4ad5ac59"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,6 +178,9 @@ virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>InAction</b> 
 <tr class="memitem:a4526db1393088a8b164a59e48016bc30 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a4526db1393088a8b164a59e48016bc30"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>CancelAction</b> ()</td></tr>
 <tr class="separator:a4526db1393088a8b164a59e48016bc30 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31c5f9cb77730384569f5d97b45ece8b inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a31c5f9cb77730384569f5d97b45ece8b"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsCancelActionRecently</b> (float interval=1)</td></tr>
+<tr class="separator:a31c5f9cb77730384569f5d97b45ece8b inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a407a905ec12d41903e6a187626f8fc39 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a407a905ec12d41903e6a187626f8fc39"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>SelectTarget</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> target)</td></tr>
 <tr class="separator:a407a905ec12d41903e6a187626f8fc39 inherit pub_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -232,6 +238,12 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a33bda3c3126562449c12a2202a761e24"><td class="memItemLeft" align="right" valign="top"><a id="a33bda3c3126562449c12a2202a761e24"></a>
 RagdollAnim&#160;</td><td class="memItemRight" valign="bottom"><b>ra</b></td></tr>
 <tr class="separator:a33bda3c3126562449c12a2202a761e24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d90ba58fd828eeecba6ff0a55168047"><td class="memItemLeft" align="right" valign="top"><a id="a9d90ba58fd828eeecba6ff0a55168047"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>rebornActId</b> = -1</td></tr>
+<tr class="separator:a9d90ba58fd828eeecba6ff0a55168047"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab872072285f9d3a9cbcf07f4d98d77a3"><td class="memItemLeft" align="right" valign="top"><a id="ab872072285f9d3a9cbcf07f4d98d77a3"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>BeingReborn</b> = false</td></tr>
+<tr class="separator:ab872072285f9d3a9cbcf07f4d98d77a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>

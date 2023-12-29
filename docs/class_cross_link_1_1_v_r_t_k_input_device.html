@@ -68,6 +68,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_v_r_t_k_input_device-members.html">List of all members</a>  </div>
@@ -76,42 +77,90 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a6709bd3cb634856e71c4ecca639ec8db"><td class="memItemLeft" align="right" valign="top">enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">ControllerType</a> { <br />
+&#160;&#160;<b>Undefined</b>
+, <b>OculusTouchController</b>
+, <b>ViveController</b>
+, <b>ValveIndexController</b>
+, <br />
+&#160;&#160;<b>WMRSpatialController</b>
+, <b>PicoNeoController</b>
+, <b>PSVR2SenseController</b>
+<br />
+ }</td></tr>
+<tr class="memdesc:a6709bd3cb634856e71c4ecca639ec8db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Controller Type  <a href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">More...</a><br /></td></tr>
+<tr class="separator:a6709bd3cb634856e71c4ecca639ec8db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21944a2ea8ee5d956f74bc89ade05d03"><td class="memItemLeft" align="right" valign="top"><a id="a21944a2ea8ee5d956f74bc89ade05d03"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>ControlHand</b> { <b>right</b>
+, <b>left</b>
+ }</td></tr>
+<tr class="separator:a21944a2ea8ee5d956f74bc89ade05d03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ac5bbc5971508382183d4fccb36bf73fe"><td class="memItemLeft" align="right" valign="top"><a id="ac5bbc5971508382183d4fccb36bf73fe"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>GetAxis1D</b> (SDK_BaseController.ButtonTypes button)</td></tr>
-<tr class="separator:ac5bbc5971508382183d4fccb36bf73fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae3904d60dad5605b81d5ec52e13ce0c7"><td class="memItemLeft" align="right" valign="top"><a id="ae3904d60dad5605b81d5ec52e13ce0c7"></a>
-Vector2&#160;</td><td class="memItemRight" valign="bottom"><b>GetAxis2D</b> (SDK_BaseController.ButtonTypes button)</td></tr>
-<tr class="separator:ae3904d60dad5605b81d5ec52e13ce0c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae500e654f15035cbffa40643a61be0b6"><td class="memItemLeft" align="right" valign="top"><a id="ae500e654f15035cbffa40643a61be0b6"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetPressDown</b> (SDK_BaseController.ButtonTypes button)</td></tr>
-<tr class="separator:ae500e654f15035cbffa40643a61be0b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb0a621b3c2c5e468da44c01833cc422"><td class="memItemLeft" align="right" valign="top"><a id="abb0a621b3c2c5e468da44c01833cc422"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetPressUp</b> (SDK_BaseController.ButtonTypes button)</td></tr>
-<tr class="separator:abb0a621b3c2c5e468da44c01833cc422"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a93aaa5adf0aab6bd1395b4304b38ff85"><td class="memItemLeft" align="right" valign="top"><a id="a93aaa5adf0aab6bd1395b4304b38ff85"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetPress</b> (SDK_BaseController.ButtonTypes button)</td></tr>
-<tr class="separator:a93aaa5adf0aab6bd1395b4304b38ff85"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad39df2b1bd3e56c0a233492d56ac3594"><td class="memItemLeft" align="right" valign="top"><a id="ad39df2b1bd3e56c0a233492d56ac3594"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetTouchDown</b> (SDK_BaseController.ButtonTypes button)</td></tr>
-<tr class="separator:ad39df2b1bd3e56c0a233492d56ac3594"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4210dc0677b7738486f483ac5bb8e80a"><td class="memItemLeft" align="right" valign="top"><a id="a4210dc0677b7738486f483ac5bb8e80a"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetTouchUp</b> (SDK_BaseController.ButtonTypes button)</td></tr>
-<tr class="separator:a4210dc0677b7738486f483ac5bb8e80a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af25c1c2fc89ed6fb12aaf8c20cce1ef2"><td class="memItemLeft" align="right" valign="top"><a id="af25c1c2fc89ed6fb12aaf8c20cce1ef2"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetTouch</b> (SDK_BaseController.ButtonTypes button)</td></tr>
-<tr class="separator:af25c1c2fc89ed6fb12aaf8c20cce1ef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a949114fb45d70a00dc53c259f4a0076c"><td class="memItemLeft" align="right" valign="top"><a id="a949114fb45d70a00dc53c259f4a0076c"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>GetAxis1D</b> (VRTKInputButton.ButtonType button)</td></tr>
+<tr class="separator:a949114fb45d70a00dc53c259f4a0076c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf567b5bef8c05a15fa15ea0df3604b6"><td class="memItemLeft" align="right" valign="top"><a id="abf567b5bef8c05a15fa15ea0df3604b6"></a>
+Vector2&#160;</td><td class="memItemRight" valign="bottom"><b>GetAxis2D</b> (VRTKInputButton.ButtonType button)</td></tr>
+<tr class="separator:abf567b5bef8c05a15fa15ea0df3604b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb7d7786591b68075d19efec75c234ea"><td class="memItemLeft" align="right" valign="top"><a id="acb7d7786591b68075d19efec75c234ea"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetPressDown</b> (VRTKInputButton.ButtonType button)</td></tr>
+<tr class="separator:acb7d7786591b68075d19efec75c234ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93208669d39cbc5c2ea6e8f63c78ed0f"><td class="memItemLeft" align="right" valign="top"><a id="a93208669d39cbc5c2ea6e8f63c78ed0f"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetPressUp</b> (VRTKInputButton.ButtonType button)</td></tr>
+<tr class="separator:a93208669d39cbc5c2ea6e8f63c78ed0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a602a2363a9e9c88fb1091d7397102bde"><td class="memItemLeft" align="right" valign="top"><a id="a602a2363a9e9c88fb1091d7397102bde"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetPress</b> (VRTKInputButton.ButtonType button)</td></tr>
+<tr class="separator:a602a2363a9e9c88fb1091d7397102bde"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a096e522420cab28a25a5f275a79c6b74"><td class="memItemLeft" align="right" valign="top"><a id="a096e522420cab28a25a5f275a79c6b74"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetTouchDown</b> (VRTKInputButton.ButtonType button)</td></tr>
+<tr class="separator:a096e522420cab28a25a5f275a79c6b74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a154c0eef923d2caa03f6214f36addea8"><td class="memItemLeft" align="right" valign="top"><a id="a154c0eef923d2caa03f6214f36addea8"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetTouchUp</b> (VRTKInputButton.ButtonType button)</td></tr>
+<tr class="separator:a154c0eef923d2caa03f6214f36addea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18740819e8a1802aba3840fbeac3c80d"><td class="memItemLeft" align="right" valign="top"><a id="a18740819e8a1802aba3840fbeac3c80d"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetTouch</b> (VRTKInputButton.ButtonType button)</td></tr>
+<tr class="separator:a18740819e8a1802aba3840fbeac3c80d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4399251346fe3573ddc75d9f3708abdd"><td class="memItemLeft" align="right" valign="top"><a id="a4399251346fe3573ddc75d9f3708abdd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerHapticPulse</b> (ushort durationMicroSec=500)</td></tr>
 <tr class="separator:a4399251346fe3573ddc75d9f3708abdd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a2eae3d1740c0d81b663d3bbf8b2a17fe"><td class="memItemLeft" align="right" valign="top"><a id="a2eae3d1740c0d81b663d3bbf8b2a17fe"></a>
-VRTK_ControllerReference&#160;</td><td class="memItemRight" valign="bottom"><b>controllerReference</b></td></tr>
-<tr class="separator:a2eae3d1740c0d81b663d3bbf8b2a17fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae15d6a8faff18a55dd6eba4e1bb27ac9"><td class="memItemLeft" align="right" valign="top"><a id="ae15d6a8faff18a55dd6eba4e1bb27ac9"></a>
+InputDevice&#160;</td><td class="memItemRight" valign="bottom"><b>controllerReference</b></td></tr>
+<tr class="separator:ae15d6a8faff18a55dd6eba4e1bb27ac9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8453bdd9c4fd82b5291d80adb6528b2d"><td class="memItemLeft" align="right" valign="top"><a id="a8453bdd9c4fd82b5291d80adb6528b2d"></a>
+XRNode&#160;</td><td class="memItemRight" valign="bottom"><b>controlNode</b></td></tr>
+<tr class="separator:a8453bdd9c4fd82b5291d80adb6528b2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Enumeration Documentation</h2>
+<a id="a6709bd3cb634856e71c4ecca639ec8db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6709bd3cb634856e71c4ecca639ec8db">&#9670;&nbsp;</a></span>ControllerType</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">CrossLink.VRTKInputDevice.ControllerType</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Controller Type </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['richcolorreg_1629',['RichColorReg',['../class_rich_text_alpha_updater.html#a9627c2e68f0a583eeaa1c8be762c8ab0',1,'RichTextAlphaUpdater']]]
+  ['logictimescale_1878',['LogicTimeScale',['../class_cross_link_1_1_physics_helper.html#a00eea6f7718a8530d652c0c6f7cc2d1e',1,'CrossLink::PhysicsHelper']]]
 ];

@@ -224,15 +224,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DoSlotTrigger</b> (bo
 <tr class="memitem:a8515f9e88df4e451bcdc713e8ec32a0c"><td class="memItemLeft" align="right" valign="top"><a id="a8515f9e88df4e451bcdc713e8ec32a0c"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Init</b> ()</td></tr>
 <tr class="separator:a8515f9e88df4e451bcdc713e8ec32a0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2be613a80858771857894b89152d957e"><td class="memItemLeft" align="right" valign="top"><a id="a2be613a80858771857894b89152d957e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>SetControlType</b> (SDK_BaseController.ControllerType type)</td></tr>
-<tr class="separator:a2be613a80858771857894b89152d957e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51e18c5350dcd529165cffedc2a05452"><td class="memItemLeft" align="right" valign="top"><a id="a51e18c5350dcd529165cffedc2a05452"></a>
-SDK_BaseController.ControllerType&#160;</td><td class="memItemRight" valign="bottom"><b>GetControlType</b> ()</td></tr>
-<tr class="separator:a51e18c5350dcd529165cffedc2a05452"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0eca2bde9f7eca671ca2253e23a7670c"><td class="memItemLeft" align="right" valign="top"><a id="a0eca2bde9f7eca671ca2253e23a7670c"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUndefineController</b> (SDK_BaseController.ControllerType type)</td></tr>
-<tr class="separator:a0eca2bde9f7eca671ca2253e23a7670c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11f7b215e6830d7eefe32abdc081a05d"><td class="memItemLeft" align="right" valign="top"><a id="a11f7b215e6830d7eefe32abdc081a05d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>InitJointFollow</b> ()</td></tr>
+<tr class="separator:a11f7b215e6830d7eefe32abdc081a05d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12535817edb1be9ee00ece0696264fef"><td class="memItemLeft" align="right" valign="top"><a id="a12535817edb1be9ee00ece0696264fef"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetControlType</b> (<a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">VRTKInputDevice.ControllerType</a> type)</td></tr>
+<tr class="separator:a12535817edb1be9ee00ece0696264fef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a062c3fac4561d8207b0d8473031ac4a1"><td class="memItemLeft" align="right" valign="top"><a id="a062c3fac4561d8207b0d8473031ac4a1"></a>
+<a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">VRTKInputDevice.ControllerType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetControlType</b> ()</td></tr>
+<tr class="separator:a062c3fac4561d8207b0d8473031ac4a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6df55d1770098eec7ddab225ef33a165"><td class="memItemLeft" align="right" valign="top"><a id="a6df55d1770098eec7ddab225ef33a165"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUndefineController</b> ()</td></tr>
 <tr class="separator:a6df55d1770098eec7ddab225ef33a165"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -308,6 +308,9 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a91222db8ba53a25c71195e45e26a8994"><td class="memItemLeft" align="right" valign="top"><a id="a91222db8ba53a25c71195e45e26a8994"></a>
 <a class="el" href="class_cross_link_1_1_interact_character.html">InteractCharacter</a>&#160;</td><td class="memItemRight" valign="bottom"><b>character</b></td></tr>
 <tr class="separator:a91222db8ba53a25c71195e45e26a8994"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93a545f62abc95f1b25b673a08d21c6b"><td class="memItemLeft" align="right" valign="top"><a id="a93a545f62abc95f1b25b673a08d21c6b"></a>
+Transform&#160;</td><td class="memItemRight" valign="bottom"><b>snapObj</b></td></tr>
+<tr class="separator:a93a545f62abc95f1b25b673a08d21c6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc99f458dfef9df19970fccf262e51c0"><td class="memItemLeft" align="right" valign="top"><a id="acc99f458dfef9df19970fccf262e51c0"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>linkToDevice</b> = false</td></tr>
 <tr class="separator:acc99f458dfef9df19970fccf262e51c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -437,6 +440,12 @@ const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice
 <tr class="memitem:a010f181345845e1bedc6d3644e6431f4"><td class="memItemLeft" align="right" valign="top"><a id="a010f181345845e1bedc6d3644e6431f4"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Vive</b> = &quot;Vive&quot;</td></tr>
 <tr class="separator:a010f181345845e1bedc6d3644e6431f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acaa37eafe088fe09b4aa9ccf613dc816"><td class="memItemLeft" align="right" valign="top"><a id="acaa37eafe088fe09b4aa9ccf613dc816"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Pico</b> = &quot;Pico&quot;</td></tr>
+<tr class="separator:acaa37eafe088fe09b4aa9ccf613dc816"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57bfd2df977342399fef218066312380"><td class="memItemLeft" align="right" valign="top"><a id="a57bfd2df977342399fef218066312380"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_PSVR2</b> = &quot;PSVR2&quot;</td></tr>
+<tr class="separator:a57bfd2df977342399fef218066312380"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3cab98e8f10e559259b08b6453d3d136"><td class="memItemLeft" align="right" valign="top"><a id="a3cab98e8f10e559259b08b6453d3d136"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Default</b> = ControlDevice_Vive</td></tr>
 <tr class="separator:a3cab98e8f10e559259b08b6453d3d136"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -452,6 +461,12 @@ const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice
 <tr class="memitem:a94d75dce732bdfd828c897b73fc6c894"><td class="memItemLeft" align="right" valign="top"><a id="a94d75dce732bdfd828c897b73fc6c894"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Postfix_Vive</b> = &quot;_Vive&quot;</td></tr>
 <tr class="separator:a94d75dce732bdfd828c897b73fc6c894"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfdd3d087e0ee8b496687ac8b9cee575"><td class="memItemLeft" align="right" valign="top"><a id="abfdd3d087e0ee8b496687ac8b9cee575"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Postfix_Pico</b> = &quot;_Pico&quot;</td></tr>
+<tr class="separator:abfdd3d087e0ee8b496687ac8b9cee575"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a568c4aae3922175e4928e19e40cf876d"><td class="memItemLeft" align="right" valign="top"><a id="a568c4aae3922175e4928e19e40cf876d"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Postfix_PSVR2</b> = &quot;_PSVR2&quot;</td></tr>
+<tr class="separator:a568c4aae3922175e4928e19e40cf876d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a75f347e7d7045eee30c13d714c3e4fb8"><td class="memItemLeft" align="right" valign="top"><a id="a75f347e7d7045eee30c13d714c3e4fb8"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>ControlDevice_Postfix_Default</b> = ControlDevice_Vive</td></tr>
 <tr class="separator:a75f347e7d7045eee30c13d714c3e4fb8"><td class="memSeparator" colspan="2">&#160;</td></tr>

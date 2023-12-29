@@ -98,18 +98,53 @@ Public Types</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:a07d6abc90eccd7f197807c1f2323db64"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1cc0124f7c21760231576a5567cb670"><td class="memItemLeft" align="right" valign="top"><a id="ad1cc0124f7c21760231576a5567cb670"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>ContentWeaponType</b> { <br />
+&#160;&#160;<b>Axe</b> = 0
+, <b>Bow</b>
+, <b>Dagger</b>
+, <b>GiantSword</b>
+, <br />
+&#160;&#160;<b>Gun</b>
+, <b>Hammer</b>
+, <b>Mace</b>
+, <b>Shield</b>
+, <br />
+&#160;&#160;<b>SingleHammer</b>
+, <b>Spear</b>
+, <b>Sword</b>
+, <b>Wand</b>
+, <br />
+&#160;&#160;<b>Other</b>
+<br />
+ }</td></tr>
+<tr class="separator:ad1cc0124f7c21760231576a5567cb670"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:aa2c0db9005441ac506b7065f27ad1202"><td class="memItemLeft" align="right" valign="top"><a id="aa2c0db9005441ac506b7065f27ad1202"></a>
+static string&#160;</td><td class="memItemRight" valign="bottom"><b>GetUnlockKeyPrefix</b> (GameMode gamemode, ItemSaveState type)</td></tr>
+<tr class="separator:aa2c0db9005441ac506b7065f27ad1202"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3fc8655a8ace4fc3de7416d955e3efd"><td class="memItemLeft" align="right" valign="top"><a id="ab3fc8655a8ace4fc3de7416d955e3efd"></a>
+static <a class="el" href="class_cross_link_1_1_unlock_content_config.html">UnlockContentConfig</a>&#160;</td><td class="memItemRight" valign="bottom"><b>SelectConfig</b> (GameMode gameMode)</td></tr>
+<tr class="separator:ab3fc8655a8ace4fc3de7416d955e3efd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74ceede98a735c9225dbe84427e90de8"><td class="memItemLeft" align="right" valign="top"><a id="a74ceede98a735c9225dbe84427e90de8"></a>
 static <a class="el" href="class_cross_link_1_1_unlock_content_config.html">UnlockContentConfig</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetConfig</b> ()</td></tr>
 <tr class="separator:a74ceede98a735c9225dbe84427e90de8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19ad6b68ec639ba8e6680b1501db0110"><td class="memItemLeft" align="right" valign="top"><a id="a19ad6b68ec639ba8e6680b1501db0110"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>Reset</b> ()</td></tr>
+<tr class="separator:a19ad6b68ec639ba8e6680b1501db0110"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98c139061c5d6738c09dbdaf80479e2c"><td class="memItemLeft" align="right" valign="top"><a id="a98c139061c5d6738c09dbdaf80479e2c"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>AddItem</b> (<a class="el" href="class_cross_link_1_1_unlock_content_item.html">UnlockContentItem</a> item)</td></tr>
 <tr class="separator:a98c139061c5d6738c09dbdaf80479e2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad46250b9df1660dfa01548dd0182deb7"><td class="memItemLeft" align="right" valign="top"><a id="ad46250b9df1660dfa01548dd0182deb7"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>AddItem</b> (<a class="el" href="class_cross_link_1_1_unlock_content_item.html">UnlockContentItem</a> item, GameMode gameMode)</td></tr>
+<tr class="separator:ad46250b9df1660dfa01548dd0182deb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa063eb25d56f6a2929f8bb259fb5b88d"><td class="memItemLeft" align="right" valign="top"><a id="aa063eb25d56f6a2929f8bb259fb5b88d"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveItem</b> (string name)</td></tr>
 <tr class="separator:aa063eb25d56f6a2929f8bb259fb5b88d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8e5a0ce5ba16a2681a32ea38756e286"><td class="memItemLeft" align="right" valign="top"><a id="aa8e5a0ce5ba16a2681a32ea38756e286"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveItem</b> (GameMode gameMode, string name)</td></tr>
+<tr class="separator:aa8e5a0ce5ba16a2681a32ea38756e286"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad2311bcf89d415601259d3c3a0b32b65"><td class="memItemLeft" align="right" valign="top"><a id="ad2311bcf89d415601259d3c3a0b32b65"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>CanNotMountOnTheBack</b> (string itemName)</td></tr>
 <tr class="separator:ad2311bcf89d415601259d3c3a0b32b65"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -140,9 +175,21 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>ItemViewed</b>
 <tr class="memitem:a8834eafd8d10090766bae2f8da3cf047"><td class="memItemLeft" align="right" valign="top"><a id="a8834eafd8d10090766bae2f8da3cf047"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsItemEnabled</b> (string itemName)</td></tr>
 <tr class="separator:a8834eafd8d10090766bae2f8da3cf047"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61eb812882444e7cbaf15636cbd34e70"><td class="memItemLeft" align="right" valign="top"><a id="a61eb812882444e7cbaf15636cbd34e70"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetItemSellPrice</b> (<a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a> ib)</td></tr>
+<tr class="separator:a61eb812882444e7cbaf15636cbd34e70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4539a84c3eff5e6b0d53f08e28b4aab6"><td class="memItemLeft" align="right" valign="top"><a id="a4539a84c3eff5e6b0d53f08e28b4aab6"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetItemBuyPrice</b> (string name, int forgeLevel)</td></tr>
+<tr class="separator:a4539a84c3eff5e6b0d53f08e28b4aab6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:a3b96cf2dea3526fa2b08b5224669cde8"><td class="memItemLeft" align="right" valign="top"><a id="a3b96cf2dea3526fa2b08b5224669cde8"></a>
+List&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>globalWeaponSellCoe</b> = new List&lt;float&gt;() { 0f, 0f, 0f }</td></tr>
+<tr class="separator:a3b96cf2dea3526fa2b08b5224669cde8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a18728ea1f5bd396a3624b589ac323797"><td class="memItemLeft" align="right" valign="top"><a id="a18728ea1f5bd396a3624b589ac323797"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>defaultSellSoulNum</b></td></tr>
+<tr class="separator:a18728ea1f5bd396a3624b589ac323797"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba35bb2591f636a18bd7183e98909f3d"><td class="memItemLeft" align="right" valign="top"><a id="aba35bb2591f636a18bd7183e98909f3d"></a>
 Dictionary&lt; string, <a class="el" href="class_cross_link_1_1_unlock_content_item.html">UnlockContentItem</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>unlockInfos</b> = new Dictionary&lt;string, <a class="el" href="class_cross_link_1_1_unlock_content_item.html">UnlockContentItem</a>&gt;()</td></tr>
 <tr class="separator:aba35bb2591f636a18bd7183e98909f3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -167,6 +214,15 @@ List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>roleL
 <tr class="memitem:aa26d8d5377d811932207bdca5b010c8b"><td class="memItemLeft" align="right" valign="top"><a id="aa26d8d5377d811932207bdca5b010c8b"></a>
 List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>unlockedPotionList</b> = new List&lt;string&gt;()</td></tr>
 <tr class="separator:aa26d8d5377d811932207bdca5b010c8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39caaded6609ed7dd4856dcf588bd967"><td class="memItemLeft" align="right" valign="top"><a id="a39caaded6609ed7dd4856dcf588bd967"></a>
+List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>unlockedSpellList</b> = new List&lt;string&gt;()</td></tr>
+<tr class="separator:a39caaded6609ed7dd4856dcf588bd967"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad75f6e4b9408c0b7d14ab7ffc56143d3"><td class="memItemLeft" align="right" valign="top"><a id="ad75f6e4b9408c0b7d14ab7ffc56143d3"></a>
+List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>unlockedAllWeaponList</b> = new List&lt;string&gt;()</td></tr>
+<tr class="separator:ad75f6e4b9408c0b7d14ab7ffc56143d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5fb8c2734c49aeeb8041b4b5f7213752"><td class="memItemLeft" align="right" valign="top"><a id="a5fb8c2734c49aeeb8041b4b5f7213752"></a>
+List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>itemBanList</b> = new List&lt;string&gt;()</td></tr>
+<tr class="separator:a5fb8c2734c49aeeb8041b4b5f7213752"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -179,6 +235,9 @@ const string&#160;</td><td class="memItemRight" valign="bottom"><b>UnexistItem</
 <tr class="memitem:a5e3b7e7e2eb27b440d51ae059f1d5b4e"><td class="memItemLeft" align="right" valign="top"><a id="a5e3b7e7e2eb27b440d51ae059f1d5b4e"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>UnexistInDemo</b> = &quot;UD&quot;</td></tr>
 <tr class="separator:a5e3b7e7e2eb27b440d51ae059f1d5b4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b39425fddc073e0324ca0a52187fc1c"><td class="memItemLeft" align="right" valign="top"><a id="a0b39425fddc073e0324ca0a52187fc1c"></a>
+static readonly string&#160;</td><td class="memItemRight" valign="bottom"><b>SpellPrefix</b> = &quot;Spell&quot;</td></tr>
+<tr class="separator:a0b39425fddc073e0324ca0a52187fc1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b07f104f043ec63af42d02f41eafcbc"><td class="memItemLeft" align="right" valign="top"><a id="a6b07f104f043ec63af42d02f41eafcbc"></a>
 static System.Action&lt; <a class="el" href="class_cross_link_1_1_unlock_content_item.html">UnlockContentItem</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>UnlockEvent</b></td></tr>
 <tr class="separator:a6b07f104f043ec63af42d02f41eafcbc"><td class="memSeparator" colspan="2">&#160;</td></tr>

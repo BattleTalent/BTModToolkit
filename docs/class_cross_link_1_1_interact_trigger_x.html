@@ -132,6 +132,12 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnChargeCool
 <tr class="memitem:a30b945228fe35b01ae0d56219ada6f66"><td class="memItemLeft" align="right" valign="top"><a id="a30b945228fe35b01ae0d56219ada6f66"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerOnChargeCoolDown</b> ()</td></tr>
 <tr class="separator:a30b945228fe35b01ae0d56219ada6f66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada8d44b6bb5574f73a275e65bc90b5f2"><td class="memItemLeft" align="right" valign="top"><a id="ada8d44b6bb5574f73a275e65bc90b5f2"></a>
+override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnSale</b> ()</td></tr>
+<tr class="separator:ada8d44b6bb5574f73a275e65bc90b5f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae231156c8e987308f06fb02ed1655f3a"><td class="memItemLeft" align="right" valign="top"><a id="ae231156c8e987308f06fb02ed1655f3a"></a>
+override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnBuy</b> ()</td></tr>
+<tr class="separator:ae231156c8e987308f06fb02ed1655f3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a24bec2d4247cc64359f163059e550d3f"><td class="memItemLeft" align="right" valign="top"><a id="a24bec2d4247cc64359f163059e550d3f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LuaReset</b> ()</td></tr>
 <tr class="separator:a24bec2d4247cc64359f163059e550d3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -280,6 +286,12 @@ LuaFunction&#160;</td><td class="memItemRight" valign="bottom"><b>luaOnEquipment
 <tr class="memitem:a378310f07464ff1c62f4cb88ee6ea634"><td class="memItemLeft" align="right" valign="top"><a id="a378310f07464ff1c62f4cb88ee6ea634"></a>
 LuaFunction&#160;</td><td class="memItemRight" valign="bottom"><b>luaOnEnhance</b></td></tr>
 <tr class="separator:a378310f07464ff1c62f4cb88ee6ea634"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9af36d833a61d0611b56e72f1325d4a"><td class="memItemLeft" align="right" valign="top"><a id="aa9af36d833a61d0611b56e72f1325d4a"></a>
+LuaFunction&#160;</td><td class="memItemRight" valign="bottom"><b>luaOnSale</b></td></tr>
+<tr class="separator:aa9af36d833a61d0611b56e72f1325d4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a236d817d91854af8e366ca1c039cc4b2"><td class="memItemLeft" align="right" valign="top"><a id="a236d817d91854af8e366ca1c039cc4b2"></a>
+LuaFunction&#160;</td><td class="memItemRight" valign="bottom"><b>luaOnBuy</b></td></tr>
+<tr class="separator:a236d817d91854af8e366ca1c039cc4b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_interact_trigger"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_interact_trigger')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_interact_trigger.html">CrossLink.InteractTrigger</a></td></tr>
 <tr class="memitem:a96a324b0f4171e4e23efeb2baf64b55b inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a96a324b0f4171e4e23efeb2baf64b55b"></a>
 <a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>interact</b></td></tr>
@@ -341,9 +353,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>dontNeedUpdate</b> = 
 <tr class="memitem:a1b2e1ca95253153ce36422555aeaa577 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a1b2e1ca95253153ce36422555aeaa577"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>needUpdateOnce</b> = false</td></tr>
 <tr class="separator:a1b2e1ca95253153ce36422555aeaa577 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e29c0ee74b76e0386a716cf95fde304 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a8e29c0ee74b76e0386a716cf95fde304"></a>
-string&#160;</td><td class="memItemRight" valign="bottom"><b>savePointLoadInfo</b> = string.Empty</td></tr>
-<tr class="separator:a8e29c0ee74b76e0386a716cf95fde304 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfb931635cabd8a339665153560de018 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="abfb931635cabd8a339665153560de018"></a>
+Dictionary&lt; string, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>savePointLoadInfo</b></td></tr>
+<tr class="separator:abfb931635cabd8a339665153560de018 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b8bcd147a282f549cf8b4be7244c0fd inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a5b8bcd147a282f549cf8b4be7244c0fd"></a>
 Renderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>skillChangeColors</b></td></tr>
 <tr class="separator:a5b8bcd147a282f549cf8b4be7244c0fd inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>

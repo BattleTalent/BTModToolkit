@@ -80,9 +80,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0d1d2903bb63a8ee32a7f49162704a60"><td class="memItemLeft" align="right" valign="top"><a id="a0d1d2903bb63a8ee32a7f49162704a60"></a>
-delegate void&#160;</td><td class="memItemRight" valign="bottom"><b>loadCompleted</b> ()</td></tr>
-<tr class="separator:a0d1d2903bb63a8ee32a7f49162704a60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0034b528ebefa0015952b829c48a1f55"><td class="memItemLeft" align="right" valign="top"><a id="a0034b528ebefa0015952b829c48a1f55"></a>
+delegate void&#160;</td><td class="memItemRight" valign="bottom"><b>loadCompleted</b> (bool isSuc)</td></tr>
+<tr class="separator:a0034b528ebefa0015952b829c48a1f55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1126bb59f458ee6bcff107966e69d90f"><td class="memItemLeft" align="right" valign="top"><a id="a1126bb59f458ee6bcff107966e69d90f"></a>
 List&lt; <a class="el" href="class_cross_link_1_1_mod_info.html">ModInfo</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetModInfos</b> ()</td></tr>
 <tr class="separator:a1126bb59f458ee6bcff107966e69d90f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -107,9 +107,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>OnModUnInstalled</b> 
 <tr class="memitem:af50acaeb53a26a39706e231f290ab439"><td class="memItemLeft" align="right" valign="top"><a id="af50acaeb53a26a39706e231f290ab439"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>DiscoverMods</b> ()</td></tr>
 <tr class="separator:af50acaeb53a26a39706e231f290ab439"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aec9b02098f07669a31cb1f672d5896dc"><td class="memItemLeft" align="right" valign="top"><a id="aec9b02098f07669a31cb1f672d5896dc"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadMods</b> ()</td></tr>
-<tr class="separator:aec9b02098f07669a31cb1f672d5896dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a153de41599b2a08ee9b16e9409374e86"><td class="memItemLeft" align="right" valign="top"><a id="a153de41599b2a08ee9b16e9409374e86"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadMods</b> (loadCompleted cb=null)</td></tr>
+<tr class="separator:a153de41599b2a08ee9b16e9409374e86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a627d5da03e6932d9a5704330766ddac7"><td class="memItemLeft" align="right" valign="top"><a id="a627d5da03e6932d9a5704330766ddac7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadModScene</b> (string sceneKey)</td></tr>
+<tr class="separator:a627d5da03e6932d9a5704330766ddac7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af2330668d2d8c895cdf7d885404af2bd"><td class="memItemLeft" align="right" valign="top"><a id="af2330668d2d8c895cdf7d885404af2bd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TryLoadModByPath</b> (string path)</td></tr>
 <tr class="separator:af2330668d2d8c895cdf7d885404af2bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
