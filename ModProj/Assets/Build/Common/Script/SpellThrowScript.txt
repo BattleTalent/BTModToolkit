@@ -18,7 +18,7 @@ end
 function spellThrowScript:OnChargeBegin()    
     --print("OnChargeBegin")
     local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)
-    if self.host.interact:IsEnhance() then
+    if self.host.interact:IsEnhance() and fo.script.self.EnhanceSpell then
         fo.script.self:EnhanceSpell()
         fo.script.self:SetOwner(self)
     end
