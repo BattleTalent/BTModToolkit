@@ -57,7 +57,7 @@ namespace CrossLink
                 }
                 else
                 {
-                    Debug.Log("path does't exist:" + weaponPath);
+                    Debug.Log("path doesn't exist:" + weaponPath);
                 }
             }
             return paths;
