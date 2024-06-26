@@ -41,6 +41,27 @@ namespace CrossLink
 
         [Tooltip("item type, Weapon,Music or other")]
         public ItemInfoConfig.ItemType itemType;
+
+        public MerchandiseItemInfo[] dungeonInfos;
+    }
+
+    [System.Serializable]
+    public class MerchandiseItemInfo
+    {
+        [Tooltip("the dungeon level where item sold")]
+        public string level;
+
+        [Tooltip("weight of on item sold")]
+        public int weight;
+
+        [Tooltip("price of item sold")]
+        public int price;
+
+        [Tooltip("enhance level")]
+        public int enhanceLevel = 0;
+
+        //[Tooltip("buffs")]
+        //public string[] buffs;
     }
 
     [System.Serializable]
