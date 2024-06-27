@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
@@ -40,6 +40,10 @@ namespace CrossLink
         {
             ClearOldFiles();
 
+            if (!AddressableHelper.ValidateAddressables()) {
+                return;
+            }
+
             BuildWithProfile(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows);
 
             InstallModOnWindows();
@@ -49,6 +53,10 @@ namespace CrossLink
         public static void FastBuildAndInstallForAndroid()
         {
             ClearOldFiles();
+
+            if (!AddressableHelper.ValidateAddressables()) {
+                return;
+            }
 
             if (!isBuiltAndroid)
             {
@@ -65,6 +73,10 @@ namespace CrossLink
         public static void BuildAndroid()
         {
             ClearOldFiles();
+
+            if (!AddressableHelper.ValidateAddressables()) {
+                return;
+            }
 
             BuildWithProfile(BuildTargetGroup.Android, BuildTarget.Android);
 
@@ -181,6 +193,8 @@ namespace CrossLink
         [MenuItem("BuildTools/BuildAllBundles", false, 0)]
         public static void BuildAll()
         {
+            ClearOldFiles();
+
             if (!AddressableHelper.ValidateAddressables()) {
                 return;
             }
@@ -191,7 +205,6 @@ namespace CrossLink
                 return;
             }*/
 
-            ClearOldFiles();
             //BuildWithProfile("Windows");
             //BuildWithProfile("Android");                             
 
