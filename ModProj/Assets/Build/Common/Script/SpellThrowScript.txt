@@ -15,13 +15,19 @@ end
 
 
 
-function spellThrowScript:OnChargeBegin()    
+function spellThrowScript:OnChargeBegin()
+    self:SetHandPose(true)
+    if self.fo then
+        self:ReleaseSpell()
+    end
+    
     --print("OnChargeBegin")
     local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)
+
     if self.host.interact:IsEnhance() and fo.script.self.EnhanceSpell then
         fo.script.self:EnhanceSpell()
-        fo.script.self:SetOwner(self)
     end
+    fo.script.self:SetOwner(self)
     
     self:SetHandPose(true)
     -- you can access base function in this way:
@@ -29,9 +35,10 @@ end
 
 function spellThrowScript:OnChargeReady()
     self:PrepareSpellOnHand()
+    if self.isEnchantable >= 1 then
+        self:StartDetectingEnchant(self.createPoint)
+    end
 end
-
-
 
 
 function spellThrowScript:OnChargeCancel()
@@ -39,6 +46,10 @@ function spellThrowScript:OnChargeCancel()
     self:ReleaseSpell()
     
     self:SetHandPose(false)
+    
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
 end
 
 
@@ -46,23 +57,39 @@ end
 
 function spellThrowScript:OnChargeRelease()    
     --throw
+    self:SetHandPose(false)
+    
+    if self.isOnline then
+        CL.Scheduler.RemoveSchedule(self.localActId)
+    end
+    
     if not self:TryThrow() then
+        --[[
         local hand = self:GetSpellHand()
-        if not IsNullOrDestroyed(hand) then
+        if not IsNullOrDestroyed(self.fo) and self.fo.trans.gameObject.activeSelf
+        and not IsNullOrDestroyed(hand) then
             hand.character.attr:AddMp(self.host:GetLastManaCost())
         end
-        
+        ]]
         self:ReleaseSpell()
     end
     
-    self:SetHandPose(false)
-
+    self.fo = nil
+    
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
 end
 
-
+--Handling triggers when charge on hand
 function spellThrowScript:OnFoDestroyed(fo)
     if self.fo and self.fo.script.self == fo then
         self.host:CloseSkill()
+        self.fo = nil
+
+        if self.isEnchantable >= 1 then
+            self:StopDetectingEnchant()
+        end
     end
 end
 

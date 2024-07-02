@@ -13,6 +13,12 @@ local spellBase = {
     motionMinDot = 0.8,
     
     minSpeed = 0.1,
+    
+    isEnchantable = -1,
+    enchantDetectDura = 1,
+    enchantSkillDura = 30,
+    enchantSkillCount = 3,
+    enchantMana = 10,
 }
 
 
@@ -257,6 +263,34 @@ function spellBase:ReleaseSpell(attach)
     end    
 end
 
+
+function spellBase:ReleaseSpellWithAnim(fo)
+    self.prepareActId = CL.Scheduler.RemoveSchedule(self.prepareActId)
+    self.setupTriggerActId = CL.Scheduler.RemoveSchedule(self.setupTriggerActId)
+    self:ClearHandPose()
+    
+    self:OnRelease()
+    
+    if not fo or IsNullOrDestroyed(fo) then
+        return
+    end
+    local time = 0.2
+    local scale = fo.trans.localScale.x
+    CL.Scheduler.Create(self.host.interact, 
+        function(sche, t, s)
+            if not fo then
+                sche:Stop()
+                return
+            end
+            fo.trans.localScale = UE.Vector3.one * scale * (1 - t / time)
+
+            if t >= time and fo then
+                fo:OnFinish()
+            end
+        end,
+    0, time)
+end
+
 function spellBase:ControlFlyObj(fo, dir, speed, value)
     fo.rb.velocity = UE.Vector3.Lerp(fo.rb.velocity, dir * speed, value)
 end
@@ -363,6 +397,7 @@ function spellBase:OnGrab(attach, t)
         --]]
         self:GrabSpell(attach)
         self:StopLightPillarTimer()
+        self:SetLightPillar(false)
     else
         self:UnGrabSpell(attach)
         local gemTrans = attach.attachedHand.gemTrans
@@ -393,12 +428,12 @@ function spellBase:InitLightPillar()
     self.hzLightUpdate = CL.FramerateController(CL.PhysicsHelper.FPS10Sec)
     self.lastLightTime = 0
     
-    
+    local rotation = UE.Quaternion.identity
     CL.Scheduler.RemoveSchedule(self.lightPillarId)
     self.lightPillarId = CL.Scheduler.Create(self.host.interact, 
         function(sche, t, s)
             if self.lightPillar ~= nil then
-                self.lightPillar.trans.rotation = UE.Quaternion.identity
+                self.lightPillar.trans.rotation = rotation
                 if self.host.interact.rb.velocity.sqrMagnitude > 1 then
                     self:SetLightPillar(false)
                     self.lastLightTime = UE.Time.time
@@ -432,12 +467,10 @@ function spellBase:SetLightPillar(isPlay)
             self.lightPillar = CL.EffectMgr.Instance:PlayEffect("LightPillar", self.host.interact.trans.position, UE.Quaternion.identity)
             self.lightPillar.trans.parent = self.host.interact.trans
             
-            local color = self.host.chargeColor or UE.Color.yellow
-            
             local particles = self.lightPillar.particles
             for i = 0, particles.Length -1 do
                 local mm = particles[i].main
-                mm.startColor = UE.ParticleSystem.MinMaxGradient(color)
+                mm.startColor = UE.ParticleSystem.MinMaxGradient(self.host.chargeColor or UE.Color.yellow)
             end
         end
     else
@@ -447,7 +480,6 @@ function spellBase:SetLightPillar(isPlay)
         end
     end
 end
-
 
 --[[ Effect ]]
 function spellBase:SetEffect(name, position, rotation, isPlay, trans)
@@ -464,6 +496,194 @@ function spellBase:SetEffect(name, position, rotation, isPlay, trans)
     end
 end
 --[[ end of Effect ]]
+
+
+--[[enchantment]]
+
+function spellBase:StartDetectingEnchant(createTrans)
+    local hand = self:GetSlotHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+
+    if not hand.character:HasEnoughMana(self.enchantMana) then
+        NoManaTips()
+        return
+    end
+
+    local detectInfo = nil
+    local thisCols = self.host.interact:GetCols()
+    self.detectEnchantId = CL.Scheduler.RemoveSchedule(self.detectEnchantId)
+    self.detectEnchantId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if not self.fo or IsNullOrDestroyed(self.fo) then
+				if detectInfo then				
+					self:StopEnchanting(detectInfo.pu)
+				end
+				sche:Stop()
+                return
+            end
+            
+            if detectInfo and IsNullOrDestroyed(detectInfo.pu) then
+                detectInfo = nil
+            end
+            
+            if detectInfo then
+                if UE.Time.time >= detectInfo.triggerTime then
+                    local pos = detectInfo.col:ClosestPoint(self.fo.trans.position)
+                    
+                    if CostMana(self.host, self.enchantMana, hand.character) then
+                        self:EnchantWeapon(detectInfo.pu, pos)
+                    else
+                        self:StopEnchanting(detectInfo.pu)
+                    end
+                    sche:Stop()
+                    return
+                else
+                    detectInfo.isCollision = false                
+                end
+            end
+            
+            local num = UE.Physics.OverlapSphereNonAlloc(createTrans.position, 0.2, 
+            CL.PhysicsHelper.shareOverlapColArray, UE.LayerMask.GetMask(UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)))
+            local curCol = nil
+            if num <= 0 then
+                detectInfo = nil
+                return
+            end
+            
+            local pass = true
+            for i = 0, num - 1 do
+                pass = true
+                for j = 0, thisCols.Length - 1 do
+                    if CL.PhysicsHelper.shareOverlapColArray[i] == thisCols[j] then
+                        pass = false
+                        break
+                    end
+                end
+                
+                if pass then
+                    curCol = CL.PhysicsHelper.shareOverlapColArray[i]
+                    local pu = CL.PhysicsUnit.GetPhysicsUnit(curCol)
+                    if IsNullOrDestroyed(pu) or
+                        (pu.unitType ~= CL.Tagger.Tag.InteractWeapon 
+                            and pu.unitType ~= CL.Tagger.Tag.InteractObj) then
+                        pass = false
+                    end
+                    
+                    if self.isOnline and IsNullOrDestroyed(pu.networkIB) then
+                        pass = false
+                    end
+                    
+                    if pass then
+                        pass = pu:IsEnchantble() and not pu:IsOnEnchanting()
+                    end
+                    
+                    if pass then
+                        if not detectInfo then
+                            detectInfo = {}
+                            detectInfo.pu = pu
+                            detectInfo.triggerTime = UE.Time.time + self.enchantDetectDura
+                            detectInfo.startTime = UE.Time.time
+                            detectInfo.isCollision = true
+                            detectInfo.col = curCol
+                            self:StartEnchanting(pu)
+                            break
+                        else
+                            if detectInfo.pu == pu then
+                                self:OnEnchanting(pu, (UE.Time.time - detectInfo.startTime)/self.enchantDetectDura)
+                                local hand = pu:GetPrimaryHand()
+                                if hand and not IsNullOrDestroyed(hand) then
+                                    hand:HapticPulse(hand.character.skillOpenHapticCurve, 0.2)
+                                end
+                                detectInfo.col = curCol
+                                detectInfo.isCollision = true
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+            
+            if detectInfo and not detectInfo.isCollision then
+                self:StopEnchanting(detectInfo.pu)
+                detectInfo = nil
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+function spellBase:StartEnchanting(pu)
+    self.enchantingPu = pu
+    self:StartEnchantingEffect(pu)
+end
+
+function spellBase:OnEnchanting(pu, progress)
+    pu:OnEnchanting(progress)
+end
+
+function spellBase:StopEnchanting(pu)
+    self:StopEnchantingEffect(pu)
+    self.enchantingPu = nil
+end
+
+function spellBase:StartEnchantingEffect(pu)
+    pu:StartEnchanting(self.enchantingEffect)
+end
+
+function spellBase:StopEnchantingEffect(pu)
+    pu:StopEnchanting()
+end
+
+function spellBase:EnchantWeapon(pu, point)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    pu:EnchantEnd()
+    
+    pu:Enchant(self.host, self.enchantSkillDura, self.enchantSkillCount, self.enchantEffectLoop, self.enchantEffectEnd)
+    self:OnEnchantWeapon(self.fo.trans.position, pu, point)
+    
+    self.enchantingPu = nil
+end
+
+function spellBase:OnEnchantWeapon(startPos, pu, target)
+    if self.enchantSound and not IsNullOrDestroyed(self.enchantSound) then
+        self.enchantSound:PlaySound()
+    end
+    
+    self:ReleaseSpellWithAnim(self.fo)
+    self:SetHandPose(false)
+    self:StopDetectingEnchant()
+end
+
+
+function spellBase:StopDetectingEnchant()
+    if self.enchantingPu and not IsNullOrDestroyed(self.enchantingPu) then
+        self:StopEnchanting(self.enchantingPu)
+    end
+    
+    self.detectEnchantId = CL.Scheduler.RemoveSchedule(self.detectEnchantId)
+end
+
+
+function spellBase.OnEnchantSkillByStab(ib, si)
+end
+
+
+function spellBase.OnEnchantSkillWithRole(ib, collision, fc)
+end
+
+---------------------------------------------------------
+
+function spellBase.OnEnchantExpired(ib)
+
+end
+--[[end of enchantment]]
+
 ---------------------------------------------------------------------------------------------------------
 function spellBase:MotionDetectByDir(dir, speed, checkfunc, progressCb, reachCb, isLocal)
     self:StopMotionDetect()

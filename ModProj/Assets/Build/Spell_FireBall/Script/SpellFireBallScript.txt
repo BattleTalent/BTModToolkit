@@ -1,0 +1,54 @@
+
+local spellFireBall = {
+    enchantingEffect = "FireEnchanting",
+    enchantEffectLoop = "FireEnchantLoop",
+    enchantEffectEnd = "FireEnchantEnd",
+}
+
+function spellFireBall.OnEnchantSkillWithRole(ib, fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+    if mu then
+        local state = fc.muscleState.stateRecord[mu.muscleName]
+        if fc.muscleState:IsArmor(state, thisCol) then
+            return
+        end
+    end
+    
+    ib:EnchantSkillCountUpdate()
+    
+    local pos = point
+    if thisCol.sharedMesh and not thisCol.convex then
+        pos = point
+    else
+        pos = thisCol:ClosestPoint(point)
+    end
+    
+    spellFireBall.SpawnFire(ib, thisCol.transform, pos, normal)
+end
+
+function spellFireBall.OnEnchantSkillByStab(ib, si)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        local mu = pu.ra:GetMuscle(si.stabTarget)
+        if mu then
+            local state = pu.muscleState.stateRecord[mu.muscleName]
+            
+            local cols = si.stabTarget:GetComponents(typeof(UE.Collider))
+            for i = 0, cols.Length - 1 do
+                if pu.muscleState:IsArmor(state, cols[i]) then
+                    return
+                end
+            end
+        end
+    end
+    
+    spellFireBall.SpawnFire(ib, si.stabTarget, si.stabTarget:TransformPoint(si.stabLocalPos), si.stabTarget:TransformDirection(si.stabLocalDir))
+    ib:EnchantSkillCountUpdate()
+end
+
+function spellFireBall.SpawnFire(ib, trans, pos, normal)
+    local fo = CL.FlyObject.CreateFlyObj("Zone_Fire_Small_Short", ib, pos, UE.Vector3.up)
+    fo.trans.position = pos
+    fo.trans:SetParent(trans)
+end
+
+return Class(Require("LuaScript/WMD_SpellThrowScript"), nil, spellFireBall)
