@@ -78,6 +78,12 @@ namespace CrossLink
         [Tooltip("level of enhance state")]
         public int enhanceLevel = -1;
         #endregion
+
+        #region     Enchantment
+        [Tooltip("Renderer for setting effects when enchanting. if empty then all Renderers on this prefab are selected to set the enchantment effect.")]
+        public List<Renderer> enchantRenderers;
+        public bool allowEnchantment = true;
+        #endregion
     }
 }
 
