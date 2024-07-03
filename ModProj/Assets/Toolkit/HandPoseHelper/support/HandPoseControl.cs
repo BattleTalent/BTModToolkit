@@ -184,7 +184,28 @@ namespace CrossLink
             return finger;
         }
 
-        [EasyButtons.Button]
+        [EasyButtons.Button("View - Finger Open Pose", Spacing = EasyButtons.ButtonSpacing.Before)]
+        void ViewFingerOpenPose()
+        {
+            for (int i = 0; i < fingers.Length; ++i)
+            {
+                fingers[i].PasteOpenPose();
+            }
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+
+        
+        [EasyButtons.Button("View - Finger Close Pose")]
+        void ViewFingerClosePose()
+        {
+            for (int i = 0; i < fingers.Length; ++i)
+            {
+                fingers[i].PasteClosePose();
+            }
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
+
+        [EasyButtons.Button("Save - Finger Open Pose", Spacing = EasyButtons.ButtonSpacing.Before)]
         void SaveFingersOpenPose()
         {
             UnityEditor.Undo.RegisterCompleteObjectUndo(this, "open pose change") ;
@@ -195,19 +216,9 @@ namespace CrossLink
             }
 
             UnityEditor.EditorUtility.SetDirty(this);
-        }
+        }       
 
-        [EasyButtons.Button]
-        void ViewFingerOpenPose()
-        {
-            for (int i = 0; i < fingers.Length; ++i)
-            {
-                fingers[i].PasteOpenPose();
-            }
-            UnityEditor.EditorUtility.SetDirty(this);
-        }
-
-        [EasyButtons.Button]
+        [EasyButtons.Button("Save - Finger Close Pose", Spacing = EasyButtons.ButtonSpacing.After)]
         void SaveFingersClosePose()
         {
             UnityEditor.Undo.RegisterCompleteObjectUndo(this, "close pose change");
@@ -215,16 +226,6 @@ namespace CrossLink
             for (int i = 0; i < fingers.Length; ++i)
             {
                 fingers[i].SaveClosePose();
-            }
-            UnityEditor.EditorUtility.SetDirty(this);
-        }
-
-        [EasyButtons.Button]
-        void ViewFingerClosePose()
-        {
-            for (int i = 0; i < fingers.Length; ++i)
-            {
-                fingers[i].PasteClosePose();
             }
             UnityEditor.EditorUtility.SetDirty(this);
         }
