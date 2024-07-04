@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 304999738078892527}
   - component: {fileID: 1707901287615463056}
   m_Layer: 15
-  m_Name: Sword
+  m_Name: Axe
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -36,6 +36,7 @@ Transform:
   m_Children:
   - {fileID: 17932314190681208}
   - {fileID: 3425351982885149969}
+  - {fileID: 7614170652714986640}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -47,9 +48,9 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 861081719677651821}
   serializedVersion: 2
-  m_Mass: 4
-  m_Drag: 0.5
-  m_AngularDrag: 1
+  m_Mass: 20
+  m_Drag: 1.2
+  m_AngularDrag: 2
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
@@ -71,17 +72,18 @@ MonoBehaviour:
   durability: 50
   interactType: 0
   guardPoints: []
-  linearForce: 20000
+  linearForce: 30000
   linearDamper: 500
-  angularForce: 14000
+  angularForce: 13000
   angularDamper: 500
-  singleHandSpeed: 1
-  twoHandSpeed: 1
-  allowSecondHand: 0
+  singleHandSpeed: 0.18
+  twoHandSpeed: 0.45
+  allowSecondHand: 1
   beAbleToShowGrab: 1
   enableAutoTickTwoHand: 0
   attachList:
   - {fileID: 5165084198005751464}
+  - {fileID: 111934755940257577}
   gaze: {fileID: 304999738078892527}
   grabDistanceLimit: 0
   itemTypes:
@@ -91,7 +93,7 @@ MonoBehaviour:
   canPaint: 1
   enhanceLevel: -1
   showExampleWeaponGizmo: 1
-  gizmoType: 0
+  gizmoType: 2
 --- !u!114 &5263428509812131785
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -105,7 +107,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitInfo:
-    templateName: Sword
+    templateName: Axe
     weightAmongMultiple: 1
 --- !u!114 &2035787851957860724
 MonoBehaviour:
@@ -191,26 +193,8 @@ MonoBehaviour:
   geos:
   - geoFwdDis: 0.2
     thickness: 0.05
-    geoWidth: 0.2
-    geoPoint: {x: 0, y: 0, z: 0.98}
-    geoForward: {x: 0, y: 0, z: 1}
-    geoThick: {x: 0, y: 1, z: 0}
-    sliceDir: {x: 0, y: 0, z: 0}
-    stabMin: -0.08
-    stabMax: -0.3
-    stabTie: -0.12
-    stabDot: 0.5
-    stabHandVelSqrtRequire: 8
-    stabSlideFactor: 1000
-    cols: []
-    subObj: {fileID: 0}
-    sideGeo: -1
-    noStabOut: 0
-    isBlade: 1
-  - geoFwdDis: 0.1
-    thickness: 0.05
-    geoWidth: 0.6
-    geoPoint: {x: 0, y: 0, z: 0.65}
+    geoWidth: 0.4
+    geoPoint: {x: 0.05, y: 0, z: 0.68}
     geoForward: {x: 1, y: 0, z: 0}
     geoThick: {x: 0, y: 0, z: 0}
     sliceDir: {x: 0, y: 0, z: 0}
@@ -225,10 +209,10 @@ MonoBehaviour:
     sideGeo: 0
     noStabOut: 0
     isBlade: 1
-  - geoFwdDis: 0.1
+  - geoFwdDis: 0.2
     thickness: 0.05
-    geoWidth: 0.6
-    geoPoint: {x: 0, y: 0, z: 0.65}
+    geoWidth: 0.4
+    geoPoint: {x: -0.05, y: 0, z: 0.68}
     geoForward: {x: -1, y: 0, z: 0}
     geoThick: {x: 0, y: 0, z: 0}
     sliceDir: {x: 0, y: 0, z: 0}
@@ -243,7 +227,7 @@ MonoBehaviour:
     sideGeo: 0
     noStabOut: 0
     isBlade: 1
-  ib: {fileID: 2721182167853324177}
+  ib: {fileID: 0}
   trackback: 0
 --- !u!1 &5849679342078531499
 GameObject:
@@ -376,12 +360,12 @@ PrefabInstance:
     - target: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
         type: 3}
       propertyPath: lineEndPoint
-      value: -0.05
+      value: -0.1
       objectReference: {fileID: 0}
     - target: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
         type: 3}
       propertyPath: lineStartPoint
-      value: 0.05
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 5830968527570335278, guid: e5b98c5f705a399448efb529a8111bdd,
         type: 3}
@@ -401,6 +385,118 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
     type: 3}
   m_PrefabInstance: {fileID: 835288470753296122}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 888349f3ca4e57d4296b2e278cdc5138, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!1001 &5599160535199371131
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 7327018171835894425}
+    m_Modifications:
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: selfRB
+      value: 
+      objectReference: {fileID: 8110845255186075943}
+    - target: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: interact
+      value: 
+      objectReference: {fileID: 2721182167853324177}
+    - target: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: indexLimit
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: lineEndPoint
+      value: -0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: lineStartPoint
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5830968527570335278, guid: e5b98c5f705a399448efb529a8111bdd,
+        type: 3}
+      propertyPath: m_Name
+      value: AttachLine (1)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e5b98c5f705a399448efb529a8111bdd, type: 3}
+--- !u!4 &7614170652714986640 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2602729886090404843, guid: e5b98c5f705a399448efb529a8111bdd,
+    type: 3}
+  m_PrefabInstance: {fileID: 5599160535199371131}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &111934755940257577 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5492591396037001298, guid: e5b98c5f705a399448efb529a8111bdd,
+    type: 3}
+  m_PrefabInstance: {fileID: 5599160535199371131}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1

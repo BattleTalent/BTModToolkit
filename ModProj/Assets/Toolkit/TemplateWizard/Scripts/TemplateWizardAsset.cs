@@ -21,6 +21,7 @@ namespace CrossLink
         {
             Sword,
             Gun,
+            Axe,
         }
 
         static TemplateWizardAsset wizard;
