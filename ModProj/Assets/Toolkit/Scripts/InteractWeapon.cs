@@ -173,7 +173,8 @@ namespace CrossLink
         private Mesh mesh;
         public enum gizmoTypes {
             Sword,
-            Gun
+            Gun,
+            Axe
         };
 
         public gizmoTypes gizmoType = gizmoTypes.Sword;
@@ -198,6 +199,10 @@ namespace CrossLink
 
             if(gizmoType == gizmoTypes.Gun) {
                 Gizmos.DrawWireMesh(mesh, new Vector3(0,0.05f,0.05f), new Quaternion(0,0,0,0).normalized, new Vector3(0.5f,0.5f,0.5f));
+            }
+
+            if(gizmoType == gizmoTypes.Axe) {
+                Gizmos.DrawWireMesh(mesh, new Vector3(0,0,-0.125f), new Quaternion(0,90,90,0).normalized, new Vector3(1,1,1));
             }
         }
 #endif
