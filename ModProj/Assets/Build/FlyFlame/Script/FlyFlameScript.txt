@@ -59,8 +59,6 @@ function flyFlame:OnDisable()
     end
 end
 
-flyFlameCols = {}
-
 function flyFlame:DoFireCheck()
     local center = self.host.trans.position + self.host.trans.forward * (self.hitDistance / 2 + self.hitStartOffset)
     local halfExt = UE.Vector3(self.hitWidth/2, self.hitHeight/2, (self.hitDistance/2))
@@ -72,7 +70,7 @@ function flyFlame:DoFireCheck()
     
     for i = 0, flyFlameCols.Length - 1 do
         CL.InteractTrigger.ApplyHitScanDamage(flyFlameCols[i],
-            self.host, self.host.rb, self.host.col, self.host.trans.forward, CL.AiProxy.CampNone)
+            self.host, self.host.rb, self.host.col, self.host.trans.forward, CL.AIProxy.CampNone)
     end
     self:AfterHitScan()
     

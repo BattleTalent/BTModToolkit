@@ -107,6 +107,8 @@ MonoBehaviour:
   - {fileID: 5000950131739979148}
   canPaint: 1
   enhanceLevel: -1
+  enchantRenderers: []
+  allowEnchantment: 1
   showExampleWeaponGizmo: 0
   gizmoType: 0
 --- !u!114 &4652765688551413682
@@ -195,7 +197,7 @@ MonoBehaviour:
   enableChargeColor: 0
   chargeColor: {r: 0.9811321, g: 0.17108932, b: 0.0509078, a: 1}
   script:
-    luaScript: WMD_SpellThrowScript
+    luaScript: WMD_SpellFireBallScript
     objList:
     - name: createPoint
       value: {fileID: 7068175284645617976}
@@ -204,6 +206,12 @@ MonoBehaviour:
     numberList:
     - name: intensity
       value: 30
+    - name: isEnchantable
+      value: 1
+    - name: enchantSkillCount
+      value: 10
+    - name: enchantSkillDura
+      value: 30
     stringList:
     - name: flyObjName
       value: WMD_FlyFireBallX
@@ -211,6 +219,12 @@ MonoBehaviour:
       value: WMD_ElementBullet_FireBall
     - name: elementStateEffect
       value: WMD_FireBallElementState
+    - name: enchantingEffect
+      value: WMD_FireEnchanting
+    - name: enchantEffectLoop
+      value: WMD_FireEnchantLoop
+    - name: enchantEffectEnd
+      value: WMD_FireEnchantEnd
 --- !u!1 &3397413800559501122
 GameObject:
   m_ObjectHideFlags: 0
