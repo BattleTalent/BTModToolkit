@@ -81,19 +81,39 @@ namespace CrossLink
         [Header("Example Role Gizmo")]
 
         public bool showExampleRoleGizmo = false;
+        public bool showRoleSlotsGizmos = false;
+
         private Mesh mesh;
 
         private void OnDrawGizmos()
         {
-            if(!showExampleRoleGizmo)
-                return;
+            Gizmos.color = Color.red;
+            
+            if(showExampleRoleGizmo) {
+                if (!mesh) {
+                    mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/Avatar.fbx");
+                }
 
-            if (!mesh) {
-                mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/Avatar.fbx");
+                Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(1f,1f,1f));
             }
 
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(1f,1f,1f));
+            if(showRoleSlotsGizmos) {
+                if (handSlotLeft) {
+                    Gizmos.DrawWireSphere(handSlotLeft.transform.position, 0.05f);
+                }
+
+                if (handSlotRight) {
+                    Gizmos.DrawWireSphere(handSlotRight.transform.position, 0.05f);
+                }
+
+                if (shoulderSlotLeft) {
+                    Gizmos.DrawWireSphere(shoulderSlotLeft.transform.position, 0.05f);
+                }
+
+                if (shoulderSlotRight) {
+                    Gizmos.DrawWireSphere(shoulderSlotRight.transform.position, 0.05f);
+                }
+            }
         }
 #endif
     }
