@@ -114,7 +114,7 @@ namespace CrossLink
 
         private void CreateRolePrefab(string newModFolderName)
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootRoleNode.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/TemplateWizard/Dummy/Role.prefab");
             var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
             PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/Role/{newModFolderName}.prefab", InteractionMode.AutomatedAction);
             DestroyImmediate(instantiatedPrefab);
@@ -129,7 +129,7 @@ namespace CrossLink
 
         private void CreateAvatarPrefab(string newModFolderName)
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/Prefabs/RootAvatarNode.prefab");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Toolkit/TemplateWizard/Dummy/Avatar.prefab");
             var instantiatedPrefab = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
             PrefabUtility.SaveAsPrefabAssetAndConnect(instantiatedPrefab, $"Assets/Build/{newModFolderName}/Avatar/{newModFolderName}.prefab", InteractionMode.AutomatedAction);
             DestroyImmediate(instantiatedPrefab);

@@ -293,6 +293,25 @@ namespace CrossLink
             }
             handler.SetHumanPose(ref pose);
         }
+
+        
+        [Header("Example Weapon Gizmo")]
+
+        public bool showExampleAvatarGizmo = false;
+        private Mesh mesh;
+
+        private void OnDrawGizmos()
+        {
+            if(!showExampleAvatarGizmo)
+                return;
+
+            if (!mesh) {
+                mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/Avatar.fbx");
+            }
+
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(1f,1f,1f));
+        }
 #endif
     }
 }

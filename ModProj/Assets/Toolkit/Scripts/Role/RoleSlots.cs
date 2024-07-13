@@ -77,35 +77,42 @@ namespace CrossLink
                 "please assign the handTrans of the handPoseControl manually.");
         }
 
+        
+        [Header("Example Role Gizmo")]
+
+        public bool showExampleRoleGizmo = false;
+        public bool showRoleSlotsGizmos = false;
+
+        private Mesh mesh;
+
         private void OnDrawGizmos()
         {
-            var color = Color.green;
-            color.a = 0.3f;
-            Gizmos.color = color;
-            float dist = 0.5f;
+            Gizmos.color = Color.red;
+            
+            if(showExampleRoleGizmo) {
+                if (!mesh) {
+                    mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/Avatar.fbx");
+                }
 
-            if (handSlotLeft) {
-                Gizmos.DrawWireSphere(handSlotLeft.transform.position, 0.1f);
-                Vector3 direction = transform.TransformDirection(handSlotLeft.transform.forward) * dist;
-                Gizmos.DrawRay(handSlotLeft.transform.position, direction);
+                Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(1f,1f,1f));
             }
 
-            if (handSlotRight) {
-                Gizmos.DrawWireSphere(handSlotRight.transform.position, 0.1f);
-                Vector3 direction = transform.TransformDirection(handSlotRight.transform.forward) * dist;
-                Gizmos.DrawRay(handSlotRight.transform.position, direction);
-            }
+            if(showRoleSlotsGizmos) {
+                if (handSlotLeft) {
+                    Gizmos.DrawWireSphere(handSlotLeft.transform.position, 0.05f);
+                }
 
-            if (shoulderSlotLeft) {
-                Gizmos.DrawWireSphere(shoulderSlotLeft.transform.position, 0.1f);
-                Vector3 direction = transform.TransformDirection(shoulderSlotLeft.transform.forward) * dist;
-                Gizmos.DrawRay(shoulderSlotLeft.transform.position, direction);
-            }
+                if (handSlotRight) {
+                    Gizmos.DrawWireSphere(handSlotRight.transform.position, 0.05f);
+                }
 
-            if (shoulderSlotRight) {
-                Gizmos.DrawWireSphere(shoulderSlotRight.transform.position, 0.1f);
-                Vector3 direction = transform.TransformDirection(shoulderSlotRight.transform.forward) * dist;
-                Gizmos.DrawRay(shoulderSlotRight.transform.position, direction);
+                if (shoulderSlotLeft) {
+                    Gizmos.DrawWireSphere(shoulderSlotLeft.transform.position, 0.05f);
+                }
+
+                if (shoulderSlotRight) {
+                    Gizmos.DrawWireSphere(shoulderSlotRight.transform.position, 0.05f);
+                }
             }
         }
 #endif
