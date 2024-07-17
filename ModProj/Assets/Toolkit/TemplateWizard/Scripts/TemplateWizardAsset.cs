@@ -22,6 +22,7 @@ namespace CrossLink
             Sword,
             Gun,
             Axe,
+            Shotgun,
         }
 
         static TemplateWizardAsset wizard;
@@ -253,7 +254,7 @@ namespace CrossLink
             CreateIcon(newModFolderName);
             CreateWeaponPrefab(newModFolderName);
 
-            if(selectedWeaponType == WeaponType.Gun) {
+            if(selectedWeaponType == WeaponType.Gun || selectedWeaponType == WeaponType.Shotgun) {
                 AssetDatabase.CreateFolder(newModFolderPath, "FlyObj");
                 CreateBulletPrefab(newModFolderName);
                 CreateScriptIfNotAvailable("Common", "WeaponFlyObjBaseScript.txt");
