@@ -60,6 +60,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -84,6 +85,7 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!65 &7874304148287134788
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -163,7 +165,7 @@ MonoBehaviour:
   trail: {fileID: 0}
   resetParticles: []
   playImpactOnTimeout: 0
-  ignoreDamageList: 
+  ignoreDamageList: c8000000
 --- !u!114 &6827588594812889095
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -191,4 +193,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df710fb68de61bb4989f3f822c6787de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialName: Metal
+  materialName: 

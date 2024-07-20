@@ -7,6 +7,8 @@ local WeaponFlyObj = {
     shootOnCharge = 1,
     shootOnActivateEnd = 0,
     autoSetupBulletIgnore = 0,
+    bulletsPerShot = 1,
+    bulletSpread = 0,
     
     flyObjName = "",
     
@@ -21,29 +23,15 @@ local WeaponFlyObj = {
 function WeaponFlyObj:PlayShootAction()
 	local interact = self.host.interact
     local ph = interact:GetPrimaryHand()
-    
+
     if not IsNullOrDestroyed(ph) then
         ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
     end
-    
-    local aimDir = self.shootPosition.forward
-    local bulletScript = self.host:CreateFlyObj(self.flyObjName, self.shootPosition.position, aimDir, self.shootVel)
-    
-    if not IsNullOrDestroyed(bulletScript) then
-        TryAerialStay(ph)
-    end
-    
-    if self.autoSetupBulletIgnore == 1 then
-        CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), true)
-        
-        CL.Scheduler.Create(self.host.gameObject, 
-        function(sche, t, s)
-            if not IsNullOrDestroyed(bulletScript) and not IsNullOrDestroyed(interact) then
-                CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), false)
-            end
-        end
-        , 0, 0, 0.2)
-        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+
+    local bulletScript = nil
+    for i = self.bulletsPerShot, 1, -1 
+    do
+        bulletScript = self:SpawnBullet(interact) 
     end
 
     if (self.shootSound ~= nil) then
@@ -67,6 +55,39 @@ function WeaponFlyObj:PlayShootAction()
     interact:CostDurability()
     self.shootTime = UE.Time.time
     
+    return bulletScript
+end
+
+function WeaponFlyObj:SpawnBullet(interact)
+    local aimDir = self.shootPosition.forward
+
+    --We calculate the shots divergence from the original trajectory and put it into a vector. 
+    local xSpread = UE.Random.Range(-self.bulletSpread, self.bulletSpread)
+    local ySpread = UE.Random.Range(-self.bulletSpread, self.bulletSpread)
+    local zSpread = UE.Random.Range(-self.bulletSpread, self.bulletSpread)
+
+    --Here we combine the spread with the shooting direction and normalize it, so that it has the length/magnitude 1.
+    local shootingDirectionWithSpread = (UE.Vector3(xSpread, ySpread, zSpread) + aimDir).normalized
+
+    local bulletScript = self.host:CreateFlyObj(self.flyObjName, self.shootPosition.position, shootingDirectionWithSpread, self.shootVel)
+    
+    if not IsNullOrDestroyed(bulletScript) then
+        TryAerialStay(ph)
+    end
+    
+    if self.autoSetupBulletIgnore == 1 then
+        CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), true)
+        
+        CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(bulletScript) and not IsNullOrDestroyed(interact) then
+                CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), false)
+            end
+        end
+        , 0, 0, 0.2)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+
     return bulletScript
 end
 
