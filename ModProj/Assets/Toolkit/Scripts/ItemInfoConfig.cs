@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace CrossLink
@@ -43,7 +47,10 @@ namespace CrossLink
         public ItemInfoConfig.ItemType itemType;
 
         public MerchandiseItemInfo[] dungeonInfos;
+
+        public bool supportedMultiplayer;
     }
+
 
     [System.Serializable]
     public class MerchandiseItemInfo
@@ -75,6 +82,11 @@ namespace CrossLink
 
         [Tooltip("scene discription")]
         public string desc;
+
+        public bool supportedMultiplayer;
+
+        [Tooltip("multiplayer config")]
+        public Network.NetworkMapConfigData mutiplayerConfig;
     }
 
     [System.Serializable]
@@ -312,6 +324,9 @@ namespace CrossLink
         public SceneModInfo[] sceneModInfo;
 
         [SerializeField]
+        public PropInfo[] propInfo;
+
+        [SerializeField]
         public AvatarInfo[] avatarInfo;
 
         [SerializeField]
@@ -326,7 +341,62 @@ namespace CrossLink
         [SerializeField]
         public HitInfo[] hitInfo;
 
+        [Tooltip("FlyObject need to be registered to be used in multiplayer mode. Please make sure that the registered prefab supports multiplayer mode!")]
+        public string[] networkPrefabRegister;
+
+
+
 #if UNITY_EDITOR
+
+        [EasyButtons.Button]
+        public void AutoRegisterNetworkPrefab()
+        {
+            Debug.Log("Please make sure that the registered prefab supports multiplayer mode!");
+
+            var assetPath = AssetDatabase.GetAssetPath(this);
+            if (!assetPath.Contains("Assets/Build"))
+            {
+                Debug.LogError($"This ItemInfoConfig is not in Assets/Build");
+                return;
+            }
+            if (!assetPath.Contains("Config/"))
+            {
+                Debug.LogError($"This ItemInfoConfig is not in the Config folder.");
+                return;
+            }
+
+            List<string> list = new List<string>();
+
+            string modPath = assetPath.Substring(0, assetPath.LastIndexOf("/", assetPath.LastIndexOf("/") - 1));
+
+            //flyObject
+            string foPath = System.IO.Path.Combine(modPath, "FlyObj");
+            var foGuids = AssetDatabase.FindAssets("t:prefab", new string[] { foPath });
+            foreach (var guid in foGuids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                path = path.Replace(".prefab", string.Empty);
+                var idx = path.LastIndexOf("/");
+                string name = path.Substring(idx + 1, path.Length - idx - 1);
+                list.Add(AddressableConfig.GetConfig().GetPrefix() + name);
+            }
+
+            ////SceneObject
+            //string sceneObjPath = System.IO.Path.Combine(modPath, "SceneObj");
+            //var soGuids = AssetDatabase.FindAssets("t:prefab", new string[] { sceneObjPath });
+            //foreach (var guid in soGuids)
+            //{
+            //    var path = AssetDatabase.GUIDToAssetPath(guid);
+            //    path = path.Replace(".prefab", string.Empty);
+            //    var idx = path.LastIndexOf("/");
+            //    string name = path.Substring(idx + 1, path.Length - idx - 1);
+            //    list.Add(AddressableConfig.GetConfig().GetPrefix() + name);
+            //}
+
+            networkPrefabRegister = list.ToArray();
+        }
+
+
         [EasyButtons.Button]
         public void AutoAddPrefix()
         {
@@ -358,6 +428,22 @@ namespace CrossLink
                     if (!item.sceneName.Contains(prefix))
                     {
                         item.sceneName = prefix + item.sceneName;
+                    }
+                }
+            }
+
+            //SceneObj
+            if (propInfo != null)
+            {
+                foreach (var item in propInfo)
+                {
+                    if (string.IsNullOrEmpty(item.name))
+                        continue;
+
+
+                    if (!item.name.Contains(prefix))
+                    {
+                        item.name = prefix + item.name;
                     }
                 }
             }

@@ -11,6 +11,10 @@ namespace CrossLink
 {
     public class InteractBase : PhysicsUnit
     {
+        #region Network
+        public Network.NetworkStateLibrary stateLibrary;
+        #endregion
+
         #region Basic Info
         public bool autoDisappearWhenDurableLow = true;
         public int durability = 25;

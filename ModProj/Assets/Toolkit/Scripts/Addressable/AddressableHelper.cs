@@ -10,6 +10,7 @@ using System.IO;
 using System.Text;
 using CrossLink;
 using System;
+using CrossLink.Network;
 
 #if UNITY_EDITOR
 namespace CrossLink
@@ -25,6 +26,7 @@ namespace CrossLink
         { "Audio", "Audio/Sound/" },
         { "Config", "Config/" },
         { "Scene", "Scene/" },
+        { "SceneObj", "SceneObj/" },
         { "Avatar", "Avatar/" },
         { "Skin", "Skin/" },
         { "HandPose", "Attach/Mod/" },
@@ -352,6 +354,12 @@ namespace CrossLink
                 {
                     str.value = str.value.Replace(oldPrefix, curPrefix);
                 }
+                hasChanged = true;
+            }
+
+            foreach (var ib in root.GetComponentsInChildren<NetworkInteractBase>())
+            {
+                ib.ibName = ib.ibName.Replace(oldPrefix, curPrefix);
                 hasChanged = true;
             }
 
