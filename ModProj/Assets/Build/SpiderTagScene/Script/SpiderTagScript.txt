@@ -1,0 +1,1056 @@
+local SpiderTag = {
+    --setup players
+    setupPlayers = {},
+    trigList = {},
+    
+    startCountdown = 10,
+    roundTime = 60,
+    markList = {},
+    
+    tickActId = -1,
+    roundActId = -1,
+    
+    infectList = {},
+    minCount = 2,
+    
+    --fixed mount bug
+    playerHooks = {},
+    
+    scoreInfo = {},
+    --scoreType
+    score_touch = 1,
+    score_survival = 2,
+    }
+
+function SpiderTag:Awake()
+    print("spider tag awake------------------")
+    self.weaponSpawner = self.weaponSpawnerLb.script:GetSelf()
+    self.weaponSpawner.controller = self
+    
+    self.cacheMoveType = CL.SettingMgr.Instance.moveType
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if self.playerHooks[netId] ~= nil then
+            print("OnSpawnNetworkIB----------")
+            self:ClientMountHook(netId, self.playerHooks[netId].playerId, self.playerHooks[netId].handIdx)
+            self.playerHooks[netId] = nil
+        end
+    end
+    
+    SpiderTag.Instance = self
+    CL.InteractCharacter.OnPlayerInitFinish("+", self.ClientLocalInit)
+    
+    
+    if CL.Network.VRNetworkManager.Instance.IsServer then
+        CL.EventHub.ListenEvent("NetworkRoomPlayerJoin", self.PlayerJoinScene)
+        CL.EventHub.ListenEvent("NetworkRoomPlayerLeft", self.RoomPlayerLeft)
+        SpiderTag.PlayerJoinScene()
+        self.ClientLocalInit()
+    else
+        if not IsNullOrDestroyed(CL.InteractCharacter.PlayerInstance) then
+            self.ClientLocalInit()
+        end
+        
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function SpiderTag:OnDestroy()
+    CL.InteractCharacter.OnPlayerInitFinish("-", self.ClientLocalInit)
+
+    if CL.Network.VRNetworkManager.Instance.IsServer then
+        CL.EventHub.RemoveListener("NetworkRoomPlayerJoin", self.PlayerJoinScene)
+        CL.EventHub.RemoveListener("NetworkRoomPlayerLeft", self.RoomPlayerLeft)
+    else
+        if CL.Network.NetworkSpawnMgr.Instance then
+            CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+        end
+    end
+    
+    self:LockHpMp(false)
+    self:LockMovement(false)
+    self:RemoveStatePanel()
+    self:RemoveTriggerToPlayer()
+    self:ClearHunter()
+    
+    SpiderTag.Instance = nil
+end
+
+function SpiderTag:NetworkInject()
+    self.host:InjectFunc("ServerSetHook", self.ServerSetHook)
+    --self.host:InjectFunc("RpcOnSpawnHook", self.RpcOnSpawnHook)
+    self.host:InjectFunc("RefleshCountdown", self.RefleshCountdown)
+    self.host:InjectFunc("RpcShowTips", self.RpcShowTips)
+    self.host:InjectFunc("CmdServerHookInfo", self.CmdServerHookInfo)
+    self.host:InjectFunc("RpcClientHookInfo", self.RpcClientHookInfo)
+    self.host:InjectFunc("CmdServerSetTriggerToPlayer", self.CmdServerSetTriggerToPlayer)
+    self.host:InjectFunc("RpcPlayInfectEffect", self.RpcPlayInfectEffect)
+    self.host:InjectFunc("RpcSetHunter", self.RpcSetHunter)
+    self.host:InjectFunc("ClearHunter", self.ClearHunter)
+    self.host:InjectFunc("RoundEnd", self.RoundEnd)
+    self.host:InjectFunc("ReqestUpdateScoreInfo", self.ReqestUpdateScoreInfo)
+    self.host:InjectFunc("RpcUpdateScoreInfo", self.RpcUpdateScoreInfo)
+    self.host:InjectFunc("RpcSettlement", self.RpcSettlement)
+    self.host:InjectFunc("RpcScoring", self.RpcScoring)
+    self.host:InjectFunc("PlayCountdown", self.PlayCountdown)
+    self.host:InjectFunc("StopCountdown", self.StopCountdown)
+    self.host:InjectFunc("PlayStartBellSound", self.PlayStartBellSound)
+
+    print("NetworkInject--------------")
+end
+
+function SpiderTag:ServerPlayerInit(playerId)
+    print("set up player --------------:" .. playerId)
+
+    self:ServerSetTriggerToPlayer(playerId)
+    self:ServerSetHook(playerId)
+    self.setupPlayers[playerId] = true
+end
+
+function SpiderTag.ClientLocalInit()
+    print("ClientLocalInit--------------")
+    if SpiderTag.Instance.isInitLocal then
+        return
+    end
+    SpiderTag.Instance.isInitLocal = true
+    SpiderTag.Instance:SpawnStatePanel()
+    SpiderTag.Instance:LockHpMp(true)
+    SpiderTag.Instance:LockMovement(true)
+    
+    if not CL.Network.VRNetworkManager.Instance.IsServer then
+        SpiderTag.Instance:ClientCmdHookInfo()
+        SpiderTag.Instance:CommandScoreInfo()
+    end
+end
+
+function SpiderTag.PlayerJoinScene()
+    local roomPlayers = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    for i = 0, roomPlayers.Count - 1 do
+        if not SpiderTag.Instance.setupPlayers[roomPlayers[i].netId] then
+            SpiderTag.Instance:ServerPlayerInit(roomPlayers[i].netId)
+        end
+    end
+    
+    local count = roomPlayers.Count
+    
+    print("PlayerJoinScene--------------count:" .. count)
+    if not SpiderTag.Instance.isStart then
+        if count >= SpiderTag.Instance.minCount then
+            SpiderTag.Instance:TickToStart()
+        end
+    end
+    
+    SpiderTag.Instance:ScoreInfoAddPlayer()
+    SpiderTag.Instance:RefleshScore()
+end
+
+function SpiderTag.RoomPlayerLeft()
+    local roomPlayers = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    local isExist = false
+    for k, v in pairs(SpiderTag.Instance.setupPlayers) do
+        for i = 0, roomPlayers.Count - 1 do
+            if roomPlayers[i].netId == k then
+                isExist = true
+                break
+            end
+        end
+        
+        if not isExist then
+            SpiderTag.Instance.setupPlayers[k] = nil
+        end
+    end
+    
+    local count = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers.Count
+    if SpiderTag.Instance.isStart then
+        if count < SpiderTag.Instance.minCount then
+            SpiderTag.Instance:StopGame()
+        end
+    end
+    SpiderTag.Instance:ScoreInfoRemovePlayer()
+end
+
+function SpiderTag:LockHpMp(flag)
+    CL.PlayerCombatAttr.LockHp = flag
+    CL.PlayerCombatAttr.LockMp = flag
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        CL.Network.NetworkRoomMgr.Instance:ServerUpdateRoomCheating(flag, 
+            flag, nil, nil, nil, nil, nil)
+    end
+end
+
+function SpiderTag:LockMovement(flag)
+    --CL.InteractCharacter.PlayerInstance.move.simulatorRunCoe = flag and 0 or 0.05
+    --CL.InteractCharacter.PlayerInstance.move:SetSpeedMlp(flag and 0 or 1)
+    --
+    --if flag then
+    --    CL.SettingMgr.Instance.moveType = CL.SettingMgr.MoveType.NoSwing
+    --else
+    --    CL.SettingMgr.Instance.moveType = self.cacheMoveType
+    --end
+    
+    if flag then
+        self.lockMovementId = CL.Scheduler.Create(self.trans,
+            function(sche, t, s)
+                CL.SettingMgr.Instance.moveType = CL.SettingMgr.MoveType.NoSwing
+                CL.InteractCharacter.PlayerInstance.move:SetSpeedMlp(0)
+                CL.InteractCharacter.PlayerInstance.move.simulatorRunCoe = 0
+            end
+        , 0.5, -1).actionId
+    else
+        CL.Scheduler.RemoveSchedule(self.lockMovementId)
+        CL.InteractCharacter.PlayerInstance.move.simulatorRunCoe = 0.05
+        CL.InteractCharacter.PlayerInstance.move:SetSpeedMlp(1)
+        CL.SettingMgr.Instance.moveType = self.cacheMoveType
+    end
+end
+
+--function SpiderTag:SetHook()
+--    if CL.Network.VRNetworkManager.IsOnline then
+--        local playerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+--        if CL.Network.VRNetworkManager.Instance.IsServer then
+--            self:ServerSetHook(playerId)
+--        else
+--            self:ClientCmdSetHook(playerId)
+--        end
+--    end
+--end
+
+function SpiderTag:ServerSetHook(playerId)
+    local player = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerId).interactCharacter
+    CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB("Spell_HookArmguard", 
+        UE.Vector3.zero, UE.Quaternion.identity,
+        false, false, 0, true, 
+        function(netIb, go)
+            if IsNullOrDestroyed(go) then
+                return
+            end
+            local ib = netIb.ib
+            if IsNullOrDestroyed(ib) then
+                return
+            end
+            
+            player.hands[CL.RagdollBoneInfo.LEFT_HAND].triggerSlots[0]:DoMount(ib)
+            player.networkPlayer.networkInteractHand:OnDoMountServer(true, ib.netId, 0)
+            print("server do mount hook-------------left")
+            
+            
+            local trigger = ib:GetInteractTrigger()
+            if not IsNullOrDestroyed(trigger) and trigger.script then
+                local tb = trigger.script:GetSelf()
+                tb.maxRange = 50
+            end
+            
+            
+            --local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+            --local id_list = list_int()
+            --id_list:Add(ib.netId)
+            --id_list:Add(playerId)
+            --id_list:Add(CL.RagdollBoneInfo.LEFT_HAND)
+            --self.host:ServerRpcIntListFunc("RpcOnSpawnHook", id_list)
+            
+            --self:ServerRpcHookInfo()
+            if not self.playerHooks[ib.netId] then
+                self.playerHooks[ib.netId] = {}
+            end
+            self.playerHooks[ib.netId].playerId = playerId
+            self.playerHooks[ib.netId].handIdx = CL.RagdollBoneInfo.LEFT_HAND
+        end)
+    
+    CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB("Spell_HookArmguard", 
+        UE.Vector3.zero, UE.Quaternion.identity,
+        false, false, 0, true, 
+        function(netIb, go)
+            if IsNullOrDestroyed(go) then
+                return
+            end
+            local ib = netIb.ib
+            if IsNullOrDestroyed(ib) then
+                return
+            end
+            
+            player.hands[CL.RagdollBoneInfo.RIGHT_HAND].triggerSlots[0]:DoMount(ib)
+            player.networkPlayer.networkInteractHand:OnDoMountServer(false, ib.netId, 1)
+            print("server do mount hook-------------right")
+            
+            local trigger = ib:GetInteractTrigger()
+            if not IsNullOrDestroyed(trigger) and trigger.script then
+                local tb = trigger.script:GetSelf()
+                tb.maxRange = 50
+            end
+            
+            --self:ServerRpcHookInfo()
+            if not self.playerHooks[ib.netId] then
+                self.playerHooks[ib.netId] = {}
+            end
+            self.playerHooks[ib.netId].playerId = playerId
+            self.playerHooks[ib.netId].handIdx = CL.RagdollBoneInfo.RIGHT_HAND
+        end)
+    
+end
+
+--function SpiderTag:ClientCmdSetHook(playerId)
+--    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+--    local id_list = list_int()
+--    id_list:Add(playerId)
+--    self.host:CommandFunc("CmdServerSetHook", nil, nil, id_list, nil)
+--end
+
+function SpiderTag:ClientCmdHookInfo()
+    self.host:CommandFunc("CmdServerHookInfo", nil, nil, nil, nil)
+    print("  CmdServerHookInfo -------------")
+    
+end
+
+function SpiderTag:CmdServerHookInfo(boolList, floatList, intList, strList)
+    print("CmdServerHookInfo------------------------")
+    self:ServerRpcHookInfo()
+end
+
+function SpiderTag:ServerRpcHookInfo()
+    print("ServerRpcHookInfo------------------------")
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    for k, v in pairs(self.playerHooks) do
+        id_list:Add(k)
+        id_list:Add(v.playerId)
+        id_list:Add(v.handIdx)
+    end
+    self.host:ServerRpcIntListFunc("RpcClientHookInfo", id_list)
+end
+
+function SpiderTag:RpcClientHookInfo(intList)
+    print("RpcClientHookInfo------------------------")
+    local count = 0
+    for i = 0, intList.Count - 1 do
+        if count == 3 then
+            count = 0
+        end
+        
+        if count == 0 then
+            if not self.playerHooks[intList[i]] then
+                self.playerHooks[intList[i]] = {}
+            end
+        end
+        if count == 1 then
+            self.playerHooks[intList[i - 1]].playerId = intList[i]
+        end
+        if count == 2 then
+            self.playerHooks[intList[i - 2]].handIdx = intList[i]
+        end
+        count = count + 1
+    end
+    
+    for k, v in pairs(self.playerHooks) do
+        self:ClientMountHook(k, v.playerId, v.handIdx)
+    end
+end
+--function SpiderTag:CmdServerSetHook(boolList, floatList, intList, strList)
+--    print("  CmdServerSetHook -------------")
+--    self:ServerSetHook(intList[0])
+--end
+--
+--function SpiderTag:RpcOnSpawnHook(intList)
+--    print("RpcOnSpawnHook-------------")
+--    if not self.playerHooks[intList[0]] then
+--        self.playerHooks[intList[0]] = {}
+--    end
+--    self.playerHooks[intList[0]].playerId = intList[1]
+--    self.playerHooks[intList[0]].handIdx = intList[2]
+--end
+
+function SpiderTag:ClientMountHook(netId, playerId, handIdx)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    end
+    
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerId)
+    print("try mount hook-------------player:" .. playerId)
+    if IsNullOrDestroyed(networkPlayer) then
+        return
+    end
+    print("try mount hook-------------player222")
+    if not IsNullOrDestroyed(networkPlayer.slotTriggers[handIdx].mountItem) then
+        return
+    end
+    
+    local trigger = netIb.ib:GetInteractTrigger()
+    if not IsNullOrDestroyed(trigger) and trigger.script then
+        local tb = trigger.script:GetSelf()
+        tb.maxRange = 50
+    end
+    
+    netIb.ib:OnSlot(networkPlayer.interactCharacter.hands[handIdx].triggerSlots[0])
+end
+
+--function SpiderTag:ClientCmdSetHook(playerId)
+--    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+--    local id_list = list_int()
+--    id_list:Add(playerId)
+--    self.host:CommandFunc("CmdServerSetHook", nil, nil, id_list, nil)
+--end
+--
+--function SpiderTag:CmdServerSetHook(boolList, floatList, intList, strList)
+--    print("  CmdServerSetHook -------------")
+--    self:ServerSetHook(intList[0])
+--end
+
+--Just need to set triggers for players in the server.
+function SpiderTag:InitTriggerToPlayer()
+    if CL.Network.VRNetworkManager.IsOnline then
+        local playerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            print("set trigger---------------server:" .. playerId)
+            self:ServerSetTriggerToPlayer(playerId)
+        else
+            print("set trigger---------------client:" .. playerId)
+            self:ClientCmdSetTriggerToPlayer(playerId)
+        end
+    end
+end
+
+function SpiderTag:RemoveTriggerToPlayer()
+    for k, v in ipairs(self.trigList) do
+        if v and not IsNullOrDestroyed(v.trans) then
+            UE.Object.DestroyImmediate(v.trans.gameObject)
+        end
+    end
+    self.trigList = {}
+end
+
+function SpiderTag:ServerSetTriggerToPlayer(playerId)
+    local player = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerId).interactCharacter
+    
+    local trigGo = UE.GameObject.Instantiate(self.handTriggerPrefab)
+    trigGo:SetActive(true)
+    
+    local trigLeft = trigGo:GetComponent(typeof(CL.LuaBehaviour)).script:GetSelf()
+    trigLeft:Init(self, player.hands[CL.RagdollBoneInfo.LEFT_HAND])
+    table.insert(self.trigList, trigLeft)
+    
+    trigGo = UE.GameObject.Instantiate(self.handTriggerPrefab)
+    trigGo:SetActive(true)
+    
+    local trigRight = trigGo:GetComponent(typeof(CL.LuaBehaviour)).script:GetSelf()
+    trigRight:Init(self, player.hands[CL.RagdollBoneInfo.RIGHT_HAND])
+    table.insert(self.trigList, trigRight)
+end
+
+function SpiderTag:ClientCmdSetTriggerToPlayer(playerId)
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    id_list:Add(playerId)
+    self.host:CommandFunc("CmdServerSetTriggerToPlayer", nil, nil, id_list, nil)
+end
+
+function SpiderTag:CmdServerSetTriggerToPlayer(boolList, floatList, intList, strList)
+    print("  CmdServerSetTriggerToPlayer -------------")
+    self:ServerSetTriggerToPlayer(intList[0])
+end
+
+-----------------------------------------------GameLogic---------------------------------------------------
+function SpiderTag:TickToStart()
+    if self.tickActId > 0 and self.isStart then
+        return
+    end
+    
+    print("Start tick to start----------------")
+
+    self.tickActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if t <= 1.1 then
+                self.host:ServerRpcFunc("PlayCountdown", true)
+            else
+                self:ShowTips("Count down ".. math.abs(math.ceil(self.startCountdown - t)) .. " to start", 2)
+            end
+        end
+    , 1, self.startCountdown + 1, 0.5)
+    :SetOnStop(
+        function()
+            local count = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers.Count
+            if count >= self.minCount then
+                self:StartGame()
+            end
+        end
+    ).actionId
+end
+
+function SpiderTag:StartGame()
+    if self.isStart then
+        return
+    end
+    
+    self.isStart = true
+    self.host:ServerRpcFunc("StopCountdown", true)
+
+    self.roundActId = CL.Scheduler.RemoveSchedule(self.roundActId)
+    self:StartRound()
+end
+
+function SpiderTag:TickToStartRound()
+    print("Start tick to start-round---------------")
+    self.tickRoundActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if t <= 1.1 then
+                self.host:ServerRpcFunc("PlayCountdown", true)
+            else
+                self:ShowTips("Count down ".. math.abs(math.ceil(self.startCountdown - t)) .. " to start new round", 2)
+            end
+        end
+    , 1, self.startCountdown + 1)
+    :SetOnStop(
+        function()
+            self.host:ServerRpcFunc("StopCountdown", true)
+            
+            if not self.isStart then
+                return
+            end
+            
+            local count = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers.Count
+            if count >= self.minCount then
+                self:StartRound()
+            end
+        end
+    ).actionId
+end
+
+function SpiderTag:StartRound()
+    --self:ShowCountdown(true)
+    self:RefleshCountdown("")
+    
+    self.host:ServerRpcFunc("PlayStartBellSound", true)
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcFunc("RoundEnd")
+        self.host:ServerRpcFunc("ClearHunter")
+    end
+    
+    self:ResetGameData()
+    
+    self:ClearHunter()
+    --random hunter
+    self:RandomHunter()
+    print("StartRound  RandomHunter----------------")
+    
+    self:StartRandomSpawnProps()
+    
+    self.isStartRound = true
+    
+    self.roundActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if self:IsInfectAll() then
+                self:ShowTips("Infect all, nobody servival", 2)
+                sche:Stop()
+                self:RoundFinish()
+                return
+            end
+            self:RefleshCountdown(math.abs(math.ceil(self.roundTime - t)))
+            
+            if self.roundTime - t < 3 then
+                self:ShowTips("Count down ".. math.abs(math.ceil(self.roundTime - t)) .. " to end round", 1)
+                self.host:ServerRpcFunc("PlayCountdown", true)
+            end
+            
+            if t >= self.roundTime then
+                self:RoundFinish()
+            end
+        end
+    , 1, self.roundTime).actionId
+end
+
+function SpiderTag:PlayCountdown()
+    print("play countdown time--------------")
+    if not self.cdSoundInfo then
+        CL.AudioMgr.SetAsGlobalSoundOnce()
+        self.cdSoundInfo = self.countdownSound:PlaySoundInfo()
+    end
+end
+
+function SpiderTag:StopCountdown()
+    print("stop countdown time--------------")
+    if self.cdSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.cdSoundInfo)
+    end
+    self.cdSoundInfo = nil
+end
+
+function SpiderTag:PlayBellSound()
+    CL.AudioMgr.SetAsGlobalSoundOnce()
+    local info = self.bellSound:PlaySoundInfo()
+end
+
+function SpiderTag:PlayStartBellSound()
+    CL.AudioMgr.SetAsGlobalSoundOnce()
+    local info = self.startBellSound:PlaySoundInfo()
+end
+
+function SpiderTag:RoundFinish()
+    --self:ShowCountdown(false)
+    self:RoundEnd()
+    
+    self:SurvivalScoring()
+
+    self:Settlement()
+    
+    self:PlayBellSound()
+    
+    local count = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers.Count
+    if count >= self.minCount then
+        self:TickToStartRound()
+    end
+end
+
+function SpiderTag:RoundEnd()
+    self.isStartRound = false
+    
+    self:StopCountdown()
+
+    --self:ShowCountdown(false)
+    self:RefleshCountdown("-")
+    
+    self:StopRandomSpawnProps()
+    
+    self.tickActId = CL.Scheduler.RemoveSchedule(self.tickActId)
+    self.roundActId = CL.Scheduler.RemoveSchedule(self.roundActId)
+    self.tickRoundActId = CL.Scheduler.RemoveSchedule(self.tickRoundActId)
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcFunc("RoundEnd")
+    end
+end
+
+function SpiderTag:PlayInfectEffect(collider, point)
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(collider)
+            local localPoint = cid ~= 0 and collider.transform:InverseTransformPoint(point) or point
+             
+            local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+            local list = list_int()
+            list:Add(key)
+            list:Add(cid)
+            list:Add(localPoint.x)
+            list:Add(localPoint.y)
+            list:Add(localPoint.z)
+            self.host:ServerRpcIntListFunc("RpcPlayInfectEffect", list)
+            print("server play infect effect--------------" .. cid.." key:" .. key)
+            CL.EffectMgr.Instance:PlayEffect(self.infectEffectName, point, UE.Quaternion.identity)
+        end
+    end
+end
+
+function SpiderTag:RpcPlayInfectEffect(intList)
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(intList[1], intList[0])
+    print("rpc play infect effect--------------")
+    local point = UE.Vector3(intList[2], intList[3], intList[4])
+    if IsNullOrDestroyed(col) then
+        print("rpc play infect effect--------------not col:" .. intList[1] .. "key :" .. intList[0])
+        CL.EffectMgr.Instance:PlayEffect(self.infectEffectName, point, UE.Quaternion.identity)
+        return
+    end
+    local worldPoint = col.transform:TransformPoint(UE.Vector3(intList[2], intList[3], intList[4]))
+    CL.EffectMgr.Instance:PlayEffect(self.infectEffectName, worldPoint, UE.Quaternion.identity)
+end
+
+function SpiderTag:RandomHunter()
+    local count = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers.Count
+    local random = math.random(0, count - 1)
+    
+    local networkRoomPlayer = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers[random]
+    local netId = networkRoomPlayer.netId
+    local player = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(netId).interactCharacter
+    print("find player---------:" .. random .. " " .. player.networkPlayer.netId)
+    
+    self.hunterColor = networkRoomPlayer.colorId
+    self:SetHunter(player, self.hunterColor)
+end
+
+function SpiderTag:SetHunter(player, hunterColor)
+    local headset = player:GetHeadset()
+    local mu = player.aiProxy.ra:GetMuscle(CL.RagdollBoneInfo.Head)
+    local netId = CL.EffectMgr.GetEffectObjNetId()
+    local eo =  CL.EffectMgr.Instance:PlayEffect("WMD_SpiderMark", mu.rbTrans.position, mu.rbTrans.rotation, netId)
+    eo.trans:SetParent(mu.rbTrans)
+    eo.trans.position = mu.rbTrans.position + headset.up * 0.3
+    player:ChangeCloakColor(hunterColor)
+    
+    table.insert(self.markList, eo)
+    
+    self.infectList[player.networkPlayer.netId] = player
+    
+    if player.networkPlayer == CL.InteractCharacter.PlayerInstance.networkPlayer then
+        self.statePanel:SetHunter(true)
+    end
+    
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    id_list:Add(player.networkPlayer.netId)
+    id_list:Add(netId)
+    id_list:Add(hunterColor)
+    self.host:ServerRpcIntListFunc("RpcSetHunter", id_list)
+end
+
+function SpiderTag:RpcSetHunter(intList)
+    print("rpc sethunter---:" .. intList[0])
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(intList[0])
+    if IsNullOrDestroyed(networkPlayer) then
+        return
+    end
+    
+    local player = networkPlayer.interactCharacter
+    local mu = player.aiProxy.ra:GetMuscle(CL.RagdollBoneInfo.Head)
+    local headset = player:GetHeadset()
+    local eo =  CL.EffectMgr.Instance:PlayEffect("WMD_SpiderMark", mu.rbTrans.position, mu.rbTrans.rotation, intList[1])
+    print("rpc sethunter---suc")
+    eo.trans:SetParent(mu.rbTrans)
+    eo.trans.position = mu.rbTrans.position + headset.up * 0.3
+    
+    player:ChangeCloakColor(intList[2])
+    
+    if networkPlayer == CL.InteractCharacter.PlayerInstance.networkPlayer then
+        self.statePanel:SetHunter(true)
+    end
+    
+    table.insert(self.markList, eo)
+end
+
+function SpiderTag:ClearHunter()
+    for k, v in ipairs(self.markList) do
+        if not IsNullOrDestroyed(v) then
+            CL.EffectMgr.Instance:GiveBack(v)
+        end
+    end
+    
+    if not IsNullOrDestroyed(CL.Network.NetworkRoomMgr.Instance) then
+        local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+        for i = 0, players.Count - 1 do
+            local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(players[i].netId)
+            if not IsNullOrDestroyed(networkPlayer) then
+                networkPlayer.interactCharacter:ChangeCloakColor(players[i].colorId)
+            end
+        end
+    end
+    
+    if self.statePanel then
+        self.statePanel:SetHunter(false)
+    end
+end
+
+function SpiderTag:StopGame()
+    if self.isStart then
+        self.isStart = false
+    end
+    self:RoundEnd()
+end
+
+function SpiderTag:ResetGameData()
+    self.infectList = {}
+end
+
+function SpiderTag:IsInfectAll()
+    local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    for i = 0, players.Count - 1 do
+        if not self.infectList[players[i].netId] then
+            return false
+        end
+    end
+    return true
+end
+
+function SpiderTag:IsPlayerInfect(playerId)
+    return self.infectList[playerId] ~= nil
+end
+
+function SpiderTag:CommandScoreInfo()
+    print("client CommandScoreInfo-------------------------")
+    self.host:CommandFunc("ReqestUpdateScoreInfo", nil, nil, nil, nil)
+end
+
+function SpiderTag:ReqestUpdateScoreInfo()
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    local count = 0
+    for k, v in pairs(self.scoreInfo) do
+        id_list:Add(k)
+        id_list:Add(v.score)
+        id_list:Add(v.touch)
+        id_list:Add(v.survival)
+        count = count + 1
+    end
+    
+    print("server recv CommandScoreInfo-------------------------:" .. count)
+
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcIntListFunc("RpcUpdateScoreInfo", id_list)
+    end
+end
+
+function SpiderTag:RpcUpdateScoreInfo(list)
+    print("client RpcUpdateScoreInfo-------------------------:".. list.Count)
+    self.scoreInfo = {}
+    local count = 0
+    local lastNetId = 0
+    for i = 0, list.Count - 1 do
+        count = i % 4
+        
+        if count == 0 then
+            if not self.scoreInfo[list[i]] then
+                self:ScoreInfoAddPlayerById(list[i])
+            end
+            lastNetId = list[i]
+        elseif count == 1 then
+            self.scoreInfo[lastNetId].score = list[i]
+        elseif count == 2 then
+            self.scoreInfo[lastNetId].touch = list[i]
+        elseif count == 3 then
+            self.scoreInfo[lastNetId].survival = list[i]
+        end
+    end
+    self:RefleshScore()
+end
+
+function SpiderTag:RefleshScore()
+    local str = ""
+    for k, v in pairs(self.scoreInfo) do
+        if not v.name then
+            local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+            for i = 0, players.Count - 1 do
+                if players[i].netId == k then
+                    v.name = players[i].PlayerName
+                    break
+                end
+            end
+        end
+        
+        str = str .. (v.name and v.name or k) .. "  score: " 
+            .. v.score .. " touch: " .. v.touch .. " survival: " .. v.survival .. " \n "
+    end
+    self.text.text = str 
+end
+
+function SpiderTag:Settlement() 
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    for k, v in pairs(self.scoreInfo) do
+        id_list:Add(k)
+        id_list:Add(v.score)
+        id_list:Add(v.touch)
+        id_list:Add(v.survival)
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcIntListFunc("RpcSettlement", id_list)
+    end
+end
+
+function SpiderTag:RpcSettlement(list)
+    --local str = ""
+    --for i = 0, list.Count - 1 do
+    --    str = str ..  "id: " .. list[i] .. " score: " 
+    --        .. list[i + 1] .. " touch: " .. list[i + 2] .. " survival: " .. list[i + 3] .. " \n "
+    --end
+    
+    print(" client score---:" .. list.Count)
+end
+
+function SpiderTag:ScoreInfoAddPlayer()
+    local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    for i = 0, players.Count - 1 do
+        self:ScoreInfoAddPlayerById(players[i].netId)
+    end
+end
+
+function SpiderTag:ScoreInfoAddPlayerById(netId)
+    if not self.scoreInfo[netId] then
+        self.scoreInfo[netId] = {}
+        self.scoreInfo[netId].touch = 0
+        self.scoreInfo[netId].survival = 0
+        self.scoreInfo[netId].score = 0
+    end
+end
+
+function SpiderTag:ScoreInfoRemovePlayer()
+    local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    local isExist = false
+    for k, v in pairs(self.scoreInfo) do
+        isExist = false
+        for i = 0, players.Count - 1 do
+            if players[i].netId == k then
+                isExist = true
+                break
+            end
+        end
+        if not isExist then
+            self.scoreInfo[k] = nil
+        end
+    end
+end
+
+function SpiderTag:SurvivalScoring()
+    print("survival score-----------------")
+    local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    for i = 0, players.Count - 1 do
+        if not self:IsPlayerInfect(players[i].netId) then
+            self:Scoring(players[i].netId, self.score_survival)
+        end
+    end
+end
+
+function SpiderTag:Scoring(netId, scoreType)
+    if not self.scoreInfo[netId] then
+        self:ScoreInfoAddPlayerById(netId)
+    end
+    
+    if scoreType == self.score_touch then
+        self.scoreInfo[netId].touch = self.scoreInfo[netId].touch + 1
+        self.scoreInfo[netId].score = self.scoreInfo[netId].score + self.score_touch
+    elseif scoreType == self.score_survival then
+        self.scoreInfo[netId].survival = self.scoreInfo[netId].survival + 1
+        self.scoreInfo[netId].score = self.scoreInfo[netId].score + self.score_survival
+    end
+    
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    id_list:Add(netId)
+    id_list:Add(self.scoreInfo[netId].touch)
+    id_list:Add(self.scoreInfo[netId].survival)
+    id_list:Add(self.scoreInfo[netId].score)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcIntListFunc("RpcScoring", id_list)
+    end
+    
+    self:RefleshScore()
+end
+
+function SpiderTag:RpcScoring(list)
+    local netId = list[0]
+    if not self.scoreInfo[netId] then
+        self:ScoreInfoAddPlayerById(netId)
+    end
+    
+    self.scoreInfo[netId].touch = list[1]
+    self.scoreInfo[netId].survival = list[2]
+    self.scoreInfo[netId].score = list[3]
+    print(" rpc scoring------------:" .. netId)
+    self:RefleshScore()
+end
+
+---------------------------------------------Trigger---------------------------------------------
+
+function SpiderTag:HunterTriggerPlayer(hunter, player, collider, point)
+    if not self.isStartRound then
+        return
+    end
+    
+    if not self:IsPlayerInfect(hunter.networkPlayer.netId) then
+        return
+    end
+    
+    if self:IsPlayerInfect(player.networkPlayer.netId) then
+        return
+    end
+    
+    self:PlayInfectEffect(collider, point)
+    self:SetHunter(player, self.hunterColor)
+    
+    self:Scoring(hunter.networkPlayer.netId, self.score_touch)
+    
+    local scoreInfo = self.scoreInfo[hunter.networkPlayer.netId]
+    if scoreInfo then
+        self:ShowTips("Player ".. scoreInfo.name or hunter.networkPlayer.netId  .. " get " .. self.score_touch .. " point", 2)
+    end
+end
+
+
+---------------------------------------------StatePanel------------------------------------------
+function SpiderTag:SpawnStatePanel()
+    local eo = CL.EffectMgr.Instance:PlayEffect("WMD_GameStatePanel", UE.Vector3.zero, UE.Quaternion.identity)
+    self.statePanel = eo.trans:GetComponent(typeof(CL.LuaBehaviour)):GetSelf()
+    
+    local hand = CL.InteractCharacter.PlayerInstance.hands[CL.RagdollBoneInfo.LEFT_HAND]
+    self.statePanel:MenuInit(hand.triggerSlots[0].transform, hand)
+    --self.statePanel:Show(false)
+end
+
+function SpiderTag:RemoveStatePanel()
+    CL.EffectMgr.Instance:GiveBack(self.statePanel)
+    self.statePanel = nil
+end
+
+function SpiderTag:ShowCountdown(flag)
+    self.statePanel:Show(flag)
+end
+
+function SpiderTag:RefleshCountdown(time)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcIntFunc("RefleshCountdown", time)
+    end
+    self.statePanel:RefleshConsole(time)
+end
+
+function SpiderTag:ShowTips(str, time)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcComplFunc("RpcShowTips", false, time, 0, str, UE.Vector3.zero, false)
+    end
+    CL.TextPanel.ShowTips(str, time, true)
+end
+
+function SpiderTag:RpcShowTips(bool, time, int, str, vec)
+    print("rpc show tips-----------------:" .. str)
+    CL.TextPanel.ShowTips(str, time, true)
+end
+---------------------------------------------Scene props----------------------------------------------
+
+function SpiderTag:StartRandomSpawnProps()
+    print("start spawn weapon---------------")
+    local nextSpawnTime = math.random(0, self.roundTime/5)
+    self.spawnPropActId = CL.Scheduler.RemoveSchedule(self.spawnPropActId)
+    self.spawnPropActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self.weaponSpawner:SpawnIBAtRandomPos()
+            print("try spawn weapon---------------")
+            if self.isStartRound then
+                self:StartRandomSpawnProps()
+            end
+        end
+    , 0, 0, nextSpawnTime).actionId
+end
+
+function SpiderTag:StopRandomSpawnProps()
+    print("stop spawn weapon---------------")
+    self.spawnPropActId = CL.Scheduler.RemoveSchedule(self.spawnPropActId)
+    self.weaponSpawner:ClearUnGrabIB()
+end
+
+function SpiderTag:BreakPlayerHook(character)
+    local leftHand = character.hands[CL.RagdollBoneInfo.LEFT_HAND]
+    self:BreakHandHook(leftHand)
+    
+    local rightHand = character.hands[CL.RagdollBoneInfo.RIGHT_HAND]
+    self:BreakHandHook(rightHand)
+end
+
+function SpiderTag:BreakHandHook(hand)
+    if not hand:IsTriggerSlotEquiped() then
+        return
+    end
+    
+    local ib = hand.triggerSlots[0].mountedItem
+    if IsNullOrDestroyed(ib) then
+        return
+    end
+    
+    local trigger = ib:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+    
+    local tb = trigger.script:GetSelf()
+    tb:RecallArrow()
+    tb:BreakUntilGround()
+    print("break until ground-------------------")
+end
+
+
+return Class(nil, nil, SpiderTag)

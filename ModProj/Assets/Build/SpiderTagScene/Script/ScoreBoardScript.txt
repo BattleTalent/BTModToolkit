@@ -1,0 +1,135 @@
+local ScoreBoard = {
+    scoreInfo = {},
+    --scoreType
+    score_touch = 1,
+    score_survival = 2,
+    }
+
+function ScoreBoard:NetworkInject()
+    self.host:InjectFunc("RpcScoreInfoAddPlayer", self.RpcScoring)
+    self.host:InjectFunc("RpcSettlement", self.RpcSettlement)
+    self.host:InjectFunc("RpcScoring", self.RpcScoring)
+
+    print("ScoreBoard NetworkInject--------------")
+end
+
+function ScoreBoard:ScoreInfoAddPlayer()
+    local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    for i = 0, players.Count - 1 do
+        self:ScoreInfoAddPlayerById(players[i].netId)
+    end
+end
+
+function ScoreBoard:ScoreInfoAddPlayerById(netId)
+    if not self.scoreInfo[netId] then
+        self.scoreInfo[netId] = {}
+        self.scoreInfo[netId].touch = 0
+        self.scoreInfo[netId].survival = 0
+        self.scoreInfo[netId].score = 0
+    end
+end
+
+function ScoreBoard:ScoreInfoRemovePlayer()
+    local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    local isExist = false
+    for k, v in pairs(self.scoreInfo) do
+        isExist = false
+        for i = 0, players.Count - 1 do
+            if players[i].netId == k then
+                isExist = true
+                break
+            end
+        end
+        if not isExist then
+            self.scoreInfo[k] = nil
+        end
+    end
+end
+
+
+function ScoreBoard:RefleshScore()
+    local str = ""
+    for k, v in pairs(self.scoreInfo) do
+        str = str ..  "id: " .. k .. " score: " 
+            .. v.score .. " touch: " .. v.touch .. " survival: " .. v.survival .. " \n "
+    end
+    self.text.text = str 
+end
+
+function ScoreBoard:Settlement() 
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    for k, v in pairs(self.scoreInfo) do
+        id_list:Add(k)
+        id_list:Add(v.score)
+        id_list:Add(v.touch)
+        id_list:Add(v.survival)
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcIntListFunc("RpcSettlement", id_list)
+    end
+end
+
+function ScoreBoard:RpcSettlement(list)
+    --local str = ""
+    --for i = 0, list.Count - 1 do
+    --    str = str ..  "id: " .. list[i] .. " score: " 
+    --        .. list[i + 1] .. " touch: " .. list[i + 2] .. " survival: " .. list[i + 3] .. " \n "
+    --end
+    
+    print(" client score---:" .. list.Count)
+end
+
+
+function ScoreBoard:SurvivalScoring()
+    print("survival score-----------------")
+    local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    for i = 0, players.Count - 1 do
+        if not self:IsPlayerInfect(players[i].netId) then
+            self:Scoring(players[i].netId, self.score_survival)
+        end
+    end
+end
+
+function ScoreBoard:Scoring(netId, scoreType)
+    if not self.scoreInfo[netId] then
+        self:ScoreInfoAddPlayerById(netId)
+    end
+    
+    if scoreType == self.score_touch then
+        self.scoreInfo[netId].touch = self.scoreInfo[netId].touch + 1
+        self.scoreInfo[netId].score = self.scoreInfo[netId].score + self.score_touch
+    elseif scoreType == self.score_survival then
+        self.scoreInfo[netId].survival = self.scoreInfo[netId].survival + 1
+        self.scoreInfo[netId].score = self.scoreInfo[netId].score + self.score_survival
+    end
+    
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    id_list:Add(netId)
+    id_list:Add(self.scoreInfo[netId].touch)
+    id_list:Add(self.scoreInfo[netId].survival)
+    id_list:Add(self.scoreInfo[netId].score)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcIntListFunc("RpcScoring", id_list)
+    end
+    
+    self:RefleshScore()
+end
+
+function ScoreBoard:RpcScoring(list)
+    local netId = list[0]
+    if not self.scoreInfo[netId] then
+        self:ScoreInfoAddPlayerById(netId)
+    end
+    
+    self.scoreInfo[netId].touch = list[1]
+    self.scoreInfo[netId].survival = list[2]
+    self.scoreInfo[netId].score = list[3]
+    
+    self:RefleshScore()
+end
+
+
+return Class(nil, nil, ScoreBoard)
