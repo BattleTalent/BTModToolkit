@@ -381,6 +381,18 @@ namespace CrossLink
                 list.Add(AddressableConfig.GetConfig().GetPrefix() + name);
             }
 
+            //Weapon
+            string wpPath = System.IO.Path.Combine(modPath, "Weapon");
+            var wpGuids = AssetDatabase.FindAssets("t:prefab", new string[] { wpPath });
+            foreach (var guid in wpGuids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                path = path.Replace(".prefab", string.Empty);
+                var idx = path.LastIndexOf("/");
+                string name = path.Substring(idx + 1, path.Length - idx - 1);
+                list.Add(AddressableConfig.GetConfig().GetPrefix() + name);
+            }
+
             ////SceneObject
             //string sceneObjPath = System.IO.Path.Combine(modPath, "SceneObj");
             //var soGuids = AssetDatabase.FindAssets("t:prefab", new string[] { sceneObjPath });

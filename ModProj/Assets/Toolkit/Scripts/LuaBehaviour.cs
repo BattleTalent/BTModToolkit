@@ -70,6 +70,8 @@ namespace CrossLink
     public class LuaBehaviour : MonoBehaviour
     {
         public LuaScript script = new LuaScript();
+
+        public bool dontNeedUpdate = true;
     }
 
 }
