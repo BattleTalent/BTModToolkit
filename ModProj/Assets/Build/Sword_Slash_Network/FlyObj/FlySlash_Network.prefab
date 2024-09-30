@@ -77,7 +77,7 @@ GameObject:
   - component: {fileID: 6737299342136022994}
   - component: {fileID: 692742274995497954}
   m_Layer: 15
-  m_Name: FlySlash
+  m_Name: FlySlash_Network
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -238,7 +238,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   col: {fileID: 6345105654171939508}
   force: 10
-  maxFlyTime: 1.8
+  maxFlyTime: 50
   forwardAlwayFollowVelocity: 0
   dealDmgAsArrow: 0
   flyObjTobeCreatedOnImpact: 
@@ -276,7 +276,7 @@ MonoBehaviour:
   playImpactOnTimeout: 0
   ignoreDamageList: 
   script:
-    luaScript: WMD_FlySlashScript
+    luaScript: WMD_FlySlashNetworkScript
     objList: []
     numberList:
     - name: destoryWhenHitEnv
