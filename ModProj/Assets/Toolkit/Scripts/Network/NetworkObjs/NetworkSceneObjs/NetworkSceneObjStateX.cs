@@ -1,15 +1,18 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Mirror;
 using System.Linq;
+using Mirror;
+using System.Globalization;
 
 namespace CrossLink.Network
 {
-    public class NetworkIBStateX : NetworkIBState
+
+    public class NetworkSceneObjStateX : NetworkSceneObjBase
     {
-        [System.NonSerialized]
-        public LuaScript script = new LuaScript();
+        public LuaBehaviour lua;
+        [System.NonSerialized] 
+        public LuaScript script;
 
         private Dictionary<string, NetworkState<bool>> boolStatesDic;
         private Dictionary<string, System.Action<bool>> boolStatesAction;
@@ -506,5 +509,6 @@ namespace CrossLink.Network
         {
         }
         #endregion
+
     }
 }

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f0360b0d473ef848b1017f1219d1ab5, type: 3}
+  m_Name: Bow_Simple_Network_Info
+  m_EditorClassIdentifier: 
+  loadOnSpawn: 1
+  storeItemInfo:
+  - addStoreItemName: WMD_Bow_Simple_Network
+    dependItemName: 
+    dependencies: []
+    name: Bow_Simple_Net
+    desc: I'm network Bow_Simple
+    itemType: 0
+    dungeonInfos: []
+    supportedMultiplayer: 1
+  sceneModInfo: []
+  propInfo: []
+  avatarInfo: []
+  skinInfo: []
+  roleModInfo: []
+  handPoseInfo: []
+  hitInfo: []
+  networkPrefabRegister:
+  - WMD_Arrow_Network

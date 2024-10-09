@@ -15,14 +15,17 @@ MonoBehaviour:
   loadOnSpawn: 1
   storeItemInfo: []
   sceneModInfo: []
+  propInfo: []
+  avatarInfo: []
   skinInfo: []
   roleModInfo:
   - roleName: WMD_SimpleRole
     name: Simple Role
-    desc: A simple role!
+    desc: A simple role
     replaceRole:
     - Goblin_Axe
     - SkelSmall_Axe
+    defaultReplacement: 
     weapon: WMD_Stick
     attr:
     - hpMax: 500
@@ -78,4 +81,6 @@ MonoBehaviour:
       volRandomRange: 0
       pitchMax: -1
       pitchMin: 0.8
+  handPoseInfo: []
   hitInfo: []
+  networkPrefabRegister: []

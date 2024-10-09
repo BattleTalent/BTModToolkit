@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f0360b0d473ef848b1017f1219d1ab5, type: 3}
+  m_Name: Sword_Slash_Network_Info
+  m_EditorClassIdentifier: 
+  loadOnSpawn: 1
+  storeItemInfo:
+  - addStoreItemName: WMD_Sword_Slash_Network
+    dependItemName: 
+    dependencies: []
+    name: Sword_Slash_Network
+    desc: I'm Network Sword_Slash
+    itemType: 0
+    dungeonInfos: []
+    supportedMultiplayer: 1
+  sceneModInfo: []
+  propInfo: []
+  avatarInfo: []
+  skinInfo: []
+  roleModInfo: []
+  handPoseInfo: []
+  hitInfo: []
+  networkPrefabRegister:
+  - WMD_FlySlash_Network
+  - WMD_Sword_Slash_Network
