@@ -1,0 +1,609 @@
+local BowBase = {
+    --ArrowPuller puller
+    --string arrowPrefab
+    --AimWidget aimWidget
+    --shootWeaponSpeed
+    ignoreWeaponColActId = -1,
+        
+    count = 0,
+    
+    initNetIds = {},
+    }
+function BowBase:NetworkInject()
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcSpawnArrow", self.RpcSpawnArrow)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcRefreshPutedWeapon", self.RpcRefreshPutedWeapon)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnPutedWeapon", self.RpcOnPutedWeapon)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcShowHint", self.RpcShowHint)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnHandLeave", self.RpcOnHandLeave)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnHandEnter", self.RpcOnHandEnter)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcRefreshUsingHand", self.RpcRefreshUsingHand)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnHandExit", self.RpcOnHandExit)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcStartHandPull", self.RpcStartHandPull)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcEndHandPull", self.RpcEndHandPull)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnRelease", self.RpcOnRelease)
+end
+
+function BowBase:ServerSpawnArrow(netId)
+     self.host.interact.networkIB.networkIBState:ServerRpcIntFunc("RpcSpawnArrow", netId, false)
+end
+
+function BowBase:NetworkOnSpawnArrow(arrow)
+    --print("NetworkOnSpawnArrow")
+end
+
+function BowBase:RpcSpawnArrow(netId)
+    if not self.initNetIds then
+        self.initNetIds = {}
+    end
+    
+    if not self.initNetIds[netId] then
+        self.initNetIds[netId] = true
+    end
+
+end
+
+function BowBase:ServerRefreshPutedWeapon(netIb)
+    local netId = -1
+    if netId ~= nil and not IsNullOrDestroyed(netIb) then
+        netId = netIb.netId
+    end
+    self.host.interact.networkIB.networkIBState:ServerRpcIntFunc("RpcRefreshPutedWeapon", netId, false)
+end
+
+function BowBase:RpcRefreshPutedWeapon(netId)
+    if netId == -1 then
+        self.rpcPutedWeapon = nil
+    else
+        local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+        if IsNullOrDestroyed(netIb) then
+             self.rpcPutedWeapon = nil
+        else
+             self.rpcPutedWeapon = netIb.ib
+        end   
+    end
+
+end
+
+function BowBase:ServerOnPutedWeapon(netIb)
+    local netId = -1
+    if not IsNullOrDestroyed(netIb) then
+        netId = netIb.netId
+        --print("ServerOnPutedWeapon",netId)
+    end
+    self.host.interact.networkIB.networkIBState:ServerRpcIntFunc("RpcOnPutedWeapon", netId, false)
+end
+
+function BowBase:RpcOnPutedWeapon(netId)
+    --print("RpcOnPutedWeapon",1)
+    local ib
+    if netId == -1 then
+        -- print("RpcOnPutedWeapon netId = -1")
+        ib = nil
+    else
+        local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+        if IsNullOrDestroyed(netIb) then
+            --print("RpcOnPutedWeapon netIb = nil")
+        else
+            ib = netIb.ib
+            self:OnPutedWeapon(ib)
+             --print("RpcOnPutedWeapon PutWeapon")
+            self:PutWeapon(self.puller.attach)
+        end   
+    end
+end
+
+function BowBase:SetRpcPutedWeaponLifeCircle()
+    self.RpcPutedWeaponLifeCircleId = CL.Scheduler.RemoveSchedule(self.RpcPutedWeaponLifeCircleId)
+    self.RpcPutedWeaponLifeCircleId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.ServerOnline then
+                return
+            end
+            if(not IsNullOrDestroyed(self.rpcPutedWeapon)) then
+                 self.rpcPutedWeapon.transform.position = self.puller.attach.trans.position
+                 self.rpcPutedWeapon.transform.forward = self.puller.trans.forward
+            end
+        end
+    , 0.01, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+function BowBase:ServerShowHint(id, show)
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local int_list = list_int()
+    int_list:Add(id)
+    int_list:Add(show and 1 or 0)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntListFunc("RpcShowHint", int_list, true)
+end
+function BowBase:RpcShowHint(int_list) 
+    local id = int_list[0]
+    local show = int_list[1] == 1
+    self.puller:NetworkShowHint(id, show)
+end
+
+function BowBase:ServerOnHandLeave()
+    self.host.interact.networkIB.networkIBState:ServerRpcFunc("RpcOnHandLeave", false)
+end
+
+function BowBase:RpcOnHandLeave()
+    self.puller:OnHandLeave()
+end
+
+function BowBase:ServerOnHandEnter(hand)
+    if(IsNullOrDestroyed(hand)) then 
+        return
+    end
+    local playerNetId = hand.character.networkPlayer.netId
+    local isLeft = hand:GetHandIndex() == CL.RagdollBoneInfo.LEFT_HAND and 1 or 0
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local int_list = list_int()
+    int_list:Add(playerNetId)
+    int_list:Add(isLeft)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntListFunc("RpcOnHandEnter", int_list, false)
+end
+function BowBase:RpcOnHandEnter(int_list)
+    local playerNetId = int_list[0]
+    local isLeft = int_list[1] == 1
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerNetId)
+    if(IsNullOrDestroyed(networkPlayer)) then 
+        return
+    end
+    local hand = isLeft and networkPlayer.networkInteractHand.interactLeftHand or networkPlayer.networkInteractHand.interactRightHand
+    self.puller:OnHandEnter(hand)
+end
+
+function BowBase:ServerRefreshUsingHand(hand)
+    local playerNetId
+    local isLeft
+    if(IsNullOrDestroyed(hand)) then 
+        playerNetId = -1
+        isLeft = -1
+    else
+        playerNetId = hand.character.networkPlayer.netId
+        isLeft = hand:GetHandIndex() == CL.RagdollBoneInfo.LEFT_HAND and 1 or 0
+    end
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local int_list = list_int()
+    int_list:Add(playerNetId)
+    int_list:Add(isLeft)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntListFunc("RpcRefreshUsingHand", int_list, true)
+end
+
+function BowBase:RpcRefreshUsingHand(int_list)
+    local playerNetId = int_list[0]
+    if playerNetId == -1 then
+        self.puller:NetworkRefreshUsingHand(nil)
+    else
+        local isLeft = int_list[1] == 1
+        local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerNetId)
+        if(IsNullOrDestroyed(networkPlayer)) then 
+            self.puller:NetworkRefreshUsingHand(nil)
+        else
+            local hand = isLeft and networkPlayer.networkInteractHand.interactLeftHand or networkPlayer.networkInteractHand.interactRightHand
+            self.puller:NetworkRefreshUsingHand(hand)
+        end
+    end 
+   
+end
+
+function BowBase:ServerOnHandExit(hand)
+    if(IsNullOrDestroyed(hand)) then 
+        return
+    end
+    local playerNetId = hand.character.networkPlayer.netId
+    local isLeft = hand:GetHandIndex() == CL.RagdollBoneInfo.LEFT_HAND and 1 or 0
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local int_list = list_int()
+    int_list:Add(playerNetId)
+    int_list:Add(isLeft)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntListFunc("RpcOnHandExit", int_list, false)
+end
+function BowBase:RpcOnHandExit(int_list)
+    local playerNetId = int_list[0]
+    local isLeft = int_list[1] == 1
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerNetId)
+    if(IsNullOrDestroyed(networkPlayer)) then 
+        return
+    end
+    local hand = isLeft and networkPlayer.networkInteractHand.interactLeftHand or networkPlayer.networkInteractHand.interactRightHand
+    self.puller:OnHandExit(hand)
+end
+
+function BowBase:ServerStartHandPull(hand)
+    if(IsNullOrDestroyed(hand)) then 
+        return
+    end
+    local playerNetId = hand.character.networkPlayer.netId
+    local isLeft = hand:GetHandIndex() == CL.RagdollBoneInfo.LEFT_HAND and 1 or 0
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local int_list = list_int()
+    int_list:Add(playerNetId)
+    int_list:Add(isLeft)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntListFunc("RpcStartHandPull", int_list, false)
+end
+function BowBase:RpcStartHandPull(int_list)
+    local playerNetId = int_list[0]
+    local isLeft = int_list[1] == 1
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerNetId)
+    if(IsNullOrDestroyed(networkPlayer)) then 
+        return
+    end
+    local hand = isLeft and networkPlayer.networkInteractHand.interactLeftHand or networkPlayer.networkInteractHand.interactRightHand
+    self.puller:NetworkStartPull(hand)
+end
+
+function BowBase:ServerEndHandPull(hand)
+    if(IsNullOrDestroyed(hand)) then 
+        return
+    end
+    local playerNetId = hand.character.networkPlayer.netId
+    local isLeft = hand:GetHandIndex() == CL.RagdollBoneInfo.LEFT_HAND and 1 or 0
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local int_list = list_int()
+    int_list:Add(playerNetId)
+    int_list:Add(isLeft)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntListFunc("RpcEndHandPull", int_list, false)
+end
+function BowBase:RpcEndHandPull(int_list)
+    local playerNetId = int_list[0]
+    local isLeft = int_list[1] == 1
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerNetId)
+    if(IsNullOrDestroyed(networkPlayer)) then 
+        return
+    end
+    local hand = isLeft and networkPlayer.networkInteractHand.interactLeftHand or networkPlayer.networkInteractHand.interactRightHand
+    self.puller:NetworkEndPull(hand)
+end
+
+
+
+
+function BowBase:ServerOnRelease(factor)
+    self.host.interact.networkIB.networkIBState:ServerRpcFloatFunc("RpcOnRelease", factor, false)
+end
+function BowBase:RpcOnRelease(factor)
+    self:OnRelease(self.puller.attach, factor)
+    self.puller:RpcOnRelease(factor)
+end
+
+function BowBase:Start()
+    --self.OnPutWeapon = function(weapon)
+    --    self.putedWeapon = weapon
+    --end
+    --
+    --self.OnPutHandler = function(a)
+    --    self:OnPut(a)
+    --end
+    --
+    --self.OnReleaseHandler = function(a, shootFactor)
+    --    self:OnRelease(a, shootFactor)
+    --end
+    --
+    --self.OnCancelHandler = function()
+    --    self:OnCancel()
+    --end
+    --self.puller:PutWeaponEvent("+", self.OnPutWeapon)
+    --self.puller:PutEvent("+", self.OnPutHandler)
+    --self.puller:ReleaseEvent("+", self.OnReleaseHandler)
+    --self.puller:CancelEvent("+", self.OnCancelHandler)
+    self.pullerScript.gameObject:SetActive(false)
+    self.puller = self.pullerScript:GetSelf()
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetIds[netId] then
+            self.initNetIds[netId] = nil
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            
+            
+            self.putedArrow = netIb.ib:GetComponent(typeof(CL.InteractTriggerX)).script.self
+            self.count = self.count + 1
+            netIb.ib.gameObject.name = self.host.interact.trans.name .. "_Arrow" .. self.count
+            self.putedWeapon = netIb.ib
+            
+            self.rpcPutedWeapon = self.putedWeapon
+            self:PutWeapon(self.puller.attach)
+            self:NetworkOnSpawnArrow(self.putedArrow)
+        end
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB) 
+        self:SetRpcPutedWeaponLifeCircle()
+    end
+end
+
+function BowBase:OnDestroy()
+    if CL.Network.VRNetworkManager.IsOnline and CL.Network.NetworkSpawnMgr.Instance then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+        if self.RpcPutedWeaponLifeCircleId then
+            CL.Scheduler.RemoveSchedule(self.RpcPutedWeaponLifeCircleId)
+        end
+    end
+   
+end
+
+function BowBase:OnPut(a)
+    local hand = self.puller:GetPullingHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    if IsNullOrDestroyed(self.putedWeapon) then
+        if CL.Network.VRNetworkManager.IsOnline then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.arrowPrefab, 
+                    self.puller.attach.transform.position, self.puller.attach.transform.rotation,
+                    false, false, self.host.interact.netId, true, 
+                    function(netIb, go)
+                        if IsNullOrDestroyed(go) then
+                            return
+                        end
+                        self.putedArrow = go:GetComponent(typeof(CL.InteractTriggerX)).script.self
+                        self.count = self.count + 1
+                        go.name = self.host.interact.trans.name .. "_Arrow" .. self.count
+                        self.putedWeapon = netIb.ib
+                        
+                        self:ServerRefreshPutedWeapon(netIb.ib)
+                        
+                        self:PutWeapon(a)
+                        self:NetworkOnSpawnArrow(self.putedArrow)
+                        self:ServerSpawnArrow(netIb.netId)
+                    end)
+            end
+            return
+        else
+            self.putedWeapon, self.putedArrow = self:SpawnArrow()
+                        
+            if self.host.interact:IsOnEnchant() and self.putedArrow.ib:IsEnchantble() then
+                self.host.interact:EnchantOther(self.putedArrow.ib)
+            end
+        end
+    end
+    self:PutWeapon(a)
+end
+
+function BowBase:PutWeapon(attach)
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self:ProtectArrowStabObj(self.putedWeapon)
+
+        local s = self.putedWeapon:GetComponent(typeof(CL.Scabbard))
+        local su = self.putedWeapon:GetComponent(typeof(CL.ScabbardUser))
+        if not IsNullOrDestroyed(s) and s:IsConnect() then
+            s:DisconnectWithOther()
+        end
+        if not IsNullOrDestroyed(su) and su:IsConnect() then
+            su:DisconnectWithOther()
+        end
+        
+        self:SetArrowOnShootPos(self.putedWeapon, attach)
+
+        if self.lastReleaseWeapon == self.putedWeapon then
+            self.ignoreWeaponColActId = CL.Scheduler.RemoveSchedule(self.ignoreWeaponColActId)
+        end
+        self.lastReleaseWeapon = nil
+        
+        self:IgnoreArrowCollision(self.putedWeapon, true)
+        
+        self:ArrowColsEnable(self.putedWeapon, false)
+        
+        self:SetArrowKinematic(self.putedWeapon, true)
+        
+        if CL.Network.VRNetworkManager.ClientOnline then
+            self.putedWeapon.networkIB.networkRB.enabled = false
+        end
+    end
+    if self.putedArrow then
+        self.putedArrow:OnPut(self)
+    end
+end
+
+
+
+function BowBase:SpawnArrow()
+    local arrowGO = CL.PrefabPool.SpawnPrefab(self.arrowPrefab, CL.InteractTrigger.WeaponPath)
+    local putedWeapon = arrowGO:GetComponent(typeof(CL.InteractTriggerX)).interact
+        
+    local putedArrow = arrowGO:GetComponent(typeof(CL.InteractTriggerX)).script.self
+    self.count = self.count + 1
+    arrowGO.name = self.host.interact.trans.name .. "_Arrow" .. self.count
+    return putedWeapon, putedArrow 
+end
+
+function BowBase:ProtectArrowStabObj(arrow)
+    local stab = arrow:GetStabObject()
+    if not IsNullOrDestroyed(stab) then
+        stab:ProtectStabForAWhile()
+    end
+end
+
+function BowBase:SetArrowOnShootPos(arrow, a)
+    arrow.transform.parent = a.transform
+    arrow.transform.localPosition = UE.Vector3.zero
+    
+    local holdHand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(holdHand) then
+        local palmDir = holdHand:GetPalmDir()
+        arrow.transform.position = arrow.transform.position + palmDir * -0.025
+    end
+    
+    arrow.transform.forward = self.puller.trans.forward
+end
+
+
+
+function BowBase:IgnoreArrowCollision(arrow, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), arrow:GetCols(), ignore)
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        hand.character.aiProxy.ra:SetCollisionIgnoreWith(arrow:GetCols(), ignore)
+    end
+end
+
+function BowBase:IgnoreArrowCollision(arrow, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), arrow:GetCols(), ignore)
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        hand.character.aiProxy.ra:SetCollisionIgnoreWith(arrow:GetCols(), ignore)
+    end
+end
+function BowBase:ArrowColsEnable(arrow, enable)
+    arrow:SetRBCols(enable)
+end
+
+function BowBase:SetArrowKinematic(arrow, flag)
+    arrow:SetKinematic(flag)
+end
+
+function BowBase:OnPutedWeapon(weapon)
+    self.putedWeapon = weapon
+    if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.ServerOnline then
+        self:ServerRefreshPutedWeapon(self.putedWeapon)
+    end
+end
+
+function BowBase:OnMove(a, shootFactor)
+end
+
+function BowBase:OnShootWeapon(weapon)
+    local force = self.puller.trans.forward * self.shootWeaponSpeed
+    local stab = weapon:GetStabObject()
+    
+    if not IsNullOrDestroyed(stab) then
+        stab:AddStabTargetForce(force)
+    end
+    weapon.rb.velocity = force
+end
+
+function BowBase:OnRelease(a, shootFactor)
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self.putedWeapon.transform.parent = nil
+        self:SetArrowKinematic(self.putedWeapon, false)
+        self:ArrowColsEnable(self.putedWeapon, true)
+        
+        self:OnShootWeapon(self.putedWeapon)
+        
+        self.putedWeapon:SetHolderCollision(self.holdingCharacter, true, true, true, true)
+        self.putedWeapon:SetHolderCollision(self.holdingCharacter, true, true, true, false, 0.5)
+        
+        self.lastReleaseWeapon = self.putedWeapon
+        local ignoreWeapon = self.putedWeapon
+        self.ignoreWeaponColActId = CL.Scheduler.RemoveSchedule(self.ignoreWeaponColActId)
+        self.ignoreWeaponColActId = CL.Scheduler.Create(self.host, 
+            function(sche, t, s)
+                if IsNullOrDestroyed(self.interact) or IsNullOrDestroyed(ignoreWeapon) then
+                    return
+                end
+                CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), ignoreWeapon:GetCols(), false)
+                --CL.InteractCharacter.AIPlayerInstance.ra:SetCollisionIgnoreWith(ignoreWeapon:GetCols(), false)
+            end,
+        0, 0, 0.5).actionId
+    
+        self.putedWeapon:MarkThrowAssist(1)
+        if self.putedArrow then
+            self:WeaponDrop(self.putedWeapon)
+        end
+        
+        if CL.Network.VRNetworkManager.IsOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                self:ServerRefreshPutedWeapon(nil)
+            else
+                self.putedWeapon.networkIB.networkRB.enabled = true
+                self.putedWeapon.networkIB.networkRB.physicsFollow = true
+            end
+        end
+
+        self.putedWeapon = nil
+    end
+    
+    if self.putedArrow and not IsNullOrDestroyed(self.putedArrow.ib) then
+        if self.putedArrow.ib:IsOnEnchant() then
+            self.host.interact:EnchantSkillCountUpdate()
+        end
+    end
+    self:ShootArrow(self.putedArrow)
+    self.putedArrow = nil
+    self.host.interact:CostDurability()
+end
+
+function BowBase:ShootArrow(arrow)
+    if arrow then
+        if CL.Network.VRNetworkManager.IsOnline then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                arrow:ServerOnShoot()
+            end
+        end
+        arrow:OnShoot(self)
+        arrow.ib:MarkThrowAssist(1)
+    end
+end
+
+function BowBase:WeaponDrop(weapon)
+    weapon:OnDrop(true)
+end
+function BowBase:OnCancel()
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self.putedWeapon.transform.parent = nil
+        self:SetArrowKinematic(self.putedWeapon, false)
+        self:ArrowColsEnable(self.putedWeapon, true)
+        
+        if CL.Network.VRNetworkManager.ClientOnline then
+            self.putedWeapon.networkIB.networkRB.enabled = true
+            self.putedWeapon.networkIB.networkRB.physicsFollow = true
+        end
+
+        self:IgnoreArrowCollision(self.putedWeapon, false)
+        if not self.putedArrow then
+            self.putedWeapon:OnDrop(true)
+        end
+        
+        if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.ServerOnline then
+            self:ServerRefreshPutedWeapon(nil)
+        end
+        self.putedWeapon = nil
+    end
+    
+    self:ResetArrow(self.putedArrow)
+    self.putedArrow = nil
+end
+
+function BowBase:ResetArrow(arrow)
+    if arrow then
+        arrow:OnCancel(self)
+    end
+end
+
+function BowBase:OnPutWeaponEvent(weapon)
+    self.putedWeapon = weapon
+end
+
+
+
+function BowBase:OnGrab(attach, t)
+    self.aimWidget.gameObject:SetActive(t)
+    if t and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+        self.aimWidget.enabled = true
+    else
+        self.aimWidget.enabled = false
+    end
+    
+    if t == false and attach.attachedHand.character ~= nil then
+        for i = 0, CL.RagdollBoneInfo.HAND_NUM - 1 do
+            attach.attachedHand.character.hands[i]:Ban(false)
+        end
+    end
+    self.pullerScript.gameObject:SetActive(t)
+    if self.puller then
+        self.puller:OnGrab(attach, t)
+    end
+    
+    if t then
+        self.holdingCharacter = attach.attachedHand.character
+    end
+    
+end
+
+return Class(nil, nil, BowBase)

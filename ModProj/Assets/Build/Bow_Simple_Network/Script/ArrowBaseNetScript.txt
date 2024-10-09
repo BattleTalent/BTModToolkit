@@ -1,0 +1,226 @@
+--luaBehaviour
+local ArrowBase = {
+    reflashTime = 0.01,
+    lifeTime = 10,
+    }
+function ArrowBase:NetworkInject()
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnShoot", self.RpcOnShoot)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnGiveBack", self.RpcOnGiveBack)
+end
+
+function ArrowBase:ServerOnShoot()
+    self.host.interact.networkIB.networkIBState:ServerRpcFunc("RpcOnShoot", true)
+end
+
+function ArrowBase:RpcOnShoot()
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        self:DelayToShowTrail()
+    else
+        if not IsNullOrDestroyed(self.trail) then
+            self.trail.enabled = true
+        end
+    end
+    self.disabled = false
+end
+
+
+function ArrowBase:ServerOnGiveBack()
+    self.host.interact.networkIB.networkIBState:ServerRpcFunc("RpcOnGiveBack", true)
+end
+
+function ArrowBase:RpcOnGiveBack()
+    self:DoGiveBack()
+end
+
+function ArrowBase:Awake()
+    self.onStabEnterHandler = function(si)
+        CL.Scheduler.RemoveSchedule(self.delayTrailId)
+        if not IsNullOrDestroyed(self.trail) then
+            self.trail.enabled = false
+        end
+    end
+end
+
+
+function ArrowBase:Reset()
+    self.trail = self.host.gameObject:GetComponent(UE.TrailRenderer)
+end
+
+function ArrowBase:StartLifeCircle()
+    self:StopLifeCircle()
+    
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    self.lifeCircleId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ArrowBase:StopLifeCircle()
+    CL.Scheduler.RemoveSchedule(self.lifeCircleId)
+    self.lifeCircleId = nil
+end
+
+function ArrowBase:OnEnable()
+    self:StartLifeCircle()
+    
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("+", self.onStabEnterHandler)
+    end
+end
+
+function ArrowBase:OnDisable()
+    self:StopLifeCircle()
+    
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("-", self.onStabEnterHandler)
+    end
+end
+
+function ArrowBase:Update()
+    self:AdjectRotation()
+   
+    
+end
+
+function ArrowBase:AdjectRotation()
+     if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    
+    if not self.disabled then
+       if self.ib.rb.velocity.sqrMagnitude > 0.01 then
+           CL.PhysicsFollow.TrackRotation(self.ib.rb, UE.Quaternion.LookRotation(self.ib.rb.velocity))
+        end
+    end
+end
+
+
+function ArrowBase:OnPut(bow)
+     self.ib:SetLatestHolder(bow.host.interact:GetLatestHolder())
+end
+
+function ArrowBase:OnShoot(bow)
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            self:ServerOnShoot()
+        end
+    end
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        self:DelayToShowTrail()
+    else
+        if not IsNullOrDestroyed(self.trail) then
+            self.trail.enabled = true
+        end
+    end
+    self.disabled = false
+            
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    CL.FlyObject.CopyWeaponBuffToUnit(bow.host.interact, self.ib)
+    self.givebackId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:GiveBack()
+        end,
+    0, 0, self.lifeTime).actionId
+end
+
+
+
+function ArrowBase:DelayToShowTrail()
+    CL.Scheduler.RemoveSchedule(self.delayTrailId)
+    self.delayTrailId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(self.trail) then
+                self.trail.enabled = true
+            end
+        end,
+    0, 0, 0.02).actionId
+end
+
+function ArrowBase:OnColliderEnter(collision)
+    if self.disabled then
+        return
+    end
+    
+    local hand = CL.InteractHand.GetHandByCollider(collision.collider)
+    if not IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local player = CL.PlayerUnit.GetPhysicsUnit(collision.transform.root)
+    if not IsNullOrDestroyed(player) then
+        if player.unitType == CL.Tagger.Tag.PlayerRole then
+            return
+        end
+    end
+    
+    self:OnCollision()
+end
+
+
+function ArrowBase:OnCollision()
+    self:DisableTrail()
+    self.disabled = true
+end
+
+function ArrowBase:DisableTrail()
+    CL.Scheduler.RemoveSchedule(self.delayTrailId)
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = false
+    end
+end
+
+
+function ArrowBase:OnCancel(bow)
+    self:RpcOnGiveBack()
+end
+
+function ArrowBase:GiveBack()
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            self:ServerOnGiveBack()
+        else
+            return
+        end
+    else
+        self:DoGiveBack()
+    end
+end
+
+function ArrowBase:DoGiveBack()
+    self.disabled = false
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:Clear()
+    end
+    self:StopLifeCircle()
+    CL.Scheduler.RemoveSchedule(self.givebackId)
+    CL.Scheduler.RemoveSchedule(self.delayTrailId)
+    self:OnResetState()
+    if self.trail ~= nil and not IsNullOrDestroyed(self.trail) then
+        self.trail:Clear()
+        self.trail.enabled = false
+    end
+    if not IsNullOrDestroyed(self.ib) then
+        local hitInfoObj = self.ib:GetRagdollHitInfoObj()
+        if hitInfoObj then
+            hitInfoObj:ResetState()
+        end
+--        CL.PrefabPool.GiveBack(self.ib.gameObject)
+        UE.Object.Destroy(self.ib.gameObject)
+    end
+end
+
+
+function ArrowBase:OnResetState()
+end
+
+
+return Class(nil, nil, ArrowBase)
