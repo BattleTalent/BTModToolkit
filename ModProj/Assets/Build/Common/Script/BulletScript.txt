@@ -1,16 +1,21 @@
 
-local table = {}
+local bullet = {}
 
-
-function table:OnCollision(collision, pu)
-    if (pu ~= null and pu.unitType == CL.Tagger.Tag.FlyObject) then    
-        local fo = pu
-        if (fo ~= null) then
-            fo:OnCollisionUpdate(collision)
-            fo:OnFinish()
-        end
-    end
-
+function bullet:OnCollision(collision, pu)
+    local contect = collision:GetContact(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, contect.point, contect.normal, collision.relativeVelocity, pu)
 end
 
-return Class(nil,nil,table)
+function bullet:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+end
+
+function bullet:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    if not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.FlyObject then
+        local fo = pu
+        fo:OnCollisionUpdate(rb, col, point, normal, relaVel)
+        fo:OnFinish()
+    end
+end
+
+return Class(nil, nil, bullet)

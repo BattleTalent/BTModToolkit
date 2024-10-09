@@ -3,101 +3,119 @@ local WeaponFlyObj = {
     recoilVector = UE.Vector3(0, 0.1, -0.3),
     recoilCurve = UE.AnimationCurve(UE.Keyframe(0, 1000), UE.Keyframe(0.1, 0)),
     
-    dontShootOnInstant = 0,
-    shootOnCharge = 1,
-    shootOnActivateEnd = 0,
-    autoSetupBulletIgnore = 0,
-    bulletsPerShot = 1,
-    bulletSpread = 0,
+    -- bool value: 0 -> false  1 -> true
+    dontShootOnInstant = false,   
+    shootOnCharge = true,         
+    shootOnActivateEnd = false,   
+    autoSetupBulletIgnore = false,
     
     flyObjName = "",
     
     shootVel = -1,
     recoilRotate = -15,
     recoilRandomBias = 3,
+    releaseBulletTime = 0.2,
+    releaseBulletNumber = 1,
     
-    shootInterval = 0.1,
     shootPosition = nil,
 }
 
-function WeaponFlyObj:PlayShootAction()
-	local interact = self.host.interact
-    local ph = interact:GetPrimaryHand()
+function WeaponFlyObj:NetworkInject()
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnShoot", self.RpcOnShoot)
+end
 
+function WeaponFlyObj:ServerOnShoot(bullet)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntFunc("RpcOnShoot", bullet.netId, false)
+end
+
+function WeaponFlyObj:RpcOnShoot(netId)
+    local netFo = CL.Network.NetworkSpawnMgr.Instance:GetNetworkFlyObject(netId)
+    if netFo then
+        self:OnShoot(netFo.flyObject)
+    end
+end
+
+function WeaponFlyObj:PlayShootAction()
+    local ph = self.host.interact:GetPrimaryHand()
+    
     if not IsNullOrDestroyed(ph) then
         ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
     end
-
-    local bulletScript = nil
-    for i = self.bulletsPerShot, 1, -1 
-    do
-        bulletScript = self:SpawnBullet(interact) 
-    end
-
-    if (self.shootSound ~= nil) then
-        self.shootSound:PlaySound()
-    end
     
-    local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
-    local addForce = function (sche, t, s)
-        interact.rb:AddForce(self.shootPosition:TransformVector(self.recoilVector) *
-            self.recoilCurve:Evaluate(t), UE.ForceMode.Acceleration)
-            
-        interact.rb:AddRelativeTorque(UE.Vector3(self.recoilRotate, bias, 0), UE.ForceMode.Impulse)
-    end
-    
-    self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
-    self.recoilActId = CL.Scheduler.Create(self.host, 
-        addForce
-    , 0, self.recoilCurve.keys[self.recoilCurve.length - 1].time)
-    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
-    
-    interact:CostDurability()
-    self.shootTime = UE.Time.time
-    
-    return bulletScript
-end
-
-function WeaponFlyObj:SpawnBullet(interact)
     local aimDir = self.shootPosition.forward
-
-    --We calculate the shots divergence from the original trajectory and put it into a vector. 
-    local xSpread = UE.Random.Range(-self.bulletSpread, self.bulletSpread)
-    local ySpread = UE.Random.Range(-self.bulletSpread, self.bulletSpread)
-    local zSpread = UE.Random.Range(-self.bulletSpread, self.bulletSpread)
-
-    --Here we combine the spread with the shooting direction and normalize it, so that it has the length/magnitude 1.
-    local shootingDirectionWithSpread = (UE.Vector3(xSpread, ySpread, zSpread) + aimDir).normalized
-
-    local bulletScript = self.host:CreateFlyObj(self.flyObjName, self.shootPosition.position, shootingDirectionWithSpread, self.shootVel)
+    local bulletScript = self:SpawnBullet(self.flyObjName, self.shootPosition.position,
+        aimDir, self.shootVel)
+    
+    --if bulletScript and bulletScript:IsEnchantble() then
+    --    bulletScript:Enchant()
+    --end
+    if IsNullOrDestroyed(bulletScript) then
+        return nil
+    end
     
     if not IsNullOrDestroyed(bulletScript) then
         TryAerialStay(ph)
     end
-    
-    if self.autoSetupBulletIgnore == 1 then
-        CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), true)
-        
-        CL.Scheduler.Create(self.host.gameObject, 
-        function(sche, t, s)
-            if not IsNullOrDestroyed(bulletScript) and not IsNullOrDestroyed(interact) then
-                CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), interact:GetCols(), false)
-            end
-        end
-        , 0, 0, 0.2)
-        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
-    end
 
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self:ServerOnShoot(bulletScript)
+    end
+    self:OnShoot(bulletScript)
+    
     return bulletScript
 end
 
+function WeaponFlyObj:SpawnBullet(flyObjName, position, rotation, vel)
+    local fo = nil
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        fo = self.host:NetworkCreateFlyObj(flyObjName, position, rotation, vel)
+    else
+        fo = self.host:CreateFlyObj(flyObjName, position, rotation, vel)
+    end
+    return fo
+end
+
+function WeaponFlyObj:OnShoot(bulletScript)
+    if self.autoSetupBulletIgnore or self.autoSetupBulletIgnore == 1 then
+        CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), self.host.interact:GetCols(), true)
+        
+        CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(bulletScript) and not IsNullOrDestroyed(self.host.interact) then
+                CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), self.host.interact:GetCols(), false)
+            end
+        end
+        ,0, 0, 0.2)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+    
+    self:AddRecoil()
+end
+
+function WeaponFlyObj:AddRecoil()
+    local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
+    self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
+    self.recoilActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            self.host.interact.rb:AddForce(self.shootPosition:TransformVector(self.recoilVector) *
+                self.recoilCurve:Evaluate(t), UE.ForceMode.Acceleration)
+            
+            self.host.interact.rb:AddRelativeTorque(UE.Vector3(self.recoilRotate, bias, 0), UE.ForceMode.Impulse)
+        end
+    ,0, self.recoilCurve.keys[self.recoilCurve.length - 1].time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self.host.interact:CostDurability()
+end
+
+
 function WeaponFlyObj:UpdateSkill()
-    local st = self.shootTime or 0
-    local ct = UE.Time.time
-    if ct - st < self.shootInterval then
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
         return
     end
-    if self.dontShootOnInstant == 0 then
+    
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
         self:PlayShootAction()
     end
     self:OnUpdateSkill()
@@ -107,15 +125,31 @@ function WeaponFlyObj:OnUpdateSkill()
 end
 
 function WeaponFlyObj:OnChargeRelease()
-    if self.shootOnCharge == 1 then
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    
+    if self.shootOnCharge or self.shootOnCharge == 1 then
         self:PlayShootAction()
     end
 end
 
+function WeaponFlyObj:HolderPushBack(intensity)
+    local holder = self.host.interact:GetHolder()
+    if holder then
+        holder:GetControllerBase():AddPushbackByForce(-self.host.interact.trans.forward * intensity)
+    end
+end
+
 function WeaponFlyObj:OnActivateEnd()
-    if self.shootOnActivateEnd == 1 then
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    
+    if self.shootOnActivateEnd or self.shootOnActivateEnd == 1 then
         self:PlayShootAction()
     end
 end
+
 
 return Class(nil, nil, WeaponFlyObj)
