@@ -1,3 +1,4 @@
+local DefaultScaleSize = 0.05
 
 local spellFireBall = {
     enchantingEffect = "FireEnchanting",
@@ -50,5 +51,230 @@ function spellFireBall.SpawnFire(ib, trans, pos, normal)
     fo.trans.position = pos
     fo.trans:SetParent(trans)
 end
+
+function spellFireBall:NetworkInject()
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnChargeReady", self.RpcOnChargeReady)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnChargeReleaseThrowVel", self.RpcOnChargeReleaseThrowVel)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnChargeReleaseThrow", self.RpcOnChargeReleaseThrow)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnChargeReleaseReleaseSpell", self.RpcOnChargeReleaseReleaseSpell)
+end
+
+function spellFireBall:SpawnSpellOnHand(flyObjName, createTrans)
+    local pos = createTrans.position
+    local fo = nil
+    fo = self.host:CreateFlyObj(flyObjName, pos, self.host.interact.trans.forward)
+    self:SpawnSpellOnHandFix(fo,createTrans)
+    return fo
+end
+
+function spellFireBall:SpawnSpellOnHandFix(fo,createTrans)
+    fo.trans.parent = createTrans
+    fo.trans.localPosition = UE.Vector3.zero
+    fo.trans.localRotation = UE.Quaternion.identity
+    fo.trans.localScale = UE.Vector3(DefaultScaleSize, DefaultScaleSize, DefaultScaleSize)
+    self.fo = fo
+    fo.col.enabled = false
+    fo.col.isTrigger = true
+    fo.rb.isKinematic = true   
+    
+    
+    local hand = self:GetSpellHand()
+    
+    CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand.physicsHand.colliders, true)
+    --CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand:GetAnotherHand().physicsHand:GetCols(), true)
+    CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), self.host.interact:GetCols(), true)    
+end
+
+function spellFireBall:OnChargeBegin()
+    -- print("OnChargeBegin")
+    self:SetHandPose(true)
+    if self.fo then
+        self:ReleaseSpell()
+    end
+    
+    -- print("OnChargeBegin ENTER")
+    local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)
+
+    if self.host.interact:IsEnhance() and fo.script.self.EnhanceSpell then
+        fo.script.self:EnhanceSpell()
+    end
+    fo.script.self:SetOwner(self)
+    self:SetHandPose(true)
+end
+
+function spellFireBall:DoChargeReady()
+    self:PrepareSpellOnHand()
+    if self.isEnchantable >= 1 then
+        self:StartDetectingEnchant(self.createPoint)
+    end
+end
+
+function spellFireBall:OnChargeReady()
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+
+    self:DoChargeReady()
+    
+    if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.ServerOnline then
+        self.host.interact.networkIB.networkIBState:ServerRpcFunc("RpcOnChargeReady", false)
+    end
+end
+
+function spellFireBall:RpcOnChargeReady()
+    -- print("RpcOnChargeReady")
+    self:DoChargeReady()
+end
+
+function spellFireBall:TryThrow(fo,flyStartVel)    
+    if not fo then
+        return false,nil
+    end
+
+    local hand = self:GetSpellHand()
+    if hand == nil then
+        return false,nil
+    end
+    
+    local curDir = hand.velocityEstimator:GetVelocityEstimateLocal()
+    if curDir.sqrMagnitude < 0.3*0.3 then
+        return false,nil
+    end
+    
+    local dir = hand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.15)
+    local dirSqrt = dir.sqrMagnitude
+    if dirSqrt < 0.2*0.2 then
+        return false,nil
+    end
+    
+    if flyStartVel == nil then
+        flyStartVel = (dirSqrt > 1 and dir.normalized or dir) * self.intensity
+    end
+
+    return true,flyStartVel
+end
+
+function spellFireBall:DoThrow(fo,flyStartVel)
+    fo:FlyStart(flyStartVel)
+end
+
+function spellFireBall:DoThrowAfterFix(fo)
+    fo.rb.isKinematic = false 
+    fo.trans.parent = nil
+    fo.col.isTrigger = false
+
+    CL.Scheduler.RemoveSchedule(self.setupTriggerActId)
+    self.setupTriggerActId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            --self.fo.col.isTrigger = false
+            if self.slotHand and not IsNullOrDestroyed(fo) then
+                CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.slotHand.physicsHand.colliders, false)
+            end
+        end,
+    0, 0, 0.05).actionId
+end
+
+function spellFireBall:OnChargeRelease()    
+    --throw
+    -- print("OnChargeRelease")
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    self:SetHandPose(false)
+    
+    local tryThrowSuccess,flyStartVel = self:TryThrow(self.fo)
+    if not tryThrowSuccess then
+        self:ReleaseSpell()
+    else
+        if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.ServerOnline then
+            local pos = self.fo.trans.position
+            local dir = self.fo.trans.forward
+            
+            self.fo.col.enabled = false
+
+            self:ReleaseSpell()
+
+            fo = self.host:NetworkCreateFlyObj(self.flyObjName, pos, dir)
+
+            fo.col.enabled = true
+            local hand = self:GetSpellHand()
+            CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), hand.physicsHand.colliders, true)
+            CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.host.interact:GetCols(), true)
+
+            self.fo = fo
+        end
+        self.fo:FlyStart(flyStartVel)
+        self:DoThrowAfterFix(self.fo)
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.ServerOnline then
+        if tryThrowSuccess then
+            self:ServerOnChargeReleaseThrow(self.fo.netId,flyStartVel)
+        else
+            self:ServerOnChargeReleaseReleaseSpell()
+        end
+    end
+    
+    self.fo = nil
+    
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+end
+
+function spellFireBall:ServerOnChargeReleaseThrow(netId,flyStartVel)
+    -- print("ServerOnChargeReleaseThrow")
+    self.host.interact.networkIB.networkIBState:ServerRpcVec3Func("RpcOnChargeReleaseThrowVel", flyStartVel, false)
+    self.host.interact.networkIB.networkIBState:ServerRpcVec3Func("RpcOnChargeReleaseThrow", netId, false)
+end
+
+function spellFireBall:RpcOnChargeReleaseThrowVel(flyStartVel)
+    -- print("RpcOnChargeReleaseThrowVel")
+    self.netThrowVel = flyStartVel
+end
+
+function spellFireBall:RpcOnChargeReleaseThrow(netId)
+    -- print("RpcOnChargeReleaseThrow")
+    self:SetHandPose(false)
+    self:ReleaseSpell()
+
+    local netFo = CL.Network.NetworkSpawnMgr.Instance:GetNetworkFlyObject(netId)
+
+    local fo = nil
+    if netFo then
+        fo = netFo.FlyObject
+    else
+        return
+    end
+
+    fo.col.enabled = true
+    local hand = self:GetSpellHand()
+    CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), hand.physicsHand.colliders, true)
+    CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.host.interact:GetCols(), true)
+    
+    fo:FlyStart(self.netThrowVel)
+    self:DoThrowAfterFix(fo)
+
+    self.fo = nil
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+end
+
+function spellFireBall:ServerOnChargeReleaseReleaseSpell()
+    -- print("ServerOnChargeReleaseReleaseSpell")
+    self.host.interact.networkIB.networkIBState:ServerRpcFunc("RpcOnChargeReleaseReleaseSpell", false)
+end
+
+function spellFireBall:RpcOnChargeReleaseReleaseSpell()
+    -- print("RpcOnChargeReleaseReleaseSpell")
+    self:SetHandPose(false)
+    self:ReleaseSpell()
+    self.fo = nil
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+end
+
 
 return Class(Require("LuaScript/WMD_SpellThrowScript"), nil, spellFireBall)

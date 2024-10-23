@@ -3,8 +3,33 @@ local flyFireBall = {
     
 }
 
+-- play impact could create another flyobj, such as explode
+function flyFireBall:OnTrigger(pu, col)
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
 
+function flyFireBall:OnTriggerWithStaticScene(col)
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
 
+function flyFireBall:OnTriggerWithPlayer(pu, col)
+    
+end
 
+function flyFireBall:OnTriggerWithRole(fc, col)
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
 
 return Class(Require("LuaScript/WMD_FlySpellBaseScript"),nil,flyFireBall)
