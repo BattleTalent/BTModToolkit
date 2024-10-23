@@ -180,7 +180,7 @@ function spellFireBall:OnChargeRelease()
         return
     end
     self:SetHandPose(false)
-    
+
     local tryThrowSuccess,flyStartVel = self:TryThrow(self.fo)
     if not tryThrowSuccess then
         self:ReleaseSpell()
@@ -193,7 +193,7 @@ function spellFireBall:OnChargeRelease()
 
             self:ReleaseSpell()
 
-            fo = self.host:NetworkCreateFlyObj(self.flyObjName, pos, dir)
+            local fo = self.host:NetworkCreateFlyObj(self.flyObjName, pos, dir)
 
             fo.col.enabled = true
             local hand = self:GetSpellHand()
