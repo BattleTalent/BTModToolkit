@@ -15,6 +15,11 @@ local SpringMin = 1000
 
 function forceSpell:GrabSpell(a)
     self.hand = a.attachedHand --player.hands[a.attachedHand:GetHandIndex()]
+    
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+
     if self.joint == nil then
         self.joint = self.hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
         self.joint.autoConfigureConnectedAnchor = false
@@ -33,6 +38,9 @@ function forceSpell:SlotSpell(s)
     
     self.hand = s:GetAttachedHand()
     
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
     -- means this is not a slot for triggering skill, but you still can put it in this slot anyway
     if self.hand == nil then
         return
@@ -71,6 +79,10 @@ function forceSpell:OpenSkill()
     if EnableParticleEffect then
     --    self.pathFlow:Play()
     end
+    
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
     self:SetHandPose(true)
     self.chargeAU = CL.SoundTable.PlaySound("ForceCharge", self.host.interact.trans.position, true)
     self.chargeAU.ao.trans.parent = self.hand.trans
@@ -78,7 +90,9 @@ end
 
 function forceSpell:UpdateSkill()
     --self.lineRenderer:SetPosition(0, self.createPoint.position)
-        
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
     if EnableParticleEffect then
         if IsNullOrDestroyed(self.connectRb) then
             local targetPos = self.hand:GetGrabDir()
@@ -115,6 +129,9 @@ function forceSpell:UpdateSkill()
 end
 
 function forceSpell:CloseSkill()    
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
     self:BreakConnect()
     self:SetHandPose(false)    
 end
