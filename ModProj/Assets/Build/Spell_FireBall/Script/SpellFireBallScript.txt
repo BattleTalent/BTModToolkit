@@ -54,7 +54,6 @@ end
 
 function spellFireBall:NetworkInject()
     self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnChargeReady", self.RpcOnChargeReady)
-    self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnChargeReleaseThrowVel", self.RpcOnChargeReleaseThrowVel)
     self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnChargeReleaseThrow", self.RpcOnChargeReleaseThrow)
     self.host.interact.networkIB.networkIBState:InjectFunc("RpcOnChargeReleaseReleaseSpell", self.RpcOnChargeReleaseReleaseSpell)
 end
@@ -209,7 +208,7 @@ function spellFireBall:OnChargeRelease()
     
     if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.ServerOnline then
         if tryThrowSuccess then
-            self:ServerOnChargeReleaseThrow(self.fo.netId,flyStartVel)
+            self:ServerOnChargeReleaseThrow(self.fo.netId)
         else
             self:ServerOnChargeReleaseReleaseSpell()
         end
@@ -222,15 +221,9 @@ function spellFireBall:OnChargeRelease()
     end
 end
 
-function spellFireBall:ServerOnChargeReleaseThrow(netId,flyStartVel)
+function spellFireBall:ServerOnChargeReleaseThrow(netId)
     -- print("ServerOnChargeReleaseThrow")
-    self.host.interact.networkIB.networkIBState:ServerRpcVec3Func("RpcOnChargeReleaseThrowVel", flyStartVel, false)
     self.host.interact.networkIB.networkIBState:ServerRpcVec3Func("RpcOnChargeReleaseThrow", netId, false)
-end
-
-function spellFireBall:RpcOnChargeReleaseThrowVel(flyStartVel)
-    -- print("RpcOnChargeReleaseThrowVel")
-    self.netThrowVel = flyStartVel
 end
 
 function spellFireBall:RpcOnChargeReleaseThrow(netId)
@@ -252,7 +245,6 @@ function spellFireBall:RpcOnChargeReleaseThrow(netId)
     CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), hand.physicsHand.colliders, true)
     CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.host.interact:GetCols(), true)
     
-    fo:FlyStart(self.netThrowVel)
     self:DoThrowAfterFix(fo)
 
     self.fo = nil
