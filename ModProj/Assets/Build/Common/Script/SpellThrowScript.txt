@@ -14,10 +14,16 @@ end
 
 
 
-
+ 
 function spellThrowScript:OnChargeBegin()
     self:SetHandPose(true)
+
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
     if self.fo then
+        print("error: Charge begin before release-------------------------------")
         self:ReleaseSpell()
     end
     
@@ -35,33 +41,67 @@ end
 
 function spellThrowScript:OnChargeReady()
     self:PrepareSpellOnHand()
+
     if self.isEnchantable >= 1 then
         self:StartDetectingEnchant(self.createPoint)
+    end
+    if self.isOnline and self.host.interact.networkIB.networkIBProperties:IsOwnerLocalPlayer() then
+        CL.Scheduler.RemoveSchedule(self.localActId)
+        self.localActId = CL.Scheduler.Create(self.trans, 
+            function(sche, t, s)
+                if not self.slotHand or IsNullOrDestroyed(self.slotHand) then
+                    return
+                end
+                if self.slotHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp then
+                    self:OnChargeRelease(true)
+                    sche:Stop()
+                end
+            end,
+        0, -1).actionId
     end
 end
 
 
+
+
 function spellThrowScript:OnChargeCancel()
-    --print("OnChargeCancel")
     self:ReleaseSpell()
     
     self:SetHandPose(false)
     
+
     if self.isEnchantable >= 1 then
         self:StopDetectingEnchant()
+    end
+    
+    if self.isOnline and self.host.interact.networkIB.networkIBProperties:IsOwnerLocalPlayer() then
+        CL.Scheduler.RemoveSchedule(self.localActId)
     end
 end
 
 
 
-
-function spellThrowScript:OnChargeRelease()    
+ 
+function spellThrowScript:OnChargeRelease(isLocal)
     --throw
     self:SetHandPose(false)
+    
+    if self.isOnline and not self.host.interact.networkIB.networkIBProperties:IsOwnerLocalPlayer() then
+        return
+    end
+    
+    if self.isOnline and not isLocal then
+        return
+    end
     
     if self.isOnline then
         CL.Scheduler.RemoveSchedule(self.localActId)
     end
+    
+    --if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+    --    return
+    --end
+    
     
     if not self:TryThrow() then
         --[[
@@ -71,10 +111,20 @@ function spellThrowScript:OnChargeRelease()
             hand.character.attr:AddMp(self.host:GetLastManaCost())
         end
         ]]
-        self:ReleaseSpell()
+        if self.isOnline then
+            local hand = self:GetSpellHand()
+            if hand then
+                local cmd = hand.character.networkPlayer.networkPlayerCommand
+                cmd:CmdUnitAction(self.host.interact.netId)
+            end
+        else
+            self:ReleaseSpell()
+        end
     end
     
-    self.fo = nil
+    if not self.isOnline then
+        self.fo = nil
+    end
     
     if self.isEnchantable >= 1 then
         self:StopDetectingEnchant()
@@ -84,7 +134,16 @@ end
 --Handling triggers when charge on hand
 function spellThrowScript:OnFoDestroyed(fo)
     if self.fo and self.fo.script.self == fo then
-        self.host:CloseSkill()
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                self.host.interact.networkIB.networkIBState:ServerCloseSkill()
+                self.host:CloseSkill()
+            else
+                return
+            end
+        else
+            self.host:CloseSkill()
+        end
         self.fo = nil
 
         if self.isEnchantable >= 1 then
@@ -92,6 +151,5 @@ function spellThrowScript:OnFoDestroyed(fo)
         end
     end
 end
-
 
 return Class(Require("LuaScript/WMD_SpellBaseScript"), nil, spellThrowScript)
