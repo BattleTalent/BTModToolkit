@@ -8,9 +8,12 @@ function flySpell:FlyStart()
     self.host.rb.isKinematic = false 
     self.host.trans.parent = nil    
     self.host.col.isTrigger = false
-    
+    self.host.col.radius = 0.13
     self.isFlying = true
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
 end
+
 
 
 function flySpell:OnFinish()
@@ -45,6 +48,7 @@ end
 function flySpell:ResetState()
     self.delayActId = CL.Scheduler.RemoveSchedule(self.delayActId)
     self.trans.localScale = UE.Vector3.one
+    self.host.col.radius = 0.04
     
     self.isFlying = false
 end
@@ -52,6 +56,10 @@ end
 
 -- play impact could create another flyobj, such as explode
 function flySpell:OnTrigger(pu, col)
+    if not col or IsNullOrDestroyed(col) then
+        return
+    end
+
     self.host:PlayImpact(self.trans.position, self.trans.forward)
     self.host:CollisionCountUpdate()
 end
@@ -76,5 +84,6 @@ end
 function flySpell:SetOwner(owner)
     self.owner = owner
 end
+
 
 return Class(nil,nil,flySpell)
