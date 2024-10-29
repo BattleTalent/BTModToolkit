@@ -1,0 +1,25 @@
+
+local BuffBreakHook = {
+    buffDesc = "The next time you shoot another player you can break their hook.",
+}
+
+local SpiderTag = Require("WMD_SpiderTagScript")
+
+function BuffBreakHook:OnEnable()
+    --self.eo:PlayAnimationClip("BuffBreakHook_Tag_OnAppear")
+end
+
+function BuffBreakHook:ActiveBuff(character)
+    SpiderTag.Instance:AddBreakHookBuff(character, 1)
+    
+    --self.eo:PlayAnimationClipThenGiveBack("BuffBreakHook_Tag_OnDisappear")
+    CL.EffectMgr.Instance:GiveBack(self.eo)
+    self.activeSound:PlaySoundInfo()
+    
+    
+    if character.IsLocalPlayer then
+        CL.TextPanel.ShowTips(self.buffDesc, 2, true)
+    end
+end
+
+return Class(Require("LuaScript/WMD_BuffBaseScript"), nil, BuffBreakHook)

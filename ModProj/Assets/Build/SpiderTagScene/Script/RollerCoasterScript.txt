@@ -1,0 +1,149 @@
+local RolerCoster = {
+    speed = 2,
+    disDelta = 0.3,
+    runActId = -1,
+}
+
+function RolerCoster:Awake()
+    if not CL.Network.VRNetworkManager.IsOnline then
+        self:StartRun()
+    end
+    
+    self.onChangeConnectedAnchor = function(value)
+        self.serverConnectedAnchor = value
+        self.joint.connectedAnchor = value
+    end
+    
+    self.onChangeTargetRotation = function(value)
+        self.serverTargetRotation = value
+        self.joint.targetRotation = value
+    end
+    
+    self.onChangeCurIdx = function(value)
+        self.serverIdx = value
+        --if self.runActId < 0 then
+        --    self:StartRunAtClient()
+        --end
+    end
+end
+
+
+function RolerCoster:NetworkInject()
+    self.state:InjectVec3State("connectedAnchor", self.onChangeConnectedAnchor)
+    self.state:InjectQuatState("targetRotation", self.onChangeTargetRotation)
+    self.state:InjectQuatState("curIdx", self.onChangeCurIdx)
+end
+
+function RolerCoster:RegStates()
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self:StartRun()
+    else
+        self:StartRunAtClient()
+    end
+end
+
+--function RolerCoster:OnEnable()
+--    self:StartRun()
+--end
+
+function RolerCoster:Init()
+    self.joint.xMotion = UE.ConfigurableJointMotion.Limited
+    self.joint.yMotion = UE.ConfigurableJointMotion.Limited
+    self.joint.zMotion = UE.ConfigurableJointMotion.Limited
+    self.joint.autoConfigureConnectedAnchor = false
+end
+
+function RolerCoster:StartRun()
+    local paths = self.pathLb.script:GetSelf().pathPoint
+    local idx = 0
+    local count = #paths
+    local curPos = paths[idx + 1]
+    idx = idx + 1
+    local nextPos = paths[idx + 1]
+    nextPos = paths[idx + 1]
+    self.trans.position = curPos
+    local initAnchor = self.connectRb.transform:InverseTransformPoint(curPos)
+    self.joint.connectedAnchor = initAnchor
+    local isInit = false
+    local riginQua = self.trans.rotation
+    CL.Scheduler.RemoveSchedule(self.runActId)
+    self.trans.gameObject:SetActive(false)
+    self.runActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if t < 0.5 then
+                return
+            end
+            
+            if not isInit then
+                isInit = true
+                self:Init()
+                self.trans.gameObject:SetActive(true)
+            end
+            
+            local vec = (nextPos - self.trans.position)
+            local dis = vec.magnitude
+            if dis < 0.1 then
+                idx = (idx + 1) % count
+                nextPos = paths[idx + 1]
+            end
+            local point = (vec / dis) * UE.Time.deltaTime *self.speed + self.trans.position
+            --self.target.position = nextPos
+            local qua = UE.Quaternion.LookRotation(vec)
+            --self.target.rotation = qua
+            local q_r = riginQua * UE.Quaternion.Inverse(qua)
+            local anchor = self.connectRb.transform:InverseTransformPoint(point)
+            self.joint.connectedAnchor = anchor
+            if self.faceToMoveDir == 1 then
+                self.joint.targetRotation = q_r
+            end
+            
+            if CL.Network.VRNetworkManager.ServerOnline then
+                self.state:SetVec3StateValue("connectedAnchor", anchor)
+                self.state:SetQuatStateValue("targetRotation", q_r)
+            end
+        end
+    , 0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function RolerCoster:StartRunAtClient()
+    --local paths = self.pathLb.script:GetSelf().pathPoint
+    --local count = #paths
+    --local curPos = paths[self.serverIdx + 1]
+    --self.serverIdx = self.serverIdx + 1
+    --local nextPos = paths[self.serverIdx + 1]
+    --nextPos = paths[self.serverIdx + 1]
+    --self.trans.position = curPos
+    --local riginQua = self.trans.rotation
+    --CL.Scheduler.RemoveSchedule(self.runActId)
+    
+    local isInit = false
+    self.trans.gameObject:SetActive(false)
+    self.runActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if not isInit then
+                isInit = true
+                self:Init()
+                self.trans.gameObject:SetActive(true)
+            end
+            
+            --local vec = (nextPos - self.trans.position)
+            --local dis = vec.magnitude
+            --if dis < 0.1 then
+            --    self.serverIdx = (self.serverIdx + 1) % count
+            --    nextPos = paths[self.serverIdx + 1]
+            --end
+            --local point = (vec / dis) * UE.Time.deltaTime *self.speed + self.trans.position
+            ----self.target.position = nextPos
+            --local qua = UE.Quaternion.LookRotation(vec)
+            ----self.target.rotation = qua
+            --local q_r = riginQua * UE.Quaternion.Inverse(qua)
+            --local anchor = self.connectRb.transform:InverseTransformPoint(point)
+            --self.joint.connectedAnchor = anchor
+            --if self.faceToMoveDir == 1 then
+            --    self.joint.targetRotation = q_r
+            --end
+        end
+    , 0, 0, 0.5):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+return Class(nil, nil, RolerCoster)
