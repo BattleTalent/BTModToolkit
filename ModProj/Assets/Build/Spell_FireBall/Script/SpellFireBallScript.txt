@@ -1,6 +1,7 @@
 
 local spellFireBall = {
     enchantingEffect = "FireEnchanting",
+    enchantEffectFly = "FireEnchantFly",
     enchantEffectLoop = "FireEnchantLoop",
     enchantEffectEnd = "FireEnchantEnd",
 }
@@ -45,10 +46,42 @@ function spellFireBall.OnEnchantSkillByStab(ib, si)
     ib:EnchantSkillCountUpdate()
 end
 
+function spellFireBall.OnEnchantSkillWithPlayer(ib, rb, thisCol, otherCol, point, normal, relaVel, character)
+    ib:EnchantSkillCountUpdate()
+    
+    local pos = point
+    if thisCol.sharedMesh and not thisCol.convex then
+        pos = point
+    else
+        pos = thisCol:ClosestPoint(point)
+    end
+    
+    spellFireBall.SpawnFire(ib, thisCol.transform, pos, normal)
+end
+
 function spellFireBall.SpawnFire(ib, trans, pos, normal)
-    local fo = CL.FlyObject.CreateFlyObj("Zone_Fire_Small_Short", ib, pos, UE.Vector3.up)
-    fo.trans.position = pos
+    local fo = nil
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo =  CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj("Zone_Fire_Small_Short", ib, pos, UE.Vector3.up)
+        else
+            return
+        end
+    else
+        fo = CL.FlyObject.CreateFlyObj("Zone_Fire_Small_Short", ib, pos, UE.Vector3.up)
+    end
+    
+    local col = trans:GetComponent(typeof(UE.Collider))
+    if not IsNullOrDestroyed(col) then
+        if col.sharedMesh and not col.convex then
+            fo.trans.position = pos
+        else
+            fo.trans.position = col:ClosestPoint(pos)
+        end
+    end
     fo.trans:SetParent(trans)
+    --fire effect
 end
 
 return Class(Require("LuaScript/WMD_SpellThrowScript"), nil, spellFireBall)

@@ -12,9 +12,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f0360b0d473ef848b1017f1219d1ab5, type: 3}
   m_Name: Spell_FireBall_Info
   m_EditorClassIdentifier: 
+  loadOnSpawn: 1
   storeItemInfo:
   - addStoreItemName: WMD_Spell_FireBall
     dependItemName: 
+    dependencies: []
     name: Spell_FireBall
     desc: I'm Spell FireBall
+    itemType: 0
+    dungeonInfos: []
+    supportedMultiplayer: 1
+  sceneModInfo: []
+  propInfo: []
+  avatarInfo: []
+  skinInfo: []
+  roleModInfo: []
+  handPoseInfo: []
   hitInfo: []
+  networkPrefabRegister:
+  - WMD_ElementBullet_FireBall
+  - WMD_FlyExplodeX
+  - WMD_FlyFireBallX
+  - WMD_Spell_FireBall
