@@ -1,0 +1,133 @@
+
+local BuffSpawner = {
+    buffNames = {"WMD_BuffBreakHook"},
+    buffList = {},
+    
+    maxDis = 100,
+}
+
+function BuffSpawner:Awake()
+    BuffSpawner.Instance = self
+    
+    self.rangeBox.gameObject:SetActive(false)
+end
+
+function BuffSpawner:NetworkInject()
+    self.host:InjectFunc("RpcSpawnBuffAtPos", self.RpcSpawnBuffAtPos)
+    self.host:InjectFunc("RpcBuffActive", self.RpcBuffActive)
+end
+
+
+function BuffSpawner:SpawnAtRandomPos()
+    local pos = self:GetRandomSpawnPosition()
+    if pos then
+        self:SpawnRandomBuffAtPos(pos)
+    end
+end
+
+function BuffSpawner:ClearBuff()
+    for k, v in pairs(self.buffList) do
+        if v and IsNullOrDestroyed(v) then
+            return
+        end
+        CL.EffectMgr.Instance:GiveBack(v)
+    end
+    
+    self.buffList = {}
+end
+
+function BuffSpawner:GetRandomSpawnPosition()
+    local pos = nil
+    local count = 10
+    while count > 0 do
+        pos = self:GetRandomPoint()
+        pos = self:GetSpawnPointByPos(pos)
+        if pos then
+            return pos
+        end
+        count = count - 1
+    end
+    
+    return pos
+end
+
+function BuffSpawner:GetSpawnPointByPos(pos)
+    local hit, hitInfo = UE.Physics.SphereCast(pos, 
+                0.3,
+                UE.Vector3.down, self.maxDis, UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value)))
+    CL.DebugDraw.DrawLine(pos, pos + UE.Vector3.down * self.maxDis, UE.Color.red, 3)
+    if not hit then
+        return nil
+    end
+    --local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(hitInfo.collider)
+    --if not IsNullOrDestroyed(pu) and pu.unitType ~= CL.Tagger.Tag.SceneObject then
+    --    return nil
+    --end
+    return hitInfo.point + UE.Vector3.up
+end
+
+function BuffSpawner:GetRandomPoint()
+    local extents = self.rangeBox.size / 2
+    local pos = UE.Vector3(
+            math.random(-extents.x, extents.x),
+            math.random(-extents.y, extents.y),
+            math.random(-extents.z, extents.z)
+        ) + self.rangeBox.center + self.rangeBox.transform.position
+    
+    
+    
+    return pos
+end
+
+function BuffSpawner:SpawnRandomBuffAtPos(pos)
+    local random = math.random(1, #self.buffNames)
+    self:ServerSpawnBuffAtPos(random, pos)
+end
+
+function BuffSpawner:ServerSpawnBuffAtPos(idx, pos)
+    local name = self.buffNames[idx]
+    
+    local nid = CL.EffectMgr.GetEffectObjNetId()
+    local eo = CL.EffectMgr.Instance:PlayEffect(name, pos, UE.Quaternion.identity, nid)
+    self.buffList[nid] = eo
+    
+    self.host:ServerRpcComplFunc("RpcSpawnBuffAtPos", false, idx, nid, "", pos)
+end
+
+function BuffSpawner:RpcSpawnBuffAtPos(bool, float, int, str, vec)
+    local name = self.buffNames[float]
+    local eo = CL.EffectMgr.Instance:PlayEffect(name, vec, UE.Quaternion.identity, int)
+    self.buffList[eo.netId] = eo
+end
+
+function BuffSpawner:BuffGiveBack(netId)
+    self.buffList[netId] = nil
+end
+
+------------------------------Buff Active----------------------------
+function BuffSpawner:OnBuffActive(character, eo)
+    local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+    local id_list = list_int()
+    id_list:Add(character.networkPlayer.netId)
+    id_list:Add(eo.netId)
+    self.host:ServerRpcIntListFunc("RpcBuffActive", id_list)
+end
+
+function BuffSpawner:RpcBuffActive(list)
+    -- get buff by netId, active and giveback
+    local eo = self.buffList[list[1]]
+    if not eo or IsNullOrDestroyed(eo) then
+        return
+    end
+
+    local lb = eo.trans:GetComponent(typeof(CL.LuaBehaviour))
+    local tb = lb.script:GetSelf()
+    
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(list[0])
+    if not IsNullOrDestroyed(networkPlayer) then
+        tb:ActiveBuff(networkPlayer.interactCharacter)
+    end
+end
+
+return Class(nil, nil, BuffSpawner)

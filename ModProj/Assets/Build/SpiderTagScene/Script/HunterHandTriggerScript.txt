@@ -1,0 +1,54 @@
+
+local HunterHandTrigger = {
+    isExitAct = 0
+}
+
+function HunterHandTrigger:Init(control, hand)
+    self.control = control
+    self.hand = hand
+    
+    if not IsNullOrDestroyed(hand) then
+        self.character = hand.character
+        
+        self:SetToHand()
+    end
+end
+
+function HunterHandTrigger:SetToHand()
+    self.trans:SetParent(self.hand.physicsHand.transform)
+    local handCol = self.hand.physicsHand.hudHandCol
+    
+    self.trans.localScale = UE.Vector3.one
+    self.trans.localPosition = handCol.transform.localPosition
+    self.trans.localRotation = handCol.transform.localRotation
+end
+
+--function HunterHandTrigger:OnTriggerStay(collider)
+--    if self.control then
+--        self.control:TriggerStay(collider)
+--    end
+--end
+
+function HunterHandTrigger:OnTriggerEnter(collider)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collider)
+    
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    if pu.unitType ~= CL.Tagger.Tag.PlayerRole then
+        return
+    end
+    
+    if pu.character == self.character then
+        UE.Physics.IgnoreCollision(self.col, collider, true)
+        return
+    end
+    
+
+    if self.control then
+        self.control:HunterTriggerPlayer(self.character, pu.character, collider, self.trans.position)
+    end
+end
+
+return Class(nil, nil, HunterHandTrigger)

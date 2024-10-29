@@ -68,8 +68,10 @@ end
 function WeaponFlyObj:SpawnBullet(flyObjName, position, rotation, vel)
     local fo = nil
     
-    if CL.Network.VRNetworkManager.ServerOnline then
-        fo = self.host:NetworkCreateFlyObj(flyObjName, position, rotation, vel)
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            fo = self.host:NetworkCreateFlyObj(flyObjName, position, rotation, vel)
+        end
     else
         fo = self.host:CreateFlyObj(flyObjName, position, rotation, vel)
     end

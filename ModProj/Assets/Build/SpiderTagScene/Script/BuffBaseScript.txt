@@ -1,0 +1,51 @@
+
+local BuffBase = {
+    isUsed = false,
+    buffDesc = "",
+}
+
+local BuffSpawner = Require("WMD_BuffSpawnerScript")
+
+function BuffBase:Awake()
+    self.eo = self.trans:GetComponent(typeof(CL.EffectObj))
+end
+
+function BuffBase:OnTriggerStay(collider)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    if self.isUsed then
+        return
+    end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collider)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    if pu.unitType ~= CL.Tagger.Tag.PlayerRole then
+        return
+    end
+    
+    
+    self.isUsed = true
+    BuffSpawner.Instance:OnBuffActive(pu.character, self.eo)
+    self:ActiveBuff(pu.character)
+    
+    if pu.character == CL.InteractCharacter.PlayerInstance then
+        CL.TextPanel.ShowTips(self.buffDesc, 2, true)
+    end
+end
+
+function BuffBase:ActiveBuff(character)
+    --todo
+    
+    CL.EffectMgr.Instance:GiveBack(self.eo)
+end
+
+function BuffBase:OnDisable()
+    BuffSpawner:BuffGiveBack(self.eo.netId)
+    self.isUsed = false
+end
+
+return Class(nil, nil, BuffBase)
