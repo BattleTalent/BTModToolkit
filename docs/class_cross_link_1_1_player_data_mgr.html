@@ -102,12 +102,12 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>ChangePlayerCo
 <tr class="memitem:ac83c59a4bd8ebdf1e5dfc22557b44fdb"><td class="memItemLeft" align="right" valign="top"><a id="ac83c59a4bd8ebdf1e5dfc22557b44fdb"></a>
 static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetCoinNum</b> ()</td></tr>
 <tr class="separator:ac83c59a4bd8ebdf1e5dfc22557b44fdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abefa9a1100d6a2411bf34201dec9b7b7"><td class="memItemLeft" align="right" valign="top"><a id="abefa9a1100d6a2411bf34201dec9b7b7"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>ChangePlayerSoul</b> (int soulDelta)</td></tr>
-<tr class="separator:abefa9a1100d6a2411bf34201dec9b7b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0e484f9b78259004040cdca59281a20e"><td class="memItemLeft" align="right" valign="top"><a id="a0e484f9b78259004040cdca59281a20e"></a>
-static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetPlayerSoul</b> ()</td></tr>
-<tr class="separator:a0e484f9b78259004040cdca59281a20e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28d58ec289b2f6200a1303547a9d1261"><td class="memItemLeft" align="right" valign="top"><a id="a28d58ec289b2f6200a1303547a9d1261"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>ChangePlayerSoul</b> (int soulDelta, <a class="el" href="class_cross_link_1_1_network_1_1_network_player.html">Network.NetworkPlayer</a> networkPlayer=null, bool withNotice=false)</td></tr>
+<tr class="separator:a28d58ec289b2f6200a1303547a9d1261"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5018aa6bbe7cf5123de590d812a298b"><td class="memItemLeft" align="right" valign="top"><a id="ae5018aa6bbe7cf5123de590d812a298b"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetPlayerSoul</b> (<a class="el" href="class_cross_link_1_1_network_1_1_network_player.html">Network.NetworkPlayer</a> networkPlayer=null)</td></tr>
+<tr class="separator:ae5018aa6bbe7cf5123de590d812a298b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9a9959b43585964a3566b5e57632b5ce"><td class="memItemLeft" align="right" valign="top"><a id="a9a9959b43585964a3566b5e57632b5ce"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetPlayerSoul</b> (int defaultNum)</td></tr>
 <tr class="separator:a9a9959b43585964a3566b5e57632b5ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -126,21 +126,27 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>RollCoin</b> (
 <tr class="memitem:a12f49fe091cbfe668a8aa5ddec4eeb71"><td class="memItemLeft" align="right" valign="top"><a id="a12f49fe091cbfe668a8aa5ddec4eeb71"></a>
 static <a class="el" href="class_cross_link_1_1_coin_ball.html">CoinBall</a>&#160;</td><td class="memItemRight" valign="bottom"><b>DropCoin</b> (Vector3 pos, float delay=CoinBall.InitStayCoinSec, bool isImmediate=false)</td></tr>
 <tr class="separator:a12f49fe091cbfe668a8aa5ddec4eeb71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a50a6bbaecf5b66a8b269c0cffef30f9c"><td class="memItemLeft" align="right" valign="top"><a id="a50a6bbaecf5b66a8b269c0cffef30f9c"></a>
-static <a class="el" href="class_cross_link_1_1_soul_ball.html">SoulBall</a>&#160;</td><td class="memItemRight" valign="bottom"><b>DropSoul</b> (Vector3 pos, float delay=SoulBall.InitStaySoulSec)</td></tr>
-<tr class="separator:a50a6bbaecf5b66a8b269c0cffef30f9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afbed99a25102f601d1f6e0e88528db93"><td class="memItemLeft" align="right" valign="top"><a id="afbed99a25102f601d1f6e0e88528db93"></a>
-static <a class="el" href="class_cross_link_1_1_soul_ball.html">SoulBall</a>&#160;</td><td class="memItemRight" valign="bottom"><b>DropSoulWithValue</b> (Vector3 pos, int valueOfBall, float delay=SoulBall.InitStaySoulSec)</td></tr>
-<tr class="separator:afbed99a25102f601d1f6e0e88528db93"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0b831b8edc2d32a6e4716bc34cf506ba"><td class="memItemLeft" align="right" valign="top"><a id="a0b831b8edc2d32a6e4716bc34cf506ba"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>DropSouls</b> (Vector3 pos, int count, float delay=SoulBall.InitStaySoulSec)</td></tr>
-<tr class="separator:a0b831b8edc2d32a6e4716bc34cf506ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bf08e63f2fe7dcc068a0321c04a6267"><td class="memItemLeft" align="right" valign="top"><a id="a1bf08e63f2fe7dcc068a0321c04a6267"></a>
+static <a class="el" href="class_cross_link_1_1_soul_ball.html">SoulBall</a>&#160;</td><td class="memItemRight" valign="bottom"><b>DropSoul</b> (Vector3 pos, float delay=SoulBall.InitStaySoulSec, uint? netId=null)</td></tr>
+<tr class="separator:a1bf08e63f2fe7dcc068a0321c04a6267"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a490f0a8ffe8a1f6ab899c5190222b73e"><td class="memItemLeft" align="right" valign="top"><a id="a490f0a8ffe8a1f6ab899c5190222b73e"></a>
+static <a class="el" href="class_cross_link_1_1_soul_ball.html">SoulBall</a>&#160;</td><td class="memItemRight" valign="bottom"><b>DropSoulWithValue</b> (Vector3 pos, int valueOfBall, float delay=SoulBall.InitStaySoulSec, uint? netId=null)</td></tr>
+<tr class="separator:a490f0a8ffe8a1f6ab899c5190222b73e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80e1215cbd730c406eba8f9814265e1c"><td class="memItemLeft" align="right" valign="top"><a id="a80e1215cbd730c406eba8f9814265e1c"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>DropSouls</b> (Vector3 pos, int count, float delay=SoulBall.InitStaySoulSec, uint? netId=null, bool zeroValue=false)</td></tr>
+<tr class="separator:a80e1215cbd730c406eba8f9814265e1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a787aa0c42b60accaf8a3b07f3c896b25"><td class="memItemLeft" align="right" valign="top"><a id="a787aa0c42b60accaf8a3b07f3c896b25"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>GiveSoulFromTo</b> (int count, Transform from, Transform to)</td></tr>
 <tr class="separator:a787aa0c42b60accaf8a3b07f3c896b25"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6991392b74c8959e008ccba0132372a"><td class="memItemLeft" align="right" valign="top"><a id="ac6991392b74c8959e008ccba0132372a"></a>
 static <a class="el" href="class_cross_link_1_1_soul_ball.html">SoulBall</a>&#160;</td><td class="memItemRight" valign="bottom"><b>SoulBallFromTo</b> (Vector3 from, Transform to)</td></tr>
 <tr class="separator:ac6991392b74c8959e008ccba0132372a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b07d37e981bc2fa6a5d01b2f1927677"><td class="memItemLeft" align="right" valign="top"><a id="a8b07d37e981bc2fa6a5d01b2f1927677"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkDropPotion</b> (Vector3 pos)</td></tr>
+<tr class="separator:a8b07d37e981bc2fa6a5d01b2f1927677"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04e8118d0d1e95379f64b7e00c59af4c"><td class="memItemLeft" align="right" valign="top"><a id="a04e8118d0d1e95379f64b7e00c59af4c"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkDropSpell</b> (Vector3 pos)</td></tr>
+<tr class="separator:a04e8118d0d1e95379f64b7e00c59af4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fb2196a5ab78cdb3652eb2f51fc94c3"><td class="memItemLeft" align="right" valign="top"><a id="a8fb2196a5ab78cdb3652eb2f51fc94c3"></a>
 static <a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>DropPotion</b> (Vector3 pos)</td></tr>
 <tr class="separator:a8fb2196a5ab78cdb3652eb2f51fc94c3"><td class="memSeparator" colspan="2">&#160;</td></tr>

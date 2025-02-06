@@ -68,6 +68,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
@@ -79,6 +80,11 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_tile_mgr_1_1_tile_env_setting.html">TileEnvSetting</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:af202531e88df9f6b04f015c14eb89c7b"><td class="memItemLeft" align="right" valign="top"><a id="af202531e88df9f6b04f015c14eb89c7b"></a>
@@ -93,6 +99,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerDunGenInit</b>
 <tr class="memitem:a9403fd01bf153ff9093076e4f8bc8503"><td class="memItemLeft" align="right" valign="top"><a id="a9403fd01bf153ff9093076e4f8bc8503"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ProcessTilesByBridgeLevel</b> (System.Action&lt; List&lt; DunGen.Tile &gt;, int &gt; tileProc, bool includeInactive=false)</td></tr>
 <tr class="separator:a9403fd01bf153ff9093076e4f8bc8503"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61973bba829570f52104c193f26516e8"><td class="memItemLeft" align="right" valign="top"><a id="a61973bba829570f52104c193f26516e8"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RegEnvSetting</b> (<a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> tile)</td></tr>
+<tr class="separator:a61973bba829570f52104c193f26516e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9581980b4bc04d17dc2d701dba250d32"><td class="memItemLeft" align="right" valign="top"><a id="a9581980b4bc04d17dc2d701dba250d32"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetEnvByTile</b> (Tile tile)</td></tr>
+<tr class="separator:a9581980b4bc04d17dc2d701dba250d32"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f65fb97804a0f5fdad243ae394e6b90"><td class="memItemLeft" align="right" valign="top"><a id="a6f65fb97804a0f5fdad243ae394e6b90"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>MoveToNextBridge</b> ()</td></tr>
 <tr class="separator:a6f65fb97804a0f5fdad243ae394e6b90"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -117,21 +129,21 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>UnRegisterBridgeRoom<
 <tr class="memitem:a3322f2cc6439d7c004e858c3b46052ce"><td class="memItemLeft" align="right" valign="top"><a id="a3322f2cc6439d7c004e858c3b46052ce"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Clear</b> ()</td></tr>
 <tr class="separator:a3322f2cc6439d7c004e858c3b46052ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a84375942bcdca933ed12561664d84237"><td class="memItemLeft" align="right" valign="top"><a id="a84375942bcdca933ed12561664d84237"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CullOldRoom</b> (bool all=false, bool deleteOldRoom=false)</td></tr>
-<tr class="separator:a84375942bcdca933ed12561664d84237"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a92ac56224c1df757d1f01f1210105a3a"><td class="memItemLeft" align="right" valign="top"><a id="a92ac56224c1df757d1f01f1210105a3a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CullNewRoom</b> ()</td></tr>
-<tr class="separator:a92ac56224c1df757d1f01f1210105a3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29768930798c20a9bfc1debd2f78ca6f"><td class="memItemLeft" align="right" valign="top"><a id="a29768930798c20a9bfc1debd2f78ca6f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>CullOldRoom</b> (bool all=false, bool deleteOldRoom=false, int bridgeId=-1)</td></tr>
+<tr class="separator:a29768930798c20a9bfc1debd2f78ca6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d2cd79b7c5b21353c3172e26411b12b"><td class="memItemLeft" align="right" valign="top"><a id="a1d2cd79b7c5b21353c3172e26411b12b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>CullNewRoom</b> (int bridgeId=-1)</td></tr>
+<tr class="separator:a1d2cd79b7c5b21353c3172e26411b12b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2aa4ed1bee3167eda9702e1e5954d763"><td class="memItemLeft" align="right" valign="top"><a id="a2aa4ed1bee3167eda9702e1e5954d763"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>MoveForwardAndOpenNewRoom</b> ()</td></tr>
 <tr class="separator:a2aa4ed1bee3167eda9702e1e5954d763"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46eefa98ad01ccd9396421167effd5b0"><td class="memItemLeft" align="right" valign="top"><a id="a46eefa98ad01ccd9396421167effd5b0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CullOthers</b> (bool c, int currentTileId)</td></tr>
-<tr class="separator:a46eefa98ad01ccd9396421167effd5b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a27e774f93f5121eb53122a2d3b05edc0"><td class="memItemLeft" align="right" valign="top"><a id="a27e774f93f5121eb53122a2d3b05edc0"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>OpenOthersInLod</b> (bool open, int currentTileId, int lodLv)</td></tr>
-<tr class="separator:a27e774f93f5121eb53122a2d3b05edc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e3c1ab7b04159ca5c592490ac889d50"><td class="memItemLeft" align="right" valign="top"><a id="a4e3c1ab7b04159ca5c592490ac889d50"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>CullOthers</b> (bool c, int currentTileId, int bridgeId=-1)</td></tr>
+<tr class="separator:a4e3c1ab7b04159ca5c592490ac889d50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab14f4c801881f21a9ea5c5db7549d684"><td class="memItemLeft" align="right" valign="top"><a id="ab14f4c801881f21a9ea5c5db7549d684"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OpenOthersInLod</b> (bool open, int currentTileId, int lodLv, int bridgeId=-1)</td></tr>
+<tr class="separator:ab14f4c801881f21a9ea5c5db7549d684"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abb40f99b706d7105dd97f2d999c82c57"><td class="memItemLeft" align="right" valign="top"><a id="abb40f99b706d7105dd97f2d999c82c57"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>CountSpawn</b> (Object spawnObj, int spawnOrder, int bridgeLv)</td></tr>
 <tr class="separator:abb40f99b706d7105dd97f2d999c82c57"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -150,6 +162,9 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>GetPrefabCount</b> (Li
 <tr class="memitem:ab9fd8eddd30506af4e25142c4e77e1bf"><td class="memItemLeft" align="right" valign="top"><a id="ab9fd8eddd30506af4e25142c4e77e1bf"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>BindHandToggleEvents</b> ()</td></tr>
 <tr class="separator:ab9fd8eddd30506af4e25142c4e77e1bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e4a5d92a2d2b888ba97b227b25a9aac"><td class="memItemLeft" align="right" valign="top"><a id="a3e4a5d92a2d2b888ba97b227b25a9aac"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UnBindHandToggleEvents</b> ()</td></tr>
+<tr class="separator:a3e4a5d92a2d2b888ba97b227b25a9aac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b915dc4dfedf9367066850c5c52ed62"><td class="memItemLeft" align="right" valign="top"><a id="a7b915dc4dfedf9367066850c5c52ed62"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TransformTileMap</b> (Vector3 offset)</td></tr>
 <tr class="separator:a7b915dc4dfedf9367066850c5c52ed62"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -162,9 +177,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowupMap</b> (bool s
 <tr class="memitem:a2f383c9a07cc5f28265e922b88c25ede"><td class="memItemLeft" align="right" valign="top"><a id="a2f383c9a07cc5f28265e922b88c25ede"></a>
 DunGen.Tile&#160;</td><td class="memItemRight" valign="bottom"><b>GetCurTile</b> ()</td></tr>
 <tr class="separator:a2f383c9a07cc5f28265e922b88c25ede"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0de6d1be4a87534863f4b61dc0bc7c9a"><td class="memItemLeft" align="right" valign="top"><a id="a0de6d1be4a87534863f4b61dc0bc7c9a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTileUpdate</b> (DunGen.Tile newTile)</td></tr>
-<tr class="separator:a0de6d1be4a87534863f4b61dc0bc7c9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2351f4fd163b036bff2be14bd6debefd"><td class="memItemLeft" align="right" valign="top"><a id="a2351f4fd163b036bff2be14bd6debefd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTileUpdateNetwork</b> (<a class="el" href="class_cross_link_1_1_player_unit.html">PlayerUnit</a> playerUnit)</td></tr>
+<tr class="separator:a2351f4fd163b036bff2be14bd6debefd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba7fe2bb0e325e59a651a3fd4beaacb9"><td class="memItemLeft" align="right" valign="top"><a id="aba7fe2bb0e325e59a651a3fd4beaacb9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkClientUpdateTile</b> (int tileId)</td></tr>
+<tr class="separator:aba7fe2bb0e325e59a651a3fd4beaacb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41c6844728096d5378be37ab9e09f3ad"><td class="memItemLeft" align="right" valign="top"><a id="a41c6844728096d5378be37ab9e09f3ad"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTileUpdate</b> (<a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> newTile)</td></tr>
+<tr class="separator:a41c6844728096d5378be37ab9e09f3ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae8097facad0d25648e9e25cde365090"><td class="memItemLeft" align="right" valign="top"><a id="aae8097facad0d25648e9e25cde365090"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TileLodSetup</b> (DunGen.Tile curTile)</td></tr>
 <tr class="separator:aae8097facad0d25648e9e25cde365090"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -195,12 +216,18 @@ List&lt; <a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> &
 <tr class="memitem:a3b24cf060f7bd964e1d1672078e40f89"><td class="memItemLeft" align="right" valign="top"><a id="a3b24cf060f7bd964e1d1672078e40f89"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>currentBridge</b> = 0</td></tr>
 <tr class="separator:a3b24cf060f7bd964e1d1672078e40f89"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9390e3b547cb60e893df7417a344c32"><td class="memItemLeft" align="right" valign="top"><a id="ae9390e3b547cb60e893df7417a344c32"></a>
+List&lt; <a class="el" href="class_cross_link_1_1_tile_mgr_1_1_tile_env_setting.html">TileEnvSetting</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>tileEnvSettings</b> = new List&lt;<a class="el" href="class_cross_link_1_1_tile_mgr_1_1_tile_env_setting.html">TileEnvSetting</a>&gt;()</td></tr>
+<tr class="separator:ae9390e3b547cb60e893df7417a344c32"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:af8e76828e2f5f96ef8dded07a3804130"><td class="memItemLeft" align="right" valign="top"><a id="af8e76828e2f5f96ef8dded07a3804130"></a>
 static <a class="el" href="class_cross_link_1_1_tile_mgr.html">TileMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_tile_mgr.html">TileMgr</a>()</td></tr>
 <tr class="separator:af8e76828e2f5f96ef8dded07a3804130"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb72c776b67d712fe7acfcd7809513ac"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_tile_mgr.html#afb72c776b67d712fe7acfcd7809513ac">startTile</a> = null</td></tr>
+<tr class="memdesc:afb72c776b67d712fe7acfcd7809513ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">the tile of start room  <a href="class_cross_link_1_1_tile_mgr.html#afb72c776b67d712fe7acfcd7809513ac">More...</a><br /></td></tr>
+<tr class="separator:afb72c776b67d712fe7acfcd7809513ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>
@@ -214,6 +241,31 @@ System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>DunGenInit</
 static System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>NextTileUpdateOneTimeEvent</b></td></tr>
 <tr class="separator:aa11633e3cc6ac188832bfe0f34e32281"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="afb72c776b67d712fe7acfcd7809513ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb72c776b67d712fe7acfcd7809513ac">&#9670;&nbsp;</a></span>startTile</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> CrossLink.TileMgr.startTile = null</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>the tile of start room </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

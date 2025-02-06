@@ -76,18 +76,30 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aca057085d2e7ae448385ebcec15193a9"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_v_r_t_k_util.html#aca057085d2e7ae448385ebcec15193a9">IsPresent</a> ()</td></tr>
 <tr class="memdesc:aca057085d2e7ae448385ebcec15193a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">check if the vr device is present  <a href="class_v_r_t_k_util.html#aca057085d2e7ae448385ebcec15193a9">More...</a><br /></td></tr>
 <tr class="separator:aca057085d2e7ae448385ebcec15193a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aafbea4aa61b105b4abc469f6c2b5478c"><td class="memItemLeft" align="right" valign="top">static InputDevice&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_v_r_t_k_util.html#aafbea4aa61b105b4abc469f6c2b5478c">GetDevicesWithCharacteristics</a> (InputDeviceCharacteristics desiredCharacteristics)</td></tr>
-<tr class="memdesc:aafbea4aa61b105b4abc469f6c2b5478c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the first device found with the given characteristics  <a href="class_v_r_t_k_util.html#aafbea4aa61b105b4abc469f6c2b5478c">More...</a><br /></td></tr>
+<tr class="memitem:aafbea4aa61b105b4abc469f6c2b5478c"><td class="memItemLeft" align="right" valign="top"><a id="aafbea4aa61b105b4abc469f6c2b5478c"></a>
+static InputDevice&#160;</td><td class="memItemRight" valign="bottom"><b>GetDevicesWithCharacteristics</b> (InputDeviceCharacteristics desiredCharacteristics)</td></tr>
 <tr class="separator:aafbea4aa61b105b4abc469f6c2b5478c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aebab1d88441da7a30c6c1eed4f8c3728"><td class="memItemLeft" align="right" valign="top"><a id="aebab1d88441da7a30c6c1eed4f8c3728"></a>
 static XRNode&#160;</td><td class="memItemRight" valign="bottom"><b>GetInputDeviceXRNode</b> (InputDevice device)</td></tr>
 <tr class="separator:aebab1d88441da7a30c6c1eed4f8c3728"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34734c44d19b0bf94e606edd08b5d890"><td class="memItemLeft" align="right" valign="top"><a id="a34734c44d19b0bf94e606edd08b5d890"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>CheckCmdControllerType</b> (ref <a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">VRTKInputDevice.ControllerType</a> controllerType)</td></tr>
+<tr class="separator:a34734c44d19b0bf94e606edd08b5d890"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6021f465c97084370f06406bfb365a45"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="class_cross_link_1_1_v_r_t_k_input_device.html#a6709bd3cb634856e71c4ecca639ec8db">VRTKInputDevice.ControllerType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_v_r_t_k_util.html#a6021f465c97084370f06406bfb365a45">GetCurrentControllerType</a> (InputDevice device)</td></tr>
 <tr class="memdesc:a6021f465c97084370f06406bfb365a45"><td class="mdescLeft">&#160;</td><td class="mdescRight">given input device to get the related controller type  <a href="class_v_r_t_k_util.html#a6021f465c97084370f06406bfb365a45">More...</a><br /></td></tr>
 <tr class="separator:a6021f465c97084370f06406bfb365a45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e23c1b1365e86fc542ce0e89d085b6b"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_v_r_t_k_util.html#a6e23c1b1365e86fc542ce0e89d085b6b">IsBtnPressed</a> (InputDevice device, InputFeatureUsage&lt; bool &gt; usage)</td></tr>
 <tr class="memdesc:a6e23c1b1365e86fc542ce0e89d085b6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">check the button of the given device is pressed or not  <a href="class_v_r_t_k_util.html#a6e23c1b1365e86fc542ce0e89d085b6b">More...</a><br /></td></tr>
 <tr class="separator:a6e23c1b1365e86fc542ce0e89d085b6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad60d04a432ea674c26b931d876e60f45"><td class="memItemLeft" align="right" valign="top"><a id="ad60d04a432ea674c26b931d876e60f45"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandPosePressDown</b> (VRTKInputButton.ButtonType button, XRNode node)</td></tr>
+<tr class="separator:ad60d04a432ea674c26b931d876e60f45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a75f8c62cf78eed61c7f2d2eecb8d9ccb"><td class="memItemLeft" align="right" valign="top"><a id="a75f8c62cf78eed61c7f2d2eecb8d9ccb"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandPosePressUp</b> (VRTKInputButton.ButtonType button, XRNode node)</td></tr>
+<tr class="separator:a75f8c62cf78eed61c7f2d2eecb8d9ccb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b74aae2c9830f6ee2073e56b95e1fb1"><td class="memItemLeft" align="right" valign="top"><a id="a3b74aae2c9830f6ee2073e56b95e1fb1"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetHandPosePress</b> (VRTKInputButton.ButtonType button, XRNode node)</td></tr>
+<tr class="separator:a3b74aae2c9830f6ee2073e56b95e1fb1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ef4a11b951a96a3b1710f94c432aeb6"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_v_r_t_k_util.html#a4ef4a11b951a96a3b1710f94c432aeb6">GetControllerButtonPressDown</a> (VRTKInputButton.ButtonType button, InputDevice device, XRNode node, bool isTouch=false)</td></tr>
 <tr class="memdesc:a4ef4a11b951a96a3b1710f94c432aeb6"><td class="mdescLeft">&#160;</td><td class="mdescRight">check if a given button was pressed  <a href="class_v_r_t_k_util.html#a4ef4a11b951a96a3b1710f94c432aeb6">More...</a><br /></td></tr>
 <tr class="separator:a4ef4a11b951a96a3b1710f94c432aeb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -362,41 +374,6 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>HapticPulse</b
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">device</td><td></td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
-
-</div>
-</div>
-<a id="aafbea4aa61b105b4abc469f6c2b5478c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aafbea4aa61b105b4abc469f6c2b5478c">&#9670;&nbsp;</a></span>GetDevicesWithCharacteristics()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">static InputDevice VRTKUtil.GetDevicesWithCharacteristics </td>
-          <td>(</td>
-          <td class="paramtype">InputDeviceCharacteristics&#160;</td>
-          <td class="paramname"><em>desiredCharacteristics</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">static</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Returns the first device found with the given characteristics </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">desiredCharacteristics</td><td></td></tr>
   </table>
   </dd>
 </dl>

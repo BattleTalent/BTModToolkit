@@ -69,6 +69,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_effect_mgr-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -89,15 +90,18 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnStateClear
 <tr class="memitem:ad0279d6dc7c757f0d889164e8f98c1c8"><td class="memItemLeft" align="right" valign="top"><a id="ad0279d6dc7c757f0d889164e8f98c1c8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Clear</b> ()</td></tr>
 <tr class="separator:ad0279d6dc7c757f0d889164e8f98c1c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60847ec3298395ba42a6dd02e8f916b6"><td class="memItemLeft" align="right" valign="top"><a id="a60847ec3298395ba42a6dd02e8f916b6"></a>
-<a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>PlayEffect</b> (string name, Vector3 pos, Quaternion rot)</td></tr>
-<tr class="separator:a60847ec3298395ba42a6dd02e8f916b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29d4b9e698831bb4cfe5dea4ccf9d3cc"><td class="memItemLeft" align="right" valign="top"><a id="a29d4b9e698831bb4cfe5dea4ccf9d3cc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearEffect</b> (string name)</td></tr>
+<tr class="separator:a29d4b9e698831bb4cfe5dea4ccf9d3cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa76356139c8c5476086b4597cc6ad1a2"><td class="memItemLeft" align="right" valign="top"><a id="aa76356139c8c5476086b4597cc6ad1a2"></a>
+<a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>PlayEffect</b> (string name, Vector3 pos, Quaternion rot, int netId=-1, uint netSimpleId=0)</td></tr>
+<tr class="separator:aa76356139c8c5476086b4597cc6ad1a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6b970b827f2ca31c6e207e9a235a8d42"><td class="memItemLeft" align="right" valign="top"><a id="a6b970b827f2ca31c6e207e9a235a8d42"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Cache</b> (string name, int num)</td></tr>
 <tr class="separator:a6b970b827f2ca31c6e207e9a235a8d42"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9ab6e8800758196a24433d1a62a622c"><td class="memItemLeft" align="right" valign="top"><a id="ac9ab6e8800758196a24433d1a62a622c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>GiveBack</b> (<a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a> obj)</td></tr>
-<tr class="separator:ac9ab6e8800758196a24433d1a62a622c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54839abae5c43fc3ce95513674f84cdf"><td class="memItemLeft" align="right" valign="top"><a id="a54839abae5c43fc3ce95513674f84cdf"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>GiveBack</b> (<a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a> obj, int netId=-1)</td></tr>
+<tr class="separator:a54839abae5c43fc3ce95513674f84cdf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a532c455061baf7764102fafa5321a508"><td class="memItemLeft" align="right" valign="top"><a id="a532c455061baf7764102fafa5321a508"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>GetEffectRoot</b> ()</td></tr>
 <tr class="separator:a532c455061baf7764102fafa5321a508"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -109,8 +113,23 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnInit</b> ()
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnRelease</b> ()</td></tr>
 <tr class="separator:a67d8c3fb3a0ed22b426fc50890abd9db inherit pub_methods_class_cross_link_1_1_core_mgr"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ab724ea423c6399672e38bc5e3cb8c84a"><td class="memItemLeft" align="right" valign="top"><a id="ab724ea423c6399672e38bc5e3cb8c84a"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetEffectObjNetId</b> ()</td></tr>
+<tr class="separator:ab724ea423c6399672e38bc5e3cb8c84a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acfc1af3b3663b715617e0643c2441dda"><td class="memItemLeft" align="right" valign="top"><a id="acfc1af3b3663b715617e0643c2441dda"></a>
+static <a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetNetEffectObj</b> (int netId)</td></tr>
+<tr class="separator:acfc1af3b3663b715617e0643c2441dda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
+<tr class="memitem:af852b7eb26318e47fa47f6e24ac7a956"><td class="memItemLeft" align="right" valign="top"><a id="af852b7eb26318e47fa47f6e24ac7a956"></a>
+static List&lt; <a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>netEffectObjs</b> = new List&lt;<a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a>&gt;()</td></tr>
+<tr class="separator:af852b7eb26318e47fa47f6e24ac7a956"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f2da557f5059a1f885cc21a38efc16d"><td class="memItemLeft" align="right" valign="top"><a id="a8f2da557f5059a1f885cc21a38efc16d"></a>
+static SortedList&lt; uint, <a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>netSimpleEffectObjs</b> = new SortedList&lt;uint, <a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a>&gt;()</td></tr>
+<tr class="separator:a8f2da557f5059a1f885cc21a38efc16d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3f09b24e2b5d0a2af60008331168947e"><td class="memItemLeft" align="right" valign="top"><a id="a3f09b24e2b5d0a2af60008331168947e"></a>
 static <a class="el" href="class_cross_link_1_1_effect_mgr.html">EffectMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_effect_mgr.html">EffectMgr</a>()</td></tr>
 <tr class="separator:a3f09b24e2b5d0a2af60008331168947e"><td class="memSeparator" colspan="2">&#160;</td></tr>

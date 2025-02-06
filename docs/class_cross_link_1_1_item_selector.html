@@ -80,7 +80,7 @@ $(function() {
 
 <p>Inherits <a class="el" href="class_cross_link_1_1_interact_trigger.html">CrossLink.InteractTrigger</a>.</p>
 
-<p>Inherited by <a class="el" href="class_cross_link_1_1_m_r_wave_selector.html">CrossLink.MRWaveSelector</a>.</p>
+<p>Inherited by <a class="el" href="class_cross_link_1_1_wave_selector.html">CrossLink.WaveSelector</a>.</p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -93,6 +93,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetOwner</b> (<a clas
 <tr class="memitem:a8a7f667d1986171322a8ee7fdd4a39c4"><td class="memItemLeft" align="right" valign="top"><a id="a8a7f667d1986171322a8ee7fdd4a39c4"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnChargeBegin</b> ()</td></tr>
 <tr class="separator:a8a7f667d1986171322a8ee7fdd4a39c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61ab48be269806c22cc996882fca4f5e"><td class="memItemLeft" align="right" valign="top"><a id="a61ab48be269806c22cc996882fca4f5e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>CmdPlayForgeEffect</b> ()</td></tr>
+<tr class="separator:a61ab48be269806c22cc996882fca4f5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab636d9d4e29100cf0d5aaa09b1ae4260"><td class="memItemLeft" align="right" valign="top"><a id="ab636d9d4e29100cf0d5aaa09b1ae4260"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcPlayForgeEffect</b> (uint netId)</td></tr>
+<tr class="separator:ab636d9d4e29100cf0d5aaa09b1ae4260"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa707fcd8e83c98f3a27993bb7560131"><td class="memItemLeft" align="right" valign="top"><a id="aaa707fcd8e83c98f3a27993bb7560131"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayForgeEffect</b> ()</td></tr>
+<tr class="separator:aaa707fcd8e83c98f3a27993bb7560131"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a450934350731385f73efd11208210aab"><td class="memItemLeft" align="right" valign="top"><a id="a450934350731385f73efd11208210aab"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>CmdStopForgeEffect</b> ()</td></tr>
+<tr class="separator:a450934350731385f73efd11208210aab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a557181309e3dd9b5798f13095d81965d"><td class="memItemLeft" align="right" valign="top"><a id="a557181309e3dd9b5798f13095d81965d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcStopForgeEffect</b> (uint netId)</td></tr>
+<tr class="separator:a557181309e3dd9b5798f13095d81965d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af336e3b856d01769317002a87500722b"><td class="memItemLeft" align="right" valign="top"><a id="af336e3b856d01769317002a87500722b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StopForgeEffect</b> ()</td></tr>
+<tr class="separator:af336e3b856d01769317002a87500722b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11a2285db80cc0f25233ef4b7356c51a"><td class="memItemLeft" align="right" valign="top"><a id="a11a2285db80cc0f25233ef4b7356c51a"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnChargeCancel</b> ()</td></tr>
 <tr class="separator:a11a2285db80cc0f25233ef4b7356c51a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -208,27 +226,48 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>GetLastManaCost</b> 
 <tr class="memitem:aca82ad4bf98e35bd5e9810f8b44a48ce inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="aca82ad4bf98e35bd5e9810f8b44a48ce"></a>
 <a class="el" href="class_cross_link_1_1_fly_object.html">FlyObject</a>&#160;</td><td class="memItemRight" valign="bottom"><b>CreateFlyObj</b> (string flyObjectName, Vector3 pos, Vector3 dir, float vel=-1)</td></tr>
 <tr class="separator:aca82ad4bf98e35bd5e9810f8b44a48ce inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8c334ba507d063c479ca0ae932810ee inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="ae8c334ba507d063c479ca0ae932810ee"></a>
+<a class="el" href="class_cross_link_1_1_fly_object.html">FlyObject</a>&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkCreateFlyObj</b> (string flyObjectName, Vector3 pos, Vector3 dir, float vel=-1)</td></tr>
+<tr class="separator:ae8c334ba507d063c479ca0ae932810ee inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32fbbe5955143e8da3a8254bb2555b2c inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a32fbbe5955143e8da3a8254bb2555b2c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>FinishFlyObject</b> ()</td></tr>
+<tr class="separator:a32fbbe5955143e8da3a8254bb2555b2c inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42df705ae2b7e7dd60e77ea9c7919165 inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a42df705ae2b7e7dd60e77ea9c7919165"></a>
+virtual string&#160;</td><td class="memItemRight" valign="bottom"><b>GetGazeManaInfo</b> ()</td></tr>
+<tr class="separator:a42df705ae2b7e7dd60e77ea9c7919165 inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae32a13a029b49995ef8a3decfc7aac7f inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="ae32a13a029b49995ef8a3decfc7aac7f"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnSale</b> ()</td></tr>
 <tr class="separator:ae32a13a029b49995ef8a3decfc7aac7f inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8a55fc76913bb08d7047bb3af99bde1 inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="ab8a55fc76913bb08d7047bb3af99bde1"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnBuy</b> ()</td></tr>
 <tr class="separator:ab8a55fc76913bb08d7047bb3af99bde1 inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a032a246d06469c6ac17bf2d7c544cbe4 inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a032a246d06469c6ac17bf2d7c544cbe4"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnchantStart</b> ()</td></tr>
+<tr class="separator:a032a246d06469c6ac17bf2d7c544cbe4 inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0c6ee9e4d872b3b85aa411390584811 inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="af0c6ee9e4d872b3b85aa411390584811"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnchantEnd</b> ()</td></tr>
+<tr class="separator:af0c6ee9e4d872b3b85aa411390584811 inherit pub_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:a4904d542d42a9d7d85a4b1fcb725bfc1"><td class="memItemLeft" align="right" valign="top"><a id="a4904d542d42a9d7d85a4b1fcb725bfc1"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>chargeReadyDontDestroy</b> = false</td></tr>
+<tr class="separator:a4904d542d42a9d7d85a4b1fcb725bfc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6096a20c9c3574dd2627090b05f13131"><td class="memItemLeft" align="right" valign="top"><a id="a6096a20c9c3574dd2627090b05f13131"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>trackTarget</b></td></tr>
 <tr class="separator:a6096a20c9c3574dd2627090b05f13131"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ae4b7c1226061b2bd408b13512bb10a"><td class="memItemLeft" align="right" valign="top"><a id="a1ae4b7c1226061b2bd408b13512bb10a"></a>
-string&#160;</td><td class="memItemRight" valign="bottom"><b>tipsId</b></td></tr>
-<tr class="separator:a1ae4b7c1226061b2bd408b13512bb10a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab9b1f143110371a8716e364514fb5873"><td class="memItemLeft" align="right" valign="top"><a id="ab9b1f143110371a8716e364514fb5873"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>chargeFinishEffect</b></td></tr>
 <tr class="separator:ab9b1f143110371a8716e364514fb5873"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab905664c6068be1ac11ce3b28cf9e24e"><td class="memItemLeft" align="right" valign="top"><a id="ab905664c6068be1ac11ce3b28cf9e24e"></a>
 <a class="el" href="class_cross_link_1_1_gaze_obj.html">GazeObj</a>&#160;</td><td class="memItemRight" valign="bottom"><b>gaze</b></td></tr>
 <tr class="separator:ab905664c6068be1ac11ce3b28cf9e24e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0ebf5249cdddc0813a6f75ebab93508"><td class="memItemLeft" align="right" valign="top"><a id="ae0ebf5249cdddc0813a6f75ebab93508"></a>
+Action&lt; <a class="el" href="class_cross_link_1_1_item_selector.html">ItemSelector</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>onChargeDone</b></td></tr>
+<tr class="separator:ae0ebf5249cdddc0813a6f75ebab93508"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a619632fd5ae6b6f204ece15b5c9af4b7"><td class="memItemLeft" align="right" valign="top"><a id="a619632fd5ae6b6f204ece15b5c9af4b7"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>trackingLootAtPlayer</b> = false</td></tr>
+<tr class="separator:a619632fd5ae6b6f204ece15b5c9af4b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91c30db311a44fa5ca0c25116ddb38a3"><td class="memItemLeft" align="right" valign="top"><a id="a91c30db311a44fa5ca0c25116ddb38a3"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>progressEffect</b> = &quot;ForgeEffect&quot;</td></tr>
 <tr class="separator:a91c30db311a44fa5ca0c25116ddb38a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -236,6 +275,27 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>progressEffect</b> 
 string&#160;</td><td class="memItemRight" valign="bottom"><b>hintEffect</b> = &quot;SelectorHintEffect&quot;</td></tr>
 <tr class="separator:a8f0793d319c8bc8b7eeb4ba6ed40b90d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_interact_trigger"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_interact_trigger')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_interact_trigger.html">CrossLink.InteractTrigger</a></td></tr>
+<tr class="memitem:a4a7e9f14b0a2b931631e8b68c7ee4c5f inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a4a7e9f14b0a2b931631e8b68c7ee4c5f"></a>
+System.Action&lt; int, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>serverOpenSkillEvent</b></td></tr>
+<tr class="separator:a4a7e9f14b0a2b931631e8b68c7ee4c5f inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c8ed6875f6fcca9f248098a69e05364 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a3c8ed6875f6fcca9f248098a69e05364"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>serverCloseSkillEvent</b></td></tr>
+<tr class="separator:a3c8ed6875f6fcca9f248098a69e05364 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abad4ec32d98378006cb08fe9fea8dbfe inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="abad4ec32d98378006cb08fe9fea8dbfe"></a>
+System.Action&lt; int, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>clientOpenSkillEvent</b></td></tr>
+<tr class="separator:abad4ec32d98378006cb08fe9fea8dbfe inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59ee25e1e822f38f9cd3783edb9cda60 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a59ee25e1e822f38f9cd3783edb9cda60"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>clientCloseSkillEvent</b></td></tr>
+<tr class="separator:a59ee25e1e822f38f9cd3783edb9cda60 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f76437dcd106e6b2bc2c7c715e35a76 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a3f76437dcd106e6b2bc2c7c715e35a76"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_fly_object.html">FlyObject</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>addFlyObjEvent</b></td></tr>
+<tr class="separator:a3f76437dcd106e6b2bc2c7c715e35a76 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e20e3e3307eed4901cb154ebc81367b inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a4e20e3e3307eed4901cb154ebc81367b"></a>
+<a class="el" href="class_cross_link_1_1_fly_object.html">FlyObject</a>&#160;</td><td class="memItemRight" valign="bottom"><b>flyObject</b></td></tr>
+<tr class="separator:a4e20e3e3307eed4901cb154ebc81367b inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf35f2a8ab220724745a945ca6ea0a56 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="aaf35f2a8ab220724745a945ca6ea0a56"></a>
+<a class="el" href="class_cross_link_1_1_network_1_1_network_interact_trigger.html">Network.NetworkInteractTrigger</a>&#160;</td><td class="memItemRight" valign="bottom"><b>networkInteractTrigger</b></td></tr>
+<tr class="separator:aaf35f2a8ab220724745a945ca6ea0a56 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a96a324b0f4171e4e23efeb2baf64b55b inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a96a324b0f4171e4e23efeb2baf64b55b"></a>
 <a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>interact</b></td></tr>
 <tr class="separator:a96a324b0f4171e4e23efeb2baf64b55b inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -299,6 +359,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>needUpdateOnce</b> = 
 <tr class="memitem:abfb931635cabd8a339665153560de018 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="abfb931635cabd8a339665153560de018"></a>
 Dictionary&lt; string, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>savePointLoadInfo</b></td></tr>
 <tr class="separator:abfb931635cabd8a339665153560de018 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad17eb0bb769d526aa24724e765a5abdb inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="ad17eb0bb769d526aa24724e765a5abdb"></a>
+AnimationCurve[]&#160;</td><td class="memItemRight" valign="bottom"><b>curves</b></td></tr>
+<tr class="separator:ad17eb0bb769d526aa24724e765a5abdb inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fdb3e62c730580a623b158c01e18f24 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a9fdb3e62c730580a623b158c01e18f24"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>triggerStop</b></td></tr>
+<tr class="separator:a9fdb3e62c730580a623b158c01e18f24 inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b8bcd147a282f549cf8b4be7244c0fd inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a5b8bcd147a282f549cf8b4be7244c0fd"></a>
 Renderer[]&#160;</td><td class="memItemRight" valign="bottom"><b>skillChangeColors</b></td></tr>
 <tr class="separator:a5b8bcd147a282f549cf8b4be7244c0fd inherit pub_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -323,9 +389,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Reset</b> ()</td></tr
 <tr class="memitem:a5eaac7d7c8a0603e38e0d84e1113a2a1"><td class="memItemLeft" align="right" valign="top"><a id="a5eaac7d7c8a0603e38e0d84e1113a2a1"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>AwakeInit</b> ()</td></tr>
 <tr class="separator:a5eaac7d7c8a0603e38e0d84e1113a2a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac628661420d13fcae1541cbc877ebb2f"><td class="memItemLeft" align="right" valign="top"><a id="ac628661420d13fcae1541cbc877ebb2f"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Update</b> ()</td></tr>
-<tr class="separator:ac628661420d13fcae1541cbc877ebb2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a930671f88f7c7e54a747030e9b8486b8"><td class="memItemLeft" align="right" valign="top"><a id="a930671f88f7c7e54a747030e9b8486b8"></a>
+override void&#160;</td><td class="memItemRight" valign="bottom"><b>Update</b> ()</td></tr>
+<tr class="separator:a930671f88f7c7e54a747030e9b8486b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a176eed730ed1879a054110b81c96bbf7"><td class="memItemLeft" align="right" valign="top"><a id="a176eed730ed1879a054110b81c96bbf7"></a>
+override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTrigger</b> (<a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a> attach, bool t)</td></tr>
+<tr class="separator:a176eed730ed1879a054110b81c96bbf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d056e311f48129c2b8dc39da9405226"><td class="memItemLeft" align="right" valign="top"><a id="a9d056e311f48129c2b8dc39da9405226"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHintEffect</b> (bool isShow)</td></tr>
+<tr class="separator:a9d056e311f48129c2b8dc39da9405226"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_class_cross_link_1_1_interact_trigger"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_class_cross_link_1_1_interact_trigger')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="class_cross_link_1_1_interact_trigger.html">CrossLink.InteractTrigger</a></td></tr>
 <tr class="memitem:ae376fadd8c0e489e561b8a8836ba81b5 inherit pro_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="ae376fadd8c0e489e561b8a8836ba81b5"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>StartInit</b> ()</td></tr>
@@ -363,9 +435,6 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsTriggeringExcept</b
 <tr class="memitem:a3564cafab504660863f4884d3eb780cf inherit pro_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a3564cafab504660863f4884d3eb780cf"></a>
 <a class="el" href="class_cross_link_1_1_interact_character.html">InteractCharacter</a>&#160;</td><td class="memItemRight" valign="bottom"><b>QueryHolder</b> ()</td></tr>
 <tr class="separator:a3564cafab504660863f4884d3eb780cf inherit pro_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a08298896b506f259286aa52563e9237b inherit pro_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a08298896b506f259286aa52563e9237b"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTrigger</b> (<a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a> attach, bool t)</td></tr>
-<tr class="separator:a08298896b506f259286aa52563e9237b inherit pro_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a03114e44d1a56f7eac2d358dd91f6fc2 inherit pro_methods_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a03114e44d1a56f7eac2d358dd91f6fc2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnterActivate</b> ()</td></tr>
 <tr class="separator:a03114e44d1a56f7eac2d358dd91f6fc2 inherit pro_methods_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -425,6 +494,9 @@ const string&#160;</td><td class="memItemRight" valign="bottom"><b>WeaponPath</b
 <tr class="memitem:a9ec14e189a2046d413211b221d47e928 inherit pub_static_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a9ec14e189a2046d413211b221d47e928"></a>
 const string&#160;</td><td class="memItemRight" valign="bottom"><b>WeaponTexPath</b> = &quot;WeaponPreview/&quot;</td></tr>
 <tr class="separator:a9ec14e189a2046d413211b221d47e928 inherit pub_static_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3e5a2b48c64040217089a2f65b610f4 inherit pub_static_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="ab3e5a2b48c64040217089a2f65b610f4"></a>
+const string&#160;</td><td class="memItemRight" valign="bottom"><b>buffPath</b> = &quot;Selector/BuffSelector/&quot;</td></tr>
+<tr class="separator:ab3e5a2b48c64040217089a2f65b610f4 inherit pub_static_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d1cf7fc0e26921e89889d03b7b47fe3 inherit pub_static_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a4d1cf7fc0e26921e89889d03b7b47fe3"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>SkillChargeBeginTime</b> = 0.2f</td></tr>
 <tr class="separator:a4d1cf7fc0e26921e89889d03b7b47fe3 inherit pub_static_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -477,6 +549,9 @@ static System.Func&lt; <a class="el" href="class_cross_link_1_1_physics_unit.htm
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreForceToRagdoll</b> = false</td></tr>
 <tr class="separator:af770ae4960ecc2554e83464878d9168c inherit pub_static_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_class_cross_link_1_1_interact_trigger"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_cross_link_1_1_interact_trigger')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_cross_link_1_1_interact_trigger.html">CrossLink.InteractTrigger</a></td></tr>
+<tr class="memitem:a1e280bc3b98e0326cfb67e729d7c6d75 inherit pro_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a1e280bc3b98e0326cfb67e729d7c6d75"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isOnline</b> = false</td></tr>
+<tr class="separator:a1e280bc3b98e0326cfb67e729d7c6d75 inherit pro_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fe268346d0d485048741c4279690f88 inherit pro_attribs_class_cross_link_1_1_interact_trigger"><td class="memItemLeft" align="right" valign="top"><a id="a8fe268346d0d485048741c4279690f88"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>openUTime</b></td></tr>
 <tr class="separator:a8fe268346d0d485048741c4279690f88 inherit pro_attribs_class_cross_link_1_1_interact_trigger"><td class="memSeparator" colspan="2">&#160;</td></tr>

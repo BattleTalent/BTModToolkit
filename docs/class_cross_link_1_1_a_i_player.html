@@ -114,12 +114,30 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>RespawnAndAlive</b> (
 <tr class="memitem:a294b9e3681c4a11ee764148e8c057df5"><td class="memItemLeft" align="right" valign="top"><a id="a294b9e3681c4a11ee764148e8c057df5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Reborn</b> (float hp)</td></tr>
 <tr class="separator:a294b9e3681c4a11ee764148e8c057df5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a583a752bbe43972852f0f13d06c8f6f9"><td class="memItemLeft" align="right" valign="top"><a id="a583a752bbe43972852f0f13d06c8f6f9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>AddTargetSelfAI</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> ai)</td></tr>
+<tr class="separator:a583a752bbe43972852f0f13d06c8f6f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d3cf6a992d5b1960df20feccb5c751c"><td class="memItemLeft" align="right" valign="top"><a id="a4d3cf6a992d5b1960df20feccb5c751c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveTargetSelfAI</b> (<a class="el" href="class_cross_link_1_1_a_i_proxy.html">AIProxy</a> ai)</td></tr>
+<tr class="separator:a4d3cf6a992d5b1960df20feccb5c751c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa179731e76f92ab4d867592ac505a570"><td class="memItemLeft" align="right" valign="top"><a id="aa179731e76f92ab4d867592ac505a570"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>NullTargeted</b> ()</td></tr>
+<tr class="separator:aa179731e76f92ab4d867592ac505a570"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93b56f98a2ab41bf14cd6785a4004c8a"><td class="memItemLeft" align="right" valign="top"><a id="a93b56f98a2ab41bf14cd6785a4004c8a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkDead</b> ()</td></tr>
+<tr class="separator:a93b56f98a2ab41bf14cd6785a4004c8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66553e3a19436698dfb0a600dbbf6cdc"><td class="memItemLeft" align="right" valign="top"><a id="a66553e3a19436698dfb0a600dbbf6cdc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkReborn</b> ()</td></tr>
+<tr class="separator:a66553e3a19436698dfb0a600dbbf6cdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee050a7cd085ff7f8abf24e69852b827"><td class="memItemLeft" align="right" valign="top"><a id="aee050a7cd085ff7f8abf24e69852b827"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkAllDead</b> ()</td></tr>
+<tr class="separator:aee050a7cd085ff7f8abf24e69852b827"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f99128df2e103e45390c0fa4ad5ac59"><td class="memItemLeft" align="right" valign="top"><a id="a0f99128df2e103e45390c0fa4ad5ac59"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollision</b> (Collision collision, RagdollMuscle hitedMu)</td></tr>
 <tr class="separator:a0f99128df2e103e45390c0fa4ad5ac59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a27c515b1f9a02f396f190558eeb31a8c"><td class="memItemLeft" align="right" valign="top"><a id="a27c515b1f9a02f396f190558eeb31a8c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyDamage</b> (Vector3 hitPos, <a class="el" href="class_cross_link_1_1_ragdoll_hit_info.html">RagdollHitInfo</a> hitInfo)</td></tr>
-<tr class="separator:a27c515b1f9a02f396f190558eeb31a8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33656078fc43cf5183433c4595ce7d34"><td class="memItemLeft" align="right" valign="top"><a id="a33656078fc43cf5183433c4595ce7d34"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyDamage</b> (Vector3 hitPos, <a class="el" href="class_cross_link_1_1_ragdoll_hit_info.html">RagdollHitInfo</a> hitInfo, float dmgMlp=1, Vector3? hitDir=null, Collider hitCol=null)</td></tr>
+<tr class="separator:a33656078fc43cf5183433c4595ce7d34"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5242f41b79c8eab12e0dde836dbc446"><td class="memItemLeft" align="right" valign="top"><a id="ae5242f41b79c8eab12e0dde836dbc446"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateHitWindow</b> ()</td></tr>
 <tr class="separator:ae5242f41b79c8eab12e0dde836dbc446"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -244,6 +262,18 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>rebornActId</b> = -1</
 <tr class="memitem:ab872072285f9d3a9cbcf07f4d98d77a3"><td class="memItemLeft" align="right" valign="top"><a id="ab872072285f9d3a9cbcf07f4d98d77a3"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>BeingReborn</b> = false</td></tr>
 <tr class="separator:ab872072285f9d3a9cbcf07f4d98d77a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae65ba8c5e9b98520f818ad75ab81899d"><td class="memItemLeft" align="right" valign="top"><a id="ae65ba8c5e9b98520f818ad75ab81899d"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>networkDropDead</b> = false</td></tr>
+<tr class="separator:ae65ba8c5e9b98520f818ad75ab81899d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea0d56ac267017d20765e91055230afb"><td class="memItemLeft" align="right" valign="top"><a id="aea0d56ac267017d20765e91055230afb"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>cacheDropRebornHp</b> = 1f</td></tr>
+<tr class="separator:aea0d56ac267017d20765e91055230afb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6300f67813c7506e0730a40cb77e9e77"><td class="memItemLeft" align="right" valign="top"><a id="a6300f67813c7506e0730a40cb77e9e77"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>cacheDropRebornMp</b> = 1f</td></tr>
+<tr class="separator:a6300f67813c7506e0730a40cb77e9e77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7ec8cfe2ca5d826747fe4a6bb061ad9"><td class="memItemLeft" align="right" valign="top"><a id="ac7ec8cfe2ca5d826747fe4a6bb061ad9"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>networkLocalDead</b> = false</td></tr>
+<tr class="separator:ac7ec8cfe2ca5d826747fe4a6bb061ad9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -291,9 +321,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAIStyle</b>
 <tr class="memitem:a8b3c1959e6be303f9e1cd4b4433ce3ff inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a8b3c1959e6be303f9e1cd4b4433ce3ff"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>SetHitTime</b> (float ht)</td></tr>
 <tr class="separator:a8b3c1959e6be303f9e1cd4b4433ce3ff inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afd77024079f8e59691a878da34c38f47 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="afd77024079f8e59691a878da34c38f47"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateAtkWindowMlp</b> ()</td></tr>
-<tr class="separator:afd77024079f8e59691a878da34c38f47 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9275e25e4066ca36e026f4be2c9b8cbb inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a9275e25e4066ca36e026f4be2c9b8cbb"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateAtkWindowMlp</b> (<a class="el" href="class_cross_link_1_1_interact_character.html">InteractCharacter</a> character=null)</td></tr>
+<tr class="separator:a9275e25e4066ca36e026f4be2c9b8cbb inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3431e51a59d55d1861e03d960f5189e3 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memItemLeft" align="right" valign="top"><a id="a3431e51a59d55d1861e03d960f5189e3"></a>
 static float&#160;</td><td class="memItemRight" valign="bottom"><b>GetAtkStartTime</b> ()</td></tr>
 <tr class="separator:a3431e51a59d55d1861e03d960f5189e3 inherit pub_static_methods_class_cross_link_1_1_a_i_proxy"><td class="memSeparator" colspan="2">&#160;</td></tr>

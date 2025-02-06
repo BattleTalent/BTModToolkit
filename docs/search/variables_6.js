@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['valueeffect_1881',['valueEffect',['../class_cross_link_1_1_dynamic_modifier.html#ac9d32dceea2d19454e4c9caacafe3842',1,'CrossLink::DynamicModifier']]],
-  ['valueinsetting_1882',['valueInSetting',['../class_cross_link_1_1_dynamic_modifier.html#a566654aaec7f5429c4bb52aec1ed9f11',1,'CrossLink::DynamicModifier']]]
+  ['richcolorreg_2625',['RichColorReg',['../class_rich_text_alpha_updater.html#a9627c2e68f0a583eeaa1c8be762c8ab0',1,'RichTextAlphaUpdater']]]
 ];

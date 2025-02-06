@@ -89,9 +89,21 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDiscount</b> (floa
 <tr class="memitem:a871eb244cd32b61c35361f78d974998e"><td class="memItemLeft" align="right" valign="top"><a id="a871eb244cd32b61c35361f78d974998e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowGrid</b> ()</td></tr>
 <tr class="separator:a871eb244cd32b61c35361f78d974998e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a829013e81f226d5611d408dfe93c42f9"><td class="memItemLeft" align="right" valign="top"><a id="a829013e81f226d5611d408dfe93c42f9"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>BindBuffItem</b> (GameObject go, <a class="el" href="class_cross_link_1_1_merchandise_info.html">MerchandiseInfo</a> info)</td></tr>
+<tr class="separator:a829013e81f226d5611d408dfe93c42f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0695c9bc589e05f6f8596d2b099ab41c"><td class="memItemLeft" align="right" valign="top"><a id="a0695c9bc589e05f6f8596d2b099ab41c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>BindWeaponItem</b> (GameObject weaponGO, <a class="el" href="class_cross_link_1_1_merchandise_info.html">MerchandiseInfo</a> info)</td></tr>
+<tr class="separator:a0695c9bc589e05f6f8596d2b099ab41c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a886cc16aeae87c97b0aea64fb2ca46c7"><td class="memItemLeft" align="right" valign="top"><a id="a886cc16aeae87c97b0aea64fb2ca46c7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowPrice</b> (<a class="el" href="class_cross_link_1_1_merchandise_info.html">MerchandiseInfo</a> info)</td></tr>
+<tr class="separator:a886cc16aeae87c97b0aea64fb2ca46c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c7508d9a017809026a119825c0326b2"><td class="memItemLeft" align="right" valign="top"><a id="a0c7508d9a017809026a119825c0326b2"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>UngrabInteract</b> ()</td></tr>
 <tr class="separator:a0c7508d9a017809026a119825c0326b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9dfe8dbe9f89c8534e9a5f1aaa498c92"><td class="memItemLeft" align="right" valign="top"><a id="a9dfe8dbe9f89c8534e9a5f1aaa498c92"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>CheckReleaseHand</b> (<a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a> ib)</td></tr>
+<tr class="separator:a9dfe8dbe9f89c8534e9a5f1aaa498c92"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab532d66a7f3f4954b0e340fc9d7e2710"><td class="memItemLeft" align="right" valign="top"><a id="ab532d66a7f3f4954b0e340fc9d7e2710"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnBuy</b> ()</td></tr>
 <tr class="separator:ab532d66a7f3f4954b0e340fc9d7e2710"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,6 +146,18 @@ TextMeshPro&#160;</td><td class="memItemRight" valign="bottom"><b>deleteLine</b>
 <tr class="memitem:a6d48615ef227f48957046b590dfd023f"><td class="memItemLeft" align="right" valign="top"><a id="a6d48615ef227f48957046b590dfd023f"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>sqrMaxDis</b> = 25</td></tr>
 <tr class="separator:a6d48615ef227f48957046b590dfd023f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac814850a814b8921de8fc0e6c097ad9"><td class="memItemLeft" align="right" valign="top"><a id="aac814850a814b8921de8fc0e6c097ad9"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSoldOut</b> = false</td></tr>
+<tr class="separator:aac814850a814b8921de8fc0e6c097ad9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e077fe34df758fc9d9cca0c94cf65d9"><td class="memItemLeft" align="right" valign="top"><a id="a9e077fe34df758fc9d9cca0c94cf65d9"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>discount</b> = -1</td></tr>
+<tr class="separator:a9e077fe34df758fc9d9cca0c94cf65d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adabb34e438ee48b5f2f938eeb1dc790c"><td class="memItemLeft" align="right" valign="top"><a id="adabb34e438ee48b5f2f938eeb1dc790c"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>buyPrice</b> = 0</td></tr>
+<tr class="separator:adabb34e438ee48b5f2f938eeb1dc790c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a89115548107edc775c8a6dbbfea98c39"><td class="memItemLeft" align="right" valign="top"><a id="a89115548107edc775c8a6dbbfea98c39"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>index</b> = 0</td></tr>
+<tr class="separator:a89115548107edc775c8a6dbbfea98c39"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05fa671c951982129ec503b05ba69dcd"><td class="memItemLeft" align="right" valign="top"><a id="a05fa671c951982129ec503b05ba69dcd"></a>
 LineRenderer&#160;</td><td class="memItemRight" valign="bottom"><b>line</b></td></tr>
 <tr class="separator:a05fa671c951982129ec503b05ba69dcd"><td class="memSeparator" colspan="2">&#160;</td></tr>

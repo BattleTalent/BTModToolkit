@@ -109,6 +109,15 @@ static <a class="el" href="class_cross_link_1_1_config_data_base.html">ConfigDat
 <tr class="memitem:a54b99960b1d64a80c92ab0902ecb172b"><td class="memItemLeft" align="right" valign="top"><a id="a54b99960b1d64a80c92ab0902ecb172b"></a>
 static T&#160;</td><td class="memItemRight" valign="bottom"><b>GetData&lt; T &gt;</b> ()</td></tr>
 <tr class="separator:a54b99960b1d64a80c92ab0902ecb172b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad259768238edfa256a60f3568db815be"><td class="memItemLeft" align="right" valign="top"><a id="ad259768238edfa256a60f3568db815be"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>ReloadSaveData</b> (int idx)</td></tr>
+<tr class="separator:ad259768238edfa256a60f3568db815be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a896db24db07b857fb9555196f17eeee3"><td class="memItemLeft" align="right" valign="top"><a id="a896db24db07b857fb9555196f17eeee3"></a>
+static string&#160;</td><td class="memItemRight" valign="bottom"><b>GetSaveDataPathByIndex</b> (int index)</td></tr>
+<tr class="separator:a896db24db07b857fb9555196f17eeee3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c73949aa3736ec0f141b38d8f4295b2"><td class="memItemLeft" align="right" valign="top"><a id="a3c73949aa3736ec0f141b38d8f4295b2"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>GetCurSaveDataIdx</b> ()</td></tr>
+<tr class="separator:a3c73949aa3736ec0f141b38d8f4295b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad853639dee032c433a68b0486cce12d2"><td class="memItemLeft" align="right" valign="top"><a id="ad853639dee032c433a68b0486cce12d2"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>InitSave</b> ()</td></tr>
 <tr class="separator:ad853639dee032c433a68b0486cce12d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -124,6 +133,9 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>DeleteKey</b> 
 <tr class="memitem:af275d01709012a429ba861e8408fc1b9"><td class="memItemLeft" align="right" valign="top"><a id="af275d01709012a429ba861e8408fc1b9"></a>
 static T&#160;</td><td class="memItemRight" valign="bottom"><b>Load&lt; T &gt;</b> (string key)</td></tr>
 <tr class="separator:af275d01709012a429ba861e8408fc1b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbcec6310a09090c27fec47f4640e008"><td class="memItemLeft" align="right" valign="top"><a id="acbcec6310a09090c27fec47f4640e008"></a>
+static T&#160;</td><td class="memItemRight" valign="bottom"><b>LoadOnFile&lt; T &gt;</b> (string key, string filePath, T defaultValue)</td></tr>
+<tr class="separator:acbcec6310a09090c27fec47f4640e008"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa911857a6a48a290097b9d326227c4c3"><td class="memItemLeft" align="right" valign="top"><a id="aa911857a6a48a290097b9d326227c4c3"></a>
 static T&#160;</td><td class="memItemRight" valign="bottom"><b>Load&lt; T &gt;</b> (string key, T defaultValue)</td></tr>
 <tr class="separator:aa911857a6a48a290097b9d326227c4c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -139,6 +151,12 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>CreateBackup</
 <tr class="memitem:a1365d326de29546b10b2e9d4af1254a4"><td class="memItemLeft" align="right" valign="top"><a id="a1365d326de29546b10b2e9d4af1254a4"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>RestoreBackup</b> ()</td></tr>
 <tr class="separator:a1365d326de29546b10b2e9d4af1254a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6dd48c805adfa22191f8e66a34cd907b"><td class="memItemLeft" align="right" valign="top"><a id="a6dd48c805adfa22191f8e66a34cd907b"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>DeleteSaveData</b> (int index)</td></tr>
+<tr class="separator:a6dd48c805adfa22191f8e66a34cd907b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab19918f9b63fe482d4c76b76e683db0f"><td class="memItemLeft" align="right" valign="top"><a id="ab19918f9b63fe482d4c76b76e683db0f"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>CopySaveData</b> (int index)</td></tr>
+<tr class="separator:ab19918f9b63fe482d4c76b76e683db0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>

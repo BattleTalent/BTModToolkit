@@ -110,12 +110,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DiscoverMods</b> ()</
 <tr class="memitem:a153de41599b2a08ee9b16e9409374e86"><td class="memItemLeft" align="right" valign="top"><a id="a153de41599b2a08ee9b16e9409374e86"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadMods</b> (loadCompleted cb=null)</td></tr>
 <tr class="separator:a153de41599b2a08ee9b16e9409374e86"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a627d5da03e6932d9a5704330766ddac7"><td class="memItemLeft" align="right" valign="top"><a id="a627d5da03e6932d9a5704330766ddac7"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadModScene</b> (string sceneKey)</td></tr>
-<tr class="separator:a627d5da03e6932d9a5704330766ddac7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a490e725e6a048a50ed6b77ea446dba81"><td class="memItemLeft" align="right" valign="top"><a id="a490e725e6a048a50ed6b77ea446dba81"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadModScene</b> (string sceneKey, LoadSceneMode mode=LoadSceneMode.Single, System.Action&lt; bool &gt; onLoad=null)</td></tr>
+<tr class="separator:a490e725e6a048a50ed6b77ea446dba81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af2330668d2d8c895cdf7d885404af2bd"><td class="memItemLeft" align="right" valign="top"><a id="af2330668d2d8c895cdf7d885404af2bd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TryLoadModByPath</b> (string path)</td></tr>
 <tr class="separator:af2330668d2d8c895cdf7d885404af2bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0df5744f9775a9aa5945ecc5b7e5565"><td class="memItemLeft" align="right" valign="top"><a id="ad0df5744f9775a9aa5945ecc5b7e5565"></a>
+List&lt; <a class="el" href="class_cross_link_1_1_item_info_config.html">ItemInfoConfig</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetCacheItemInfo</b> ()</td></tr>
+<tr class="separator:ad0df5744f9775a9aa5945ecc5b7e5565"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aabdb502348050a2420ffad6fd0b92240"><td class="memItemLeft" align="right" valign="top"><a id="aabdb502348050a2420ffad6fd0b92240"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnModDisable</b> (string name)</td></tr>
 <tr class="separator:aabdb502348050a2420ffad6fd0b92240"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,6 +137,18 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsScriptLocation</b> 
 <tr class="memitem:ab68da30d9d840f16be0de3bcc1d57972"><td class="memItemLeft" align="right" valign="top"><a id="ab68da30d9d840f16be0de3bcc1d57972"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveAllMods</b> ()</td></tr>
 <tr class="separator:ab68da30d9d840f16be0de3bcc1d57972"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9533583c2d1d6d19f49fdcf6749a3a24"><td class="memItemLeft" align="right" valign="top"><a id="a9533583c2d1d6d19f49fdcf6749a3a24"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UnloadModByName</b> (string name)</td></tr>
+<tr class="separator:a9533583c2d1d6d19f49fdcf6749a3a24"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9c4a5ebe8ea061d8f63e8d775f21bd3"><td class="memItemLeft" align="right" valign="top"><a id="ae9c4a5ebe8ea061d8f63e8d775f21bd3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearModOfPack</b> ()</td></tr>
+<tr class="separator:ae9c4a5ebe8ea061d8f63e8d775f21bd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a633ca3e30701bffb2c786b00b2dccce5"><td class="memItemLeft" align="right" valign="top"><a id="a633ca3e30701bffb2c786b00b2dccce5"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ReloadModOfPack</b> (List&lt; int &gt; ids)</td></tr>
+<tr class="separator:a633ca3e30701bffb2c786b00b2dccce5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7bb89341d3e8e702ba53973301622eb"><td class="memItemLeft" align="right" valign="top"><a id="ac7bb89341d3e8e702ba53973301622eb"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsItemInCurPack</b> (string item)</td></tr>
+<tr class="separator:ac7bb89341d3e8e702ba53973301622eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -155,6 +170,15 @@ static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsModItemEnabl
 <tr class="memitem:a6a3cf7562748ccfab441d8d4a92a67ff"><td class="memItemLeft" align="right" valign="top"><a id="a6a3cf7562748ccfab441d8d4a92a67ff"></a>
 static GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>TryGetHandPosePreset</b> (string name, int idx)</td></tr>
 <tr class="separator:a6a3cf7562748ccfab441d8d4a92a67ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1ac1148c6067056194d2e01b0723dd1d"><td class="memItemLeft" align="right" valign="top"><a id="a1ac1148c6067056194d2e01b0723dd1d"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsSupportedMultiplayerItem</b> (string name)</td></tr>
+<tr class="separator:a1ac1148c6067056194d2e01b0723dd1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a058307fddb85c5c2ce3842bb3edfb539"><td class="memItemLeft" align="right" valign="top"><a id="a058307fddb85c5c2ce3842bb3edfb539"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>DeleteExtraDownloadedMods</b> ()</td></tr>
+<tr class="separator:a058307fddb85c5c2ce3842bb3edfb539"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae744cef2fc4de1b6be6faf550574b81a"><td class="memItemLeft" align="right" valign="top"><a id="ae744cef2fc4de1b6be6faf550574b81a"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>DeleteExtraDownloadedMod</b> (string name)</td></tr>
+<tr class="separator:ae744cef2fc4de1b6be6faf550574b81a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
@@ -164,6 +188,9 @@ static <a class="el" href="class_cross_link_1_1_mod_manager.html">ModManager</a>
 <tr class="memitem:a3500017d3679a484e92584a2a3c216c2"><td class="memItemLeft" align="right" valign="top"><a id="a3500017d3679a484e92584a2a3c216c2"></a>
 static Dictionary&lt; string, <a class="el" href="class_cross_link_1_1_hand_pose.html">HandPose</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>handPoseDic</b> = new Dictionary&lt;string, <a class="el" href="class_cross_link_1_1_hand_pose.html">HandPose</a>&gt;()</td></tr>
 <tr class="separator:a3500017d3679a484e92584a2a3c216c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10b4b7853234d40e8d42056e9fe4962c"><td class="memItemLeft" align="right" valign="top"><a id="a10b4b7853234d40e8d42056e9fe4962c"></a>
+static List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>networkPrefabs</b> = new List&lt;string&gt;()</td></tr>
+<tr class="separator:a10b4b7853234d40e8d42056e9fe4962c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a410b4a363bcb9d371c4b6e4ff6a91680"><td class="memItemLeft" align="right" valign="top"><a id="a410b4a363bcb9d371c4b6e4ff6a91680"></a>
 static <a class="el" href="class_cross_link_1_1_mod_info.html">ModInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>loadingMod</b> = null</td></tr>
 <tr class="separator:a410b4a363bcb9d371c4b6e4ff6a91680"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -176,6 +203,12 @@ Events</h2></td></tr>
 <tr class="memitem:a53d497f8db10ac05704dc566e57191f1"><td class="memItemLeft" align="right" valign="top"><a id="a53d497f8db10ac05704dc566e57191f1"></a>
 System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>OnModChanged</b></td></tr>
 <tr class="separator:a53d497f8db10ac05704dc566e57191f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4691c506c13557af05bcf99414965127"><td class="memItemLeft" align="right" valign="top"><a id="a4691c506c13557af05bcf99414965127"></a>
+System.Action&lt; int, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnModInstallSuc</b></td></tr>
+<tr class="separator:a4691c506c13557af05bcf99414965127"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a837a9684abf59cb94a1ed212d9ad3e11"><td class="memItemLeft" align="right" valign="top"><a id="a837a9684abf59cb94a1ed212d9ad3e11"></a>
+System.Action&lt; int, int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnModInstallFail</b></td></tr>
+<tr class="separator:a837a9684abf59cb94a1ed212d9ad3e11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

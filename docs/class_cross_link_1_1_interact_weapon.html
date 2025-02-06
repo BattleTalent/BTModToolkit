@@ -85,6 +85,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab2ed66516f4109e00f6680cf662062d1"><td class="memItemLeft" align="right" valign="top"><a id="ab2ed66516f4109e00f6680cf662062d1"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>GetPrefabNameForSpawn</b> ()</td></tr>
 <tr class="separator:ab2ed66516f4109e00f6680cf662062d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19b2eb003fe71d1c9c91ecc7ed6d5e07"><td class="memItemLeft" align="right" valign="top"><a id="a19b2eb003fe71d1c9c91ecc7ed6d5e07"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetBuffList</b> (List&lt; string &gt; _buffList)</td></tr>
+<tr class="separator:a19b2eb003fe71d1c9c91ecc7ed6d5e07"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab1c6f3d8c9ccb1f679e3f412045fca22"><td class="memItemLeft" align="right" valign="top"><a id="ab1c6f3d8c9ccb1f679e3f412045fca22"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowShadow</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
 <tr class="separator:ab1c6f3d8c9ccb1f679e3f412045fca22"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -94,6 +97,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>HideShadow</b> (<a cl
 <tr class="memitem:a38b63a7d64c63324649dbe345733ec29"><td class="memItemLeft" align="right" valign="top"><a id="a38b63a7d64c63324649dbe345733ec29"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableShadow</b> (bool e)</td></tr>
 <tr class="separator:a38b63a7d64c63324649dbe345733ec29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa54c92a29e8cb47e79fcf201baa9086"><td class="memItemLeft" align="right" valign="top"><a id="aaa54c92a29e8cb47e79fcf201baa9086"></a>
+<a class="el" href="class_cross_link_1_1_interact_shadow.html">InteractShadow</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetShadow</b> ()</td></tr>
+<tr class="separator:aaa54c92a29e8cb47e79fcf201baa9086"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a651db1068bd7e36a247ba60ddff9bf71"><td class="memItemLeft" align="right" valign="top"><a id="a651db1068bd7e36a247ba60ddff9bf71"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsShadow</b> ()</td></tr>
+<tr class="separator:a651db1068bd7e36a247ba60ddff9bf71"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0019d1850f829e07b2b79f42730b1e9d"><td class="memItemLeft" align="right" valign="top"><a id="a0019d1850f829e07b2b79f42730b1e9d"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnGrab</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand, <a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a> attach)</td></tr>
 <tr class="separator:a0019d1850f829e07b2b79f42730b1e9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -101,6 +110,9 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnGrab</b> (
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnUnGrab</b> (<a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand, <a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a> attach)</td></tr>
 <tr class="separator:a1b233cce18d44f835bc9c2530cf4f2cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_class_cross_link_1_1_interact_base"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_cross_link_1_1_interact_base')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_interact_base.html">CrossLink.InteractBase</a></td></tr>
+<tr class="memitem:ac102d928fcd1bdcf6ecd2e06a06d5766 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ac102d928fcd1bdcf6ecd2e06a06d5766"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnLocalBindFinish</b> ()</td></tr>
+<tr class="separator:ac102d928fcd1bdcf6ecd2e06a06d5766 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6533568f0864e234569e3eaaf78126f5 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a6533568f0864e234569e3eaaf78126f5"></a>
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetLastVelocity</b> ()</td></tr>
 <tr class="separator:a6533568f0864e234569e3eaaf78126f5 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,12 +137,15 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>StillHasEngouthDurabi
 <tr class="memitem:ad80b443708f97c1b2056e776dba887ba inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ad80b443708f97c1b2056e776dba887ba"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>GetDuralityDisplay</b> ()</td></tr>
 <tr class="separator:ad80b443708f97c1b2056e776dba887ba inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af769d6450ce79eb9eb694121b0eb8ce1 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="af769d6450ce79eb9eb694121b0eb8ce1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>CostDurability</b> (int cost=1, bool costByUsing=true)</td></tr>
-<tr class="separator:af769d6450ce79eb9eb694121b0eb8ce1 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04c5d5c3431bed25cbce1fd8ae4b6d37 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a04c5d5c3431bed25cbce1fd8ae4b6d37"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>CostDurability</b> (int cost=1, bool costByUsing=true, bool local=false, System.Action deadCallback=null)</td></tr>
+<tr class="separator:a04c5d5c3431bed25cbce1fd8ae4b6d37 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6af3ad28f563599650cb4e9d801ba691 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a6af3ad28f563599650cb4e9d801ba691"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsBrokwnWarning</b> ()</td></tr>
 <tr class="separator:a6af3ad28f563599650cb4e9d801ba691 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecda38639c5417755ea13b4d2df1954f inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="aecda38639c5417755ea13b4d2df1954f"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsBreakable</b> ()</td></tr>
+<tr class="separator:aecda38639c5417755ea13b4d2df1954f inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f532d759c6608b79534738646b98504 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a5f532d759c6608b79534738646b98504"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnterBrokenReady</b> ()</td></tr>
 <tr class="separator:a5f532d759c6608b79534738646b98504 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -179,9 +194,9 @@ XftWeapon.XWeaponTrail&#160;</td><td class="memItemRight" valign="bottom"><b>Get
 <tr class="memitem:a9be7a29c23ae0ef56ee84c8014c835b5 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a9be7a29c23ae0ef56ee84c8014c835b5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAsNoTrail</b> ()</td></tr>
 <tr class="separator:a9be7a29c23ae0ef56ee84c8014c835b5 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad399fc7c2c20fb7f1bd9cd8d38677c39 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ad399fc7c2c20fb7f1bd9cd8d38677c39"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ActivateTrail</b> (bool a, Color c)</td></tr>
-<tr class="separator:ad399fc7c2c20fb7f1bd9cd8d38677c39 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3551f2396525f3d4aa761ee945ad2175 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a3551f2396525f3d4aa761ee945ad2175"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ActivateTrail</b> (bool a, Color c, bool local=false)</td></tr>
+<tr class="separator:a3551f2396525f3d4aa761ee945ad2175 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7868bbeebcd81604d9a251915de242c inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ab7868bbeebcd81604d9a251915de242c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsAttachedByFC</b> ()</td></tr>
 <tr class="separator:ab7868bbeebcd81604d9a251915de242c inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -452,6 +467,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsUnsold</b> ()</td><
 <tr class="memitem:aa87e2086c6b7ac6e3121428a372a2b4b inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="aa87e2086c6b7ac6e3121428a372a2b4b"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayAppearEffect</b> ()</td></tr>
 <tr class="separator:aa87e2086c6b7ac6e3121428a372a2b4b inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8305d16981863d8d4a9d4a35329ebf18 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a8305d16981863d8d4a9d4a35329ebf18"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAllRenderers</b> (bool show)</td></tr>
+<tr class="separator:a8305d16981863d8d4a9d4a35329ebf18 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6599e9d2f3bc02b50a60ffb72540d1d inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ab6599e9d2f3bc02b50a60ffb72540d1d"></a>
+List&lt; Renderer &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetAllRenderers</b> (bool force=false)</td></tr>
+<tr class="separator:ab6599e9d2f3bc02b50a60ffb72540d1d inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae8bc1aa62abc5ca4f5bda788444b96ce inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ae8bc1aa62abc5ca4f5bda788444b96ce"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetDissolveEffect</b> ()</td></tr>
 <tr class="separator:ae8bc1aa62abc5ca4f5bda788444b96ce inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -464,6 +485,69 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveDissolveEffect<
 <tr class="memitem:a793e1833d34de9266a2b34be01480b72 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a793e1833d34de9266a2b34be01480b72"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>StopDissolveEffect</b> ()</td></tr>
 <tr class="separator:a793e1833d34de9266a2b34be01480b72 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9eb4e141696b9a1f268ac7d8925e267f inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a9eb4e141696b9a1f268ac7d8925e267f"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsEnchantble</b> ()</td></tr>
+<tr class="separator:a9eb4e141696b9a1f268ac7d8925e267f inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adea9680964a961190f321ceaa1d93551 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="adea9680964a961190f321ceaa1d93551"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StartEnchanting</b> (string name)</td></tr>
+<tr class="separator:adea9680964a961190f321ceaa1d93551 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae57253c615a2c1311eb0e73600a383fe inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ae57253c615a2c1311eb0e73600a383fe"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnchanting</b> (float progress)</td></tr>
+<tr class="separator:ae57253c615a2c1311eb0e73600a383fe inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3d970e569ea572edfc1f68a3c87f147c inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a3d970e569ea572edfc1f68a3c87f147c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StopEnchanting</b> ()</td></tr>
+<tr class="separator:a3d970e569ea572edfc1f68a3c87f147c inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8d1163e49a2a44e2b87093e8fb64f23 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ae8d1163e49a2a44e2b87093e8fb64f23"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>EnchantEffectColor</b> (List&lt; ParticleSystemRenderer &gt; renderers, float progress)</td></tr>
+<tr class="separator:ae8d1163e49a2a44e2b87093e8fb64f23 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d2dd3c051a768bec1c19b6fff459c11 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a6d2dd3c051a768bec1c19b6fff459c11"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsOnEnchanting</b> ()</td></tr>
+<tr class="separator:a6d2dd3c051a768bec1c19b6fff459c11 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15d04bd21b7dbb867dd67d819dabc304 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a15d04bd21b7dbb867dd67d819dabc304"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Enchant</b> (<a class="el" href="class_cross_link_1_1_interact_trigger_x.html">InteractTriggerX</a> trig, float dura=10, int count=3, string loopName=null, string endName=null)</td></tr>
+<tr class="separator:a15d04bd21b7dbb867dd67d819dabc304 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa362f257f8fbd9604e54e6d0ff6c332e inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="aa362f257f8fbd9604e54e6d0ff6c332e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnchantSkillByStab</b> (<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabObject.StabInfo</a> si)</td></tr>
+<tr class="separator:aa362f257f8fbd9604e54e6d0ff6c332e inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5268e136d298e51db09a8031580792c inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ae5268e136d298e51db09a8031580792c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>EnchantOther</b> (<a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a> ib, bool remainTime=false)</td></tr>
+<tr class="separator:ae5268e136d298e51db09a8031580792c inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4be1ddbafd1eb3f65b1a28d0a8eca91a inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a4be1ddbafd1eb3f65b1a28d0a8eca91a"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsOnEnchant</b> ()</td></tr>
+<tr class="separator:a4be1ddbafd1eb3f65b1a28d0a8eca91a inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d6a756ccff74e0bafd71973d7e3522e inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a4d6a756ccff74e0bafd71973d7e3522e"></a>
+<a class="el" href="class_cross_link_1_1_enchanter.html">Enchanter</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetEnchanter</b> ()</td></tr>
+<tr class="separator:a4d6a756ccff74e0bafd71973d7e3522e inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a395f0201a516a28098292b2a0c419d8a inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a395f0201a516a28098292b2a0c419d8a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnchantSkillWithPlayer</b> (Collision collision, <a class="el" href="class_cross_link_1_1_interact_character.html">InteractCharacter</a> character)</td></tr>
+<tr class="separator:a395f0201a516a28098292b2a0c419d8a inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a458c915aafe65b113cb7f02806bb6a4c inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a458c915aafe65b113cb7f02806bb6a4c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnchantSkillWithPlayer</b> (Rigidbody rb, Collider thisCol, Collider otherCol, Vector3 point, Vector3 normal, Vector3 relaVel, <a class="el" href="class_cross_link_1_1_interact_character.html">InteractCharacter</a> character)</td></tr>
+<tr class="separator:a458c915aafe65b113cb7f02806bb6a4c inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb0d0b0e965d93afed279dc8dfd75122 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="abb0d0b0e965d93afed279dc8dfd75122"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DoEnchantSkillWithPlayer</b> (Rigidbody rb, Collider thisCol, Collider otherCol, Vector3 point, Vector3 normal, Vector3 relaVel, <a class="el" href="class_cross_link_1_1_interact_character.html">InteractCharacter</a> character)</td></tr>
+<tr class="separator:abb0d0b0e965d93afed279dc8dfd75122 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4ff482a40947ceadec4dbe78bc78e04 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ab4ff482a40947ceadec4dbe78bc78e04"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DoEnchantSkill</b> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fc, RagdollMuscle mu, Collider thisCol, Rigidbody otherRB, Collider otherCol, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
+<tr class="separator:ab4ff482a40947ceadec4dbe78bc78e04 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2da3f2d507c4e1924ca3d32dc85c0761 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a2da3f2d507c4e1924ca3d32dc85c0761"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>EnchantSkillCountUpdate</b> ()</td></tr>
+<tr class="separator:a2da3f2d507c4e1924ca3d32dc85c0761 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64e3f694affd5967536f58cd29218603 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a64e3f694affd5967536f58cd29218603"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>EnchantEnd</b> ()</td></tr>
+<tr class="separator:a64e3f694affd5967536f58cd29218603 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a30cc7657f3c85eab09066be78ff618bd inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a30cc7657f3c85eab09066be78ff618bd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveEnchant</b> ()</td></tr>
+<tr class="separator:a30cc7657f3c85eab09066be78ff618bd inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19fcf3e3ccd719a1138eb2ba48798680 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a19fcf3e3ccd719a1138eb2ba48798680"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RefleshEnchantEffect</b> ()</td></tr>
+<tr class="separator:a19fcf3e3ccd719a1138eb2ba48798680 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab211ba87a9ed9bbccefdc35628fb0499 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ab211ba87a9ed9bbccefdc35628fb0499"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveEnchantEffect</b> (List&lt; <a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a> &gt; list)</td></tr>
+<tr class="separator:ab211ba87a9ed9bbccefdc35628fb0499 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a926af2222bebdb3cb72fe92c86f9e281 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a926af2222bebdb3cb72fe92c86f9e281"></a>
+List&lt; <a class="el" href="class_cross_link_1_1_effect_obj.html">EffectObj</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PlayEnchantEffect</b> (string loopName)</td></tr>
+<tr class="separator:a926af2222bebdb3cb72fe92c86f9e281 inherit pub_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
 <tr class="memitem:a4392c3ed80106d1f480325d5841270c5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a4392c3ed80106d1f480325d5841270c5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStaticScene</b> ()</td></tr>
@@ -534,6 +618,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableGravityAWhile<
 <tr class="memitem:a1dea0f62f06e0fd15364c4d12b75aea9 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a1dea0f62f06e0fd15364c4d12b75aea9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDisableGravity</b> ()</td></tr>
 <tr class="separator:a1dea0f62f06e0fd15364c4d12b75aea9 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97f6908fff7467c88330cd65ef34bae5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a97f6908fff7467c88330cd65ef34bae5"></a>
+List&lt; Collider &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetNotTriggerCols</b> ()</td></tr>
+<tr class="separator:a97f6908fff7467c88330cd65ef34bae5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5eca95d0a3d99c29d7c6eb863e3b871c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a5eca95d0a3d99c29d7c6eb863e3b871c"></a>
 Collider[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetCols</b> (bool forceUpdate=false)</td></tr>
 <tr class="separator:a5eca95d0a3d99c29d7c6eb863e3b871c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -600,13 +687,37 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a189fe12e28cd25d39d081038436d4281"><td class="memItemLeft" align="right" valign="top"><a id="a189fe12e28cd25d39d081038436d4281"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>prefabName</b></td></tr>
 <tr class="separator:a189fe12e28cd25d39d081038436d4281"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8267bb8b2fd79024dc9bb8901bffa1e"><td class="memItemLeft" align="right" valign="top"><a id="aa8267bb8b2fd79024dc9bb8901bffa1e"></a>
+List&lt; string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>buffList</b> = new List&lt;string&gt;()</td></tr>
+<tr class="separator:aa8267bb8b2fd79024dc9bb8901bffa1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_interact_base"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_interact_base')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_interact_base.html">CrossLink.InteractBase</a></td></tr>
+<tr class="memitem:ab83b1600ba97770c7893fe666688d249 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ab83b1600ba97770c7893fe666688d249"></a>
+<a class="el" href="class_cross_link_1_1_network_1_1_network_state_library.html">Network.NetworkStateLibrary</a>&#160;</td><td class="memItemRight" valign="bottom"><b>stateLibrary</b></td></tr>
+<tr class="separator:ab83b1600ba97770c7893fe666688d249 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf33f279c2abc0ba8c38c393b462ba70 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="adf33f279c2abc0ba8c38c393b462ba70"></a>
+<a class="el" href="class_cross_link_1_1_network_1_1_network_interact_base.html">Network.NetworkInteractBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>networkIB</b></td></tr>
+<tr class="separator:adf33f279c2abc0ba8c38c393b462ba70 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a16d0398a2ab33e25f57dda4bc3fcd3c6 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a16d0398a2ab33e25f57dda4bc3fcd3c6"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>netId</b> = -1</td></tr>
+<tr class="separator:a16d0398a2ab33e25f57dda4bc3fcd3c6 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42932c560db17830b6d5d9b0524e9650 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a42932c560db17830b6d5d9b0524e9650"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>index</b> = 0</td></tr>
+<tr class="separator:a42932c560db17830b6d5d9b0524e9650 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb0c86ebe93371fcb34ddd9404ede70a inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="abb0c86ebe93371fcb34ddd9404ede70a"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>OnIBDestroyEvent</b></td></tr>
+<tr class="separator:abb0c86ebe93371fcb34ddd9404ede70a inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa03c17b2deb8e63c473d14e62ef2787f inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="aa03c17b2deb8e63c473d14e62ef2787f"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>OnIBEnableEvent</b></td></tr>
+<tr class="separator:aa03c17b2deb8e63c473d14e62ef2787f inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a799a8b002f42ee18d39f3496b6e46074 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a799a8b002f42ee18d39f3496b6e46074"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>autoDisappearWhenDurableLow</b> = true</td></tr>
 <tr class="separator:a799a8b002f42ee18d39f3496b6e46074 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c0e9748118254734f9afc93af302efe inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a9c0e9748118254734f9afc93af302efe"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>durability</b> = 25</td></tr>
 <tr class="separator:a9c0e9748118254734f9afc93af302efe inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48f38b47522bee2eda131d7dabe20c87 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a48f38b47522bee2eda131d7dabe20c87"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>indestructible</b> = false</td></tr>
+<tr class="separator:a48f38b47522bee2eda131d7dabe20c87 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7da5e5c717a44afa204aa18e727168a3 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a7da5e5c717a44afa204aa18e727168a3"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>durailityMax</b></td></tr>
 <tr class="separator:a7da5e5c717a44afa204aa18e727168a3 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -652,6 +763,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableAutoTickTwoHand
 <tr class="memitem:a0f15393c85826d8187af4127b1e2634d inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a0f15393c85826d8187af4127b1e2634d"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>checkDrop</b> = false</td></tr>
 <tr class="separator:a0f15393c85826d8187af4127b1e2634d inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf964eba41da3161be2aec337ba6247b inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="acf964eba41da3161be2aec337ba6247b"></a>
+List&lt; System.Func&lt; bool &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>additionalDropUpdateConditions</b> = new List&lt;System.Func&lt;bool&gt;&gt;()</td></tr>
+<tr class="separator:acf964eba41da3161be2aec337ba6247b inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8d6904e673f555981bd60426b0840d11 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a8d6904e673f555981bd60426b0840d11"></a>
 <a class="el" href="class_cross_link_1_1_attach_obj.html">AttachObj</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>attachList</b></td></tr>
 <tr class="separator:a8d6904e673f555981bd60426b0840d11 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -688,6 +802,27 @@ PaintIn3D.P3dPaintable&#160;</td><td class="memItemRight" valign="bottom"><b>pai
 <tr class="memitem:ad79932655123528581d94ab590473610 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ad79932655123528581d94ab590473610"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>enhanceLevel</b> = -1</td></tr>
 <tr class="separator:ad79932655123528581d94ab590473610 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac6a690396844f018b181b12e3e8f7bb inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="aac6a690396844f018b181b12e3e8f7bb"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>decomposable</b> = true</td></tr>
+<tr class="separator:aac6a690396844f018b181b12e3e8f7bb inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb7fe2026691c08984a04c3a3d30f755 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="abb7fe2026691c08984a04c3a3d30f755"></a>
+<a class="el" href="class_cross_link_1_1_enchanter.html">Enchanter</a>&#160;</td><td class="memItemRight" valign="bottom"><b>enchanter</b></td></tr>
+<tr class="separator:abb7fe2026691c08984a04c3a3d30f755 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa4bbe591b026c4a8a048147a61e7046 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="afa4bbe591b026c4a8a048147a61e7046"></a>
+<a class="el" href="class_cross_link_1_1_interact_trigger_x.html">InteractTriggerX</a>&#160;</td><td class="memItemRight" valign="bottom"><b>enchantTrig</b></td></tr>
+<tr class="separator:afa4bbe591b026c4a8a048147a61e7046 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e731281576e50b32ec05337b9ab4a1b inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a4e731281576e50b32ec05337b9ab4a1b"></a>
+List&lt; Collider &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>enchantTriggerCols</b> = null</td></tr>
+<tr class="separator:a4e731281576e50b32ec05337b9ab4a1b inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a780d96f49bb82a34f83832cacbaa3463 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a780d96f49bb82a34f83832cacbaa3463"></a>
+List&lt; Renderer &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>enchantRenderers</b></td></tr>
+<tr class="separator:a780d96f49bb82a34f83832cacbaa3463 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e111593f11badd3546dcb2e92540337 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a8e111593f11badd3546dcb2e92540337"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>allowEnchantment</b> = true</td></tr>
+<tr class="separator:a8e111593f11badd3546dcb2e92540337 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6c143f0c56b0ab1785720a17c010770 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ac6c143f0c56b0ab1785720a17c010770"></a>
+string&#160;</td><td class="memItemRight" valign="bottom"><b>initialEnchantName</b></td></tr>
+<tr class="separator:ac6c143f0c56b0ab1785720a17c010770 inherit pub_attribs_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
 <tr class="memitem:a76e08ea7990f93139ad411e991da8044 inherit pub_attribs_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a76e08ea7990f93139ad411e991da8044"></a>
 Tagger.Tag&#160;</td><td class="memItemRight" valign="bottom"><b>unitType</b></td></tr>
@@ -748,6 +883,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Reset</b> ()</td></tr
 <tr class="memitem:aa0af9c322a7bde51388b62a37e944981 inherit pro_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="aa0af9c322a7bde51388b62a37e944981"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Awake</b> ()</td></tr>
 <tr class="separator:aa0af9c322a7bde51388b62a37e944981 inherit pro_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d37fa2358c52cd03eaf7f80e623bcca inherit pro_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a9d37fa2358c52cd03eaf7f80e623bcca"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnEnable</b> ()</td></tr>
+<tr class="separator:a9d37fa2358c52cd03eaf7f80e623bcca inherit pro_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac20af910100de97ed360b88fa95a30cd inherit pro_methods_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="ac20af910100de97ed360b88fa95a30cd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Start</b> ()</td></tr>
 <tr class="separator:ac20af910100de97ed360b88fa95a30cd inherit pro_methods_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -815,8 +953,7 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearRecordDat
 <tr class="memitem:ad172086813d71932a8cfced202e18a59 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ad172086813d71932a8cfced202e18a59"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTagedPhysicsUnit</b> (Tagger.Tag t)</td></tr>
 <tr class="separator:ad172086813d71932a8cfced202e18a59 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aab4a3ffe44e13ef8cf5fdca78fc7299b"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>FitInTagList</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, bool fitIn)</td></tr>
+<tr class="memitem:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_unit.html#aab4a3ffe44e13ef8cf5fdca78fc7299b">FitInTagList</a> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, bool fitIn)</td></tr>
 <tr class="separator:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af320a334fb24a368a178ee2c323bd098 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="af320a334fb24a368a178ee2c323bd098"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>Reg</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu)</td></tr>
@@ -960,6 +1097,12 @@ System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>OnSaleEvent<
 <tr class="memitem:a89d7be942ff80d25a8c20ec9b2f10a7b inherit events_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a89d7be942ff80d25a8c20ec9b2f10a7b"></a>
 System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>OnBuyEvent</b></td></tr>
 <tr class="separator:a89d7be942ff80d25a8c20ec9b2f10a7b inherit events_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9c3f494b10a623fc1dcb1cfb864e40f9 inherit events_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a9c3f494b10a623fc1dcb1cfb864e40f9"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>EnchantStartEvent</b></td></tr>
+<tr class="separator:a9c3f494b10a623fc1dcb1cfb864e40f9 inherit events_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d89fc927da5709318e1c95c0e8f8f8f inherit events_class_cross_link_1_1_interact_base"><td class="memItemLeft" align="right" valign="top"><a id="a2d89fc927da5709318e1c95c0e8f8f8f"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>EnchantEndEvent</b></td></tr>
+<tr class="separator:a2d89fc927da5709318e1c95c0e8f8f8f inherit events_class_cross_link_1_1_interact_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header events_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('events_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Events inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
 <tr class="memitem:adb63aad0895a2a00f4a149fdb65d384a inherit events_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="adb63aad0895a2a00f4a149fdb65d384a"></a>
 System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>DeadEvent</b></td></tr>

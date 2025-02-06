@@ -71,6 +71,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_character_animation-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -100,12 +101,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetAimPos</b> (Vector
 <tr class="memitem:adc59167f1a3ad142155af176d32e633f"><td class="memItemLeft" align="right" valign="top"><a id="adc59167f1a3ad142155af176d32e633f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearAimPos</b> ()</td></tr>
 <tr class="separator:adc59167f1a3ad142155af176d32e633f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab70f3d8ec2ea70393103a1b6542749cd"><td class="memItemLeft" align="right" valign="top"><a id="ab70f3d8ec2ea70393103a1b6542749cd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayFacial</b> (string facial)</td></tr>
-<tr class="separator:ab70f3d8ec2ea70393103a1b6542749cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee48bb496487878de1b641a62854b872"><td class="memItemLeft" align="right" valign="top"><a id="aee48bb496487878de1b641a62854b872"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayFacial</b> (string facial, float blendTime=-1, bool recover=true)</td></tr>
+<tr class="separator:aee48bb496487878de1b641a62854b872"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aec335fa512986d97bf433424c0eb9b3e"><td class="memItemLeft" align="right" valign="top"><a id="aec335fa512986d97bf433424c0eb9b3e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetFacial</b> (string facial, float percent=1)</td></tr>
 <tr class="separator:aec335fa512986d97bf433424c0eb9b3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a53eec6b1539fc08bcfc4ddc680532060"><td class="memItemLeft" align="right" valign="top"><a id="a53eec6b1539fc08bcfc4ddc680532060"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RecoverFacial</b> ()</td></tr>
+<tr class="separator:a53eec6b1539fc08bcfc4ddc680532060"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9c9349bc135127c3698ffdf660648d5"><td class="memItemLeft" align="right" valign="top"><a id="af9c9349bc135127c3698ffdf660648d5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>EnableEyeTrail</b> (bool e)</td></tr>
 <tr class="separator:af9c9349bc135127c3698ffdf660648d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -163,6 +167,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsHighLod</b> ()</td>
 <tr class="memitem:a76ea1bac84244bf0b8115fa96df8b17f"><td class="memItemLeft" align="right" valign="top"><a id="a76ea1bac84244bf0b8115fa96df8b17f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetIKLod</b> (LodLevel lv)</td></tr>
 <tr class="separator:a76ea1bac84244bf0b8115fa96df8b17f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e19c02cd1ad487a339134e187f63fea"><td class="memItemLeft" align="right" valign="top"><a id="a6e19c02cd1ad487a339134e187f63fea"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetClothEnable</b> (bool e)</td></tr>
+<tr class="separator:a6e19c02cd1ad487a339134e187f63fea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a934cc8d04f4db491fc56383a35f9b008"><td class="memItemLeft" align="right" valign="top"><a id="a934cc8d04f4db491fc56383a35f9b008"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetCloth</b> ()</td></tr>
+<tr class="separator:a934cc8d04f4db491fc56383a35f9b008"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a068c38075e6e09a9292a44e335e080e7"><td class="memItemLeft" align="right" valign="top"><a id="a068c38075e6e09a9292a44e335e080e7"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetTailWaving</b> (bool w)</td></tr>
 <tr class="separator:a068c38075e6e09a9292a44e335e080e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -184,6 +194,12 @@ Bounds&#160;</td><td class="memItemRight" valign="bottom"><b>GetBounds</b> ()</t
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:a8ef79b1088cf2c0d5a62e2b2dc0ba7fd"><td class="memItemLeft" align="right" valign="top"><a id="a8ef79b1088cf2c0d5a62e2b2dc0ba7fd"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>applyAnimator</b> = true</td></tr>
+<tr class="separator:a8ef79b1088cf2c0d5a62e2b2dc0ba7fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad17de81ee105e7f300c32fefa4bbf95c"><td class="memItemLeft" align="right" valign="top"><a id="ad17de81ee105e7f300c32fefa4bbf95c"></a>
+<a class="el" href="class_cross_link_1_1_network_1_1_network_animator_fix.html">Network.NetworkAnimatorFix</a>&#160;</td><td class="memItemRight" valign="bottom"><b>networkAnimator</b></td></tr>
+<tr class="separator:ad17de81ee105e7f300c32fefa4bbf95c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab9ee0f785c15bd83be30040eca7cd7ac"><td class="memItemLeft" align="right" valign="top"><a id="ab9ee0f785c15bd83be30040eca7cd7ac"></a>
 <a class="el" href="class_cross_link_1_1_character_controller.html">CharacterController</a>&#160;</td><td class="memItemRight" valign="bottom"><b>controller</b></td></tr>
 <tr class="separator:ab9ee0f785c15bd83be30040eca7cd7ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -241,6 +257,12 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:a3d4ad9a3f1aad2de72ff48a5e1776526"><td class="memItemLeft" align="right" valign="top"><a id="a3d4ad9a3f1aad2de72ff48a5e1776526"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>DefaultCrossFadeSec</b> = 0.2f</td></tr>
 <tr class="separator:a3d4ad9a3f1aad2de72ff48a5e1776526"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:abd15b81631072c6c59e47f23243db5cd"><td class="memItemLeft" align="right" valign="top"><a id="abd15b81631072c6c59e47f23243db5cd"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>AnimUpdateTime</b><code> [get, set]</code></td></tr>
+<tr class="separator:abd15b81631072c6c59e47f23243db5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>

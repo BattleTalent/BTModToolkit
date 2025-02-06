@@ -71,6 +71,7 @@ $(function() {
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_stab_object-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -89,6 +90,9 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:ad12473bbc70bd8a1cf5d81c33b14a5d5"><td class="memItemLeft" align="right" valign="top"><a id="ad12473bbc70bd8a1cf5d81c33b14a5d5"></a>
+<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetStabInfo</b> (string indexStr)</td></tr>
+<tr class="separator:ad12473bbc70bd8a1cf5d81c33b14a5d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae7f75f83920754816426fee24e2aeb6a"><td class="memItemLeft" align="right" valign="top"><a id="ae7f75f83920754816426fee24e2aeb6a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LooseAllStab</b> (bool l=true)</td></tr>
 <tr class="separator:ae7f75f83920754816426fee24e2aeb6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -140,9 +144,18 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>GetStabTime</b> ()</
 <tr class="memitem:a90c6bc62c3c8d3b816724e1c2cef8c0e"><td class="memItemLeft" align="right" valign="top"><a id="a90c6bc62c3c8d3b816724e1c2cef8c0e"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetStabEndTime</b> ()</td></tr>
 <tr class="separator:a90c6bc62c3c8d3b816724e1c2cef8c0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae02da2ecc0a813f3269479ab6576495"><td class="memItemLeft" align="right" valign="top"><a id="aae02da2ecc0a813f3269479ab6576495"></a>
-<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>BuildStab</b> (<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_geometry.html">StabGeometry</a> stabGeo, Collider stabCol, Collider col, Vector3 stabPos, Vector3 stabberPos, System.Action&lt; <a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a> &gt; onBreak=null)</td></tr>
-<tr class="separator:aae02da2ecc0a813f3269479ab6576495"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ab88dc0a193861c1338b186dad7f0e7"><td class="memItemLeft" align="right" valign="top"><a id="a3ab88dc0a193861c1338b186dad7f0e7"></a>
+<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>BuildStab</b> (<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_geometry.html">StabGeometry</a> stabGeo, Collider stabCol, Collider col, Vector3 stabPos, Vector3 stabberPos, System.Action&lt; <a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a> &gt; onBreak=null, bool local=false, Vector3? netEntryDir=null)</td></tr>
+<tr class="separator:a3ab88dc0a193861c1338b186dad7f0e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac475852282e208d8138778ee0d1eafbe"><td class="memItemLeft" align="right" valign="top"><a id="ac475852282e208d8138778ee0d1eafbe"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveStabInfo</b> (<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a> stabInfo)</td></tr>
+<tr class="separator:ac475852282e208d8138778ee0d1eafbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4381b95bf765ed8c95b105565c04499"><td class="memItemLeft" align="right" valign="top"><a id="ad4381b95bf765ed8c95b105565c04499"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>BreakStabInfo</b> (<a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_info.html">StabInfo</a> stabInfo, bool local=false)</td></tr>
+<tr class="separator:ad4381b95bf765ed8c95b105565c04499"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a194129fdb32319ae23ecd43597e599a0"><td class="memItemLeft" align="right" valign="top"><a id="a194129fdb32319ae23ecd43597e599a0"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsPointInStabBox</b> (Vector3 pos)</td></tr>
+<tr class="separator:a194129fdb32319ae23ecd43597e599a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a39f14f5026f341aed27171adede7686f"><td class="memItemLeft" align="right" valign="top"><a id="a39f14f5026f341aed27171adede7686f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>BreakAllStab</b> (bool exceptProtect=false)</td></tr>
 <tr class="separator:a39f14f5026f341aed27171adede7686f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -152,6 +165,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>BreakStuckStab</b> ()
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:abeb4aedf79fe8981f335d6bf1c241dde"><td class="memItemLeft" align="right" valign="top"><a id="abeb4aedf79fe8981f335d6bf1c241dde"></a>
+<a class="el" href="class_cross_link_1_1_network_1_1_network_stab_object.html">Network.NetworkStabObject</a>&#160;</td><td class="memItemRight" valign="bottom"><b>netStabObj</b></td></tr>
+<tr class="separator:abeb4aedf79fe8981f335d6bf1c241dde"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afcffcbc8e9ab3f9d7ac665a720ec2a1d"><td class="memItemLeft" align="right" valign="top"><a id="afcffcbc8e9ab3f9d7ac665a720ec2a1d"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>localStabIndex</b> = 0</td></tr>
+<tr class="separator:afcffcbc8e9ab3f9d7ac665a720ec2a1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb53e606e0ca0d43ac1124bc84418980"><td class="memItemLeft" align="right" valign="top"><a id="afb53e606e0ca0d43ac1124bc84418980"></a>
+List&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>localBreakStabMap</b> = new List&lt;int&gt;()</td></tr>
+<tr class="separator:afb53e606e0ca0d43ac1124bc84418980"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae88b0598a3d99a22d8e61b3f5f85edce"><td class="memItemLeft" align="right" valign="top"><a id="ae88b0598a3d99a22d8e61b3f5f85edce"></a>
 <a class="el" href="class_cross_link_1_1_stab_object_1_1_stab_geometry.html">StabGeometry</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>geos</b></td></tr>
 <tr class="separator:ae88b0598a3d99a22d8e61b3f5f85edce"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,6 +192,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>trackback</b> = false
 <tr class="memitem:a7d6c363d94af237b2410303166dd8707"><td class="memItemLeft" align="right" valign="top"><a id="a7d6c363d94af237b2410303166dd8707"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>scalingForward</b> = false</td></tr>
 <tr class="separator:a7d6c363d94af237b2410303166dd8707"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:adf5bb587375d27ba7ab3d3faad393466"><td class="memItemLeft" align="right" valign="top"><a id="adf5bb587375d27ba7ab3d3faad393466"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>stabInfoCount</b><code> [get]</code></td></tr>
+<tr class="separator:adf5bb587375d27ba7ab3d3faad393466"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>

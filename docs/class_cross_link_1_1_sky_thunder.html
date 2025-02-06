@@ -87,9 +87,21 @@ override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnSpawn</b> 
 <tr class="memitem:a40ff5e5a48103c6758b6b88c098eb7cd"><td class="memItemLeft" align="right" valign="top"><a id="a40ff5e5a48103c6758b6b88c098eb7cd"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>DoLightning</b> ()</td></tr>
 <tr class="separator:a40ff5e5a48103c6758b6b88c098eb7cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a1d44cd15200f0d450b1f3f66f6e467"><td class="memItemLeft" align="right" valign="top"><a id="a5a1d44cd15200f0d450b1f3f66f6e467"></a>
-override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnFinish</b> ()</td></tr>
-<tr class="separator:a5a1d44cd15200f0d450b1f3f66f6e467"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a65abae56c46891d21cc502fa60693bfa"><td class="memItemLeft" align="right" valign="top"><a id="a65abae56c46891d21cc502fa60693bfa"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkDoLightning</b> (<a class="el" href="class_cross_link_1_1_interact_weapon.html">InteractWeapon</a> followWeapon, Vector3 targetPos)</td></tr>
+<tr class="separator:a65abae56c46891d21cc502fa60693bfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b8084b4a3955ec1c56953a566b62e2f"><td class="memItemLeft" align="right" valign="top"><a id="a7b8084b4a3955ec1c56953a566b62e2f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkStopFollowTarget</b> ()</td></tr>
+<tr class="separator:a7b8084b4a3955ec1c56953a566b62e2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29f72ebe9ea50e9f0fb52bea634a9fd3"><td class="memItemLeft" align="right" valign="top"><a id="a29f72ebe9ea50e9f0fb52bea634a9fd3"></a>
+override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnFinish</b> (bool local=false)</td></tr>
+<tr class="separator:a29f72ebe9ea50e9f0fb52bea634a9fd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe1a4659d5f4717f3706abe6a30641cd"><td class="memItemLeft" align="right" valign="top"><a id="afe1a4659d5f4717f3706abe6a30641cd"></a>
+override void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkOnFinish</b> ()</td></tr>
+<tr class="separator:afe1a4659d5f4717f3706abe6a30641cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad649fbdea98c781ee2801e8144149123"><td class="memItemLeft" align="right" valign="top"><a id="ad649fbdea98c781ee2801e8144149123"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayPrepareEffect</b> (Vector3 targetPos)</td></tr>
+<tr class="separator:ad649fbdea98c781ee2801e8144149123"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_class_cross_link_1_1_fly_object"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_cross_link_1_1_fly_object')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_fly_object.html">CrossLink.FlyObject</a></td></tr>
 <tr class="memitem:a520eb82bf3915f8dd093f154044fb2f8 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a520eb82bf3915f8dd093f154044fb2f8"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsJustFlyStopped</b> ()</td></tr>
@@ -103,9 +115,15 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFlying</b> ()</td><
 <tr class="memitem:af9c170b7bb0ed06492fd8c17b93be303 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="af9c170b7bb0ed06492fd8c17b93be303"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFlyStopped</b> ()</td></tr>
 <tr class="separator:af9c170b7bb0ed06492fd8c17b93be303 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3125f5aca6a9186a0d039063930f2ff1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a3125f5aca6a9186a0d039063930f2ff1"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>FlyStart</b> (Vector3 vel)</td></tr>
-<tr class="separator:a3125f5aca6a9186a0d039063930f2ff1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54fd26b0041aa082196848e6044b2084 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a54fd26b0041aa082196848e6044b2084"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>CalVelMagnitude</b> (float vel)</td></tr>
+<tr class="separator:a54fd26b0041aa082196848e6044b2084 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38316a9f564d40d4815f5508a25a5c85 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a38316a9f564d40d4815f5508a25a5c85"></a>
+Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>GetFlyDir</b> (Vector3 dir, float vel)</td></tr>
+<tr class="separator:a38316a9f564d40d4815f5508a25a5c85 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af39cf46470a4161d1b92693f1f5063d1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="af39cf46470a4161d1b92693f1f5063d1"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>FlyStart</b> (Vector3 vel, bool local=false)</td></tr>
+<tr class="separator:af39cf46470a4161d1b92693f1f5063d1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add6d12fb4e8be16377ead93a429fcfc8 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_fly_object.html#add6d12fb4e8be16377ead93a429fcfc8">OnDelay</a> (float t, float s)</td></tr>
 <tr class="memdesc:add6d12fb4e8be16377ead93a429fcfc8 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set delayToAcc time, each frame OnDelay will be call after FlyStart function.  <a href="class_cross_link_1_1_fly_object.html#add6d12fb4e8be16377ead93a429fcfc8">More...</a><br /></td></tr>
 <tr class="separator:add6d12fb4e8be16377ead93a429fcfc8 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -115,9 +133,12 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>FlyStart</b> 
 <tr class="memitem:a7071440e832bcee402043083ddb818a1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a7071440e832bcee402043083ddb818a1"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnShoot</b> (Vector3 vel)</td></tr>
 <tr class="separator:a7071440e832bcee402043083ddb818a1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa64479af4b5368ee4f27073c5aa0ce54 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="aa64479af4b5368ee4f27073c5aa0ce54"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>FlyStop</b> ()</td></tr>
-<tr class="separator:aa64479af4b5368ee4f27073c5aa0ce54 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d0ee88725a4159cf8416cfbd6c5738b inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a9d0ee88725a4159cf8416cfbd6c5738b"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ManualSetMaxFlyTime</b> (float newMaxFlyTime)</td></tr>
+<tr class="separator:a9d0ee88725a4159cf8416cfbd6c5738b inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac771b77498dace770759cd1344d971b1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ac771b77498dace770759cd1344d971b1"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>FlyStop</b> (bool local=false)</td></tr>
+<tr class="separator:ac771b77498dace770759cd1344d971b1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad9e4cab5ce98dd7a560bdaae943c6fa1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ad9e4cab5ce98dd7a560bdaae943c6fa1"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTimeOut</b> ()</td></tr>
 <tr class="separator:ad9e4cab5ce98dd7a560bdaae943c6fa1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -127,12 +148,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DoFinish</b> ()</td><
 <tr class="memitem:ab52dfa6397fc32c6fd859ec785b097ef inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ab52dfa6397fc32c6fd859ec785b097ef"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsFinish</b> ()</td></tr>
 <tr class="separator:ab52dfa6397fc32c6fd859ec785b097ef inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80218b73617db9686b9bb868bc764bfa inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a80218b73617db9686b9bb868bc764bfa"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayImpact</b> (Vector3 point, Vector3 normal)</td></tr>
-<tr class="separator:a80218b73617db9686b9bb868bc764bfa inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af6dc5cc603b765e5f78a4b46108eb2e4 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="af6dc5cc603b765e5f78a4b46108eb2e4"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>PlaySceneImpactEffect</b> (Vector3 point, Vector3 normal)</td></tr>
-<tr class="separator:af6dc5cc603b765e5f78a4b46108eb2e4 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b4725d62e81f03a00772c5e22525206 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a8b4725d62e81f03a00772c5e22525206"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayImpact</b> (Vector3 point, Vector3 normal, bool local=false)</td></tr>
+<tr class="separator:a8b4725d62e81f03a00772c5e22525206 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a180a7c55394c559c9d9e657fae7f4408 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a180a7c55394c559c9d9e657fae7f4408"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>PlaySceneImpactEffect</b> (Vector3 point, Vector3 normal, bool local=false)</td></tr>
+<tr class="separator:a180a7c55394c559c9d9e657fae7f4408 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af777f4ed75689b2013f815855da8358d inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="af777f4ed75689b2013f815855da8358d"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>PlayShootEffect</b> ()</td></tr>
 <tr class="separator:af777f4ed75689b2013f815855da8358d inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,30 +178,45 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>IgnoreCollisionWithSa
 <tr class="memitem:a97e1c2edf41e016112160b1bd4b0ff3d inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a97e1c2edf41e016112160b1bd4b0ff3d"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnImpact</b> (Collision collision)</td></tr>
 <tr class="separator:a97e1c2edf41e016112160b1bd4b0ff3d inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c4b3e8f9fff8f074d312c3cbda2eaf1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a7c4b3e8f9fff8f074d312c3cbda2eaf1"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionUpdate</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
+<tr class="separator:a7c4b3e8f9fff8f074d312c3cbda2eaf1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c21a192631ce0138d9f5cfdac0eb81a inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a0c21a192631ce0138d9f5cfdac0eb81a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>CollisionCountUpdate</b> ()</td></tr>
 <tr class="separator:a0c21a192631ce0138d9f5cfdac0eb81a inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4b82431e4aa50159ea307c33ac1060a1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a4b82431e4aa50159ea307c33ac1060a1"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcOnCollisionWithScene</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
+<tr class="separator:a4b82431e4aa50159ea307c33ac1060a1 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa25e716eef9a1d79429a58ccf03490b3 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="aa25e716eef9a1d79429a58ccf03490b3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionUpdate</b> (Collision collision)</td></tr>
 <tr class="separator:aa25e716eef9a1d79429a58ccf03490b3 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee077079c4c26ef8f9f11af1edb710ec inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="aee077079c4c26ef8f9f11af1edb710ec"></a>
+FlyObjSimulateCollisionResult&#160;</td><td class="memItemRight" valign="bottom"><b>CmdSimulateCollisionEnter</b> (Vector3 startPos, Vector3 aimDir, float simulateTime, float shootVel, out RaycastHit hitInfo, out Vector3 relaVel, out <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu)</td></tr>
+<tr class="separator:aee077079c4c26ef8f9f11af1edb710ec inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2ce8afcb23b7024a1f287679b4547f7f inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a2ce8afcb23b7024a1f287679b4547f7f"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollision</b> (Collision collision, <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu)</td></tr>
 <tr class="separator:a2ce8afcb23b7024a1f287679b4547f7f inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0cc4c18db7449d2325387943bb004069 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a0cc4c18db7449d2325387943bb004069"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcOnCollision</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel, <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu)</td></tr>
+<tr class="separator:a0cc4c18db7449d2325387943bb004069 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae1942ca504f1177902b94fded95b8d49 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_fly_object.html#ae1942ca504f1177902b94fded95b8d49">OnCollisionWithRole</a> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fc, RagdollMuscle mu, Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
 <tr class="memdesc:ae1942ca504f1177902b94fded95b8d49 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collision with role.  <a href="class_cross_link_1_1_fly_object.html#ae1942ca504f1177902b94fded95b8d49">More...</a><br /></td></tr>
 <tr class="separator:ae1942ca504f1177902b94fded95b8d49 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa2fc0841e982f87c0e1560a8b4a48847 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="aa2fc0841e982f87c0e1560a8b4a48847"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionWithPlayerHand</b> (Collision collision, <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
 <tr class="separator:aa2fc0841e982f87c0e1560a8b4a48847 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b59f448ec96ac8e9b463fac9a408b7e inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a5b59f448ec96ac8e9b463fac9a408b7e"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcOnCollisionWithPlayerHand</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel, <a class="el" href="class_cross_link_1_1_interact_hand.html">InteractHand</a> hand)</td></tr>
+<tr class="separator:a5b59f448ec96ac8e9b463fac9a408b7e inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af2ff2fbc14e98d7ad6207b51259d44f3 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="af2ff2fbc14e98d7ad6207b51259d44f3"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionWithPlayer</b> (Collision collision, <a class="el" href="class_cross_link_1_1_interact_character.html">InteractCharacter</a> player)</td></tr>
 <tr class="separator:af2ff2fbc14e98d7ad6207b51259d44f3 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90ca50d4d93eb64c1c718fcad954e01c inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a90ca50d4d93eb64c1c718fcad954e01c"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcOnCollisionWithPlayer</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel, <a class="el" href="class_cross_link_1_1_interact_character.html">InteractCharacter</a> player)</td></tr>
+<tr class="separator:a90ca50d4d93eb64c1c718fcad954e01c inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab55ca7964b5e71920365c9b8b1deb7cd inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ab55ca7964b5e71920365c9b8b1deb7cd"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionWithHitScan</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
 <tr class="separator:ab55ca7964b5e71920365c9b8b1deb7cd inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae0203ca3031584f0e44206f9b49bdc46 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ae0203ca3031584f0e44206f9b49bdc46"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTriggerEnter</b> (Collider collider)</td></tr>
-<tr class="separator:ae0203ca3031584f0e44206f9b49bdc46 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3f6b7663e94ee07fb5dd55256c869987 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a3f6b7663e94ee07fb5dd55256c869987"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTriggerWithPlayer</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, Collider collider)</td></tr>
 <tr class="separator:a3f6b7663e94ee07fb5dd55256c869987 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -196,6 +232,18 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTriggerWith
 <tr class="memitem:a4123d82ed8ff813160a878d51c0a023c inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a4123d82ed8ff813160a878d51c0a023c"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnTrigger</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, Collider other)</td></tr>
 <tr class="separator:a4123d82ed8ff813160a878d51c0a023c inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ffbe04903705b5d2b675e5f16fc9159 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a4ffbe04903705b5d2b675e5f16fc9159"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsEnchantble</b> ()</td></tr>
+<tr class="separator:a4ffbe04903705b5d2b675e5f16fc9159 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3578b9919278982b9d4fa02d5a5f6617 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a3578b9919278982b9d4fa02d5a5f6617"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Enchant</b> ()</td></tr>
+<tr class="separator:a3578b9919278982b9d4fa02d5a5f6617 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a81003f50960ad4c4aa43d4fa858cbfe4 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a81003f50960ad4c4aa43d4fa858cbfe4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Enchant</b> (<a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a> ib)</td></tr>
+<tr class="separator:a81003f50960ad4c4aa43d4fa858cbfe4 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3eeec3eb751f1ecbf829f9a0bfcff61 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ac3eeec3eb751f1ecbf829f9a0bfcff61"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RemoveEnchant</b> ()</td></tr>
+<tr class="separator:ac3eeec3eb751f1ecbf829f9a0bfcff61 inherit pub_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
 <tr class="memitem:a4392c3ed80106d1f480325d5841270c5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a4392c3ed80106d1f480325d5841270c5"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsStaticScene</b> ()</td></tr>
@@ -272,6 +320,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableGravityAWhile<
 <tr class="memitem:a1dea0f62f06e0fd15364c4d12b75aea9 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a1dea0f62f06e0fd15364c4d12b75aea9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDisableGravity</b> ()</td></tr>
 <tr class="separator:a1dea0f62f06e0fd15364c4d12b75aea9 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97f6908fff7467c88330cd65ef34bae5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a97f6908fff7467c88330cd65ef34bae5"></a>
+List&lt; Collider &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetNotTriggerCols</b> ()</td></tr>
+<tr class="separator:a97f6908fff7467c88330cd65ef34bae5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5eca95d0a3d99c29d7c6eb863e3b871c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a5eca95d0a3d99c29d7c6eb863e3b871c"></a>
 Collider[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetCols</b> (bool forceUpdate=false)</td></tr>
 <tr class="separator:a5eca95d0a3d99c29d7c6eb863e3b871c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -345,6 +396,18 @@ string&#160;</td><td class="memItemRight" valign="bottom"><b>lightningEffect</b>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>explodeFlyObj</b></td></tr>
 <tr class="separator:a16e60e5b28233d6e1f4c80da8fd5b97b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_fly_object"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_fly_object')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_fly_object.html">CrossLink.FlyObject</a></td></tr>
+<tr class="memitem:a42d650b84d85c1cef2a4cf13a11842c9 inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a42d650b84d85c1cef2a4cf13a11842c9"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>netId</b> = -1</td></tr>
+<tr class="separator:a42d650b84d85c1cef2a4cf13a11842c9 inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab118f1b33956ec818d361fb6a9236547 inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ab118f1b33956ec818d361fb6a9236547"></a>
+<a class="el" href="class_cross_link_1_1_network_1_1_network_fly_object_base.html">Network.NetworkFlyObjectBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>networkFO</b></td></tr>
+<tr class="separator:ab118f1b33956ec818d361fb6a9236547 inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2ea6ba16a0025b1028139516a3f663c inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ab2ea6ba16a0025b1028139516a3f663c"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isNetObj</b> = false</td></tr>
+<tr class="separator:ab2ea6ba16a0025b1028139516a3f663c inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c7bf25299ce9e81a704f972de494604 inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a4c7bf25299ce9e81a704f972de494604"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>OnFlyObjectFinishEvent</b></td></tr>
+<tr class="separator:a4c7bf25299ce9e81a704f972de494604 inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01d193df521bafa5b12caba58570e609 inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a01d193df521bafa5b12caba58570e609"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>flyObjName</b></td></tr>
 <tr class="separator:a01d193df521bafa5b12caba58570e609 inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -432,6 +495,9 @@ Tagger.Tag[]&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreDamageL
 <tr class="memitem:a801098b260543ab1695057a12a7e7b3e inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a801098b260543ab1695057a12a7e7b3e"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreHolder</b> = true</td></tr>
 <tr class="separator:a801098b260543ab1695057a12a7e7b3e inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49e32fc98513f011f082a6ec5a77643e inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a49e32fc98513f011f082a6ec5a77643e"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>allowEnchantment</b> = false</td></tr>
+<tr class="separator:a49e32fc98513f011f082a6ec5a77643e inherit pub_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
 <tr class="memitem:a76e08ea7990f93139ad411e991da8044 inherit pub_attribs_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a76e08ea7990f93139ad411e991da8044"></a>
 Tagger.Tag&#160;</td><td class="memItemRight" valign="bottom"><b>unitType</b></td></tr>
@@ -480,6 +546,9 @@ static <a class="el" href="class_cross_link_1_1_fly_object.html">FlyObject</a>&#
 <tr class="memitem:a069ad1a15f6e29381a7f5e64b84126a4 inherit pub_static_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a069ad1a15f6e29381a7f5e64b84126a4"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>CopyWeaponBuffToUnit</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> from, <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> to)</td></tr>
 <tr class="separator:a069ad1a15f6e29381a7f5e64b84126a4 inherit pub_static_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad86aa082bc140bbcf615f00aa18231cd inherit pub_static_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ad86aa082bc140bbcf615f00aa18231cd"></a>
+static <a class="el" href="class_cross_link_1_1_fly_obj_simulate_collision_result_info.html">FlyObjSimulateCollisionResultInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>CmdSimulateCollisionEnterResult</b> (<a class="el" href="class_cross_link_1_1_fly_object.html">FlyObject</a> fo, Vector3 startPos, Vector3 aimDir, float simulateTime, float shootVel)</td></tr>
+<tr class="separator:ad86aa082bc140bbcf615f00aa18231cd inherit pub_static_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_static_methods_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
 <tr class="memitem:adcc833c53fa77804b605550772efcf18 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="adcc833c53fa77804b605550772efcf18"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearRecordData</b> ()</td></tr>
@@ -487,8 +556,7 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearRecordDat
 <tr class="memitem:ad172086813d71932a8cfced202e18a59 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ad172086813d71932a8cfced202e18a59"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTagedPhysicsUnit</b> (Tagger.Tag t)</td></tr>
 <tr class="separator:ad172086813d71932a8cfced202e18a59 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aab4a3ffe44e13ef8cf5fdca78fc7299b"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>FitInTagList</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, bool fitIn)</td></tr>
+<tr class="memitem:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_unit.html#aab4a3ffe44e13ef8cf5fdca78fc7299b">FitInTagList</a> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, bool fitIn)</td></tr>
 <tr class="separator:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af320a334fb24a368a178ee2c323bd098 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="af320a334fb24a368a178ee2c323bd098"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>Reg</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu)</td></tr>
@@ -554,9 +622,6 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetState</b
 <tr class="memitem:ab6aef31bd22245bd1c18e7fa1b5ed3e8 inherit pro_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ab6aef31bd22245bd1c18e7fa1b5ed3e8"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnImpact</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
 <tr class="separator:ab6aef31bd22245bd1c18e7fa1b5ed3e8 inherit pro_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c4b3e8f9fff8f074d312c3cbda2eaf1 inherit pro_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a7c4b3e8f9fff8f074d312c3cbda2eaf1"></a>
-virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionUpdate</b> (Rigidbody rb, Collider col, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
-<tr class="separator:a7c4b3e8f9fff8f074d312c3cbda2eaf1 inherit pro_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a758d092b6d021132b5035d0bb3a04b6e inherit pro_methods_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a758d092b6d021132b5035d0bb3a04b6e"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnCollisionWithScene</b> (Collision collision)</td></tr>
 <tr class="separator:a758d092b6d021132b5035d0bb3a04b6e inherit pro_methods_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -574,6 +639,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnDead</b> ()
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>NeedToClearParent</b> ()</td></tr>
 <tr class="separator:aa890af900a88fb477748488445cf0447 inherit pro_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_class_cross_link_1_1_fly_object"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_cross_link_1_1_fly_object')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_cross_link_1_1_fly_object.html">CrossLink.FlyObject</a></td></tr>
+<tr class="memitem:a221555f6116bab6ca0129e5ba953c79b inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a221555f6116bab6ca0129e5ba953c79b"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isOnline</b> = false</td></tr>
+<tr class="separator:a221555f6116bab6ca0129e5ba953c79b inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5dbaa5aff1caf0175d678557216a3bc7 inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a5dbaa5aff1caf0175d678557216a3bc7"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>flying</b> = false</td></tr>
 <tr class="separator:a5dbaa5aff1caf0175d678557216a3bc7 inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -595,9 +663,21 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>enterCollisionCounter<
 <tr class="memitem:a3ce7f36702a8f7d38d7441eb93a9d02a inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a3ce7f36702a8f7d38d7441eb93a9d02a"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>delayActId</b> = -1</td></tr>
 <tr class="separator:a3ce7f36702a8f7d38d7441eb93a9d02a inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed4c47f4818f17384f5e3e4afde01b3f inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="aed4c47f4818f17384f5e3e4afde01b3f"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>netFlyStart</b> = false</td></tr>
+<tr class="separator:aed4c47f4818f17384f5e3e4afde01b3f inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44a88832037b4ee0c0fe97a40a55fdaf inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a44a88832037b4ee0c0fe97a40a55fdaf"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>netFlyStop</b> = false</td></tr>
+<tr class="separator:a44a88832037b4ee0c0fe97a40a55fdaf inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ef0dc04d040ade674b82b7816e4e1eb inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a7ef0dc04d040ade674b82b7816e4e1eb"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isFinishing</b> = false</td></tr>
 <tr class="separator:a7ef0dc04d040ade674b82b7816e4e1eb inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad6ee79d3c258b0e0733bf6d49f755bb0 inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="ad6ee79d3c258b0e0733bf6d49f755bb0"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>netFinishing</b> = false</td></tr>
+<tr class="separator:ad6ee79d3c258b0e0733bf6d49f755bb0 inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0832be89a146f5a13f2a9e153ad9eada inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memItemLeft" align="right" valign="top"><a id="a0832be89a146f5a13f2a9e153ad9eada"></a>
+<a class="el" href="class_cross_link_1_1_enchanter.html">Enchanter</a>&#160;</td><td class="memItemRight" valign="bottom"><b>enchanter</b></td></tr>
+<tr class="separator:a0832be89a146f5a13f2a9e153ad9eada inherit pro_attribs_class_cross_link_1_1_fly_object"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
 <tr class="memitem:a48f6c24512eb824b2af11237b90ad404 inherit pro_attribs_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a48f6c24512eb824b2af11237b90ad404"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>attachable</b> = true</td></tr>

@@ -69,6 +69,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_simple_l_o_d-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -83,8 +84,20 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_simple_l_o_d_1_1_l_o_d_info.html">LODInfo</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a92321014f98edbc187b2826df51ef691"><td class="memItemLeft" align="right" valign="top"><a id="a92321014f98edbc187b2826df51ef691"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateLodLevel</b> (int level)</td></tr>
+<tr class="separator:a92321014f98edbc187b2826df51ef691"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afeb60d2a14ee2ceb9606b6f1add6a669"><td class="memItemLeft" align="right" valign="top"><a id="afeb60d2a14ee2ceb9606b6f1add6a669"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyMatrials</b> ()</td></tr>
+<tr class="separator:afeb60d2a14ee2ceb9606b6f1add6a669"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:ae1b2c12071ba4d874e7ffeb00fb4538a"><td class="memItemLeft" align="right" valign="top"><a id="ae1b2c12071ba4d874e7ffeb00fb4538a"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>curLodLevel</b> = 0</td></tr>
+<tr class="separator:ae1b2c12071ba4d874e7ffeb00fb4538a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2ce970b3b473491009d0e4d2214195c"><td class="memItemLeft" align="right" valign="top"><a id="ab2ce970b3b473491009d0e4d2214195c"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>interval</b> = 0.2f</td></tr>
 <tr class="separator:ab2ce970b3b473491009d0e4d2214195c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -95,11 +108,29 @@ Transform&#160;</td><td class="memItemRight" valign="bottom"><b>target</b></td><
 Vector3&#160;</td><td class="memItemRight" valign="bottom"><b>offset</b></td></tr>
 <tr class="separator:aab069c34937398968941358c84fc0e35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f15c79a8f2f486afa6750465f0619c1"><td class="memItemLeft" align="right" valign="top"><a id="a6f15c79a8f2f486afa6750465f0619c1"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>height</b></td></tr>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>height</b> = -1</td></tr>
 <tr class="separator:a6f15c79a8f2f486afa6750465f0619c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8460f4e01cfdefb5af6bd6e258342033"><td class="memItemLeft" align="right" valign="top"><a id="a8460f4e01cfdefb5af6bd6e258342033"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>intervalShow</b> = false</td></tr>
+<tr class="separator:a8460f4e01cfdefb5af6bd6e258342033"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c26212d7da970a1240302d9fcd55210"><td class="memItemLeft" align="right" valign="top"><a id="a5c26212d7da970a1240302d9fcd55210"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isPlayer</b> = false</td></tr>
+<tr class="separator:a5c26212d7da970a1240302d9fcd55210"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2aa74b6c6115ef5041561f4dc1c3fdc0"><td class="memItemLeft" align="right" valign="top"><a id="a2aa74b6c6115ef5041561f4dc1c3fdc0"></a>
+<a class="el" href="class_cross_link_1_1_shadow_caster.html">ShadowCaster</a>&#160;</td><td class="memItemRight" valign="bottom"><b>shadowCaster</b></td></tr>
+<tr class="separator:a2aa74b6c6115ef5041561f4dc1c3fdc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bfb9cc946310a4e8a12ae8d2bcaa587"><td class="memItemLeft" align="right" valign="top"><a id="a5bfb9cc946310a4e8a12ae8d2bcaa587"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isApplyMatrial</b> = false</td></tr>
+<tr class="separator:a5bfb9cc946310a4e8a12ae8d2bcaa587"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10b2070a11377ecd73e6521d922fa4bd"><td class="memItemLeft" align="right" valign="top"><a id="a10b2070a11377ecd73e6521d922fa4bd"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>anchorAtLodIdx</b> = 0</td></tr>
+<tr class="separator:a10b2070a11377ecd73e6521d922fa4bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1c1ba476d8b16dbbd2458c3a2c97a5e0"><td class="memItemLeft" align="right" valign="top"><a id="a1c1ba476d8b16dbbd2458c3a2c97a5e0"></a>
 List&lt; <a class="el" href="class_cross_link_1_1_simple_l_o_d_1_1_l_o_d_info.html">LODInfo</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>lodList</b></td></tr>
 <tr class="separator:a1c1ba476d8b16dbbd2458c3a2c97a5e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad22c31be52c0f42f508cc2e10cb39044"><td class="memItemLeft" align="right" valign="top"><a id="ad22c31be52c0f42f508cc2e10cb39044"></a>
+Action&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>onLodChange</b></td></tr>
+<tr class="separator:ad22c31be52c0f42f508cc2e10cb39044"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

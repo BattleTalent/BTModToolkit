@@ -71,6 +71,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_ragdoll_hit_info-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -106,12 +107,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerInteractRoleHi
 <tr class="memitem:ad11a7ac0be937524fe01d572881c6829"><td class="memItemLeft" align="right" valign="top"><a id="ad11a7ac0be937524fe01d572881c6829"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerInteractRoleHitPhase3</b> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fc, RagdollMuscle mu, Collider thisCol, Rigidbody otherRB, Collider otherCol, Vector3 point, Vector3 normal, Vector3 relaVel)</td></tr>
 <tr class="separator:ad11a7ac0be937524fe01d572881c6829"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80b2195ae26601c4e4cc5baab55b9212"><td class="memItemLeft" align="right" valign="top"><a id="a80b2195ae26601c4e4cc5baab55b9212"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerStateUpdate</b> (string state)</td></tr>
-<tr class="separator:a80b2195ae26601c4e4cc5baab55b9212"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2d19928325ae15b00a830489ea3766f"><td class="memItemLeft" align="right" valign="top"><a id="af2d19928325ae15b00a830489ea3766f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerStateUpdate</b> (string state, bool islocal)</td></tr>
+<tr class="separator:af2d19928325ae15b00a830489ea3766f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad8eaea78514557c507b1ee6ea778a543"><td class="memItemLeft" align="right" valign="top"><a id="ad8eaea78514557c507b1ee6ea778a543"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerHitOther</b> (<a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a> other)</td></tr>
 <tr class="separator:ad8eaea78514557c507b1ee6ea778a543"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7c94c51f2bf7e43dcd7a4a663b2d5a9f"><td class="memItemLeft" align="right" valign="top"><a id="a7c94c51f2bf7e43dcd7a4a663b2d5a9f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerKillOther</b> (<a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> fc)</td></tr>
+<tr class="separator:a7c94c51f2bf7e43dcd7a4a663b2d5a9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae09ea2ee074e7e8cdcd07ce67b489c76"><td class="memItemLeft" align="right" valign="top"><a id="ae09ea2ee074e7e8cdcd07ce67b489c76"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerStabOther</b> (<a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a> other)</td></tr>
 <tr class="separator:ae09ea2ee074e7e8cdcd07ce67b489c76"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -200,11 +204,27 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>BaseHitValue</
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>BaseHitResistValue</b> = 110</td></tr>
 <tr class="separator:a79ed356da82a73f48463c70aeb658c5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:ad7268ef3608febf173a7d69f54eb8cc7"><td class="memItemLeft" align="right" valign="top"><a id="ad7268ef3608febf173a7d69f54eb8cc7"></a>
+uint&#160;</td><td class="memItemRight" valign="bottom"><b>netId</b><code> [get, set]</code></td></tr>
+<tr class="separator:ad7268ef3608febf173a7d69f54eb8cc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a905257f989985f58b2872b276f55be03"><td class="memItemLeft" align="right" valign="top"><a id="a905257f989985f58b2872b276f55be03"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>key</b><code> [get, set]</code></td></tr>
+<tr class="separator:a905257f989985f58b2872b276f55be03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header properties_interface_cross_link_1_1_value_provider"><td colspan="2" onclick="javascript:toggleInherit('properties_interface_cross_link_1_1_value_provider')"><img src="closed.png" alt="-"/>&#160;Properties inherited from <a class="el" href="interface_cross_link_1_1_value_provider.html">CrossLink.ValueProvider</a></td></tr>
+<tr class="memitem:a05c99610c5a68c7931ff3adf19425cef inherit properties_interface_cross_link_1_1_value_provider"><td class="memItemLeft" align="right" valign="top"><a id="a05c99610c5a68c7931ff3adf19425cef"></a>
+uint&#160;</td><td class="memItemRight" valign="bottom"><b>netId</b><code> [get, set]</code></td></tr>
+<tr class="separator:a05c99610c5a68c7931ff3adf19425cef inherit properties_interface_cross_link_1_1_value_provider"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47ad65e2300e6a11c3614e89765cf476 inherit properties_interface_cross_link_1_1_value_provider"><td class="memItemLeft" align="right" valign="top"><a id="a47ad65e2300e6a11c3614e89765cf476"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>key</b><code> [get, set]</code></td></tr>
+<tr class="separator:a47ad65e2300e6a11c3614e89765cf476 inherit properties_interface_cross_link_1_1_value_provider"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>
-<tr class="memitem:aea66d8ec83b88498bd5f584e7915c264"><td class="memItemLeft" align="right" valign="top"><a id="aea66d8ec83b88498bd5f584e7915c264"></a>
-System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StateUpdateEvent</b></td></tr>
-<tr class="separator:aea66d8ec83b88498bd5f584e7915c264"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad66c0a1173ad3884a808472ad2c5856a"><td class="memItemLeft" align="right" valign="top"><a id="ad66c0a1173ad3884a808472ad2c5856a"></a>
+System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, string, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StateUpdateEvent</b></td></tr>
+<tr class="separator:ad66c0a1173ad3884a808472ad2c5856a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3c565b73aedc367c2bcd9e86c199690"><td class="memItemLeft" align="right" valign="top"><a id="ae3c565b73aedc367c2bcd9e86c199690"></a>
 System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HitOtherEvent</b></td></tr>
 <tr class="separator:ae3c565b73aedc367c2bcd9e86c199690"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -217,6 +237,9 @@ System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.ht
 <tr class="memitem:a27a70466d6bf1f01d96386f209ad2953"><td class="memItemLeft" align="right" valign="top"><a id="a27a70466d6bf1f01d96386f209ad2953"></a>
 System.Action&lt; string, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>WriteEvent</b></td></tr>
 <tr class="separator:a27a70466d6bf1f01d96386f209ad2953"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e12d79f1f3d80669f1c9b4eb9acc5bb"><td class="memItemLeft" align="right" valign="top"><a id="a7e12d79f1f3d80669f1c9b4eb9acc5bb"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_full_character_control.html">FullCharacterControl</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>KillOtherEvent</b></td></tr>
+<tr class="separator:a7e12d79f1f3d80669f1c9b4eb9acc5bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca12384aa462778ea4308e3922277c62"><td class="memItemLeft" align="right" valign="top"><a id="aca12384aa462778ea4308e3922277c62"></a>
 FullBodyMuscleState.DamageModifier&#160;</td><td class="memItemRight" valign="bottom"><b>OnInteractRoleHitPhase1Event</b></td></tr>
 <tr class="separator:aca12384aa462778ea4308e3922277c62"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -227,9 +250,9 @@ FullBodyMuscleState.DamageModifier&#160;</td><td class="memItemRight" valign="bo
 FullBodyMuscleState.DamageModifier&#160;</td><td class="memItemRight" valign="bottom"><b>OnInteractRoleHitPhase3Event</b></td></tr>
 <tr class="separator:a39301124ed9d49d47a2fbdcaa50e12df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header events_interface_cross_link_1_1_value_provider"><td colspan="2" onclick="javascript:toggleInherit('events_interface_cross_link_1_1_value_provider')"><img src="closed.png" alt="-"/>&#160;Events inherited from <a class="el" href="interface_cross_link_1_1_value_provider.html">CrossLink.ValueProvider</a></td></tr>
-<tr class="memitem:ae68cead6b168a355c9b69042ecb84eda inherit events_interface_cross_link_1_1_value_provider"><td class="memItemLeft" align="right" valign="top"><a id="ae68cead6b168a355c9b69042ecb84eda"></a>
-System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StateUpdateEvent</b></td></tr>
-<tr class="separator:ae68cead6b168a355c9b69042ecb84eda inherit events_interface_cross_link_1_1_value_provider"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0db292987fb85e15123480ebf1cb121b inherit events_interface_cross_link_1_1_value_provider"><td class="memItemLeft" align="right" valign="top"><a id="a0db292987fb85e15123480ebf1cb121b"></a>
+System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, string, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StateUpdateEvent</b></td></tr>
+<tr class="separator:a0db292987fb85e15123480ebf1cb121b inherit events_interface_cross_link_1_1_value_provider"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91ffa876fb85efd708528f18430747d3 inherit events_interface_cross_link_1_1_value_provider"><td class="memItemLeft" align="right" valign="top"><a id="a91ffa876fb85efd708528f18430747d3"></a>
 System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HitOtherEvent</b></td></tr>
 <tr class="separator:a91ffa876fb85efd708528f18430747d3 inherit events_interface_cross_link_1_1_value_provider"><td class="memSeparator" colspan="2">&#160;</td></tr>

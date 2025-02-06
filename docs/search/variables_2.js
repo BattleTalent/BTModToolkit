@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['key_1877',['key',['../class_cross_link_1_1_rogue_level_selector.html#a92c4035c7683107b6c989117b7c07ac3',1,'CrossLink::RogueLevelSelector']]]
+  ['globalenabled_2620',['GlobalEnabled',['../class_cross_link_1_1_dynamic_modifier_config.html#a11b1027e9f9dcfe3d7bcfbcd896e8b79',1,'CrossLink::DynamicModifierConfig']]]
 ];

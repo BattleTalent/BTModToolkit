@@ -69,8 +69,10 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="class_cross_link_1_1_weapon_decomposition-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.WeaponDecomposition Class Reference</div>  </div>
@@ -81,26 +83,61 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="struct_cross_link_1_1_weapon_decomposition_1_1_activate_weapon_info.html">ActivateWeaponInfo</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_weapon_decomposition_1_1_floating_part_info.html">FloatingPartInfo</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:adb18775535bb6cc9707aee78d28f4761"><td class="memItemLeft" align="right" valign="top"><a id="adb18775535bb6cc9707aee78d28f4761"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>State</b> { <b>IDLE</b>
+, <b>DECOMPOSING</b>
+, <b>PREPARED</b>
+, <b>FINISH</b>
+ }</td></tr>
+<tr class="separator:adb18775535bb6cc9707aee78d28f4761"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a6a2ebe48e2b4ecdd6b8e61d0566ec3ad"><td class="memItemLeft" align="right" valign="top"><a id="a6a2ebe48e2b4ecdd6b8e61d0566ec3ad"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcStopDecomposition</b> ()</td></tr>
+<tr class="separator:a6a2ebe48e2b4ecdd6b8e61d0566ec3ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a242fc2da744986c6e8591447fd6660"><td class="memItemLeft" align="right" valign="top"><a id="a1a242fc2da744986c6e8591447fd6660"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SwitchDecompositionButton</b> (bool on)</td></tr>
+<tr class="separator:a1a242fc2da744986c6e8591447fd6660"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2d306268095f479c4e9b311f67f8bcb"><td class="memItemLeft" align="right" valign="top"><a id="af2d306268095f479c4e9b311f67f8bcb"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcSetCanDecomposition</b> ()</td></tr>
+<tr class="separator:af2d306268095f479c4e9b311f67f8bcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c53b13b07571f85c5c13285198fb9b3"><td class="memItemLeft" align="right" valign="top"><a id="a0c53b13b07571f85c5c13285198fb9b3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetCanDecomposition</b> ()</td></tr>
+<tr class="separator:a0c53b13b07571f85c5c13285198fb9b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70159192d0f1439f1bf99c001a1212f4"><td class="memItemLeft" align="right" valign="top"><a id="a70159192d0f1439f1bf99c001a1212f4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>StartDecomposition</b> ()</td></tr>
 <tr class="separator:a70159192d0f1439f1bf99c001a1212f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29bce12c451e5726c2ea85fe4b722095"><td class="memItemLeft" align="right" valign="top"><a id="a29bce12c451e5726c2ea85fe4b722095"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>StopDecomposition</b> ()</td></tr>
+<tr class="separator:a29bce12c451e5726c2ea85fe4b722095"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91c95113d96720bd09927476d7b9369e"><td class="memItemLeft" align="right" valign="top"><a id="a91c95113d96720bd09927476d7b9369e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetlastInteractId</b> (uint lastId)</td></tr>
+<tr class="separator:a91c95113d96720bd09927476d7b9369e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b2ae3cfc26b822ef111b6f58dd8d2ba"><td class="memItemLeft" align="right" valign="top"><a id="a8b2ae3cfc26b822ef111b6f58dd8d2ba"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>DoDecomposition</b> ()</td></tr>
+<tr class="separator:a8b2ae3cfc26b822ef111b6f58dd8d2ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad85b44ea8373e26d49908b045365ec91"><td class="memItemLeft" align="right" valign="top"><a id="ad85b44ea8373e26d49908b045365ec91"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RpcFinishDecomposition</b> ()</td></tr>
+<tr class="separator:ad85b44ea8373e26d49908b045365ec91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5de02cfcc376d31d8264600c7a36ab9a"><td class="memItemLeft" align="right" valign="top"><a id="a5de02cfcc376d31d8264600c7a36ab9a"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>FinishDecomposition</b> ()</td></tr>
+<tr class="separator:a5de02cfcc376d31d8264600c7a36ab9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae5888bb2278ef3bd074ba334e4bbb25e"><td class="memItemLeft" align="right" valign="top"><a id="ae5888bb2278ef3bd074ba334e4bbb25e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ButtonEmissionUpdate</b> ()</td></tr>
 <tr class="separator:ae5888bb2278ef3bd074ba334e4bbb25e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c63d84ec20302ade7d6baa460511b28"><td class="memItemLeft" align="right" valign="top"><a id="a6c63d84ec20302ade7d6baa460511b28"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>StopButtonEmission</b> ()</td></tr>
 <tr class="separator:a6c63d84ec20302ade7d6baa460511b28"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3b287f00c211b2e478867cfd08236b42"><td class="memItemLeft" align="right" valign="top"><a id="a3b287f00c211b2e478867cfd08236b42"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowRewards</b> ()</td></tr>
-<tr class="separator:a3b287f00c211b2e478867cfd08236b42"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0535d42d135ca5dcf9d831fa83b38117"><td class="memItemLeft" align="right" valign="top"><a id="a0535d42d135ca5dcf9d831fa83b38117"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>HideRewards</b> ()</td></tr>
-<tr class="separator:a0535d42d135ca5dcf9d831fa83b38117"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23fb77e74271b51dacee2d120d684438"><td class="memItemLeft" align="right" valign="top"><a id="a23fb77e74271b51dacee2d120d684438"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowRewards</b> (int _price)</td></tr>
+<tr class="separator:a23fb77e74271b51dacee2d120d684438"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a175106c8cf46a5d37d825af378320b58"><td class="memItemLeft" align="right" valign="top"><a id="a175106c8cf46a5d37d825af378320b58"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>CharacterEmission</b> (bool on)</td></tr>
 <tr class="separator:a175106c8cf46a5d37d825af378320b58"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -211,6 +248,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableGravityAWhile<
 <tr class="memitem:a1dea0f62f06e0fd15364c4d12b75aea9 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a1dea0f62f06e0fd15364c4d12b75aea9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDisableGravity</b> ()</td></tr>
 <tr class="separator:a1dea0f62f06e0fd15364c4d12b75aea9 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97f6908fff7467c88330cd65ef34bae5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a97f6908fff7467c88330cd65ef34bae5"></a>
+List&lt; Collider &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetNotTriggerCols</b> ()</td></tr>
+<tr class="separator:a97f6908fff7467c88330cd65ef34bae5 inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5eca95d0a3d99c29d7c6eb863e3b871c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="a5eca95d0a3d99c29d7c6eb863e3b871c"></a>
 Collider[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetCols</b> (bool forceUpdate=false)</td></tr>
 <tr class="separator:a5eca95d0a3d99c29d7c6eb863e3b871c inherit pub_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -280,6 +320,9 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:ab7061c40d1e350565be218a5e66f9d79"><td class="memItemLeft" align="right" valign="top"><a id="ab7061c40d1e350565be218a5e66f9d79"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>numOfUse</b> = -1</td></tr>
 <tr class="separator:ab7061c40d1e350565be218a5e66f9d79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50ed9111d8081d123cb125c4384ec10a"><td class="memItemLeft" align="right" valign="top"><a id="a50ed9111d8081d123cb125c4384ec10a"></a>
+List&lt; <a class="el" href="struct_cross_link_1_1_weapon_decomposition_1_1_activate_weapon_info.html">ActivateWeaponInfo</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>activateWeapons</b> = new List&lt;<a class="el" href="struct_cross_link_1_1_weapon_decomposition_1_1_activate_weapon_info.html">ActivateWeaponInfo</a>&gt;()</td></tr>
+<tr class="separator:a50ed9111d8081d123cb125c4384ec10a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6512ee5bf9f655d846e571a9dada7b78"><td class="memItemLeft" align="right" valign="top"><a id="a6512ee5bf9f655d846e571a9dada7b78"></a>
 TriggerByHandTracking&#160;</td><td class="memItemRight" valign="bottom"><b>handTrackingTrigger</b></td></tr>
 <tr class="separator:a6512ee5bf9f655d846e571a9dada7b78"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -316,9 +359,9 @@ Color&#160;</td><td class="memItemRight" valign="bottom"><b>waitingColor</b></td
 <tr class="memitem:ae7c11639283daad2b354e9e8d3315496"><td class="memItemLeft" align="right" valign="top"><a id="ae7c11639283daad2b354e9e8d3315496"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>emissLv</b> = 3</td></tr>
 <tr class="separator:ae7c11639283daad2b354e9e8d3315496"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a974f507a0b4e8e1c0d070f8697bdd567"><td class="memItemLeft" align="right" valign="top"><a id="a974f507a0b4e8e1c0d070f8697bdd567"></a>
-Transform&#160;</td><td class="memItemRight" valign="bottom"><b>trackPoint</b></td></tr>
-<tr class="separator:a974f507a0b4e8e1c0d070f8697bdd567"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a895700ef7e0823186f93b36e80425c42"><td class="memItemLeft" align="right" valign="top"><a id="a895700ef7e0823186f93b36e80425c42"></a>
+Transform[]&#160;</td><td class="memItemRight" valign="bottom"><b>trackPoints</b></td></tr>
+<tr class="separator:a895700ef7e0823186f93b36e80425c42"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5085dda7b0eed4bf3a0274816270dadc"><td class="memItemLeft" align="right" valign="top"><a id="a5085dda7b0eed4bf3a0274816270dadc"></a>
 TextMeshPro&#160;</td><td class="memItemRight" valign="bottom"><b>text</b></td></tr>
 <tr class="separator:a5085dda7b0eed4bf3a0274816270dadc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -334,6 +377,12 @@ TextMeshPro&#160;</td><td class="memItemRight" valign="bottom"><b>text</b></td><
 <tr class="memitem:aa3bee55044eac9cfbfe2a20a7b8d62d0"><td class="memItemLeft" align="right" valign="top"><a id="aa3bee55044eac9cfbfe2a20a7b8d62d0"></a>
 <a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>dropSoulSound</b></td></tr>
 <tr class="separator:aa3bee55044eac9cfbfe2a20a7b8d62d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14496bc7d933bac73ff93c49662ef6f3"><td class="memItemLeft" align="right" valign="top"><a id="a14496bc7d933bac73ff93c49662ef6f3"></a>
+NetworkIdentity&#160;</td><td class="memItemRight" valign="bottom"><b>identity</b></td></tr>
+<tr class="separator:a14496bc7d933bac73ff93c49662ef6f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab34eb3b78bed9b6686201705bb727669"><td class="memItemLeft" align="right" valign="top"><a id="ab34eb3b78bed9b6686201705bb727669"></a>
+<a class="el" href="class_cross_link_1_1_network_1_1_network_weapon_decomposition.html">NetworkWeaponDecomposition</a>&#160;</td><td class="memItemRight" valign="bottom"><b>networkBehaviour</b></td></tr>
+<tr class="separator:ab34eb3b78bed9b6686201705bb727669"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a39db36fd46239023cb35ae406936ba20"><td class="memItemLeft" align="right" valign="top"><a id="a39db36fd46239023cb35ae406936ba20"></a>
 List&lt; <a class="el" href="class_cross_link_1_1_weapon_decomposition_1_1_floating_part_info.html">FloatingPartInfo</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>floatingList</b></td></tr>
 <tr class="separator:a39db36fd46239023cb35ae406936ba20"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -356,6 +405,12 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>floatingMaxTime</b> 
 float&#160;</td><td class="memItemRight" valign="bottom"><b>floatingMaxDis</b> = 0.05f</td></tr>
 <tr class="separator:a75a4c90119036c4f6197e498387c1181"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_class_cross_link_1_1_scene_obj"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_class_cross_link_1_1_scene_obj')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="class_cross_link_1_1_scene_obj.html">CrossLink.SceneObj</a></td></tr>
+<tr class="memitem:a34f0e2627cb7d68824c2bb384277bac2 inherit pub_attribs_class_cross_link_1_1_scene_obj"><td class="memItemLeft" align="right" valign="top"><a id="a34f0e2627cb7d68824c2bb384277bac2"></a>
+<a class="el" href="class_cross_link_1_1_network_1_1_network_scene_obj_base.html">Network.NetworkSceneObjBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>networkSO</b></td></tr>
+<tr class="separator:a34f0e2627cb7d68824c2bb384277bac2 inherit pub_attribs_class_cross_link_1_1_scene_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bde0a82f42e0696913d0e55a0a754de inherit pub_attribs_class_cross_link_1_1_scene_obj"><td class="memItemLeft" align="right" valign="top"><a id="a5bde0a82f42e0696913d0e55a0a754de"></a>
+System.Action&#160;</td><td class="memItemRight" valign="bottom"><b>OnDestroyEvent</b></td></tr>
+<tr class="separator:a5bde0a82f42e0696913d0e55a0a754de inherit pub_attribs_class_cross_link_1_1_scene_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c8b641819e5593c4599d1019e3346a8 inherit pub_attribs_class_cross_link_1_1_scene_obj"><td class="memItemLeft" align="right" valign="top"><a id="a0c8b641819e5593c4599d1019e3346a8"></a>
 <a class="el" href="class_cross_link_1_1_scene_obj.html">SceneObj</a>[]&#160;</td><td class="memItemRight" valign="bottom"><b>subObjs</b></td></tr>
 <tr class="separator:a0c8b641819e5593c4599d1019e3346a8 inherit pub_attribs_class_cross_link_1_1_scene_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -391,6 +446,15 @@ Transform&#160;</td><td class="memItemRight" valign="bottom"><b>trans</b></td></
 Rigidbody&#160;</td><td class="memItemRight" valign="bottom"><b>rb</b></td></tr>
 <tr class="separator:a8c8c9f3986ce8752e61bbc54e1e7ede1 inherit pub_attribs_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:a974a708150d6c0762b22a032a7e8d437"><td class="memItemLeft" align="right" valign="top"><a id="a974a708150d6c0762b22a032a7e8d437"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>price</b><code> [get, set]</code></td></tr>
+<tr class="separator:a974a708150d6c0762b22a032a7e8d437"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8eacd1abf11cbb58c005e279e5b329e0"><td class="memItemLeft" align="right" valign="top"><a id="a8eacd1abf11cbb58c005e279e5b329e0"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>canDecompose</b><code> [get, set]</code></td></tr>
+<tr class="separator:a8eacd1abf11cbb58c005e279e5b329e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_static_methods_class_cross_link_1_1_physics_unit"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_class_cross_link_1_1_physics_unit')"><img src="closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_physics_unit.html">CrossLink.PhysicsUnit</a></td></tr>
@@ -400,8 +464,7 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearRecordDat
 <tr class="memitem:ad172086813d71932a8cfced202e18a59 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="ad172086813d71932a8cfced202e18a59"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTagedPhysicsUnit</b> (Tagger.Tag t)</td></tr>
 <tr class="separator:ad172086813d71932a8cfced202e18a59 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="aab4a3ffe44e13ef8cf5fdca78fc7299b"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>FitInTagList</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, bool fitIn)</td></tr>
+<tr class="memitem:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_unit.html#aab4a3ffe44e13ef8cf5fdca78fc7299b">FitInTagList</a> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, bool fitIn)</td></tr>
 <tr class="separator:aab4a3ffe44e13ef8cf5fdca78fc7299b inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af320a334fb24a368a178ee2c323bd098 inherit pub_static_methods_class_cross_link_1_1_physics_unit"><td class="memItemLeft" align="right" valign="top"><a id="af320a334fb24a368a178ee2c323bd098"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>Reg</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu)</td></tr>
@@ -469,6 +532,9 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnDead</b> ()
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>NeedToClearParent</b> ()</td></tr>
 <tr class="separator:aa890af900a88fb477748488445cf0447 inherit pro_methods_class_cross_link_1_1_physics_unit"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_class_cross_link_1_1_scene_obj"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_cross_link_1_1_scene_obj')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_cross_link_1_1_scene_obj.html">CrossLink.SceneObj</a></td></tr>
+<tr class="memitem:ac7fe4ceefe09ad506c2eb0e264dc6fec inherit pro_attribs_class_cross_link_1_1_scene_obj"><td class="memItemLeft" align="right" valign="top"><a id="ac7fe4ceefe09ad506c2eb0e264dc6fec"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isOnline</b> = false</td></tr>
+<tr class="separator:ac7fe4ceefe09ad506c2eb0e264dc6fec inherit pro_attribs_class_cross_link_1_1_scene_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac036a3994611ff60fa382a4ce825ff25 inherit pro_attribs_class_cross_link_1_1_scene_obj"><td class="memItemLeft" align="right" valign="top"><a id="ac036a3994611ff60fa382a4ce825ff25"></a>
 LodLevel&#160;</td><td class="memItemRight" valign="bottom"><b>lv</b></td></tr>
 <tr class="separator:ac036a3994611ff60fa382a4ce825ff25 inherit pro_attribs_class_cross_link_1_1_scene_obj"><td class="memSeparator" colspan="2">&#160;</td></tr>

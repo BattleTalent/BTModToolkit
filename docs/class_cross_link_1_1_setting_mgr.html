@@ -73,6 +73,7 @@ $(function() {
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="class_cross_link_1_1_setting_mgr-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.SettingMgr Class Reference</div>  </div>
@@ -114,6 +115,12 @@ Public Types</h2></td></tr>
 , <b>Cheating</b>
  }</td></tr>
 <tr class="separator:a1809c30626425fa9d7e403a7cb5d26be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8e4c8bb4950d9fde8ea9b7537b2c196"><td class="memItemLeft" align="right" valign="top"><a id="af8e4c8bb4950d9fde8ea9b7537b2c196"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>TeammateDmgLevel</b> { <b>Off</b>
+, <b>Low</b>
+, <b>Normal</b>
+, <b>High</b>
+ }</td></tr>
+<tr class="separator:af8e4c8bb4950d9fde8ea9b7537b2c196"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a8b0eb0b83f404c7236495abc3f7885"><td class="memItemLeft" align="right" valign="top"><a id="a5a8b0eb0b83f404c7236495abc3f7885"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>ControlType</b> { <br />
 &#160;&#160;<b>Oculus</b> = 0
 , <b>Vive</b> = 1
@@ -159,6 +166,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SaveSettings</b> ()</
 <tr class="memitem:a931d0d7a4ae6728cc6bc3f0faa148e80"><td class="memItemLeft" align="right" valign="top"><a id="a931d0d7a4ae6728cc6bc3f0faa148e80"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>InitSettingsAfterSceneLoaded</b> ()</td></tr>
 <tr class="separator:a931d0d7a4ae6728cc6bc3f0faa148e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace511d0dddca6359968fd07ac704b542"><td class="memItemLeft" align="right" valign="top"><a id="ace511d0dddca6359968fd07ac704b542"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>InitSettingAfterSceneLoadedNetwork</b> ()</td></tr>
+<tr class="separator:ace511d0dddca6359968fd07ac704b542"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a058bd639c8c01efd3518071ec861fb2e"><td class="memItemLeft" align="right" valign="top"><a id="a058bd639c8c01efd3518071ec861fb2e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplySettings</b> ()</td></tr>
 <tr class="separator:a058bd639c8c01efd3518071ec861fb2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -192,9 +202,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SaveReplacementCharac
 <tr class="memitem:a4d4a52838b8f1781a28e2cd3b95c1e25"><td class="memItemLeft" align="right" valign="top"><a id="a4d4a52838b8f1781a28e2cd3b95c1e25"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadReplacementCharaterData</b> ()</td></tr>
 <tr class="separator:a4d4a52838b8f1781a28e2cd3b95c1e25"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ad9dbe54278bdddb307f0829c55f55c"><td class="memItemLeft" align="right" valign="top"><a id="a7ad9dbe54278bdddb307f0829c55f55c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyModToCharacter</b> (bool isApply, string name, string character)</td></tr>
-<tr class="separator:a7ad9dbe54278bdddb307f0829c55f55c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8cb9c84a1a53e6507b8358b53368309"><td class="memItemLeft" align="right" valign="top"><a id="aa8cb9c84a1a53e6507b8358b53368309"></a>
+Dictionary&lt; string, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetRoleApplyDic</b> ()</td></tr>
+<tr class="separator:aa8cb9c84a1a53e6507b8358b53368309"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ac868828b0600300df30b05edf41701"><td class="memItemLeft" align="right" valign="top"><a id="a0ac868828b0600300df30b05edf41701"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ApplyModToCharacter</b> (bool isApply, string name, string character, bool local=false)</td></tr>
+<tr class="separator:a0ac868828b0600300df30b05edf41701"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e73b3c18db716c4b9fd2b9e4c0107ef"><td class="memItemLeft" align="right" valign="top"><a id="a6e73b3c18db716c4b9fd2b9e4c0107ef"></a>
 string&#160;</td><td class="memItemRight" valign="bottom"><b>GetReplacementCharacter</b> (string name)</td></tr>
 <tr class="separator:a6e73b3c18db716c4b9fd2b9e4c0107ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -245,7 +258,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>winResolutionIdx</b> =
 <tr class="memitem:ac4e520dd6a431854f6dc6883ed606dec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><b>renderShadows</b></td></tr>
 <tr class="separator:ac4e520dd6a431854f6dc6883ed606dec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a92aa436f1933a76874c99947507ecdc9"><td class="memItemLeft" align="right" valign="top"><a id="a92aa436f1933a76874c99947507ecdc9"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>PCFOV</b> = 85</td></tr>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>PCFOV</b> = NoExtraFov</td></tr>
 <tr class="separator:a92aa436f1933a76874c99947507ecdc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0c7a96d8c18ee107658ba81bb5ba65e3"><td class="memItemLeft" align="right" valign="top"><a id="a0c7a96d8c18ee107658ba81bb5ba65e3"></a>
 MoveType&#160;</td><td class="memItemRight" valign="bottom"><b>moveType</b> = MoveType.EasySwing</td></tr>
@@ -261,6 +274,18 @@ RotateType&#160;</td><td class="memItemRight" valign="bottom"><b>rotateType</b><
 <tr class="memitem:a09a4734a23ceadba5d1ba2906e96176e"><td class="memItemLeft" align="right" valign="top"><a id="a09a4734a23ceadba5d1ba2906e96176e"></a>
 UIVisualLevel&#160;</td><td class="memItemRight" valign="bottom"><b>uiVisualLevel</b></td></tr>
 <tr class="separator:a09a4734a23ceadba5d1ba2906e96176e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab364c9a8c753a9a39544cfa9eaebde47"><td class="memItemLeft" align="right" valign="top"><a id="ab364c9a8c753a9a39544cfa9eaebde47"></a>
+UIVisualLevel&#160;</td><td class="memItemRight" valign="bottom"><b>networkUIVisualLevel</b></td></tr>
+<tr class="separator:ab364c9a8c753a9a39544cfa9eaebde47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1dae82c17fa1aecaba03df72ec5d022f"><td class="memItemLeft" align="right" valign="top"><a id="a1dae82c17fa1aecaba03df72ec5d022f"></a>
+Network.RoomJoinType&#160;</td><td class="memItemRight" valign="bottom"><b>networkRoomJoinType</b></td></tr>
+<tr class="separator:a1dae82c17fa1aecaba03df72ec5d022f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa6c24f0338523043e1111fdaa908730"><td class="memItemLeft" align="right" valign="top"><a id="afa6c24f0338523043e1111fdaa908730"></a>
+TeammateDmgLevel&#160;</td><td class="memItemRight" valign="bottom"><b>teammateDmgLevel</b></td></tr>
+<tr class="separator:afa6c24f0338523043e1111fdaa908730"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb5929f3388fd0a73e561a2bdf53f09e"><td class="memItemLeft" align="right" valign="top"><a id="adb5929f3388fd0a73e561a2bdf53f09e"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>openTeammateSlot</b> = false</td></tr>
+<tr class="separator:adb5929f3388fd0a73e561a2bdf53f09e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a179bd23751f773b7242a5a96aca6f1db"><td class="memItemLeft" align="right" valign="top"><a id="a179bd23751f773b7242a5a96aca6f1db"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>soundVol</b> = 0.5f</td></tr>
 <tr class="separator:a179bd23751f773b7242a5a96aca6f1db"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -273,6 +298,12 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>ambVol</b> = 0.5f</t
 <tr class="memitem:ab6034d87c0c7766ea98c50cd65333631"><td class="memItemLeft" align="right" valign="top"><a id="ab6034d87c0c7766ea98c50cd65333631"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>musicVol</b> = 0.5f</td></tr>
 <tr class="separator:ab6034d87c0c7766ea98c50cd65333631"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab775e5aae44146d86fcf9759f90024f7"><td class="memItemLeft" align="right" valign="top"><a id="ab775e5aae44146d86fcf9759f90024f7"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>selfVoiceVol</b> = 1f</td></tr>
+<tr class="separator:ab775e5aae44146d86fcf9759f90024f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc998ee0e00dd2b9b93b9d967501d2ba"><td class="memItemLeft" align="right" valign="top"><a id="afc998ee0e00dd2b9b93b9d967501d2ba"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>otherVoiceVol</b> = 1f</td></tr>
+<tr class="separator:afc998ee0e00dd2b9b93b9d967501d2ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad721aa740b4819dfde2e86931c31eda4"><td class="memItemLeft" align="right" valign="top"><a id="ad721aa740b4819dfde2e86931c31eda4"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSpawnEnhanced</b> = false</td></tr>
 <tr class="separator:ad721aa740b4819dfde2e86931c31eda4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -291,6 +322,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSpawnNoAI</b> = fal
 <tr class="memitem:aace7fd35569503d9b7462ba7be7dd0ed"><td class="memItemLeft" align="right" valign="top"><a id="aace7fd35569503d9b7462ba7be7dd0ed"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isSpawnModRole</b> = false</td></tr>
 <tr class="separator:aace7fd35569503d9b7462ba7be7dd0ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a190d166c9223d3db95f0e0856f7a7a80"><td class="memItemLeft" align="right" valign="top"><a id="a190d166c9223d3db95f0e0856f7a7a80"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isDebugDrawn</b> = false</td></tr>
+<tr class="separator:a190d166c9223d3db95f0e0856f7a7a80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae92f9751e2177107a93d614384151bf6"><td class="memItemLeft" align="right" valign="top"><a id="ae92f9751e2177107a93d614384151bf6"></a>
 SystemLanguage&#160;</td><td class="memItemRight" valign="bottom"><b>language</b> = SystemLanguage.English</td></tr>
 <tr class="separator:ae92f9751e2177107a93d614384151bf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -324,6 +358,39 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>vibration</b> = 1f</
 <tr class="memitem:a62bdd15781dce768bc1ac7cca4bb2353"><td class="memItemLeft" align="right" valign="top"><a id="a62bdd15781dce768bc1ac7cca4bb2353"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>isModDependencies</b> = false</td></tr>
 <tr class="separator:a62bdd15781dce768bc1ac7cca4bb2353"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1963b175287eef51dc2fa8bdcc25967a"><td class="memItemLeft" align="right" valign="top"><a id="a1963b175287eef51dc2fa8bdcc25967a"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>editorHandIdx</b> = 1</td></tr>
+<tr class="separator:a1963b175287eef51dc2fa8bdcc25967a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69ba331e0b3a009f9020911e2ff61728"><td class="memItemLeft" align="right" valign="top"><a id="a69ba331e0b3a009f9020911e2ff61728"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>armLength</b> = 0.85f</td></tr>
+<tr class="separator:a69ba331e0b3a009f9020911e2ff61728"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa900317ff3edb4eaeeb10ad2131abf73"><td class="memItemLeft" align="right" valign="top"><a id="aa900317ff3edb4eaeeb10ad2131abf73"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>kickAngle</b> = 15</td></tr>
+<tr class="separator:aa900317ff3edb4eaeeb10ad2131abf73"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e3fcd71e8cbb91d2f6efc53b9d1f9fd"><td class="memItemLeft" align="right" valign="top"><a id="a2e3fcd71e8cbb91d2f6efc53b9d1f9fd"></a>
+float&#160;</td><td class="memItemRight" valign="bottom"><b>dodgeAgle</b> = 25</td></tr>
+<tr class="separator:a2e3fcd71e8cbb91d2f6efc53b9d1f9fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad22aa7b766a24ffc584149178600bbd2"><td class="memItemLeft" align="right" valign="top"><a id="ad22aa7b766a24ffc584149178600bbd2"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>mrHideBody</b> = false</td></tr>
+<tr class="separator:ad22aa7b766a24ffc584149178600bbd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe1409ae49a3bc9b7c1d3686059bde78"><td class="memItemLeft" align="right" valign="top"><a id="afe1409ae49a3bc9b7c1d3686059bde78"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>mrOnlyGround</b> = false</td></tr>
+<tr class="separator:afe1409ae49a3bc9b7c1d3686059bde78"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ff878221eed78b9bdd666ac9f2af312"><td class="memItemLeft" align="right" valign="top"><a id="a3ff878221eed78b9bdd666ac9f2af312"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>mrVrEnv</b> = false</td></tr>
+<tr class="separator:a3ff878221eed78b9bdd666ac9f2af312"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38c77c27c3b3a9eefb82a3e87ce47ecf"><td class="memItemLeft" align="right" valign="top"><a id="a38c77c27c3b3a9eefb82a3e87ce47ecf"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>mrShadow</b> = 4</td></tr>
+<tr class="separator:a38c77c27c3b3a9eefb82a3e87ce47ecf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a655342e8d7819d5cbd36b6c87ac40144"><td class="memItemLeft" align="right" valign="top"><a id="a655342e8d7819d5cbd36b6c87ac40144"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>mrLightStrength</b> = 1</td></tr>
+<tr class="separator:a655342e8d7819d5cbd36b6c87ac40144"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a936891b3df951727b2ccfbc3475155e6"><td class="memItemLeft" align="right" valign="top"><a id="a936891b3df951727b2ccfbc3475155e6"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>mrLightFoward</b> = 0</td></tr>
+<tr class="separator:a936891b3df951727b2ccfbc3475155e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff94de2be17393be081209459115d070"><td class="memItemLeft" align="right" valign="top"><a id="aff94de2be17393be081209459115d070"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>mrLightAngle</b> = 45</td></tr>
+<tr class="separator:aff94de2be17393be081209459115d070"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab6f8cbb109767493c8c7c5a540087edf"><td class="memItemLeft" align="right" valign="top"><a id="ab6f8cbb109767493c8c7c5a540087edf"></a>
 TipsLevel&#160;</td><td class="memItemRight" valign="bottom"><b>tipsLevel</b></td></tr>
 <tr class="separator:ab6f8cbb109767493c8c7c5a540087edf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -345,12 +412,18 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:a4b8caa6a8f79c080829b256c32f94c69"><td class="memItemLeft" align="right" valign="top"><a id="a4b8caa6a8f79c080829b256c32f94c69"></a>
 static <a class="el" href="class_cross_link_1_1_setting_mgr.html">SettingMgr</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Instance</b> = new <a class="el" href="class_cross_link_1_1_setting_mgr.html">SettingMgr</a>()</td></tr>
 <tr class="separator:a4b8caa6a8f79c080829b256c32f94c69"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a0ad1783dec3ab36b73be9f110b99b4"><td class="memItemLeft" align="right" valign="top"><a id="a7a0ad1783dec3ab36b73be9f110b99b4"></a>
+const int&#160;</td><td class="memItemRight" valign="bottom"><b>NoExtraFov</b> = 60</td></tr>
+<tr class="separator:a7a0ad1783dec3ab36b73be9f110b99b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0b1f388df654cee79afb4760059d1619"><td class="memItemLeft" align="right" valign="top"><a id="a0b1f388df654cee79afb4760059d1619"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>CheatingJumpCount</b> = 5</td></tr>
 <tr class="separator:a0b1f388df654cee79afb4760059d1619"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adad3ddc3dd7a0d280fbf4b0203a0feac"><td class="memItemLeft" align="right" valign="top"><a id="adad3ddc3dd7a0d280fbf4b0203a0feac"></a>
 const float&#160;</td><td class="memItemRight" valign="bottom"><b>CheatingItemCount</b> = 5</td></tr>
 <tr class="separator:adad3ddc3dd7a0d280fbf4b0203a0feac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b68bae83693f3fbd6ee71648b8c8ff7"><td class="memItemLeft" align="right" valign="top"><a id="a5b68bae83693f3fbd6ee71648b8c8ff7"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>defualtArmLength</b> = 1</td></tr>
+<tr class="separator:a5b68bae83693f3fbd6ee71648b8c8ff7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4fa25b10fe5c13ec4ecad4a04ca171be"><td class="memItemLeft" align="right" valign="top">static Dictionary&lt; DifficultyMode, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>DifficultyFactor</b></td></tr>
 <tr class="separator:a4fa25b10fe5c13ec4ecad4a04ca171be"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab54cb4ae023ff43bbdc5ff175574bdad"><td class="memItemLeft" align="right" valign="top">static Dictionary&lt; DifficultyMode, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>DifficultyAtkDesire</b></td></tr>
@@ -359,6 +432,18 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>CheatingItemCo
 <tr class="separator:a58acc0b024f81685c83b08f8f5d174ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aed4fc27ca41a4e79fe0045acf3a6e232"><td class="memItemLeft" align="right" valign="top">static Dictionary&lt; DifficultyMode, float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>DifficultyConfrontInterval</b></td></tr>
 <tr class="separator:aed4fc27ca41a4e79fe0045acf3a6e232"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:ae22f57e27bf423da23017132aa874174"><td class="memItemLeft" align="right" valign="top"><a id="ae22f57e27bf423da23017132aa874174"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkFullHub</b><code> [get]</code></td></tr>
+<tr class="separator:ae22f57e27bf423da23017132aa874174"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeddb1084ce43c8c88cb80c9edfc7cd76"><td class="memItemLeft" align="right" valign="top"><a id="aeddb1084ce43c8c88cb80c9edfc7cd76"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkNoState</b><code> [get]</code></td></tr>
+<tr class="separator:aeddb1084ce43c8c88cb80c9edfc7cd76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aafc05050379b871d7dfb1c133bb82894"><td class="memItemLeft" align="right" valign="top"><a id="aafc05050379b871d7dfb1c133bb82894"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkNoneHud</b><code> [get]</code></td></tr>
+<tr class="separator:aafc05050379b871d7dfb1c133bb82894"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a9a85dd8e46405a4ab72baa70d203d638"></a>
@@ -399,7 +484,8 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>CheatingItemCo
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;DifficultyMode, float&gt; {</div>
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;DifficultyMode, float&gt;() </div>
+<div class="line">        {</div>
 <div class="line">            { DifficultyMode.Challenge, 1 },</div>
 <div class="line">            { DifficultyMode.Normal, 1 },</div>
 <div class="line">            { DifficultyMode.Easy, 1 },</div>
@@ -428,7 +514,8 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>CheatingItemCo
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;DifficultyMode, float&gt; {</div>
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;DifficultyMode, float&gt;()</div>
+<div class="line">        {</div>
 <div class="line">            { DifficultyMode.Challenge, 6.5f },</div>
 <div class="line">            { DifficultyMode.Normal, 7 },</div>
 <div class="line">            { DifficultyMode.Easy, 8 },</div>
@@ -457,7 +544,8 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>CheatingItemCo
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;DifficultyMode, float&gt; {</div>
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;DifficultyMode, float&gt;()</div>
+<div class="line">        {</div>
 <div class="line">            { DifficultyMode.Challenge, 1 },</div>
 <div class="line">            { DifficultyMode.Normal, 1 },</div>
 <div class="line">            { DifficultyMode.Easy, 1 },</div>
@@ -486,7 +574,8 @@ const float&#160;</td><td class="memItemRight" valign="bottom"><b>CheatingItemCo
   </tr>
 </table>
 </div><div class="memdoc">
-<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;DifficultyMode, float&gt; {</div>
+<b>Initial value:</b><div class="fragment"><div class="line">= <span class="keyword">new</span> Dictionary&lt;DifficultyMode, float&gt;()</div>
+<div class="line">        {</div>
 <div class="line">            { DifficultyMode.Challenge, 1 },</div>
 <div class="line">            { DifficultyMode.Normal, 0.8f },</div>
 <div class="line">            { DifficultyMode.Easy, 0.6f },</div>

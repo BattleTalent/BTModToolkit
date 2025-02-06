@@ -69,6 +69,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pub-static-attribs">Static Public Attributes</a> &#124;
@@ -89,11 +90,12 @@ Public Types</h2></td></tr>
 , <b>Achievement</b>
 , <br />
 &#160;&#160;<b>Scene</b>
+, <b>SceneProp</b>
 , <b>Skin</b>
 , <b>Role</b>
-, <b>Potion</b>
 , <br />
-&#160;&#160;<b>Music</b>
+&#160;&#160;<b>Potion</b>
+, <b>Music</b>
 , <b>Avatar</b>
 <br />
  }</td></tr>
@@ -119,6 +121,15 @@ Public Types</h2></td></tr>
  }</td></tr>
 <tr class="separator:ad1cc0124f7c21760231576a5567cb670"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a4349b905acdeb4ec48eb39d7a3ebaa72"><td class="memItemLeft" align="right" valign="top"><a id="a4349b905acdeb4ec48eb39d7a3ebaa72"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearItem</b> (UnlockContentType contentType, string name)</td></tr>
+<tr class="separator:a4349b905acdeb4ec48eb39d7a3ebaa72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5de8d23b8af8b729a2979f87203e2c99"><td class="memItemLeft" align="right" valign="top"><a id="a5de8d23b8af8b729a2979f87203e2c99"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearItemOnMode</b> (UnlockContentType contentType, string name, GameMode gameMode)</td></tr>
+<tr class="separator:a5de8d23b8af8b729a2979f87203e2c99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:aa2c0db9005441ac506b7065f27ad1202"><td class="memItemLeft" align="right" valign="top"><a id="aa2c0db9005441ac506b7065f27ad1202"></a>
@@ -130,6 +141,12 @@ static <a class="el" href="class_cross_link_1_1_unlock_content_config.html">Unlo
 <tr class="memitem:a74ceede98a735c9225dbe84427e90de8"><td class="memItemLeft" align="right" valign="top"><a id="a74ceede98a735c9225dbe84427e90de8"></a>
 static <a class="el" href="class_cross_link_1_1_unlock_content_config.html">UnlockContentConfig</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetConfig</b> ()</td></tr>
 <tr class="separator:a74ceede98a735c9225dbe84427e90de8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e706f23a843363d19fb27e279bf5ed0"><td class="memItemLeft" align="right" valign="top"><a id="a9e706f23a843363d19fb27e279bf5ed0"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>RefreshConfig</b> ()</td></tr>
+<tr class="separator:a9e706f23a843363d19fb27e279bf5ed0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49d2aa3ab8a2e9241e31e6c85233a678"><td class="memItemLeft" align="right" valign="top"><a id="a49d2aa3ab8a2e9241e31e6c85233a678"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>RefreshData</b> (GameMode gameMode, <a class="el" href="class_cross_link_1_1_unlock_content_config.html">UnlockContentConfig</a> config)</td></tr>
+<tr class="separator:a49d2aa3ab8a2e9241e31e6c85233a678"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19ad6b68ec639ba8e6680b1501db0110"><td class="memItemLeft" align="right" valign="top"><a id="a19ad6b68ec639ba8e6680b1501db0110"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>Reset</b> ()</td></tr>
 <tr class="separator:a19ad6b68ec639ba8e6680b1501db0110"><td class="memSeparator" colspan="2">&#160;</td></tr>

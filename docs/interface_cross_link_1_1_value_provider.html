@@ -69,6 +69,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#properties">Properties</a> &#124;
 <a href="#events">Events</a> &#124;
 <a href="interface_cross_link_1_1_value_provider-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -89,9 +90,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>WriteValue</b> (strin
 <tr class="memitem:ab1519f158d2183172856378ae38f7519"><td class="memItemLeft" align="right" valign="top"><a id="ab1519f158d2183172856378ae38f7519"></a>
 <a class="el" href="class_cross_link_1_1_attr_modifier.html">AttrModifier</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetModifier</b> ()</td></tr>
 <tr class="separator:ab1519f158d2183172856378ae38f7519"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42f272cfedce545f15962165cb2fa2cd"><td class="memItemLeft" align="right" valign="top"><a id="a42f272cfedce545f15962165cb2fa2cd"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerStateUpdate</b> (string state)</td></tr>
-<tr class="separator:a42f272cfedce545f15962165cb2fa2cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ae19f37334e16feba130b66e0f30303"><td class="memItemLeft" align="right" valign="top"><a id="a2ae19f37334e16feba130b66e0f30303"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerStateUpdate</b> (string state, bool islocal)</td></tr>
+<tr class="separator:a2ae19f37334e16feba130b66e0f30303"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2fa1fe1d3f04759da7e3e6343006b955"><td class="memItemLeft" align="right" valign="top"><a id="a2fa1fe1d3f04759da7e3e6343006b955"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>TriggerHitOther</b> (<a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a> other)</td></tr>
 <tr class="separator:a2fa1fe1d3f04759da7e3e6343006b955"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -108,11 +109,20 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>GetState</b> (string
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>HasState</b> (string name)</td></tr>
 <tr class="separator:af3793cd81fdcf1eb6d96f60af6ef5fbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:a05c99610c5a68c7931ff3adf19425cef"><td class="memItemLeft" align="right" valign="top"><a id="a05c99610c5a68c7931ff3adf19425cef"></a>
+uint&#160;</td><td class="memItemRight" valign="bottom"><b>netId</b><code> [get, set]</code></td></tr>
+<tr class="separator:a05c99610c5a68c7931ff3adf19425cef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47ad65e2300e6a11c3614e89765cf476"><td class="memItemLeft" align="right" valign="top"><a id="a47ad65e2300e6a11c3614e89765cf476"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>key</b><code> [get, set]</code></td></tr>
+<tr class="separator:a47ad65e2300e6a11c3614e89765cf476"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
 Events</h2></td></tr>
-<tr class="memitem:ae68cead6b168a355c9b69042ecb84eda"><td class="memItemLeft" align="right" valign="top"><a id="ae68cead6b168a355c9b69042ecb84eda"></a>
-System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StateUpdateEvent</b></td></tr>
-<tr class="separator:ae68cead6b168a355c9b69042ecb84eda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0db292987fb85e15123480ebf1cb121b"><td class="memItemLeft" align="right" valign="top"><a id="a0db292987fb85e15123480ebf1cb121b"></a>
+System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, string, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>StateUpdateEvent</b></td></tr>
+<tr class="separator:a0db292987fb85e15123480ebf1cb121b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91ffa876fb85efd708528f18430747d3"><td class="memItemLeft" align="right" valign="top"><a id="a91ffa876fb85efd708528f18430747d3"></a>
 System.Action&lt; <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a>, <a class="el" href="interface_cross_link_1_1_value_provider.html">ValueProvider</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>HitOtherEvent</b></td></tr>
 <tr class="separator:a91ffa876fb85efd708528f18430747d3"><td class="memSeparator" colspan="2">&#160;</td></tr>

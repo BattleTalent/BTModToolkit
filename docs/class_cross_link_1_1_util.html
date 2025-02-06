@@ -68,13 +68,28 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pub-static-attribs">Static Public Attributes</a> &#124;
 <a href="class_cross_link_1_1_util-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.Util Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a2a70e4d3fbeb652164821228b9afe78a"><td class="memItemLeft" align="right" valign="top"><a id="a2a70e4d3fbeb652164821228b9afe78a"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>LogType</b> { <b>Log</b>
+, <b>Warning</b>
+, <b>Error</b>
+ }</td></tr>
+<tr class="separator:a2a70e4d3fbeb652164821228b9afe78a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a115f6f5761a5d16e8a9957c3de24441b"><td class="memItemLeft" align="right" valign="top"><a id="a115f6f5761a5d16e8a9957c3de24441b"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>Peer</b> { <b>Both</b>
+, <b>Server</b>
+, <b>Client</b>
+ }</td></tr>
+<tr class="separator:a115f6f5761a5d16e8a9957c3de24441b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:af9b420dd16d9b8221f1e85ab5d182adc"><td class="memItemLeft" align="right" valign="top"><a id="af9b420dd16d9b8221f1e85ab5d182adc"></a>
@@ -94,6 +109,27 @@ static float&#160;</td><td class="memItemRight" valign="bottom"><b>ClipFrames</b
 <tr class="memitem:a50d52847fa47df5e0c7203a9bf6cfdd9"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_util.html#a50d52847fa47df5e0c7203a9bf6cfdd9">TryAddAnimationEvent</a> (this Animator animator, string clipName, string eventName, int triggerIndex)</td></tr>
 <tr class="memdesc:a50d52847fa47df5e0c7203a9bf6cfdd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add animation event  <a href="class_cross_link_1_1_util.html#a50d52847fa47df5e0c7203a9bf6cfdd9">More...</a><br /></td></tr>
 <tr class="separator:a50d52847fa47df5e0c7203a9bf6cfdd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d243cd4fd8aea26a9d50b5216e93307"><td class="memItemLeft" align="right" valign="top"><a id="a2d243cd4fd8aea26a9d50b5216e93307"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>GetParamNameHash</b> (this Animator animator, string paramName, ref int hash)</td></tr>
+<tr class="separator:a2d243cd4fd8aea26a9d50b5216e93307"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52de9ba6e6c86b4b4316279a702b3379"><td class="memItemLeft" align="right" valign="top"><a id="a52de9ba6e6c86b4b4316279a702b3379"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkDebug</b> (string log, Peer peer=Peer.Both, LogType logtype=LogType.Log)</td></tr>
+<tr class="separator:a52de9ba6e6c86b4b4316279a702b3379"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afed7502e6178e599dc7816e7f9c5ca4e"><td class="memItemLeft" align="right" valign="top"><a id="afed7502e6178e599dc7816e7f9c5ca4e"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>ToDecibels</b> (float multiplier)</td></tr>
+<tr class="separator:afed7502e6178e599dc7816e7f9c5ca4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeff225201feb294f9208ff1e47180b86"><td class="memItemLeft" align="right" valign="top"><a id="aeff225201feb294f9208ff1e47180b86"></a>
+static float&#160;</td><td class="memItemRight" valign="bottom"><b>FromDecibels</b> (float db)</td></tr>
+<tr class="separator:aeff225201feb294f9208ff1e47180b86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d7cb69749c7dc4ca3e82bbc69b3dab0"><td class="memItemLeft" align="right" valign="top">static float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_util.html#a5d7cb69749c7dc4ca3e82bbc69b3dab0">GetVoiceMlp</a> (float volume)</td></tr>
+<tr class="memdesc:a5d7cb69749c7dc4ca3e82bbc69b3dab0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Local Mircophone voice volume range (0, 1)  <a href="class_cross_link_1_1_util.html#a5d7cb69749c7dc4ca3e82bbc69b3dab0">More...</a><br /></td></tr>
+<tr class="separator:a5d7cb69749c7dc4ca3e82bbc69b3dab0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
+Static Public Attributes</h2></td></tr>
+<tr class="memitem:a8451449c1da5694e50db10f7a10a973b"><td class="memItemLeft" align="right" valign="top"><a id="a8451449c1da5694e50db10f7a10a973b"></a>
+const float&#160;</td><td class="memItemRight" valign="bottom"><b>MinDecibels</b> = -60f</td></tr>
+<tr class="separator:a8451449c1da5694e50db10f7a10a973b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a389e10a86258056e3b3efb3a703d68a9"></a>
@@ -154,6 +190,40 @@ static float&#160;</td><td class="memItemRight" valign="bottom"><b>ClipFrames</b
     <tr><td class="paramname">center</td><td>center point</td></tr>
     <tr><td class="paramname">end</td><td>end point</td></tr>
     <tr><td class="paramname">tangent</td><td>point tangent</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a5d7cb69749c7dc4ca3e82bbc69b3dab0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d7cb69749c7dc4ca3e82bbc69b3dab0">&#9670;&nbsp;</a></span>GetVoiceMlp()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static float CrossLink.Util.GetVoiceMlp </td>
+          <td>(</td>
+          <td class="paramtype">float&#160;</td>
+          <td class="paramname"><em>volume</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Local Mircophone voice volume range (0, 1) </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">volume</td><td></td></tr>
   </table>
   </dd>
 </dl>

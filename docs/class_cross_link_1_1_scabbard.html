@@ -68,9 +68,13 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
+<a href="#properties">Properties</a> &#124;
+<a href="#events">Events</a> &#124;
 <a href="class_cross_link_1_1_scabbard-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">CrossLink.Scabbard Class Reference</div>  </div>
@@ -79,6 +83,14 @@ $(function() {
 
 <p>Inherits MonoBehaviour.</p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a85bb00e7d42a51a77dc9ed39327fae77"><td class="memItemLeft" align="right" valign="top"><a id="a85bb00e7d42a51a77dc9ed39327fae77"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>State</b> { <b>Idle</b>
+, <b>Connected</b>
+, <b>Locked</b>
+ }</td></tr>
+<tr class="separator:a85bb00e7d42a51a77dc9ed39327fae77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aae71407efe575f8150c806a2243e145e"><td class="memItemLeft" align="right" valign="top"><a id="aae71407efe575f8150c806a2243e145e"></a>
@@ -87,18 +99,33 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a2769cd2af10bf1243b6a24a764959a46"><td class="memItemLeft" align="right" valign="top"><a id="a2769cd2af10bf1243b6a24a764959a46"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsConnect</b> ()</td></tr>
 <tr class="separator:a2769cd2af10bf1243b6a24a764959a46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2940d9f90fd3cfd5b49d170091ef273c"><td class="memItemLeft" align="right" valign="top"><a id="a2940d9f90fd3cfd5b49d170091ef273c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>BuildConnect</b> (<a class="el" href="class_cross_link_1_1_scabbard_user.html">ScabbardUser</a> scabbardUser, Rigidbody rb)</td></tr>
+<tr class="separator:a2940d9f90fd3cfd5b49d170091ef273c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a873e6f5a5828d2de43e498c4bb677ae3"><td class="memItemLeft" align="right" valign="top"><a id="a873e6f5a5828d2de43e498c4bb677ae3"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>LockWithSword</b> (bool isLock)</td></tr>
 <tr class="separator:a873e6f5a5828d2de43e498c4bb677ae3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa815a18318d571bd9136e7dd6035c747"><td class="memItemLeft" align="right" valign="top"><a id="aa815a18318d571bd9136e7dd6035c747"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>DisconnectWithOther</b> ()</td></tr>
 <tr class="separator:aa815a18318d571bd9136e7dd6035c747"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf0668ec66340fc95099fb464dba5e0c"><td class="memItemLeft" align="right" valign="top"><a id="aaf0668ec66340fc95099fb464dba5e0c"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LocalDisconnectWithOther</b> ()</td></tr>
+<tr class="separator:aaf0668ec66340fc95099fb464dba5e0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2f41c306675d35ec676f5120aa25af20"><td class="memItemLeft" align="right" valign="top"><a id="a2f41c306675d35ec676f5120aa25af20"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ConnectWithSword</b> (<a class="el" href="class_cross_link_1_1_scabbard_user.html">ScabbardUser</a> user)</td></tr>
 <tr class="separator:a2f41c306675d35ec676f5120aa25af20"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9c68a8548471c4e328dd5f4d3bd7bbac"><td class="memItemLeft" align="right" valign="top"><a id="a9c68a8548471c4e328dd5f4d3bd7bbac"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnBuy</b> ()</td></tr>
 <tr class="separator:a9c68a8548471c4e328dd5f4d3bd7bbac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa5459807544049802eaa8f513ca96cb6"><td class="memItemLeft" align="right" valign="top"><a id="aa5459807544049802eaa8f513ca96cb6"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkUpdateDepth</b> (bool scabbardGrab, float depth, int netId)</td></tr>
+<tr class="separator:aa5459807544049802eaa8f513ca96cb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ce9a52bedd25b44319febd8eb0e699e"><td class="memItemLeft" align="right" valign="top"><a id="a3ce9a52bedd25b44319febd8eb0e699e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkIdleToConnectState</b> (<a class="el" href="class_cross_link_1_1_scabbard_user.html">ScabbardUser</a> scabbardUser)</td></tr>
+<tr class="separator:a3ce9a52bedd25b44319febd8eb0e699e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4940002b12d754bdeed608bd5321dbd"><td class="memItemLeft" align="right" valign="top"><a id="ad4940002b12d754bdeed608bd5321dbd"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>NetworkIgnoreCollisionWithScabbardGrabHand</b> (bool isIgnore)</td></tr>
+<tr class="separator:ad4940002b12d754bdeed608bd5321dbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -111,15 +138,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>isTwoSide</b> = true<
 <tr class="memitem:a1cec350fbd192244e19f4bafc4ca9ee5"><td class="memItemLeft" align="right" valign="top"><a id="a1cec350fbd192244e19f4bafc4ca9ee5"></a>
 Transform&#160;</td><td class="memItemRight" valign="bottom"><b>entryPoint</b></td></tr>
 <tr class="separator:a1cec350fbd192244e19f4bafc4ca9ee5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:accfead140d2d6617195aed1d1d8ca6d6"><td class="memItemLeft" align="right" valign="top"><a id="accfead140d2d6617195aed1d1d8ca6d6"></a>
-Transform&#160;</td><td class="memItemRight" valign="bottom"><b>detectPoint</b></td></tr>
-<tr class="separator:accfead140d2d6617195aed1d1d8ca6d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a34a9274fda532e56cf91ea8e1b8c6075"><td class="memItemLeft" align="right" valign="top"><a id="a34a9274fda532e56cf91ea8e1b8c6075"></a>
 <a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ib</b></td></tr>
 <tr class="separator:a34a9274fda532e56cf91ea8e1b8c6075"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38df860d61d5877ba7851547c0fa175d"><td class="memItemLeft" align="right" valign="top"><a id="a38df860d61d5877ba7851547c0fa175d"></a>
-float&#160;</td><td class="memItemRight" valign="bottom"><b>maxConnectDis</b> = 0.05f</td></tr>
-<tr class="separator:a38df860d61d5877ba7851547c0fa175d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb6ec77ca9abd68b47f5f82b1c9bc15d"><td class="memItemLeft" align="right" valign="top"><a id="afb6ec77ca9abd68b47f5f82b1c9bc15d"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>pForce</b> = 10000</td></tr>
 <tr class="separator:afb6ec77ca9abd68b47f5f82b1c9bc15d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -162,6 +183,9 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>jointXOffset</b> = 0
 <tr class="memitem:a8d2e7da87fb3c6f5bd2183e1314b3f7a"><td class="memItemLeft" align="right" valign="top"><a id="a8d2e7da87fb3c6f5bd2183e1314b3f7a"></a>
 <a class="el" href="class_cross_link_1_1_sound_effect_info.html">SoundEffectInfo</a>&#160;</td><td class="memItemRight" valign="bottom"><b>onSheathSound</b></td></tr>
 <tr class="separator:a8d2e7da87fb3c6f5bd2183e1314b3f7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34366c693cdb317c431f6cdb9ace588c"><td class="memItemLeft" align="right" valign="top"><a id="a34366c693cdb317c431f6cdb9ace588c"></a>
+ParticleSystem&#160;</td><td class="memItemRight" valign="bottom"><b>slideVisualEffect</b></td></tr>
+<tr class="separator:a34366c693cdb317c431f6cdb9ace588c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -171,6 +195,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Awake</b> ()</td></tr
 <tr class="memitem:a3b85c80aa7f6dc32d44354b6d05468af"><td class="memItemLeft" align="right" valign="top"><a id="a3b85c80aa7f6dc32d44354b6d05468af"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnDestroy</b> ()</td></tr>
 <tr class="separator:a3b85c80aa7f6dc32d44354b6d05468af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
+Properties</h2></td></tr>
+<tr class="memitem:a0449b3b5f6223e49639fc49f9e0b581b"><td class="memItemLeft" align="right" valign="top"><a id="a0449b3b5f6223e49639fc49f9e0b581b"></a>
+<a class="el" href="class_cross_link_1_1_scabbard_user.html">ScabbardUser</a>&#160;</td><td class="memItemRight" valign="bottom"><b>ScabbardUser</b><code> [get]</code></td></tr>
+<tr class="separator:a0449b3b5f6223e49639fc49f9e0b581b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56344ea9cbde14c4c3083eabb4e002e1"><td class="memItemLeft" align="right" valign="top"><a id="a56344ea9cbde14c4c3083eabb4e002e1"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsIn</b><code> [get]</code></td></tr>
+<tr class="separator:a56344ea9cbde14c4c3083eabb4e002e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="events"></a>
+Events</h2></td></tr>
+<tr class="memitem:a9ff4d9f890b4de54fd3217cd8a96be9e"><td class="memItemLeft" align="right" valign="top"><a id="a9ff4d9f890b4de54fd3217cd8a96be9e"></a>
+System.Action&lt; State, State &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnStateChangeEvent</b></td></tr>
+<tr class="separator:a9ff4d9f890b4de54fd3217cd8a96be9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ef9f50bf39f0f835bbb7a38a335dcb7"><td class="memItemLeft" align="right" valign="top"><a id="a9ef9f50bf39f0f835bbb7a38a335dcb7"></a>
+System.Action&lt; <a class="el" href="class_cross_link_1_1_scabbard_user.html">ScabbardUser</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnSetScabbardUserEvent</b></td></tr>
+<tr class="separator:a9ef9f50bf39f0f835bbb7a38a335dcb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->

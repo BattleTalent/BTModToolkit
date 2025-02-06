@@ -86,9 +86,18 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>OnSelectGameMode</b> 
 <tr class="memitem:a1aae6aac2dfcb82de7421779a76ba29e"><td class="memItemLeft" align="right" valign="top"><a id="a1aae6aac2dfcb82de7421779a76ba29e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>OnNewModeSelect</b> ()</td></tr>
 <tr class="separator:a1aae6aac2dfcb82de7421779a76ba29e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20be811235c5ee6e19de9c967c74baa7"><td class="memItemLeft" align="right" valign="top"><a id="a20be811235c5ee6e19de9c967c74baa7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OnMultiPlayerModeSelect</b> ()</td></tr>
+<tr class="separator:a20be811235c5ee6e19de9c967c74baa7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a4fe2c9ba90ab60478d4164d5998f47"><td class="memItemLeft" align="right" valign="top"><a id="a7a4fe2c9ba90ab60478d4164d5998f47"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>ShowNetworkRoomList</b> ()</td></tr>
+<tr class="separator:a7a4fe2c9ba90ab60478d4164d5998f47"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2025efde10612589c6ac6a5cf521e811"><td class="memItemLeft" align="right" valign="top"><a id="a2025efde10612589c6ac6a5cf521e811"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ReturnToLoginPanel</b> ()</td></tr>
 <tr class="separator:a2025efde10612589c6ac6a5cf521e811"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a611d5bc8e2666abee1dac6e843c43bcf"><td class="memItemLeft" align="right" valign="top"><a id="a611d5bc8e2666abee1dac6e843c43bcf"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OpenSavePanel</b> ()</td></tr>
+<tr class="separator:a611d5bc8e2666abee1dac6e843c43bcf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_class_cross_link_1_1_panel_base"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_class_cross_link_1_1_panel_base')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="class_cross_link_1_1_panel_base.html">CrossLink.PanelBase</a></td></tr>
 <tr class="memitem:a6695512b6989eeaa6c1d74be41149515 inherit pub_methods_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="a6695512b6989eeaa6c1d74be41149515"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>FadeIn</b> (System.Action onFin=null)</td></tr>
@@ -111,15 +120,6 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a43ea43a1d15384c6137fb59a70949c00"><td class="memItemLeft" align="right" valign="top"><a id="a43ea43a1d15384c6137fb59a70949c00"></a>
 List&lt; <a class="el" href="class_cross_link_1_1_u_i_button.html">UIButton</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>modeSelectBtn</b></td></tr>
 <tr class="separator:a43ea43a1d15384c6137fb59a70949c00"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7bb35751dc688c495c7f5fcee2730348"><td class="memItemLeft" align="right" valign="top"><a id="a7bb35751dc688c495c7f5fcee2730348"></a>
-List&lt; Image &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>modeSelectImage</b></td></tr>
-<tr class="separator:a7bb35751dc688c495c7f5fcee2730348"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeaa6b0654d5b10a7f66dc5e292d5edd5"><td class="memItemLeft" align="right" valign="top"><a id="aeaa6b0654d5b10a7f66dc5e292d5edd5"></a>
-List&lt; Text &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>modeSelectText</b></td></tr>
-<tr class="separator:aeaa6b0654d5b10a7f66dc5e292d5edd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a572450143e8ffb80a9f26ba31a2e09ad"><td class="memItemLeft" align="right" valign="top"><a id="a572450143e8ffb80a9f26ba31a2e09ad"></a>
-List&lt; Text &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>modeSelectDescText</b></td></tr>
-<tr class="separator:a572450143e8ffb80a9f26ba31a2e09ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66924ab58fa8714494ba6e8556126ca1"><td class="memItemLeft" align="right" valign="top"><a id="a66924ab58fa8714494ba6e8556126ca1"></a>
 GameObject&#160;</td><td class="memItemRight" valign="bottom"><b>descTextObj</b></td></tr>
 <tr class="separator:a66924ab58fa8714494ba6e8556126ca1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -145,6 +145,10 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>ignoreFadeEffect</b> 
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pro_methods_class_cross_link_1_1_panel_base"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_class_cross_link_1_1_panel_base')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="class_cross_link_1_1_panel_base.html">CrossLink.PanelBase</a></td></tr>
+<tr class="memitem:aa386caf243cb3301108400e5535d25fc inherit pro_methods_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="aa386caf243cb3301108400e5535d25fc"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>OnExit</b> ()</td></tr>
+<tr class="separator:aa386caf243cb3301108400e5535d25fc inherit pro_methods_class_cross_link_1_1_panel_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_class_cross_link_1_1_panel_base"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_class_cross_link_1_1_panel_base')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="class_cross_link_1_1_panel_base.html">CrossLink.PanelBase</a></td></tr>
 <tr class="memitem:a5e2c75a54f15f2898b4101491b8f6d17 inherit pro_attribs_class_cross_link_1_1_panel_base"><td class="memItemLeft" align="right" valign="top"><a id="a5e2c75a54f15f2898b4101491b8f6d17"></a>
 CanvasGroup&#160;</td><td class="memItemRight" valign="bottom"><b>canvasGroup</b></td></tr>

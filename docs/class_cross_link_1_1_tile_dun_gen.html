@@ -107,21 +107,30 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>SetBridgeSpawn</b> (b
 <tr class="memitem:ab929b97f52be7b37cba5f1e55fc4b0b8"><td class="memItemLeft" align="right" valign="top"><a id="ab929b97f52be7b37cba5f1e55fc4b0b8"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsBridgeSpawn</b> ()</td></tr>
 <tr class="separator:ab929b97f52be7b37cba5f1e55fc4b0b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a342f54482f1bcfecd33fd73b78af00e1"><td class="memItemLeft" align="right" valign="top"><a id="a342f54482f1bcfecd33fd73b78af00e1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>UpdateCombine</b> ()</td></tr>
+<tr class="separator:a342f54482f1bcfecd33fd73b78af00e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a65f17121ad078812b9668b2246f08c5e"><td class="memItemLeft" align="right" valign="top"><a id="a65f17121ad078812b9668b2246f08c5e"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>GetGenTime</b> ()</td></tr>
 <tr class="separator:a65f17121ad078812b9668b2246f08c5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7704fc3bb008e3a61e89dd6dbdad66c1"><td class="memItemLeft" align="right" valign="top"><a id="a7704fc3bb008e3a61e89dd6dbdad66c1"></a>
+List&lt; <a class="el" href="class_cross_link_1_1_tile_base.html">TileBase</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetActiveTiles</b> ()</td></tr>
+<tr class="separator:a7704fc3bb008e3a61e89dd6dbdad66c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a564a0ad9a072cafa4817cfdd82fd23cb"><td class="memItemLeft" align="right" valign="top"><a id="a564a0ad9a072cafa4817cfdd82fd23cb"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>SetUpSeed</b> (int seed)</td></tr>
 <tr class="separator:a564a0ad9a072cafa4817cfdd82fd23cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae58df4b2a993bc1fe78d4f040d6571e5"><td class="memItemLeft" align="right" valign="top"><a id="ae58df4b2a993bc1fe78d4f040d6571e5"></a>
 override void&#160;</td><td class="memItemRight" valign="bottom"><b>Generate</b> ()</td></tr>
 <tr class="separator:ae58df4b2a993bc1fe78d4f040d6571e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01868d1875702185c24e37ea41e5da93"><td class="memItemLeft" align="right" valign="top"><a id="a01868d1875702185c24e37ea41e5da93"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>OuterGenerateFin</b> ()</td></tr>
+<tr class="separator:a01868d1875702185c24e37ea41e5da93"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aebfa2a0ad9d97dd46d5d8eeb7e5b1045"><td class="memItemLeft" align="right" valign="top"><a id="aebfa2a0ad9d97dd46d5d8eeb7e5b1045"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>GenNaviMesh</b> ()</td></tr>
 <tr class="separator:aebfa2a0ad9d97dd46d5d8eeb7e5b1045"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a016bb6a0d6cf80a0b9d361788b8a80b5"><td class="memItemLeft" align="right" valign="top"><a id="a016bb6a0d6cf80a0b9d361788b8a80b5"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>RecenterCharacter</b> ()</td></tr>
-<tr class="separator:a016bb6a0d6cf80a0b9d361788b8a80b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a859727eb3b3aee244538eb7358f2783e"><td class="memItemLeft" align="right" valign="top"><a id="a859727eb3b3aee244538eb7358f2783e"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>RecenterCharacter</b> (Vector3? clientManulOffset=null)</td></tr>
+<tr class="separator:a859727eb3b3aee244538eb7358f2783e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -143,6 +152,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>autoGenSeed</b> = tru
 <tr class="memitem:ae59899067ddea045e72c901ce356aabd"><td class="memItemLeft" align="right" valign="top"><a id="ae59899067ddea045e72c901ce356aabd"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>defaultSoulNum</b> = 0</td></tr>
 <tr class="separator:ae59899067ddea045e72c901ce356aabd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aabcd0b49da6dd0a392b1523a848aa5a0"><td class="memItemLeft" align="right" valign="top"><a id="aabcd0b49da6dd0a392b1523a848aa5a0"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>retryCount</b> = 0</td></tr>
+<tr class="separator:aabcd0b49da6dd0a392b1523a848aa5a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>

@@ -187,9 +187,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>BlowUp</b> (BodyFragm
 <tr class="memitem:ab711c4bb97c4bf6acea7186f47188264"><td class="memItemLeft" align="right" valign="top"><a id="ab711c4bb97c4bf6acea7186f47188264"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>BlowUp</b> (BodyFragment frag)</td></tr>
 <tr class="separator:ab711c4bb97c4bf6acea7186f47188264"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac4fb59d2e9977257027d909c2308cebf"><td class="memItemLeft" align="right" valign="top"><a id="ac4fb59d2e9977257027d909c2308cebf"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>FreezeEffect</b> (bool f)</td></tr>
-<tr class="separator:ac4fb59d2e9977257027d909c2308cebf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9fb331e7e59b31b8c7d650c91d19701d"><td class="memItemLeft" align="right" valign="top"><a id="a9fb331e7e59b31b8c7d650c91d19701d"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>FreezeEffect</b> (bool f, bool local=false)</td></tr>
+<tr class="separator:a9fb331e7e59b31b8c7d650c91d19701d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a45725c770134fff5bb413351132c497b"><td class="memItemLeft" align="right" valign="top"><a id="a45725c770134fff5bb413351132c497b"></a>
 <a class="el" href="class_cross_link_1_1_interact_base.html">InteractBase</a>&#160;</td><td class="memItemRight" valign="bottom"><b>GetWeapon</b> (string boneName)</td></tr>
 <tr class="separator:a45725c770134fff5bb413351132c497b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -244,6 +244,21 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>CanBeTear</b> (Rigidb
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
+<tr class="memitem:ad09a3ed754e9698027ffc9e78ef184e6"><td class="memItemLeft" align="right" valign="top"><a id="ad09a3ed754e9698027ffc9e78ef184e6"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsServer</b> = true</td></tr>
+<tr class="separator:ad09a3ed754e9698027ffc9e78ef184e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c08e804d1b1c1fc2b2c4315be3cf052"><td class="memItemLeft" align="right" valign="top"><a id="a8c08e804d1b1c1fc2b2c4315be3cf052"></a>
+System.Action&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>networkSetWeaponCollisionEffectAction</b></td></tr>
+<tr class="separator:a8c08e804d1b1c1fc2b2c4315be3cf052"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0054ae1c193e4dee823aeac246e54d08"><td class="memItemLeft" align="right" valign="top"><a id="a0054ae1c193e4dee823aeac246e54d08"></a>
+System.Action&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>networkDismemberAction</b></td></tr>
+<tr class="separator:a0054ae1c193e4dee823aeac246e54d08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d2baf0af85c4c31a1143a0995a9415d"><td class="memItemLeft" align="right" valign="top"><a id="a1d2baf0af85c4c31a1143a0995a9415d"></a>
+System.Action&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>networkBlowUpAction</b></td></tr>
+<tr class="separator:a1d2baf0af85c4c31a1143a0995a9415d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a246ee8e19d54a7f671dbfe2630f70918"><td class="memItemLeft" align="right" valign="top"><a id="a246ee8e19d54a7f671dbfe2630f70918"></a>
+System.Action&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>networkFreezeAction</b></td></tr>
+<tr class="separator:a246ee8e19d54a7f671dbfe2630f70918"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:add33ecf79474fa377ab3299227d9d12a"><td class="memItemLeft" align="right" valign="top"><a id="add33ecf79474fa377ab3299227d9d12a"></a>
 RagdollAnim&#160;</td><td class="memItemRight" valign="bottom"><b>ra</b></td></tr>
 <tr class="separator:add33ecf79474fa377ab3299227d9d12a"><td class="memSeparator" colspan="2">&#160;</td></tr>

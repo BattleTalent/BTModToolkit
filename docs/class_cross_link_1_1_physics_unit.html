@@ -161,6 +161,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>DisableGravityAWhile<
 <tr class="memitem:a1dea0f62f06e0fd15364c4d12b75aea9"><td class="memItemLeft" align="right" valign="top"><a id="a1dea0f62f06e0fd15364c4d12b75aea9"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearDisableGravity</b> ()</td></tr>
 <tr class="separator:a1dea0f62f06e0fd15364c4d12b75aea9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a97f6908fff7467c88330cd65ef34bae5"><td class="memItemLeft" align="right" valign="top"><a id="a97f6908fff7467c88330cd65ef34bae5"></a>
+List&lt; Collider &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetNotTriggerCols</b> ()</td></tr>
+<tr class="separator:a97f6908fff7467c88330cd65ef34bae5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5eca95d0a3d99c29d7c6eb863e3b871c"><td class="memItemLeft" align="right" valign="top"><a id="a5eca95d0a3d99c29d7c6eb863e3b871c"></a>
 Collider[]&#160;</td><td class="memItemRight" valign="bottom"><b>GetCols</b> (bool forceUpdate=false)</td></tr>
 <tr class="separator:a5eca95d0a3d99c29d7c6eb863e3b871c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -233,8 +236,7 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>ClearRecordDat
 <tr class="memitem:ad172086813d71932a8cfced202e18a59"><td class="memItemLeft" align="right" valign="top"><a id="ad172086813d71932a8cfced202e18a59"></a>
 static List&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>GetTagedPhysicsUnit</b> (Tagger.Tag t)</td></tr>
 <tr class="separator:ad172086813d71932a8cfced202e18a59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab4a3ffe44e13ef8cf5fdca78fc7299b"><td class="memItemLeft" align="right" valign="top"><a id="aab4a3ffe44e13ef8cf5fdca78fc7299b"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>FitInTagList</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, bool fitIn)</td></tr>
+<tr class="memitem:aab4a3ffe44e13ef8cf5fdca78fc7299b"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_cross_link_1_1_physics_unit.html#aab4a3ffe44e13ef8cf5fdca78fc7299b">FitInTagList</a> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu, bool fitIn)</td></tr>
 <tr class="separator:aab4a3ffe44e13ef8cf5fdca78fc7299b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af320a334fb24a368a178ee2c323bd098"><td class="memItemLeft" align="right" valign="top"><a id="af320a334fb24a368a178ee2c323bd098"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>Reg</b> (<a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a> pu)</td></tr>
@@ -348,6 +350,49 @@ System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">Ph
 System.Action&lt; <a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a>, Rigidbody, Collider, Vector3, Vector3, Vector3 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>OnHitScanEvent</b></td></tr>
 <tr class="separator:aecd7cbdcf31d57911471954fe5dca94b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="aab4a3ffe44e13ef8cf5fdca78fc7299b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab4a3ffe44e13ef8cf5fdca78fc7299b">&#9670;&nbsp;</a></span>FitInTagList()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void CrossLink.PhysicsUnit.FitInTagList </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="class_cross_link_1_1_physics_unit.html">PhysicsUnit</a>&#160;</td>
+          <td class="paramname"><em>pu</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>fitIn</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p></p>
+<ol type="1">
+<li>When fitIn is true, add pu to the tagged PU dictionary if pu is not contained, do nothing otherwise</li>
+<li>When fitIn is false, remove pu from the tagged PU dictionary if pu is contained, do nothing otherwise</li>
+</ol>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
