@@ -265,6 +265,10 @@ namespace CrossLink
         [Tooltip("character's weapon, fill in the addStoreItemName in ItemInfoConfig when using a mod weapon.")]
         public string weapon;
 
+        public string leftWeapon;
+
+        public string rightWeapon;
+
         [Tooltip("character's attribute, read only the first data of this array, Use default data when array length is 0.")]
         public RoleAttr[] attr;
 
@@ -274,6 +278,7 @@ namespace CrossLink
 
         public ArmorProfile.ArmorTag[] armorConfigsRandom;
         
+        public bool disableMotionFeature;
 
         public SoundEffectInfo boneBreakSound;
         public SoundEffectInfo hurtSound;
@@ -365,6 +370,8 @@ namespace CrossLink
             {
                 roleModInfo[i].replaceRole = ReplaceableCharacterConfig.GetConfig().characters;
             }
+
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
         [EasyButtons.Button]
