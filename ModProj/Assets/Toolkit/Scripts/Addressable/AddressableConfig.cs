@@ -130,6 +130,12 @@ namespace CrossLink
         }
 
         [EasyButtons.Button]
+        void SaveScene()
+        {
+            UnityEditor.SceneManagement.EditorSceneManager.SaveScene(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
+        }
+
+        [EasyButtons.Button]
         void RemoveEntry()
         {
             AddressableHelper.RemoveEntry();

@@ -84,6 +84,9 @@ namespace CrossLink
         #endregion
 
         #region     Enchantment
+        [Tooltip("Colliders that trigger enchantment. Set the Colliders of the weapon parts that need enchanting here." +
+            " This allows magic to trigger enchanting upon contact with these colliders, and after enchanting, collisions with these colliders can activate enchantment skills.")]
+        public List<Collider> enchantTriggerCols = null;
         [Tooltip("Renderer for setting effects when enchanting. if empty then all Renderers on this prefab are selected to set the enchantment effect.")]
         public List<Renderer> enchantRenderers;
         public bool allowEnchantment = true;

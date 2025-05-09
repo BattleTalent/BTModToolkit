@@ -268,6 +268,13 @@ namespace CrossLink
         [Tooltip("character's attribute, read only the first data of this array, Use default data when array length is 0.")]
         public RoleAttr[] attr;
 
+        public string armorProfile;
+
+        public ArmorProfile.ArmorTag[] armorConfigs;
+
+        public ArmorProfile.ArmorTag[] armorConfigsRandom;
+        
+
         public SoundEffectInfo boneBreakSound;
         public SoundEffectInfo hurtSound;
         public SoundEffectInfo deathSound;
@@ -335,6 +342,7 @@ namespace CrossLink
         [SerializeField]
         public RoleModInfo[] roleModInfo;
 
+
         [SerializeField]
         public HandPose[] handPoseInfo;
 
@@ -347,6 +355,17 @@ namespace CrossLink
 
 
 #if UNITY_EDITOR
+        [EasyButtons.Button]
+        public void ReplaceAllCharacters()
+        {
+            if (roleModInfo == null)
+                return;
+
+            for (int i = 0; i < roleModInfo.Length; i++)
+            {
+                roleModInfo[i].replaceRole = ReplaceableCharacterConfig.GetConfig().characters;
+            }
+        }
 
         [EasyButtons.Button]
         public void AutoRegisterNetworkPrefab()
