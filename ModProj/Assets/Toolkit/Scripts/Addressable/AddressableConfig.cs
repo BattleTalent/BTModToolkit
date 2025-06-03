@@ -126,13 +126,9 @@ namespace CrossLink
             AddressableHelper.RefreshAssetPrefix(oldPrefix, newPrefix);
             //RefreshScript
             AddressableHelper.RefreshScriptPrefix(oldPrefix, newPrefix);
+            //RefreshScene
+            AddressableHelper.RefreshScenePrefix(oldPrefix, newPrefix);
             prefix = newPrefix;
-        }
-
-        [EasyButtons.Button]
-        void SaveScene()
-        {
-            UnityEditor.SceneManagement.EditorSceneManager.SaveScene(UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene());
         }
 
         [EasyButtons.Button]

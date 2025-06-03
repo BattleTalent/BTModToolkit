@@ -12,6 +12,7 @@ using System.Text;
 using CrossLink;
 using System;
 using CrossLink.Network;
+using UnityEngine.SceneManagement;
 
 #if UNITY_EDITOR
 namespace CrossLink
@@ -279,33 +280,41 @@ namespace CrossLink
 
         public static void UpdateSceneAsset(string path, string oldPrefix, string curPrefix)
         {
-            var scene = EditorSceneManager.OpenScene(path);
-            if (scene == null)
+            var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+            if (!scene.IsValid())
             {
+                Debug.LogWarning($"can't open scene: {path}");
                 return;
             }
 
             bool hasChanged = false;
-            if (scene != null)
+            var objs = scene.GetRootGameObjects();
+            foreach(var go in objs)
             {
-                var objs = scene.GetRootGameObjects();
-                foreach(var go in objs)
-                {
-                    var flag = UpdateSceneGameObject(go, oldPrefix, curPrefix);
-                    if (!hasChanged && flag)
-                        hasChanged = flag;
-                }
+                var flag = UpdateSceneGameObject(go, oldPrefix, curPrefix);
+                if (!hasChanged && flag)
+                    hasChanged = flag;
             }
 
             if (hasChanged)
             {
-                try
+
+                EditorSceneManager.MarkSceneDirty(scene);
+
+                bool saveSuccess = EditorSceneManager.SaveScene(scene, path);
+
+                if (!saveSuccess)
                 {
-                    EditorSceneManager.SaveScene(scene);
+                    Debug.LogError($"save suc: {path}");
+                    saveSuccess = EditorSceneManager.SaveOpenScenes();
+                    if (!saveSuccess)
+                    {
+                        Debug.LogError("save fail");
+                    }
                 }
-                catch (Exception e)
+                else
                 {
-                    Debug.LogWarning(e.Message);
+                    Debug.Log($"save suc: {path}");
                 }
             }
         }
@@ -540,18 +549,38 @@ namespace CrossLink
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
             AddressableAssetGroup group = settings.DefaultGroup;
 
+            List<string> originallyOpenScenes = new List<string>();
+            for (int i = 0; i < EditorSceneManager.loadedSceneCount; i++)
+            {
+                Scene scene = EditorSceneManager.GetSceneAt(i);
+                if (scene.IsValid() && !string.IsNullOrEmpty(scene.path))
+                {
+                    originallyOpenScenes.Add(scene.path);
+                }
+            }
+
+            EditorSceneManager.SaveOpenScenes();
+
             var eIte = group.entries.GetEnumerator();
             while (eIte.MoveNext())
             {
                 string assetPath = eIte.Current.AssetPath;
                 //SceneAsset root = AssetDatabase.LoadAssetAtPath<SceneAsset>(assetPath);
 
-                if (assetPath.Contains(".unity"))
+                if (assetPath.EndsWith(".unity"))
                     UpdateSceneAsset(assetPath, oldPrefix, curPrefix);
             }
 
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            for (int i = 0; i < originallyOpenScenes.Count; i++)
+            {
+                OpenSceneMode mode = i == 0 ? OpenSceneMode.Single : OpenSceneMode.Additive;
+                Scene scene = EditorSceneManager.OpenScene(originallyOpenScenes[i], mode);
+
+                if (!scene.IsValid())
+                {
+                    Debug.LogWarning($"can't restore: {originallyOpenScenes[i]}");
+                }
+            }
         }   
         
         public static void RefreshAssetPrefix(string oldPrefix, string curPrefix)

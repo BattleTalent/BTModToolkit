@@ -262,11 +262,16 @@ namespace CrossLink
         [Tooltip("default replace NPC.")]
         public string defaultReplacement;
 
-        [Tooltip("character's weapon, fill in the addStoreItemName in ItemInfoConfig when using a mod weapon.")]
+        [Tooltip("Character's weapon. For mod weapons, use the 'addStoreItemName' from ItemInfoConfig. " +
+         "If leftWeapon/rightWeapon are empty, this weapon will be used for both hands.")]
         public string weapon;
 
+        [Tooltip("Left hand weapon (overrides weapon field when set). " +
+         "For mod weapons, use the 'addStoreItemName' from ItemInfoConfig.")]
         public string leftWeapon;
 
+        [Tooltip("Right hand weapon (overrides weapon field when set). " +
+         "For mod weapons, use the 'addStoreItemName' from ItemInfoConfig.")]
         public string rightWeapon;
 
         [Tooltip("character's attribute, read only the first data of this array, Use default data when array length is 0.")]
