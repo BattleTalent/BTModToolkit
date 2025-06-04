@@ -262,11 +262,28 @@ namespace CrossLink
         [Tooltip("default replace NPC.")]
         public string defaultReplacement;
 
-        [Tooltip("character's weapon, fill in the addStoreItemName in ItemInfoConfig when using a mod weapon.")]
+        [Tooltip("Character's weapon. For mod weapons, use the 'addStoreItemName' from ItemInfoConfig. " +
+         "If leftWeapon/rightWeapon are empty, this weapon will be used for both hands.")]
         public string weapon;
+
+        [Tooltip("Left hand weapon (overrides weapon field when set). " +
+         "For mod weapons, use the 'addStoreItemName' from ItemInfoConfig.")]
+        public string leftWeapon;
+
+        [Tooltip("Right hand weapon (overrides weapon field when set). " +
+         "For mod weapons, use the 'addStoreItemName' from ItemInfoConfig.")]
+        public string rightWeapon;
 
         [Tooltip("character's attribute, read only the first data of this array, Use default data when array length is 0.")]
         public RoleAttr[] attr;
+
+        public string armorProfile;
+
+        public ArmorProfile.ArmorTag[] armorConfigs;
+
+        public ArmorProfile.ArmorTag[] armorConfigsRandom;
+        
+        public bool disableMotionFeature;
 
         public SoundEffectInfo boneBreakSound;
         public SoundEffectInfo hurtSound;
@@ -335,6 +352,7 @@ namespace CrossLink
         [SerializeField]
         public RoleModInfo[] roleModInfo;
 
+
         [SerializeField]
         public HandPose[] handPoseInfo;
 
@@ -347,6 +365,19 @@ namespace CrossLink
 
 
 #if UNITY_EDITOR
+        [EasyButtons.Button]
+        public void ReplaceAllCharacters()
+        {
+            if (roleModInfo == null)
+                return;
+
+            for (int i = 0; i < roleModInfo.Length; i++)
+            {
+                roleModInfo[i].replaceRole = ReplaceableCharacterConfig.GetConfig().characters;
+            }
+
+            UnityEditor.EditorUtility.SetDirty(this);
+        }
 
         [EasyButtons.Button]
         public void AutoRegisterNetworkPrefab()

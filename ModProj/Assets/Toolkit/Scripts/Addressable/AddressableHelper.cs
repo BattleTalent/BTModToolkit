@@ -3,6 +3,7 @@ using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.AddressableAssets;
+using UnityEditor.SceneManagement;
 using UnityEditor.AddressableAssets.Settings;
 #endif
 using UnityEngine;
@@ -11,6 +12,7 @@ using System.Text;
 using CrossLink;
 using System;
 using CrossLink.Network;
+using UnityEngine.SceneManagement;
 
 #if UNITY_EDITOR
 namespace CrossLink
@@ -33,6 +35,8 @@ namespace CrossLink
         { "Role", "Role/" },
         { "Wave", "Wave/"},
         { "UI", "UI/" },
+        { "BrokenArmor", "Character/BrokenArmor/"},
+        { "ArmorProfile", "Character/ArmorProfile/"},
     };
 
 
@@ -274,7 +278,49 @@ namespace CrossLink
 #endif
         }
 
-        public static void UpdatePrefab(GameObject root, String oldPrefix, String curPrefix) {
+        public static void UpdateSceneAsset(string path, string oldPrefix, string curPrefix)
+        {
+            var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+            if (!scene.IsValid())
+            {
+                Debug.LogWarning($"can't open scene: {path}");
+                return;
+            }
+
+            bool hasChanged = false;
+            var objs = scene.GetRootGameObjects();
+            foreach(var go in objs)
+            {
+                var flag = UpdateSceneGameObject(go, oldPrefix, curPrefix);
+                if (!hasChanged && flag)
+                    hasChanged = flag;
+            }
+
+            if (hasChanged)
+            {
+
+                EditorSceneManager.MarkSceneDirty(scene);
+
+                bool saveSuccess = EditorSceneManager.SaveScene(scene, path);
+
+                if (!saveSuccess)
+                {
+                    Debug.LogError($"save suc: {path}");
+                    saveSuccess = EditorSceneManager.SaveOpenScenes();
+                    if (!saveSuccess)
+                    {
+                        Debug.LogError("save fail");
+                    }
+                }
+                else
+                {
+                    Debug.Log($"save suc: {path}");
+                }
+            }
+        }
+
+        static bool UpdateSceneGameObject(GameObject root, string oldPrefix, string curPrefix)
+        {
             var hasChanged = false;
             foreach (var fo in root.GetComponentsInChildren<GazeObj>())
             {
@@ -322,7 +368,107 @@ namespace CrossLink
                 fo.tailEffect = fo.tailEffect.Replace(oldPrefix, curPrefix);
                 hasChanged = true;
             }
-        
+
+            foreach (var it in root.GetComponentsInChildren<InteractTriggerX>())
+            {
+                LuaScript ls = it.script;
+                string name = ls.GetLuaScript();
+                ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
+                var stringList = ls.GetStringList();
+                foreach (var str in stringList)
+                {
+                    str.value = str.value.Replace(oldPrefix, curPrefix);
+                }
+
+                it.chargeEffect = it.chargeEffect.Replace(oldPrefix, curPrefix);
+                it.chargeEndEffect = it.chargeEndEffect.Replace(oldPrefix, curPrefix);
+
+                SoundEffectReplacePrefix(it.chargeSound, oldPrefix, curPrefix);
+                SoundEffectReplacePrefix(it.chargeEndSound, oldPrefix, curPrefix);
+
+                it.activateEffect = it.activateEffect.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+
+            foreach (var lb in root.GetComponentsInChildren<LuaBehaviour>())
+            {
+                LuaScript ls = lb.script;
+                string name = ls.GetLuaScript();
+                SerializedObject serializedObject = new SerializedObject(lb);
+                SerializedProperty serializedProperty = serializedObject.FindProperty("script.luaScript");
+                serializedProperty.stringValue = name.Replace(oldPrefix, curPrefix);
+                serializedObject.ApplyModifiedProperties();
+
+                var stringList = ls.GetStringList();
+                for (int i = 0; i <stringList.Length; i++)
+                {
+                    //str.value = str.value.Replace(oldPrefix, curPrefix);
+                    serializedProperty = serializedObject.FindProperty("script.stringList.Array.data["+ i + "].value");
+                    serializedProperty.stringValue = name.Replace(oldPrefix, curPrefix);
+                    serializedObject.ApplyModifiedProperties();
+                }
+                
+                hasChanged = true;
+            }
+
+            foreach (var ib in root.GetComponentsInChildren<NetworkInteractBase>())
+            {
+                ib.ibName = ib.ibName.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+            return hasChanged;
+        }
+
+        public static void UpdatePrefab(GameObject root, String oldPrefix, String curPrefix)
+        {
+            var hasChanged = false;
+            foreach (var fo in root.GetComponentsInChildren<GazeObj>())
+            {
+                fo.showInfo = fo.showInfo.Replace(oldPrefix, curPrefix);
+                fo.showName = fo.showName.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+
+            foreach (var so in root.GetComponentsInChildren<SoundEffectPlayer>())
+            {
+                for (int j = 0; j < so.soundInfo.soundNames.Length; j++)
+                {
+                    so.soundInfo.soundNames[j] = so.soundInfo.soundNames[j].Replace(oldPrefix, curPrefix);
+                    hasChanged = true;
+                }
+            }
+
+            foreach (var rg in root.GetComponentsInChildren<RagdollHitInfoObj>())
+            {
+                rg.hitInfo.templateName = rg.hitInfo.templateName.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+
+            foreach (var fo in root.GetComponentsInChildren<FlyObjectX>())
+            {
+                LuaScript ls = fo.script;
+                string name = ls.GetLuaScript();
+                ls.SetLuaScript(name.Replace(oldPrefix, curPrefix));
+                var stringList = ls.GetStringList();
+                foreach (var str in stringList)
+                {
+                    str.value = str.value.Replace(oldPrefix, curPrefix);
+                }
+
+                fo.flyObjTobeCreatedOnImpact = fo.flyObjTobeCreatedOnImpact.Replace(oldPrefix, curPrefix);
+                SoundEffectReplacePrefix(fo.delaySound, oldPrefix, curPrefix);
+
+                fo.shootEffect = fo.shootEffect.Replace(oldPrefix, curPrefix);
+                SoundEffectReplacePrefix(fo.shootSound, oldPrefix, curPrefix);
+
+                fo.impactEffect = fo.impactEffect.Replace(oldPrefix, curPrefix);
+                fo.impactSceneDecal = fo.impactSceneDecal.Replace(oldPrefix, curPrefix);
+                SoundEffectReplacePrefix(fo.impactSound, oldPrefix, curPrefix);
+
+                fo.tailEffect = fo.tailEffect.Replace(oldPrefix, curPrefix);
+                hasChanged = true;
+            }
+
             foreach (var it in root.GetComponentsInChildren<InteractTriggerX>())
             {
                 LuaScript ls = it.script;
@@ -363,7 +509,8 @@ namespace CrossLink
                 hasChanged = true;
             }
 
-            if (hasChanged) {
+            if (hasChanged)
+            {
                 try
                 {
                     PrefabUtility.SavePrefabAsset(root);
@@ -397,6 +544,45 @@ namespace CrossLink
             }
         }
 
+        public static void RefreshScenePrefix(string oldPrefix, string curPrefix)
+        {
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            AddressableAssetGroup group = settings.DefaultGroup;
+
+            List<string> originallyOpenScenes = new List<string>();
+            for (int i = 0; i < EditorSceneManager.loadedSceneCount; i++)
+            {
+                Scene scene = EditorSceneManager.GetSceneAt(i);
+                if (scene.IsValid() && !string.IsNullOrEmpty(scene.path))
+                {
+                    originallyOpenScenes.Add(scene.path);
+                }
+            }
+
+            EditorSceneManager.SaveOpenScenes();
+
+            var eIte = group.entries.GetEnumerator();
+            while (eIte.MoveNext())
+            {
+                string assetPath = eIte.Current.AssetPath;
+                //SceneAsset root = AssetDatabase.LoadAssetAtPath<SceneAsset>(assetPath);
+
+                if (assetPath.EndsWith(".unity"))
+                    UpdateSceneAsset(assetPath, oldPrefix, curPrefix);
+            }
+
+            for (int i = 0; i < originallyOpenScenes.Count; i++)
+            {
+                OpenSceneMode mode = i == 0 ? OpenSceneMode.Single : OpenSceneMode.Additive;
+                Scene scene = EditorSceneManager.OpenScene(originallyOpenScenes[i], mode);
+
+                if (!scene.IsValid())
+                {
+                    Debug.LogWarning($"can't restore: {originallyOpenScenes[i]}");
+                }
+            }
+        }   
+        
         public static void RefreshAssetPrefix(string oldPrefix, string curPrefix)
         {
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;

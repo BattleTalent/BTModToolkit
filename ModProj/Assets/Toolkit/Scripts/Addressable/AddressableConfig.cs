@@ -126,6 +126,8 @@ namespace CrossLink
             AddressableHelper.RefreshAssetPrefix(oldPrefix, newPrefix);
             //RefreshScript
             AddressableHelper.RefreshScriptPrefix(oldPrefix, newPrefix);
+            //RefreshScene
+            AddressableHelper.RefreshScenePrefix(oldPrefix, newPrefix);
             prefix = newPrefix;
         }
 
