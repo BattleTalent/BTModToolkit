@@ -1,0 +1,70 @@
+# C# Development Standards
+
+## Namespace Organization
+- Use `CrossLink` namespace for mod-related scripts
+- Follow Unity naming conventions (PascalCase for public, camelCase for private)
+- Organize scripts in appropriate namespace folders
+
+## Code Quality
+- Document public APIs with XML comments
+- Implement proper disposal patterns for addressable handles
+- Use async/await for addressable operations
+- Handle VR-specific considerations for physics and interactions
+
+## Unity Integration
+- Implement Unity lifecycle methods correctly (`Start`, `Update`, `OnDestroy`)
+- Use Unity XR systems for VR input handling
+- Follow Unity best practices for component design
+- Implement `IDisposable` where appropriate for resource management
+
+## Asset Management
+- Use Addressables for all mod assets
+- Implement proper loading/unloading cycles
+- Handle async operations with proper error handling
+- Support both Unity editor and runtime loading
+
+## Example Pattern
+```csharp
+namespace CrossLink.ModName
+{
+    /// <summary>
+    /// Example mod component with proper resource management
+    /// </summary>
+    public class ExampleModComponent : MonoBehaviour, IDisposable
+    {
+        private AsyncOperationHandle<GameObject> _assetHandle;
+        
+        private async void Start()
+        {
+            await LoadAssetsAsync();
+        }
+        
+        private async Task LoadAssetsAsync()
+        {
+            try
+            {
+                _assetHandle = Addressables.LoadAssetAsync<GameObject>("AssetKey");
+                var asset = await _assetHandle.Task;
+                // Use asset
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to load asset: {ex.Message}");
+            }
+        }
+        
+        public void Dispose()
+        {
+            if (_assetHandle.IsValid())
+            {
+                Addressables.Release(_assetHandle);
+            }
+        }
+        
+        private void OnDestroy()
+        {
+            Dispose();
+        }
+    }
+}
+```

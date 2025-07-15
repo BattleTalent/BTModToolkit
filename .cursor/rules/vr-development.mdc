@@ -1,0 +1,89 @@
+# VR Development Guidelines
+
+## VR Interaction Principles
+- Design for hand tracking and controller input
+- Implement physics-based interactions for realistic VR gameplay
+- Create intuitive grabbing and manipulation mechanics
+- Support both seated and room-scale VR experiences
+
+## Hand Pose Definitions
+- Define proper hand poses for weapon handling
+- Ensure natural grip positions for VR controllers
+- Test hand poses with different controller types
+- Provide visual feedback for interaction zones
+
+## Spatial Design
+- Design UI elements for VR interaction paradigms
+- Use world-space UI instead of screen-space when possible
+- Maintain comfortable viewing distances (0.5m - 3m)
+- Avoid small UI elements that are hard to interact with in VR
+
+## Physics Considerations
+```csharp
+// Example VR grabbable object
+public class VRGrabbableWeapon : MonoBehaviour
+{
+    [Header("VR Settings")]
+    public Transform gripPoint;
+    public HandPoseAsset leftHandPose;
+    public HandPoseAsset rightHandPose;
+    
+    [Header("Physics")]
+    public float grabDistance = 0.1f;
+    public LayerMask grabLayerMask = -1;
+    
+    private Rigidbody rb;
+    private bool isGrabbed = false;
+    
+    private void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        if (rb == null)
+        {
+            rb = gameObject.AddComponent<Rigidbody>();
+        }
+        
+        // Configure for VR physics
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+    }
+    
+    public void OnGrab(Transform hand)
+    {
+        isGrabbed = true;
+        rb.isKinematic = true;
+        transform.SetParent(hand);
+        
+        // Apply hand pose
+        ApplyHandPose(hand);
+    }
+    
+    public void OnRelease()
+    {
+        isGrabbed = false;
+        rb.isKinematic = false;
+        transform.SetParent(null);
+        
+        // Apply release velocity
+        ApplyReleasePhysics();
+    }
+}
+```
+
+## Audio Design for VR
+- Use spatial audio for immersive feedback
+- Implement 3D audio sources for weapon sounds
+- Provide audio cues for interaction feedback
+- Support haptic feedback through controller vibration
+
+## Performance Optimization for VR
+- Maintain stable 90fps for smooth VR experience
+- Use efficient rendering techniques (single-pass stereo)
+- Implement proper LOD systems for complex scenes
+- Optimize particle effects for VR performance
+
+## Comfort and Accessibility
+- Implement comfort settings (teleport vs smooth locomotion)
+- Provide options for different VR comfort levels
+- Avoid rapid camera movements that cause motion sickness
+- Support various VR headset types and play areas

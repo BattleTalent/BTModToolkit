@@ -1,0 +1,135 @@
+# Asset Management Best Practices
+
+## Unity Addressables System
+
+### Asset Organization
+- Group related assets in logical addressable groups
+- Use descriptive asset addresses (e.g., "Weapons/MagicSword/Prefab")
+- Organize by mod type and functionality
+- Separate platform-specific assets when necessary
+
+### Loading Patterns
+```csharp
+// Async asset loading with proper error handling
+public async Task<T> LoadAssetAsync<T>(string key) where T : UnityEngine.Object
+{
+    try
+    {
+        var handle = Addressables.LoadAssetAsync<T>(key);
+        var asset = await handle.Task;
+        
+        // Store handle for later cleanup
+        _assetHandles.Add(handle);
+        
+        return asset;
+    }
+    catch (Exception ex)
+    {
+        Debug.LogError($"Failed to load asset '{key}': {ex.Message}");
+        return null;
+    }
+}
+
+// Proper cleanup
+public void ReleaseAssets()
+{
+    foreach (var handle in _assetHandles)
+    {
+        if (handle.IsValid())
+        {
+            Addressables.Release(handle);
+        }
+    }
+    _assetHandles.Clear();
+}
+```
+
+### Resource Management
+- Always release addressable handles when done
+- Use object pooling for frequently spawned objects
+- Monitor memory usage and clean up unused assets
+- Implement proper disposal patterns
+
+## File Naming Conventions
+
+### Scripts
+- **C#**: `PascalCase.cs` (e.g., `WeaponController.cs`)
+- **Lua**: `PascalCaseScript.txt` (e.g., `MagicSwordScript.txt`)
+
+### Assets
+- **Prefabs**: `PascalCase.prefab` (e.g., `MagicSword.prefab`)
+- **Materials**: `PascalCase.mat` (e.g., `SwordBlade.mat`)
+- **Textures**: `descriptive_name.png/jpg` (e.g., `magic_sword_diffuse.png`)
+- **Audio**: `descriptive_name.wav/mp3` (e.g., `sword_clash_01.wav`)
+
+### Folders
+- Use `PascalCase` for main folders
+- Use descriptive names that indicate content type
+- Group by functionality, not file type
+
+## Cross-Platform Considerations
+
+### Asset Compatibility
+- Use platform-agnostic asset formats when possible
+- Test assets on both PC and Quest platforms
+- Optimize textures for mobile GPU performance (Quest)
+- Consider different screen resolutions and FOVs
+
+### Performance Optimization
+```csharp
+// Platform-specific asset loading
+public async Task<Material> LoadPlatformMaterial(string baseName)
+{
+    string platformSuffix = "";
+    
+#if UNITY_ANDROID
+    platformSuffix = "_Quest";
+#elif UNITY_STANDALONE_WIN
+    platformSuffix = "_PC";
+#endif
+    
+    string assetKey = $"Materials/{baseName}{platformSuffix}";
+    return await LoadAssetAsync<Material>(assetKey);
+}
+```
+
+## Build Configuration
+
+### Addressable Groups
+- **Default Local Group**: Core game assets that are always available
+- **Mod Groups**: Separate groups for each mod type
+- **Platform Groups**: Platform-specific optimized assets
+- **Shared Groups**: Common assets used by multiple mods
+
+### Build Settings
+- Enable "Build Remote Catalog" for mod updates
+- Configure proper compression settings for each platform
+- Set up build scripts for automated builds
+- Include dependency tracking for mod assets
+
+## Asset Dependencies
+
+### Dependency Management
+- Minimize external dependencies
+- Document all required dependencies
+- Use shared assets for common elements
+- Implement fallback assets for missing dependencies
+
+### Reference Handling
+```csharp
+// Safe asset reference with fallback
+public async Task<GameObject> GetWeaponPrefab(string weaponName)
+{
+    // Try to load specific weapon
+    var weapon = await LoadAssetAsync<GameObject>($"Weapons/{weaponName}");
+    
+    if (weapon == null)
+    {
+        // Fallback to default weapon
+        Debug.LogWarning($"Weapon '{weaponName}' not found, using default");
+        weapon = await LoadAssetAsync<GameObject>("Weapons/DefaultWeapon");
+    }
+    
+    return weapon;
+}
+```

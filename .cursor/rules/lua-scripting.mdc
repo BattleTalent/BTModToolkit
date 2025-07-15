@@ -1,0 +1,87 @@
+# Lua Scripting Guidelines
+
+## File Organization
+- File extension: `.txt` for Lua scripts in mod content
+- Place scripts in `Assets/Build/{ModName}/Script/` directory
+- Use descriptive names that indicate functionality
+
+## Code Structure
+- Use local variables where possible for performance
+- Implement proper cleanup in `OnDestroy` method
+- Follow `CL.*` API patterns for game integration
+- Use `Class()` function for object-oriented structures
+- Always handle nil checks for game objects
+
+## Standard Mod Pattern
+```lua
+-- Import required modules
+local CL = require('CL')
+
+-- Define the mod class
+local ModName = {
+    -- Properties and configuration
+    enabled = true,
+    initialized = false
+}
+
+function ModName:Start()
+    -- Initialization logic
+    self.initialized = true
+    print("ModName initialized")
+end
+
+function ModName:Update()
+    -- Per-frame logic (use sparingly for performance)
+    if not self.enabled then return end
+    
+    -- Update logic here
+end
+
+function ModName:OnEnable()
+    -- Called when object becomes active
+end
+
+function ModName:OnDisable()
+    -- Called when object becomes inactive
+end
+
+function ModName:OnDestroy()
+    -- Essential cleanup - always implement this
+    self.enabled = false
+    self.initialized = false
+    
+    -- Clean up any resources, event listeners, etc.
+end
+
+-- Return the class
+return Class(nil, nil, ModName)
+```
+
+## Game API Integration
+- Use `CL.*` namespace APIs for game system access
+- Access game objects through proper CL bindings
+- Handle VR input through CL input systems
+- Integrate with BattleTalent's weapon and spell systems
+
+## Performance Best Practices
+- Minimize Update() usage - prefer event-driven code
+- Use object pooling for frequently created objects
+- Cache frequently accessed components and objects
+- Avoid creating garbage in Update() loops
+
+## Error Handling
+```lua
+function ModName:SafeOperation()
+    local success, result = pcall(function()
+        -- Potentially failing operation
+        return someRiskyOperation()
+    end)
+    
+    if not success then
+        print("Error in SafeOperation: " .. tostring(result))
+        return nil
+    end
+    
+    return result
+end
+```

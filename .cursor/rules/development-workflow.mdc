@@ -1,0 +1,99 @@
+# Mod Development Workflow
+
+## Creating New Mods
+
+### 1. Project Setup
+- Create new folder in `Assets/Build/` with descriptive name
+- Follow existing folder structure pattern:
+  ```
+  ModName/
+  ├── Config/          # .asset configuration files
+  ├── Script/          # .txt Lua scripts
+  ├── Weapon/          # .prefab weapon files
+  ├── Effect/          # .prefab particle effects
+  ├── ICon/           # .png icon files
+  └── README.md       # Documentation
+  ```
+
+### 2. Configuration
+- Create ItemInfoConfig asset in Config/ folder
+- Set proper mod metadata (name, description, version)
+- Configure addressable group settings
+- Set up proper asset references
+
+### 3. Script Development
+- Implement main mod logic in Lua scripts
+- Follow established patterns from existing mods
+- Implement proper lifecycle methods (Start, Update, OnDestroy)
+- Add multiplayer considerations from the beginning
+
+### 4. Prefab Creation
+- Base prefabs on existing similar items when possible
+- Ensure all necessary components are included
+- Configure proper physics and VR interactions
+- Test grab points and collision detection
+
+## Testing Workflow
+
+### Editor Testing
+1. Use ModImporter for runtime testing in Unity editor
+2. Test all mod functionality in play mode
+3. Verify asset loading and unloading
+4. Check for memory leaks and performance issues
+
+### Build Testing
+1. Build mod using addressable build scripts
+2. Copy built assets to `Assets/Mods/ModProj/`
+3. Test in standalone game environment
+4. Verify cross-platform compatibility
+
+### Multiplayer Testing
+1. Test mod in single-player first
+2. Verify networking synchronization
+3. Test with multiple clients (PC and Quest)
+4. Check for network performance impact
+
+## Deployment Process
+
+### Local Development
+1. Assets organized in addressable groups
+2. Test with Unity editor play mode
+3. Use ModImporter for quick iteration
+
+### Build Process
+1. Generate platform-specific builds (Windows/Android)
+2. Output to `Assets/Mods/ModProj/` directory
+3. Verify all dependencies are included
+4. Test loading in actual game environment
+
+### Quest Deployment
+1. Use ADB tools for Quest device deployment
+2. Test VR interactions and performance
+3. Verify cross-platform multiplayer compatibility
+4. Monitor Quest-specific performance metrics
+
+## Quality Assurance Checklist
+
+### Functionality
+- [ ] All core features work as designed
+- [ ] Proper error handling for edge cases
+- [ ] Graceful handling of missing dependencies
+- [ ] Multiplayer synchronization working correctly
+
+### Performance
+- [ ] No significant FPS impact
+- [ ] Memory usage within acceptable limits
+- [ ] Network bandwidth usage optimized
+- [ ] Proper asset cleanup on mod unload
+
+### Compatibility
+- [ ] Works on both PC and Quest platforms
+- [ ] Compatible with existing game systems
+- [ ] No conflicts with other mods
+- [ ] Proper version compatibility checking
+
+### User Experience
+- [ ] Intuitive VR interactions
+- [ ] Clear visual and audio feedback
+- [ ] Proper documentation and instructions
+- [ ] Consistent with game's art style and theme

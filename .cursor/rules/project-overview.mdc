@@ -1,0 +1,33 @@
+# BattleTalent Mod Toolkit
+
+This is the official Unity-based modding toolkit for BattleTalent VR game by CrossLink. The toolkit enables creation of custom weapons, items, scenes, spells, and game mechanics.
+
+## Core Technologies
+- Unity 2020.3.48f1 LTS with Universal Render Pipeline (URP)
+- C# (.NET 4.x) and Lua scripting via XLua integration
+- Mirror Networking for multiplayer support
+- Unity Addressables system for cross-platform asset management
+- VR development for PC (Windows) and Android (Quest)
+
+## Project Structure
+```
+Assets/
+├── Build/           # Mod content and examples
+├── Editor/          # Unity editor scripts and tools
+├── Mirror/          # Networking framework
+├── Mods/           # Built mod output
+├── Plugins/        # Third-party plugins (XLua, etc.)
+├── Resources/      # Unity resources
+├── Scenes/         # Unity scenes
+├── Toolkit/        # Core modding tools
+├── URP/           # Universal Render Pipeline assets
+└── XR/            # VR-specific assets
+```
+
+## Key Components
+- **Weapons**: Swords, bows, guns, daggers, wands, spears
+- **Spells**: FireBall, Thunder, Telekinetic, Ice effects
+- **Items**: Potions, equipment, consumables
+- **Scenes**: Custom environments and game modes
+- **Audio**: Background music and sound effects
+- **Networking**: Multiplayer synchronization via Mirror
