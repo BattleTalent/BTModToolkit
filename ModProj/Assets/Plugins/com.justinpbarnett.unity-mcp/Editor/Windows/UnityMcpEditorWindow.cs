@@ -370,6 +370,12 @@ namespace UnityMcpBridge.Editor.Windows
                     {
                         existingConfig.mcp.servers = new Newtonsoft.Json.Linq.JObject();
                     }
+
+                    // Add/update UnityMCP server in VSCode settings
+                    existingConfig.mcp.servers.unityMCP =
+                        JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JToken>(
+                            JsonConvert.SerializeObject(unityMCPConfig)
+                        );
                     break;
 
                 default:
@@ -379,18 +385,20 @@ namespace UnityMcpBridge.Editor.Windows
                     {
                         existingConfig.mcpServers = new Newtonsoft.Json.Linq.JObject();
                     }
+
+                    // Add/update UnityMCP server in standard MCP config
+                    existingConfig.mcpServers.unityMCP =
+                        JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JToken>(
+                            JsonConvert.SerializeObject(unityMCPConfig)
+                        );
                     break;
             }
-
-            // Add/update UnityMCP server in VSCode settings
-            existingConfig.mcp.servers.unityMCP =
-                JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JToken>(
-                    JsonConvert.SerializeObject(unityMCPConfig)
-                );
-
+            
             // Write the merged configuration back to file
             string mergedJson = JsonConvert.SerializeObject(existingConfig, jsonSettings);
             File.WriteAllText(configPath, mergedJson);
+
+            Debug.Log($"Configuration written to {configPath}");
 
             return "Configured successfully";
         }
