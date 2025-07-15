@@ -374,6 +374,7 @@ namespace UnityMcpBridge.Editor
                     // Maps the command type (tool name) to the corresponding handler's static HandleCommand method
                     // Assumes each handler class has a static method named 'HandleCommand' that takes JObject parameters
                     "manage_script" => ManageScript.HandleCommand(paramsObject),
+                    "manage_luascript" => ManageLuaScript.HandleCommand(paramsObject),
                     "manage_scene" => ManageScene.HandleCommand(paramsObject),
                     "manage_editor" => ManageEditor.HandleCommand(paramsObject),
                     "manage_gameobject" => ManageGameObject.HandleCommand(paramsObject),
