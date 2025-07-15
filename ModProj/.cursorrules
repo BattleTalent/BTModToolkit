@@ -1,0 +1,159 @@
+# BattleTalent Mod Toolkit - Cursor Rules
+
+## Project Overview
+This is the official Unity-based modding toolkit for BattleTalent VR game by CrossLink.
+The toolkit enables creation of custom weapons, items, scenes, spells, and game mechanics using Unity and Lua scripting.
+
+## Core Technologies
+- Unity 2020.3.48f1 LTS
+- C# (.NET 4.x)
+- Lua scripting with XLua integration
+- Unity Addressables system
+- Mirror Networking for multiplayer support
+- Universal Render Pipeline (URP)
+
+## Project Structure
+```
+Assets/
+├── Build/           # Mod content and examples (weapons, scenes, spells)
+├── Editor/          # Unity editor scripts and tools
+├── Mirror/          # Networking framework
+├── Mods/           # Built mod output
+├── Plugins/        # Third-party plugins
+├── Resources/      # Unity resources
+├── Scenes/         # Unity scenes
+├── Toolkit/        # Core modding tools and utilities
+├── URP/           # Universal Render Pipeline assets
+└── XR/            # VR-specific assets
+```
+
+## Key Components
+
+### Build System
+- Addressables-based asset bundling
+- Cross-platform support (PC, Android/Quest)
+- Automated build scripts in `Assets/Editor/AddressabesBuilder.cs`
+
+### Mod Categories
+- **Weapons**: Swords, bows, guns, daggers, wands, spears
+- **Spells**: FireBall, Thunder, Telekinetic, Ice
+- **Items**: Potions, equipment
+- **Scenes**: Custom environments and game modes
+- **Characters**: Avatars and skins
+- **Audio**: Background music and sound effects
+
+### Lua Integration
+- Entry point: `Assets/Build/Entry.txt`
+- XLua framework for C#-Lua interop
+- Game API bindings through CL namespace
+- Event system (OnEnable, OnDisable, etc.)
+
+### Networking
+- Mirror networking for multiplayer mods
+- Synchronized gameplay elements
+- Cross-platform compatibility
+
+## Coding Standards
+
+### C# Guidelines
+- Use CrossLink namespace for mod-related scripts
+- Follow Unity naming conventions
+- Implement proper disposal patterns for addressable handles
+- Use async/await for addressable operations
+- Document public APIs with XML comments
+
+### Lua Guidelines
+- Use local variables where possible
+- Implement proper cleanup in OnDestroy
+- Follow CL.* API patterns for game integration
+- Use Class() function for object-oriented structures
+- Handle nil checks for game objects
+
+### File Organization
+- Scripts in appropriate namespace folders
+- Assets organized by mod type
+- Prefabs contain all necessary components
+- Materials and textures properly referenced
+
+## Development Patterns
+
+### Mod Structure
+```lua
+local ModName = {
+    -- Properties
+}
+
+function ModName:Start()
+    -- Initialization
+end
+
+function ModName:OnDestroy()
+    -- Cleanup
+end
+
+return Class(nil, nil, ModName)
+```
+
+### Asset Management
+- Use Addressables for all mod assets
+- Implement proper loading/unloading
+- Handle async operations correctly
+- Support both editor and runtime loading
+
+### Editor Tools
+- Custom inspectors for mod components
+- Automated asset processing
+- Build validation and testing
+- Preview generation for mods
+
+## Specific Rules
+
+### When editing Lua scripts:
+- Always implement proper cleanup in OnDestroy
+- Use CL.* APIs for game integration
+- Handle edge cases with nil checks
+- Follow existing mod patterns in Build/ folder
+
+### When editing C# scripts:
+- Use CrossLink namespace
+- Implement IDisposable where appropriate
+- Use Unity's lifecycle methods correctly
+- Handle addressable operations properly
+
+### When creating new mods:
+- Follow existing folder structure in Build/
+- Include proper config files
+- Implement multiplayer considerations
+- Test both editor and built versions
+
+### File Extensions
+- `.txt` for Lua scripts in mod content
+- `.cs` for C# Unity scripts
+- `.asset` for ScriptableObject configurations
+- `.prefab` for Unity prefabs
+- `.mat` for materials
+
+## Build Process
+1. Assets organized in addressable groups
+2. Platform-specific builds (Windows/Android)
+3. Output to Assets/Mods/ModProj/
+4. ADB tools for Quest deployment
+
+## Testing
+- Use ModImporter for runtime testing
+- Place mods in BattleTalent mod directory
+- Test both single-player and multiplayer
+- Verify cross-platform compatibility
+
+## Common Patterns
+- Physics interactions for VR gameplay
+- Hand pose definitions for weapon handling
+- Particle effects for spells and weapons
+- Audio integration for immersive feedback
+- UI elements for mod configuration
+
+## Documentation
+- README files in major folders
+- Code comments for complex logic
+- Example mods as reference
+- Tool usage instructions
