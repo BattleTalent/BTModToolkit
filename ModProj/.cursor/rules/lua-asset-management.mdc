@@ -1,0 +1,249 @@
+---
+title: "Asset Management for Lua Mods"
+description: "Essential asset management patterns for Lua-based VR mod development"
+type: "patterns"
+globs: ["Assets/Build/**/*", "**/*.asset"]
+alwaysApply: false
+tags: ["assets", "addressables", "lua"]
+---
+
+# Asset Management for Lua Mods
+
+## Asset Address Conventions
+
+### Standard Address Patterns
+```lua
+-- Weapons and Items
+"WMD_MagicBow"           -- Main weapon prefab
+"WMD_FireArrow"          -- Projectile prefab
+"WMD_AutoGetItem"        -- Utility item
+
+-- Effects  
+"Effect/FireExplosion"   -- Visual effects
+"Effect/IceTrail"        -- Trail effects
+"Effect/MuzzleFlash"     -- Weapon effects
+
+-- Audio
+"Audio/BowStringRelease" -- Sound effects
+"Audio/SpellCast"        -- Magic sounds
+"Audio/WeaponFire"       -- Weapon audio
+
+-- UI Elements
+"WMD_ItemSelectPanel"    -- UI panels
+"WMD_WinPanel"          -- Game UI
+
+-- Scripts (for inheritance)
+"LuaScript/WMD_WeaponBaseScript"
+"LuaScript/WMD_FlySpellBaseScript"
+```
+
+## Lua Asset Loading Patterns
+
+### Basic Asset Loading
+```lua
+-- Load and instantiate prefab
+local weapon = CL.ResourceMgr.Instantiate("WMD_MagicBow")
+
+-- Load asset reference
+local audioClip = CL.ResourceMgr.Load("Audio/BowStringRelease")
+
+-- Async loading with callback
+CL.ResourceMgr.LoadAsync("WMD_FireArrow", function(asset)
+    self._arrowPrefab = asset
+end)
+```
+
+### Resource Management
+```lua
+local AssetManager = {
+    _loadedAssets = {},
+    _preloadQueue = {}
+}
+
+function AssetManager:LoadAsset(address, callback)
+    -- Check cache first
+    if self._loadedAssets[address] then
+        if callback then callback(self._loadedAssets[address]) end
+        return
+    end
+    
+    -- Load new asset
+    CL.ResourceMgr.LoadAsync(address, function(asset)
+        self._loadedAssets[address] = asset
+        if callback then callback(asset) end
+    end)
+end
+
+function AssetManager:PreloadAssets(addressList)
+    for _, address in ipairs(addressList) do
+        self:LoadAsset(address, nil) -- Preload without callback
+    end
+end
+
+function AssetManager:GetAsset(address)
+    return self._loadedAssets[address]
+end
+```
+
+## File Organization
+
+### Mod Directory Structure
+```
+Assets/Build/{ModName}/
+├── Script/
+│   ├── {ModName}Script.txt
+│   ├── {ModName}Controller.txt  
+│   └── Utils/
+├── Config/
+│   └── {ModName}Config.asset
+├── Effect/              # Prefabs for visual effects
+├── Audio/               # Sound files (.wav, .mp3)
+├── Icon/                # UI icons (.png)
+└── Documentation/       # Mod docs
+```
+
+### File Naming Standards
+- **Lua Scripts**: `{ComponentName}Script.txt`
+- **Config Files**: `{ModName}Config.asset`
+- **Prefabs**: `{ModName}_{Variant}.prefab`
+- **Audio**: `{ModName}_{Action}.{ext}`
+
+## Asset Loading in Prefabs
+
+### LuaScript Parameter Patterns
+```lua
+-- Prefab parameters (set in Unity Inspector)
+local WeaponController = {
+    -- Direct component references (drag & drop in Inspector)
+    firePoint = nil,              -- Transform component
+    audioSource = nil,            -- AudioSource component
+    
+    -- Addressable asset addresses (string parameters)
+    projectilePrefab = "WMD_DefaultBullet",
+    impactEffect = "Effect/BulletImpact", 
+    fireSoundAddress = "Audio/WeaponFire",
+    
+    -- Runtime loaded assets
+    _loadedProjectile = nil,
+    _loadedEffect = nil,
+}
+
+function WeaponController:Awake()
+    -- Preload addressable assets
+    self:PreloadAssets()
+end
+
+function WeaponController:PreloadAssets()
+    if self.projectilePrefab ~= "" then
+        CL.ResourceMgr.LoadAsync(self.projectilePrefab, function(asset)
+            self._loadedProjectile = asset
+        end)
+    end
+    
+    if self.impactEffect ~= "" then
+        CL.ResourceMgr.LoadAsync(self.impactEffect, function(asset)
+            self._loadedEffect = asset
+        end)
+    end
+end
+```
+
+## Performance Optimization
+
+### Preloading Strategy
+```lua
+function Module:Initialize()
+    -- Preload critical assets immediately
+    local criticalAssets = {
+        "WMD_MainWeapon",
+        "Effect/CoreEffect",
+        "Audio/PrimarySound"
+    }
+    
+    for _, address in ipairs(criticalAssets) do
+        CL.ResourceMgr.LoadAsync(address, function(asset)
+            -- Cache for later use
+            self:CacheAsset(address, asset)
+        end)
+    end
+end
+```
+
+### Memory Management
+```lua
+function Module:CleanupAssets()
+    -- Release unused assets
+    for address, asset in pairs(self._cachedAssets) do
+        if not self:IsAssetInUse(address) then
+            -- Note: Asset cleanup depends on game's resource management
+            -- May use UE.Object.Destroy or game-specific release methods
+            if asset then
+                UE.Object.Destroy(asset)
+            end
+            self._cachedAssets[address] = nil
+        end
+    end
+end
+```
+
+## Common Asset Types
+
+### Weapon Assets
+```lua
+local weaponAssets = {
+    mainPrefab = "WMD_MagicBow",
+    projectile = "WMD_MagicArrow", 
+    effects = {
+        muzzleFlash = "Effect/BowFlash",
+        trail = "Effect/ArrowTrail",
+        impact = "Effect/ArrowImpact"
+    },
+    audio = {
+        fire = "Audio/BowStringRelease",
+        reload = "Audio/BowReload",
+        empty = "Audio/BowEmpty"
+    }
+}
+```
+
+### Magic System Assets
+```lua
+local spellAssets = {
+    castEffect = "Effect/SpellCast",
+    spells = {
+        Fireball = {
+            projectile = "WMD_Fireball",
+            impact = "Effect/FireExplosion",
+            audio = "Audio/FireSpell"
+        },
+        IceShard = {
+            projectile = "WMD_IceShard",
+            impact = "Effect/IceShatter", 
+            audio = "Audio/IceSpell"
+        }
+    }
+}
+```
+
+## Validation and Debugging
+
+### Asset Validation
+```lua
+function Module:ValidateAssets()
+    local requiredAssets = {
+        "WMD_MainWeapon",
+        "Effect/PrimaryEffect",
+        "Audio/MainSound"
+    }
+    
+    for _, address in ipairs(requiredAssets) do
+        CL.ResourceMgr.LoadAsync(address, function(asset)
+            if not asset then
+                self:LogError("Missing required asset: " .. address)
+            end
+        end)
+    end
+end
+```
+
+This simplified asset management focuses on Lua usage patterns while leveraging the underlying Unity Addressables system through C# APIs.

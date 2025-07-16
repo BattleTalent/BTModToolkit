@@ -1,0 +1,97 @@
+---
+title: "VR Mod Project Structure"
+description: "Essential project structure and workflow for Lua VR mod development"
+type: "overview"
+globs: ["**/*"]
+alwaysApply: true
+tags: ["overview", "vr", "lua", "structure"]
+---
+
+# VR Mod Project Structure
+
+## Project Mission
+Develop VR mods for BattleTalent using Lua scripts that interface with C# APIs. Focus on game logic, VR interactions, and mod content without Unity implementation details.
+
+## Essential Directory Structure
+
+```
+Assets/Build/{ModName}/
+├── Script/              # Lua scripts (.txt files)
+│   ├── {ModName}Script.txt      # Main mod logic  
+│   ├── {ModName}Controller.txt  # VR interactions
+│   └── Utils/                   # Helper functions
+├── Config/              # Configuration assets
+│   └── {ModName}Config.asset
+├── Effect/              # Visual effects prefabs
+├── Audio/               # Sound files
+└── Icon/                # UI icons and thumbnails
+```
+
+## API Reference
+Detailed API usage patterns and examples are available in `lua-vr-patterns.mdc`.
+
+## Development Workflow
+
+### 1. Planning Phase
+- Define VR interaction patterns
+- Identify required C# APIs
+- Plan asset addresses and structure
+
+### 2. Implementation Phase  
+- Create Lua scripts using provided APIs
+- Configure VR interactions through C# layer
+- Test on target VR platforms
+
+### 3. Testing Phase
+- VR comfort validation (no motion sickness)
+- Performance testing (90fps target)
+- Cross-platform compatibility
+
+## Key Principles
+
+### VR-First Design
+- Natural hand movements and gestures
+- Comfortable interaction distances  
+- Intuitive physics-based interactions
+- Haptic feedback for important events
+
+### API-Driven Development
+- Use C# interfaces exclusively
+- Never modify underlying C# code
+- Focus on game logic in Lua
+- Leverage existing systems through APIs
+
+### Performance Focus
+- Efficient Lua patterns
+- Minimize API calls in update loops
+- Proper resource cleanup
+- Frame rate optimization
+
+## Common Mod Types
+
+### Weapons
+- Melee weapons (swords, clubs)
+- Ranged weapons (bows, guns)
+- Magic weapons (wands, staves)
+
+### Spells and Magic
+- Projectile spells
+- Area effect spells  
+- Utility spells (teleport, shield)
+
+### Interactive Objects
+- Grabbable items
+- Physics-based tools
+- Environmental interactions
+
+## Asset Address Conventions
+
+```lua
+-- Use these patterns for asset loading
+"WMD_{ItemName}"           -- Mod items
+"Effect/{EffectName}"      -- Visual effects
+"Audio/{SoundName}"        -- Audio clips
+"LuaScript/{ScriptName}"   -- Script inheritance
+```
+
+This structure provides the foundation for efficient VR mod development using Lua while leveraging the underlying C# systems.

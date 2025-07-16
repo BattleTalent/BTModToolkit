@@ -1,0 +1,296 @@
+---
+title: "VR Multiplayer Patterns for Lua"
+description: "Essential multiplayer concepts for Lua VR mod development"
+type: "patterns"
+globs: ["**/*Network*.txt", "**/*Multiplayer*.txt"]
+alwaysApply: false
+tags: ["multiplayer", "networking", "vr", "lua"]
+---
+
+# VR Multiplayer Patterns for Lua
+
+## Core Concepts
+
+### Network Authority
+- **Server Authority**: Game state managed by host
+- **Client Prediction**: Immediate local response for VR comfort
+- **Object Ownership**: Which player controls specific objects
+
+### Lua Network Event Patterns
+
+### Player Events
+```lua
+function Module:RegisterNetworkEvents()
+    if CL.Network.IsConnected() then
+        CL.Network.OnPlayerJoined:Add(function(playerId, playerData)
+            self:OnPlayerJoined(playerId, playerData)
+        end)
+        
+        CL.Network.OnPlayerLeft:Add(function(playerId)
+            self:OnPlayerLeft(playerId)
+        end)
+        
+        CL.Network.OnDataReceived:Add(function(senderId, dataType, data)
+            self:OnNetworkData(senderId, dataType, data)
+        end)
+    end
+end
+```
+
+### Data Synchronization
+```lua
+-- Send data to all players
+function Module:SendToAll(dataType, data)
+    if CL.Network.IsHost() then
+        CL.Network.SendToAllClients(dataType, data)
+    else
+        CL.Network.SendToHost(dataType, data)
+    end
+end
+
+-- Send to specific player
+function Module:SendToPlayer(playerId, dataType, data)
+    CL.Network.SendToPlayer(playerId, dataType, data)
+end
+
+-- Handle incoming network data
+function Module:OnNetworkData(senderId, dataType, data)
+    if dataType == "WeaponFired" then
+        self:HandleWeaponFired(senderId, data)
+    elseif dataType == "PlayerAction" then
+        self:HandlePlayerAction(senderId, data)
+    end
+end
+```
+
+## VR Player Synchronization
+
+### Hand and Head Tracking
+```lua
+function Module:SyncVRPlayerState()
+    if not CL.Network.IsConnected() then return end
+    
+    local playerState = {
+        headPos = CL.VR.GetHeadPosition(),
+        headRot = CL.VR.GetHeadRotation(),
+        leftHandPos = CL.VR.GetHandPosition("Left"),
+        leftHandRot = CL.VR.GetHandRotation("Left"),
+        rightHandPos = CL.VR.GetHandPosition("Right"),
+        rightHandRot = CL.VR.GetHandRotation("Right"),
+        timestamp = CL.GetTime()
+    }
+    
+    self:SendToAll("VRPlayerState", playerState)
+end
+
+function Module:ApplyRemoteVRState(playerId, state)
+    local player = self:GetPlayer(playerId)
+    if player then
+        player:SetHeadTransform(state.headPos, state.headRot)
+        player:SetHandTransform("Left", state.leftHandPos, state.leftHandRot)
+        player:SetHandTransform("Right", state.rightHandPos, state.rightHandRot)
+    end
+end
+```
+
+### Object Interaction Sync
+```lua
+function Module:OnObjectGrabbed(objectId, handType)
+    if CL.Network.HasObjectAuthority(objectId) then
+        local grabData = {
+            objectId = objectId,
+            handType = handType,
+            grabTime = UE.Time.time
+        }
+        self:SendToAll("ObjectGrabbed", grabData)
+    end
+end
+
+function Module:OnObjectReleased(objectId, velocity, angularVelocity)
+    if CL.Network.HasObjectAuthority(objectId) then
+        local releaseData = {
+            objectId = objectId,
+            velocity = velocity,
+            angularVelocity = angularVelocity,
+            releaseTime = UE.Time.time
+        }
+        self:SendToAll("ObjectReleased", releaseData)
+    end
+end
+```
+
+## State Synchronization
+
+### Synchronized Properties
+```lua
+local NetworkedWeapon = {
+    -- Network-synced state
+    ammo = 30,
+    isReloading = false,
+    fireMode = "Single",
+    
+    -- Local-only state (prefix with _)
+    _localEffects = {},
+    _uiElements = {},
+}
+
+function NetworkedWeapon:SetAmmo(newAmmo)
+    if CL.Network.HasAuthority(self.networkId) then
+        self.ammo = newAmmo
+        self:SendPropertyUpdate("ammo", newAmmo)
+    end
+end
+
+function NetworkedWeapon:OnPropertyChanged(property, value)
+    if property == "ammo" then
+        self:UpdateAmmoUI(value)
+    elseif property == "isReloading" then
+        self:UpdateReloadState(value)
+    end
+end
+```
+
+### Event Synchronization
+```lua
+function Module:TriggerNetworkEvent(eventType, eventData)
+    -- Handle locally first (for responsiveness)
+    self:HandleEvent(eventType, eventData)
+    
+    -- Then sync to network
+    if CL.Network.IsConnected() then
+        local networkData = {
+            eventType = eventType,
+            data = eventData,
+            timestamp = UE.Time.time,
+            playerId = CL.Network.GetLocalPlayerId()
+        }
+        self:SendToAll("SyncEvent", networkData)
+    end
+end
+```
+
+## Performance Optimization
+
+### Update Rate Management
+```lua
+function Module:Update()
+    -- High frequency data (30Hz)
+    if UE.Time.frameCount % 2 == 0 then
+        self:SyncVRTracking()
+    end
+    
+    -- Medium frequency data (6Hz)
+    if UE.Time.frameCount % 10 == 0 then
+        self:SyncGameState()
+    end
+    
+    -- Low frequency data (1Hz)
+    if UE.Time.frameCount % 60 == 0 then
+        self:SyncPlayerStats()
+    end
+end
+```
+
+### Data Compression
+```lua
+function Module:CompressVRData(data)
+    -- Reduce precision for network transmission
+    return {
+        pos = self:Vector3ToBytes(data.position, 0.01), -- 1cm precision
+        rot = self:QuaternionToBytes(data.rotation, 0.001), -- Lower rotation precision
+    }
+end
+```
+
+## Network State Management
+
+### Connection Handling
+```lua
+function Module:ValidateNetworkState()
+    if not CL.Network.IsConnected() then
+        self:SwitchToOfflineMode()
+        return false
+    end
+    
+    if CL.Network.GetPing() > self.maxAllowedPing then
+        self:ShowHighLatencyWarning()
+    end
+    
+    return true
+end
+
+function Module:HandleConnectionLoss()
+    self:LogWarning("Network connection lost")
+    self:SaveCurrentState()
+    self:SwitchToOfflineMode()
+    self:ShowReconnectUI()
+end
+```
+
+### Authority Management
+```lua
+function Module:RequestObjectAuthority(objectId)
+    if CL.Network.IsConnected() then
+        CL.Network.RequestAuthority(objectId, function(success)
+            if success then
+                self:OnAuthorityGranted(objectId)
+            else
+                self:OnAuthorityDenied(objectId)
+            end
+        end)
+    end
+end
+
+function Module:TransferAuthority(objectId, targetPlayerId)
+    if CL.Network.HasObjectAuthority(objectId) then
+        CL.Network.TransferAuthority(objectId, targetPlayerId)
+    end
+end
+```
+
+## Common Multiplayer Patterns
+
+### Weapon Synchronization
+```lua
+local MultiplayerWeapon = {
+    networkId = nil,
+    ownerId = nil,
+}
+
+function MultiplayerWeapon:Fire()
+    if CL.Network.HasAuthority(self.networkId) then
+        -- Authoritative fire
+        self:PerformFire()
+        self:SendToAll("WeaponFired", {
+            weaponId = self.networkId,
+            fireTime = UE.Time.time
+        })
+    end
+end
+
+function MultiplayerWeapon:OnWeaponFired(data)
+    -- Play effects for all players
+    self:PlayFireEffects()
+    self:PlayFireSound()
+end
+```
+
+### Shared Object Interaction
+```lua
+function Module:OnSharedObjectInteraction(objectId, interactionType, data)
+    if CL.Network.HasObjectAuthority(objectId) then
+        -- Process interaction authoritatively
+        self:ProcessInteraction(objectId, interactionType, data)
+        
+        -- Notify other players
+        self:SendToAll("ObjectInteraction", {
+            objectId = objectId,
+            type = interactionType,
+            data = data,
+            timestamp = UE.Time.time
+        })
+    end
+end
+```
+
+This provides essential multiplayer patterns for Lua VR mod development while leveraging the underlying networking infrastructure.
