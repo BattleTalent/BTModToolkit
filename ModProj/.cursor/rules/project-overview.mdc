@@ -1,0 +1,291 @@
+---
+title: "BattleTalent Mod Toolkit Project Overview"
+description: "Comprehensive overview of the Unity-based modding toolkit for BattleTalent VR game development"
+type: "overview"
+globs: ["**/*"]
+alwaysApply: true
+tags: ["overview", "architecture", "unity", "vr", "battletalent", "modding"]
+---
+
+# BattleTalent Mod Toolkit Project Overview
+
+## Project Mission
+The BattleTalent Mod Toolkit is the official Unity-based development environment for creating custom content for the BattleTalent VR game by CrossLink. This toolkit empowers developers to create immersive VR experiences including weapons, spells, items, environments, and complete game modes while maintaining compatibility across PC and Android VR platforms.
+
+## Core Technologies and Framework
+
+### Unity Engine Foundation
+- **Unity Version**: 2020.3.48f1 LTS (Long Term Support)
+- **Render Pipeline**: Universal Render Pipeline (URP) for optimized VR performance
+- **Target Platforms**: 
+  - PC VR (Windows): OpenVR, Oculus PC SDK, Windows Mixed Reality
+  - Android VR (Quest): Oculus Android SDK, OpenXR
+- **XR Framework**: Unity XR Interaction Toolkit 2.0+
+- **Physics**: Unity Physics with custom VR optimizations
+
+### Programming Languages and Scripting
+- **C# (.NET 4.x)**: Core engine scripting, editor tools, networking components
+- **Lua via XLua**: Mod logic scripting, runtime customization, hot-reloading support
+- **HLSL Shaders**: Custom visual effects, URP-compatible shaders
+- **JSON/YAML**: Configuration files, mod metadata, asset definitions
+
+### Networking and Multiplayer
+- **Mirror Networking v50+**: Authoritative server architecture
+- **Protocol**: TCP for reliable data, UDP for real-time updates
+- **Architecture**: Client-Server with host migration support
+- **Synchronization**: SyncVars, Commands, ClientRPCs, custom message types
+- **Cross-Platform**: PC-Android cross-play compatibility
+
+### Asset Management System
+- **Unity Addressables v1.19+**: Dynamic content loading and management
+- **Platform Variants**: Automatic asset optimization per platform
+- **Remote Content**: Support for downloadable mod content
+- **Memory Management**: Automatic loading/unloading with reference counting
+- **Version Control**: Asset versioning and incremental updates
+
+## Project Architecture and Structure
+
+### Core Directory Organization
+```
+BattleTalent-ModToolkit/
+├── Assets/                          # Unity project assets
+│   ├── Build/                       # Mod development workspace
+│   │   ├── {ModName}/              # Individual mod projects
+│   │   │   ├── Config/             # Mod configuration assets
+│   │   │   ├── Script/             # Lua scripts (.txt files)
+│   │   │   ├── Weapon/             # Weapon prefabs and variants
+│   │   │   ├── Effect/             # Particle effects and VFX
+│   │   │   ├── Icon/              # UI icons and thumbnails
+│   │   │   ├── Materials/         # Custom materials and shaders
+│   │   │   ├── Audio/             # Sound effects and music
+│   │   │   └── Documentation/     # Mod documentation
+│   │   └── Examples/               # Reference implementations
+│   ├── Editor/                     # Unity editor extensions
+│   │   ├── ModTools/              # Custom mod development tools
+│   │   ├── Inspectors/           # Custom property inspectors
+│   │   ├── Windows/              # Editor windows and utilities
+│   │   └── Build/                # Build pipeline scripts
+│   ├── Mirror/                     # Networking framework
+│   │   ├── Core/                 # Mirror core components
+│   │   ├── Examples/             # Networking examples
+│   │   └── Transports/           # Network transport layers
+│   ├── Mods/                      # Built mod output directory
+│   │   ├── ModProj/              # Development builds
+│   │   ├── Release/              # Release builds
+│   │   └── Remote/               # Remote content staging
+│   ├── Plugins/                   # Third-party plugins and libraries
+│   │   ├── XLua/                 # Lua scripting integration
+│   │   ├── Addressables/         # Addressable asset system
+│   │   └── VR/                   # VR SDK integrations
+│   ├── Resources/                 # Unity resources folder
+│   │   ├── GlobalSettings/       # Global configuration assets
+│   │   ├── DefaultAssets/        # Fallback assets
+│   │   └── Templates/            # Asset templates
+│   ├── Scenes/                    # Unity scene files
+│   │   ├── TestScenes/           # Development and testing scenes
+│   │   ├── ModEnvironments/      # Custom game environments
+│   │   └── MainMenu/             # UI and menu scenes
+│   ├── Toolkit/                   # Core modding framework
+│   │   ├── Core/                 # Essential toolkit components
+│   │   ├── VR/                   # VR-specific utilities
+│   │   ├── Audio/                # Audio management system
+│   │   ├── Effects/              # Visual effects framework
+│   │   └── Networking/           # Multiplayer utilities
+│   ├── URP/                      # Universal Render Pipeline assets
+│   │   ├── Settings/             # URP configuration
+│   │   ├── Shaders/              # Custom URP shaders
+│   │   └── PostProcessing/       # Post-processing effects
+│   └── XR/                       # VR-specific assets
+│       ├── Interactions/         # VR interaction prefabs
+│       ├── UI/                   # VR user interface
+│       └── Tracking/             # Hand and controller tracking
+├── Packages/                      # Unity Package Manager
+│   ├── manifest.json             # Package dependencies
+│   └── packages-lock.json        # Locked package versions
+├── ProjectSettings/               # Unity project configuration
+├── UserSettings/                  # User-specific settings
+└── Documentation/                 # Project documentation
+    ├── API/                      # API reference documentation
+    ├── Tutorials/                # Step-by-step guides
+    └── Examples/                 # Code examples and samples
+```
+
+### Mod Content Categories
+
+#### 1. Weapons System
+```csharp
+// Weapon categories and their characteristics
+public enum WeaponCategory
+{
+    Melee,      // Swords, daggers, clubs, spears
+    Ranged,     // Bows, crossbows, throwing weapons
+    Magic,      // Wands, staves, spell focuses
+    Firearm,    // Guns, cannons, energy weapons
+    Tool,       // Multi-purpose utility items
+    Hybrid      // Combination weapons
+}
+
+// Weapon implementation framework
+public abstract class ModWeaponBase : MonoBehaviour, IModContent
+{
+    [Header("Weapon Configuration")]
+    public WeaponCategory category;
+    public float baseDamage = 25f;
+    public float attackSpeed = 1f;
+    public float reach = 1.5f;
+    
+    [Header("VR Interaction")]
+    public VRGrabMode grabMode = VRGrabMode.TwoHanded;
+    public HandPose primaryGripPose;
+    public HandPose secondaryGripPose;
+    
+    [Header("Audio Visual")]
+    public AudioClip[] attackSounds;
+    public ParticleSystem[] attackEffects;
+    public Material[] weaponMaterials;
+    
+    public abstract void OnWeaponEquipped(Player player);
+    public abstract void OnWeaponAttack(AttackContext context);
+    public abstract bool CanPerformAttack();
+}
+```
+
+#### 2. Spell and Magic System
+```csharp
+// Spell system architecture
+public enum SpellSchool
+{
+    Destruction,    // Damage-dealing spells
+    Restoration,    // Healing and buff spells
+    Illusion,       // Mind effects and stealth
+    Conjuration,    // Summoning and creation
+    Transmutation,  // Transformation effects
+    Divination      // Information and detection
+}
+
+public abstract class SpellBase : ScriptableObject
+{
+    [Header("Spell Properties")]
+    public SpellSchool school;
+    public int manaCost = 10;
+    public float castTime = 1f;
+    public float cooldown = 0f;
+    public float range = 10f;
+    
+    [Header("Visual Effects")]
+    public GameObject castingEffect;
+    public GameObject projectileEffect;
+    public GameObject impactEffect;
+    public AudioClip castingSound;
+    
+    [Header("Targeting")]
+    public SpellTargetType targetType;
+    public LayerMask validTargets;
+    
+    public abstract bool CanCast(SpellCaster caster, Vector3 targetPosition);
+    public abstract void CastSpell(SpellCaster caster, SpellTarget target);
+    public abstract void OnSpellComplete(SpellResult result);
+}
+```
+
+#### 3. Environmental Content
+```csharp
+// Environment and scene framework
+public class ModEnvironment : MonoBehaviour
+{
+    [Header("Environment Settings")]
+    public string environmentName;
+    public EnvironmentType type;
+    public Vector3 playerSpawnPoint;
+    public int maxPlayers = 8;
+    
+    [Header("Lighting")]
+    public LightingPreset lightingPreset;
+    public Gradient fogColor;
+    public AnimationCurve fogDensity;
+    
+    [Header("Audio")]
+    public AudioClip ambientSound;
+    public AudioMixerGroup audioMixerGroup;
+    
+    [Header("Interactive Elements")]
+    public InteractableObject[] interactables;
+    public SpawnPoint[] itemSpawnPoints;
+    public TriggerZone[] eventTriggers;
+}
+```
+
+## Development Workflow and Pipeline
+
+### Phase 1: Planning and Design
+1. **Concept Development**: Define mod objectives and scope
+2. **Technical Design**: Plan implementation architecture
+3. **Asset Planning**: Identify required assets and dependencies
+4. **Platform Considerations**: Ensure cross-platform compatibility
+
+### Phase 2: Implementation
+1. **Asset Creation**: Models, textures, audio, animations
+2. **Script Development**: Lua gameplay logic and C# components
+3. **Integration**: Combine assets with scripts and configuration
+4. **VR Optimization**: Ensure comfortable VR experience
+
+### Phase 3: Testing and Polish
+1. **Unit Testing**: Individual component functionality
+2. **Integration Testing**: System interactions and dependencies
+3. **Platform Testing**: PC and Android VR compatibility
+4. **Performance Optimization**: Frame rate and memory usage
+5. **Multiplayer Testing**: Network synchronization and latency
+
+### Phase 4: Distribution
+1. **Build Pipeline**: Automated asset compilation and packaging
+2. **Quality Assurance**: Final testing and validation
+3. **Documentation**: User guides and API documentation
+4. **Release Management**: Version control and deployment
+
+## Key Development Principles
+
+### VR-First Design Philosophy
+- **Comfort**: Prioritize user comfort and motion sickness prevention
+- **Immersion**: Design for natural hand movements and spatial interaction
+- **Accessibility**: Support various VR hardware and user capabilities
+- **Performance**: Maintain stable frame rates (90fps PC, 72fps Android)
+
+### Cross-Platform Compatibility
+- **Asset Optimization**: Platform-specific texture compression and LOD
+- **Input Abstraction**: Support various VR controllers and hand tracking
+- **Performance Scaling**: Adaptive quality settings for different hardware
+- **Network Compatibility**: Seamless PC-Android multiplayer
+
+### Modding-Friendly Architecture
+- **Hot-Reloading**: Live script updates during development
+- **Sandboxing**: Safe execution environment for mod content
+- **API Stability**: Backward-compatible interfaces across updates
+- **Documentation**: Comprehensive guides and examples
+
+### Performance Standards
+- **Frame Rate**: Maintain 90fps on recommended PC specs, 72fps on Quest 2
+- **Memory Usage**: Keep peak memory under 4GB total, 2GB for Quest
+- **Loading Times**: Initial load under 30 seconds, mod switching under 10 seconds
+- **Network Latency**: Support up to 200ms ping with prediction/rollback
+
+## Community and Ecosystem
+
+### Mod Distribution Platform
+- **Mod Browser**: In-game mod discovery and installation
+- **Version Management**: Automatic updates and dependency resolution
+- **Rating System**: Community feedback and quality metrics
+- **Content Guidelines**: Safety and quality standards
+
+### Developer Resources
+- **API Documentation**: Comprehensive reference for all mod interfaces
+- **Video Tutorials**: Step-by-step development guides
+- **Community Forums**: Developer discussion and support
+- **Sample Projects**: Reference implementations and best practices
+
+### Quality Assurance Framework
+- **Automated Testing**: Continuous integration and testing pipeline
+- **Code Review**: Community and official review processes
+- **Performance Benchmarks**: Standardized performance testing
+- **Security Auditing**: Malicious code detection and prevention
+
+This toolkit represents the cutting edge of VR modding technology, providing developers with the tools and framework necessary to create compelling, performant, and safe content for the BattleTalent VR gaming ecosystem.

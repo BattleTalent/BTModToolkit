@@ -1,0 +1,316 @@
+---
+title: "Asset Management for BattleTalent Mods"
+description: "Comprehensive guidelines for managing mod assets using Unity Addressables"
+type: "patterns"
+globs: ["Assets/Build/**/*", "Assets/Mods/**/*", "**/*.asset"]
+alwaysApply: false
+tags: ["assets", "addressables", "resources", "memory-management"]
+---
+
+# Asset Management for BattleTalent Mods
+
+## Unity Addressables System
+
+### 1. Addressable Asset Loading Pattern
+```csharp
+namespace CrossLink.Utils
+{
+    public class ModAssetLoader : MonoBehaviour, IDisposable
+    {
+        private readonly Dictionary<string, AsyncOperationHandle> _loadedAssets = new();
+        private readonly List<AsyncOperationHandle> _handles = new();
+        
+        public async Task<T> LoadAssetAsync<T>(string address, bool cacheHandle = true) where T : UnityEngine.Object
+        {
+            try
+            {
+                var handle = Addressables.LoadAssetAsync<T>(address);
+                if (cacheHandle) _handles.Add(handle);
+                
+                var result = await handle.Task;
+                if (cacheHandle) _loadedAssets[address] = handle;
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to load asset '{address}': {ex.Message}");
+                return null;
+            }
+        }
+        
+        public async Task<IList<T>> LoadAssetsAsync<T>(IList<string> addresses) where T : UnityEngine.Object
+        {
+            var tasks = addresses.Select(addr => LoadAssetAsync<T>(addr));
+            return await Task.WhenAll(tasks);
+        }
+        
+        public void ReleaseAsset(string address)
+        {
+            if (_loadedAssets.TryGetValue(address, out var handle))
+            {
+                Addressables.Release(handle);
+                _loadedAssets.Remove(address);
+                _handles.Remove(handle);
+            }
+        }
+        
+        public void Dispose()
+        {
+            foreach (var handle in _handles)
+            {
+                if (handle.IsValid())
+                    Addressables.Release(handle);
+            }
+            _loadedAssets.Clear();
+            _handles.Clear();
+        }
+    }
+}
+```
+
+### 2. Asset Grouping Strategy
+- **Mod-specific groups**: `Mod_{ModName}_{Platform}` (e.g., `Mod_MagicBow_PC`, `Mod_MagicBow_Android`)
+- **Shared resources**: `Common_Resources_{Type}` (e.g., `Common_Resources_Effects`, `Common_Resources_Audio`)
+- **Scene assets**: `Scene_{SceneName}_{Platform}`
+- **Remote assets**: `Remote_{ModName}_Content` for downloadable content
+
+### 3. Platform-Specific Configuration
+```csharp
+// Addressable Group Settings for Cross-Platform
+[Serializable]
+public class PlatformAssetConfig
+{
+    public BuildTarget platform;
+    public string groupSuffix;
+    public AddressableAssetGroupTemplate template;
+    public BundledAssetGroupSchema.BundleNamingStyle namingStyle;
+}
+
+public static class AssetPlatformManager
+{
+    public static string GetPlatformSpecificAddress(string baseAddress)
+    {
+        var platform = Application.platform switch
+        {
+            RuntimePlatform.WindowsPlayer => "PC",
+            RuntimePlatform.Android => "Android",
+            _ => "Universal"
+        };
+        return $"{baseAddress}_{platform}";
+    }
+}
+```
+
+## Naming Conventions
+
+### 1. Addressable Address Format
+- **Weapons**: `Mod/{ModName}/Weapon/{WeaponType}/{WeaponName}`
+  - Example: `Mod/MagicBow/Weapon/Bow/MagicBow_Fire`
+- **Effects**: `Mod/{ModName}/Effect/{EffectCategory}/{EffectName}`
+  - Example: `Mod/MagicBow/Effect/Projectile/FireArrowTrail`
+- **Audio**: `Mod/{ModName}/Audio/{AudioType}/{ClipName}`
+  - Example: `Mod/MagicBow/Audio/SFX/BowStringRelease`
+- **Prefabs**: `Mod/{ModName}/Prefab/{Category}/{PrefabName}`
+- **Materials**: `Mod/{ModName}/Material/{MaterialType}/{MaterialName}`
+- **Textures**: `Mod/{ModName}/Texture/{Usage}/{TextureName}`
+
+### 2. Label System
+Apply multiple labels for flexible asset management:
+- **By Type**: `weapon`, `effect`, `audio`, `material`, `texture`, `prefab`
+- **By Platform**: `pc`, `android`, `universal`
+- **By Loading Priority**: `preload`, `on-demand`, `lazy`
+- **By Update Frequency**: `static`, `dynamic`, `cached`
+- **By Mod**: `mod-{modname}` (lowercase, hyphenated)
+
+## Memory Management Best Practices
+
+### 1. Asset Lifecycle Management
+```csharp
+public class ModMemoryManager : MonoBehaviour
+{
+    private readonly Dictionary<string, (AsyncOperationHandle handle, int refCount)> _assetRefs = new();
+    
+    public async Task<T> LoadSharedAsset<T>(string address) where T : UnityEngine.Object
+    {
+        if (_assetRefs.TryGetValue(address, out var assetRef))
+        {
+            _assetRefs[address] = (assetRef.handle, assetRef.refCount + 1);
+            return assetRef.handle.Result as T;
+        }
+        
+        var handle = Addressables.LoadAssetAsync<T>(address);
+        var asset = await handle.Task;
+        _assetRefs[address] = (handle, 1);
+        return asset;
+    }
+    
+    public void ReleaseSharedAsset(string address)
+    {
+        if (_assetRefs.TryGetValue(address, out var assetRef))
+        {
+            var newRefCount = assetRef.refCount - 1;
+            if (newRefCount <= 0)
+            {
+                Addressables.Release(assetRef.handle);
+                _assetRefs.Remove(address);
+            }
+            else
+            {
+                _assetRefs[address] = (assetRef.handle, newRefCount);
+            }
+        }
+    }
+}
+```
+
+### 2. Preloading Strategy
+```csharp
+[Serializable]
+public class PreloadConfig
+{
+    public string[] criticalAssets;     // Load immediately on mod start
+    public string[] backgroundAssets;   // Load during gameplay gaps
+    public string[] onDemandAssets;     // Load only when needed
+}
+
+public class ModPreloader : MonoBehaviour
+{
+    public PreloadConfig config;
+    
+    public async Task PreloadCriticalAssets()
+    {
+        var tasks = config.criticalAssets.Select(address => 
+            Addressables.LoadAssetAsync<UnityEngine.Object>(address).Task);
+        await Task.WhenAll(tasks);
+    }
+    
+    public IEnumerator PreloadBackgroundAssets()
+    {
+        foreach (var address in config.backgroundAssets)
+        {
+            var handle = Addressables.LoadAssetAsync<UnityEngine.Object>(address);
+            yield return handle;
+            
+            // Yield control to prevent frame drops
+            yield return null;
+        }
+    }
+}
+```
+
+### 3. Memory Monitoring
+```csharp
+public class AssetMemoryProfiler : MonoBehaviour
+{
+    private float _memoryCheckInterval = 5f;
+    private float _lastMemoryCheck;
+    
+    private void Update()
+    {
+        if (Time.time - _lastMemoryCheck > _memoryCheckInterval)
+        {
+            CheckMemoryUsage();
+            _lastMemoryCheck = Time.time;
+        }
+    }
+    
+    private void CheckMemoryUsage()
+    {
+        var memoryUsage = Profiler.GetTotalAllocatedMemory(false);
+        var memoryMB = memoryUsage / (1024f * 1024f);
+        
+        if (memoryMB > 500f) // Warning threshold
+        {
+            Debug.LogWarning($"High memory usage detected: {memoryMB:F1} MB");
+            // Trigger garbage collection or asset cleanup
+            Resources.UnloadUnusedAssets();
+            System.GC.Collect();
+        }
+    }
+}
+```
+
+## Asset Update and Versioning
+
+### 1. Version Control System
+```csharp
+[Serializable]
+public class AssetVersion
+{
+    public string assetAddress;
+    public Version version;
+    public string checksum;
+    public DateTime lastModified;
+}
+
+public class ModVersionManager
+{
+    private Dictionary<string, AssetVersion> _assetVersions = new();
+    
+    public async Task<bool> CheckForUpdates(string modName)
+    {
+        // Check remote version manifest
+        var remoteManifest = await DownloadVersionManifest(modName);
+        return HasUpdates(remoteManifest);
+    }
+    
+    public async Task UpdateAssets(List<string> assetsToUpdate)
+    {
+        foreach (var assetAddress in assetsToUpdate)
+        {
+            await UpdateSingleAsset(assetAddress);
+        }
+        
+        // Update local version manifest
+        SaveVersionManifest();
+    }
+}
+```
+
+### 2. Incremental Updates
+- Use catalog update system for remote content
+- Implement delta patching for large assets
+- Cache commonly used assets locally
+- Provide rollback mechanism for failed updates
+
+## Performance Optimization
+
+### 1. Asset Bundling Strategies
+- Group related assets together (e.g., weapon + effects + audio)
+- Keep bundle sizes between 1-10MB for optimal loading
+- Use LZ4 compression for faster decompression
+- Separate platform-specific assets
+
+### 2. Loading Optimization
+```csharp
+public class OptimizedLoader : MonoBehaviour
+{
+    private readonly Queue<string> _loadQueue = new();
+    private bool _isLoading = false;
+    
+    public void QueueAssetLoad(string address)
+    {
+        _loadQueue.Enqueue(address);
+        if (!_isLoading) StartCoroutine(ProcessLoadQueue());
+    }
+    
+    private IEnumerator ProcessLoadQueue()
+    {
+        _isLoading = true;
+        
+        while (_loadQueue.Count > 0)
+        {
+            var address = _loadQueue.Dequeue();
+            var handle = Addressables.LoadAssetAsync<UnityEngine.Object>(address);
+            
+            yield return handle;
+            
+            // Spread loading across multiple frames
+            yield return null;
+        }
+        
+        _isLoading = false;
+    }
+}
+```
