@@ -105,23 +105,35 @@ public static class AssetPlatformManager
 ## Naming Conventions
 
 ### 1. Addressable Address Format
-- **Weapons**: `Mod/{ModName}/Weapon/{WeaponType}/{WeaponName}`
-  - Example: `Mod/MagicBow/Weapon/Bow/MagicBow_Fire`
-- **Effects**: `Mod/{ModName}/Effect/{EffectCategory}/{EffectName}`
-  - Example: `Mod/MagicBow/Effect/Projectile/FireArrowTrail`
-- **Audio**: `Mod/{ModName}/Audio/{AudioType}/{ClipName}`
-  - Example: `Mod/MagicBow/Audio/SFX/BowStringRelease`
-- **Prefabs**: `Mod/{ModName}/Prefab/{Category}/{PrefabName}`
-- **Materials**: `Mod/{ModName}/Material/{MaterialType}/{MaterialName}`
-- **Textures**: `Mod/{ModName}/Texture/{Usage}/{TextureName}`
+- **Weapons**: `"WMD_{WeaponName}"` or `"Weapon/{WeaponName}"`
+  - Example: `"WMD_MagicBow"`, `"Weapon/MagicBow_Fire"`
+- **Effects**: `"Effect/{EffectName}"` or `"WMD_{EffectName}"`
+  - Example: `"Effect/FireExplosion"`, `"WMD_FireArrowTrail"`
+- **Audio**: `"Audio/{ClipName}"` or `"WMD_{AudioName}"`
+  - Example: `"Audio/BowStringRelease"`, `"WMD_WeaponFire"`
+- **Prefabs**: `"WMD_{PrefabName}"` or `"{Category}/{PrefabName}"`
+  - Example: `"WMD_AutoGetItem"`, `"Selector/SpawnTemplate"`
+- **UI Elements**: `"WMD_{UIName}"` or `"UI/{UIName}"`
+  - Example: `"WMD_ItemSelectPanel"`, `"WMD_WinPanel"`
+- **Waves/Scenes**: `"Wave/{WaveName}"` or `"Scene/{SceneName}"`
+  - Example: `"Wave/WMD_SuvWave1"`, `"Scene/Arena"`
+- **Scripts**: `"LuaScript/{ScriptName}"`
+  - Example: `"LuaScript/WMD_WeaponFlyObjBaseScript"`
 
-### 2. Label System
+### 2. Asset File Naming Standards
+- **Script Files**: `{ComponentName}Script.txt` (e.g., `MagicBowScript.txt`, `SwordIceScript.txt`)
+- **Config Files**: `{ModName}Config.asset` (e.g., `MagicBowConfig.asset`)
+- **Prefab Files**: `{ModName}_{Variant}.prefab` (e.g., `MagicBow_Fire.prefab`)
+- **Audio Files**: `{ModName}_{Action}_{Type}.{ext}` (e.g., `MagicBow_Fire_SFX.wav`)
+- **Addressable Names**: `WMD_{AssetName}` or `{Category}/{AssetName}` (e.g., `WMD_AutoGetItem`, `Selector/SpawnTemplate`)
+
+### 3. Label System
 Apply multiple labels for flexible asset management:
 - **By Type**: `weapon`, `effect`, `audio`, `material`, `texture`, `prefab`
 - **By Platform**: `pc`, `android`, `universal`
 - **By Loading Priority**: `preload`, `on-demand`, `lazy`
 - **By Update Frequency**: `static`, `dynamic`, `cached`
-- **By Mod**: `mod-{modname}` (lowercase, hyphenated)
+- **By Mod**: `mod-{modname}` (lowercase, hyphenated, e.g., `mod-magicbow`, `mod-swordice`)
 
 ## Memory Management Best Practices
 
@@ -314,3 +326,864 @@ public class OptimizedLoader : MonoBehaviour
     }
 }
 ```
+
+## Prefab Creation Rules and Guidelines
+
+### 1. LuaScript Parameter Configuration
+
+#### Addressable Reference Pattern
+For prefabs with LuaScript components, follow these parameter injection rules:
+
+```csharp
+// LuaScript component parameter configuration
+public class LuaScriptParameterConfig
+{
+    [Header("Self-References (Direct GameObject/Component)")]
+    public Transform firePoint;                    // Direct component reference
+    public AudioSource weaponAudioSource;         // Direct component reference
+    public ParticleSystem muzzleFlash;           // Direct component reference
+    
+    [Header("External Assets (Addressable String Addresses)")]
+    [Tooltip("Addressable address for projectile prefab")]
+    public string projectilePrefab = "WMD_Bullet";
+    
+    [Tooltip("Addressable address for impact effect")]
+    public string impactEffect = "Effect/BulletImpact";
+    
+    [Tooltip("Addressable address for trail effect")]
+    public string trailEffect = "Effect/BulletTrail";
+    
+    [Tooltip("Addressable address for fire sound")]
+    public string fireSoundAddress = "Audio/WeaponFire";
+    
+    [Tooltip("Addressable address for reload sound")]
+    public string reloadSoundAddress = "Audio/WeaponReload";
+}
+```
+
+#### Parameter Type Guidelines
+- **Direct References**: Use for components attached to the same GameObject or its children
+- **String Addresses**: Use for external assets that need to be instantiated or loaded dynamically
+
+### 2. Prefab Structure Standards
+
+#### Standard Weapon Prefab Layout
+```
+WeaponPrefab
+├── WeaponRoot (LuaScript component here)
+│   ├── Model/                    # Visual components
+│   │   ├── WeaponMesh
+│   │   └── Materials/
+│   ├── Interaction/              # VR interaction components
+│   │   ├── GrabPoints/
+│   │   └── Colliders/
+│   ├── Audio/                    # Audio sources
+│   │   ├── FireAudioSource
+│   │   └── ReloadAudioSource
+│   ├── Effects/                  # Self-contained effects
+│   │   ├── MuzzleFlash
+│   │   └── EjectionPort
+│   └── FirePoints/               # Spawn points
+│       ├── ProjectileSpawn
+│       └── EjectionSpawn
+```
+
+#### LuaScript Parameter Mapping
+```lua
+-- In Lua script: Access injected parameters
+local WeaponController = {
+    -- Direct references (assigned in Inspector)
+    firePoint = nil,              -- Transform component
+    audioSource = nil,            -- AudioSource component
+    muzzleFlash = nil,           -- ParticleSystem component
+    
+    -- Addressable addresses (string parameters)
+    projectilePrefab = "",        -- "WMD_Bullet"
+    impactEffect = "",           -- "Effect/BulletImpact"
+    trailEffect = "",            -- "Effect/BulletTrail"
+    fireSoundAddress = "",       -- "Audio/WeaponFire"
+    
+    -- Runtime loaded assets
+    _loadedProjectile = nil,
+    _loadedImpactEffect = nil,
+    _loadedTrailEffect = nil,
+    _loadedFireSound = nil
+}
+
+function WeaponController:Awake()
+    -- Validate direct references
+    if not self.firePoint then
+        Debug.LogError("FirePoint not assigned!")
+        return
+    end
+    
+    -- Preload addressable assets
+    self:PreloadAssets()
+end
+
+function WeaponController:PreloadAssets()
+    -- Load projectile prefab
+    if self.projectilePrefab and self.projectilePrefab ~= "" then
+        CL.ResourceManager:LoadAssetAsync(self.projectilePrefab, function(asset)
+            self._loadedProjectile = asset
+        end)
+    end
+    
+    -- Load impact effect
+    if self.impactEffect and self.impactEffect ~= "" then
+        CL.ResourceManager:LoadAssetAsync(self.impactEffect, function(asset)
+            self._loadedImpactEffect = asset
+        end)
+    end
+    
+    -- Load audio clips
+    if self.fireSoundAddress and self.fireSoundAddress ~= "" then
+        CL.ResourceManager:LoadAssetAsync(self.fireSoundAddress, function(asset)
+            self._loadedFireSound = asset
+        end)
+    end
+end
+
+function WeaponController:Fire()
+    -- Use preloaded projectile
+    if self._loadedProjectile and self.firePoint then
+        local projectile = CL.ObjectPool:Spawn(self._loadedProjectile, 
+            self.firePoint.position, self.firePoint.rotation)
+        
+        -- Apply trail effect if available
+        if self._loadedTrailEffect then
+            local trail = CL.EffectManager:AttachEffect(projectile, self._loadedTrailEffect)
+        end
+    end
+    
+    -- Play fire sound
+    if self._loadedFireSound and self.audioSource then
+        self.audioSource:PlayOneShot(self._loadedFireSound)
+    end
+end
+```
+
+### 3. Addressable Address Conventions for Prefab Parameters
+
+#### Naming Patterns for Different Asset Types
+```csharp
+// Projectile prefabs
+"WMD_{ProjectileType}" or "Weapon/{ProjectileType}"
+// Examples:
+"WMD_FireArrow"
+"WMD_Bullet_762"
+"Weapon/MagicArrow"
+
+// Effect prefabs
+"Effect/{EffectName}" or "WMD_{EffectName}"
+// Examples:
+"Effect/FireExplosion"
+"Effect/IceSlashEffect"
+"WMD_TrailEffect"
+
+// Audio clips
+"Audio/{ClipName}" or "WMD_{AudioName}"
+// Examples:
+"Audio/BowStringRelease"
+"Audio/GunFire_AK47"
+"WMD_WeaponFire"
+
+// UI Elements
+"WMD_{UIName}" or "UI/{UIName}"
+// Examples:
+"WMD_ItemSelectPanel"
+"WMD_WinPanel"
+"UI/HealthBar"
+
+// Waves and Scenes
+"Wave/{WaveName}" or "Scene/{SceneName}"
+// Examples:
+"Wave/WMD_SuvWave1"
+"Scene/Arena"
+```
+
+### 4. Prefab Configuration Best Practices
+
+#### Parameter Validation in Inspector
+```csharp
+// Custom property drawer for addressable validation
+[System.Serializable]
+public class AddressableReference
+{
+    [SerializeField] private string _address;
+    [SerializeField] private UnityEngine.Object _editorReference; // For validation only
+    
+    public string Address => _address;
+    
+    public bool IsValid()
+    {
+        return !string.IsNullOrEmpty(_address) && 
+               (_address.StartsWith("WMD_") || _address.Contains("/"));
+    }
+}
+
+// Usage in LuaScript parameters
+public class WeaponLuaScript : MonoBehaviour
+{
+    [Header("Direct References")]
+    public Transform firePoint;
+    public AudioSource audioSource;
+    
+    [Header("Addressable Assets")]
+    public AddressableReference projectilePrefab;
+    public AddressableReference[] effectPrefabs;
+    public AddressableReference[] audioClips;
+    
+    private void OnValidate()
+    {
+        // Validate addressable references in editor
+        ValidateAddressableReferences();
+    }
+    
+    private void ValidateAddressableReferences()
+    {
+        if (!projectilePrefab.IsValid())
+        {
+            Debug.LogWarning($"Invalid projectile prefab address: {projectilePrefab.Address}");
+        }
+        
+        foreach (var effect in effectPrefabs)
+        {
+            if (!effect.IsValid())
+            {
+                Debug.LogWarning($"Invalid effect address: {effect.Address}");
+            }
+        }
+    }
+}
+```
+
+#### Runtime Loading Patterns
+```lua
+-- Efficient asset loading in Lua
+local AssetLoader = {
+    _loadedAssets = {},
+    _loadingPromises = {}
+}
+
+function AssetLoader:LoadAssetAsync(address, callback)
+    -- Check if already loaded
+    if self._loadedAssets[address] then
+        if callback then callback(self._loadedAssets[address]) end
+        return
+    end
+    
+    -- Check if currently loading
+    if self._loadingPromises[address] then
+        -- Add callback to existing promise
+        table.insert(self._loadingPromises[address], callback)
+        return
+    end
+    
+    -- Start new loading operation
+    self._loadingPromises[address] = {callback}
+    
+    CL.ResourceManager:LoadAssetAsync(address, function(asset)
+        -- Cache loaded asset
+        self._loadedAssets[address] = asset
+        
+        -- Execute all waiting callbacks
+        local callbacks = self._loadingPromises[address]
+        self._loadingPromises[address] = nil
+        
+        for _, cb in ipairs(callbacks) do
+            if cb then cb(asset) end
+        end
+    end)
+end
+
+function AssetLoader:PreloadAssets(addressList)
+    for _, address in ipairs(addressList) do
+        self:LoadAssetAsync(address, nil) -- Preload without callback
+    end
+end
+```
+
+### 5. Common Prefab Parameter Examples
+
+#### Weapon Prefab Parameters
+```lua
+-- Standard weapon prefab parameters
+local WeaponConfig = {
+    -- Direct component references (set in Inspector)
+    firePoint = nil,                    -- Transform
+    gripPoint = nil,                    -- Transform  
+    audioSource = nil,                  -- AudioSource
+    muzzleFlash = nil,                 -- ParticleSystem
+    
+    -- Addressable asset addresses (string parameters)
+    projectilePrefab = "WMD_DefaultBullet",
+    impactEffect = "Effect/BulletImpact",
+    fireSoundAddress = "Audio/WeaponFire",
+    
+    -- Audio addresses
+    reloadSoundAddress = "Audio/WeaponReload",
+    emptySoundAddress = "Audio/WeaponEmpty",
+    
+    -- Material addresses (for dynamic material changes)
+    defaultMaterial = "Material/WeaponDefault",
+    heatedMaterial = "Material/WeaponHeated",
+    
+    -- Additional effect addresses
+    ejectionEffect = "Effect/CaseEject",
+    smokeEffect = "Effect/BarrelSmoke"
+}
+```
+
+#### Spell/Magic Prefab Parameters
+```lua
+-- Magic weapon prefab parameters
+local SpellConfig = {
+    -- Direct references
+    castPoint = nil,                    -- Transform
+    staffTip = nil,                     -- Transform
+    crystalRenderer = nil,              -- Renderer
+    
+    -- Spell effect addresses
+    castEffect = "Effect/SpellCast",
+    chargeEffect = "Effect/PowerCharge",
+    
+    -- Projectile variants
+    fireballPrefab = "WMD_Fireball",
+    iceshardPrefab = "WMD_IceShard", 
+    lightningPrefab = "WMD_Lightning",
+    
+    -- Audio addresses
+    castSoundAddress = "Audio/SpellCast",
+    chargeSoundAddress = "Audio/PowerCharge",
+    
+    -- Material addresses for visual states
+    neutralCrystal = "Material/Crystal_Neutral",
+    fireCrystal = "Material/Crystal_Fire",
+    iceCrystal = "Material/Crystal_Ice"
+}
+```
+
+#### Gun Weapon Example
+```lua
+-- Gun implementation following project patterns
+local GunController = {
+    -- Weapon configuration
+    bulletPrefab = "WMD_Bullet_762",
+    muzzleFlash = "Effect/MuzzleFlash",
+    shellEjection = "Effect/ShellEject",
+    
+    -- Audio configuration  
+    fireSoundAddress = "Audio/GunFire_AK47",
+    reloadSoundAddress = "Audio/GunReload",
+    emptySoundAddress = "Audio/GunEmpty",
+    
+    -- UI elements
+    aimWidget = nil, -- Set in Inspector as direct reference
+    
+    -- Loaded assets
+    _loadedBullet = nil,
+    _loadedMuzzleFlash = nil
+}
+
+function GunController:Awake()
+    -- Preload bullet prefab
+    if self.bulletPrefab then
+        CL.ResourceMgr.LoadAssetAsync(self.bulletPrefab, function(asset)
+            self._loadedBullet = asset
+        end)
+    end
+    
+    -- Preload muzzle flash effect
+    if self.muzzleFlash then
+        CL.ResourceMgr.LoadAssetAsync(self.muzzleFlash, function(asset)
+            self._loadedMuzzleFlash = asset
+        end)
+    end
+end
+
+function GunController:Fire()
+    -- Instantiate bullet using preloaded prefab
+    if self._loadedBullet and self.firePoint then
+        local bullet = CL.ResourceMgr.Instantiate(self._loadedBullet,
+            self.firePoint.position, self.firePoint.rotation)
+    end
+    
+    -- Play muzzle flash effect
+    if self._loadedMuzzleFlash and self.firePoint then
+        local flash = CL.ResourceMgr.Instantiate(self._loadedMuzzleFlash,
+            self.firePoint.position, self.firePoint.rotation)
+    end
+    
+    -- Play fire sound
+    if self.fireSoundAddress and self.audioSource then
+        local fireSound = CL.ResourceMgr.Load(self.fireSoundAddress)
+        if fireSound then
+            self.audioSource:PlayOneShot(fireSound)
+        end
+    end
+end
+
+-- Handle aim widget visibility (following actual project pattern)
+function GunController:OnGrab(attach, isGrabbed)
+    if self.aimWidget ~= nil then
+        if isGrabbed then
+            if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+                self.aimWidget.gameObject:SetActive(true)
+                self.aimWidget.enabled = true
+            end
+        else
+            self.aimWidget.enabled = false
+            self.aimWidget.gameObject:SetActive(false)
+        end
+    end
+end
+
+-- Return with proper inheritance pattern
+return Class(Require("LuaScript/WMD_WeaponFlyObjBaseScript"), nil, GunController)
+```
+
+### 6. Prefab Validation and Debugging
+
+#### Editor-Time Validation
+```csharp
+#if UNITY_EDITOR
+using UnityEditor;
+
+[CustomEditor(typeof(LuaScript))]
+public class LuaScriptInspector : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+        
+        var luaScript = (LuaScript)target;
+        
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Addressable Validation", EditorStyles.boldLabel);
+        
+        // Validate addressable parameters
+        ValidateAddressableParameters(luaScript);
+        
+        if (GUILayout.Button("Validate All Addresses"))
+        {
+            ValidateAllAddresses(luaScript);
+        }
+    }
+    
+    private void ValidateAddressableParameters(LuaScript luaScript)
+    {
+        var serializedObject = new SerializedObject(luaScript);
+        var iterator = serializedObject.GetIterator();
+        
+        while (iterator.NextVisible(true))
+        {
+            if (iterator.propertyType == SerializedPropertyType.String)
+            {
+                string value = iterator.stringValue;
+                if (IsAddressableAddress(value))
+                {
+                    bool isValid = ValidateAddress(value);
+                    var color = isValid ? Color.green : Color.red;
+                    var status = isValid ? "✓" : "✗";
+                    
+                    EditorGUILayout.BeginHorizontal();
+                    GUI.color = color;
+                    EditorGUILayout.LabelField($"{status} {iterator.displayName}", GUILayout.Width(200));
+                    GUI.color = Color.white;
+                    EditorGUILayout.LabelField(value);
+                    EditorGUILayout.EndHorizontal();
+                }
+            }
+        }
+    }
+    
+    private bool IsAddressableAddress(string value)
+    {
+        return !string.IsNullOrEmpty(value) && 
+               (value.StartsWith("WMD_") || value.Contains("/"));
+    }
+    
+    private bool ValidateAddress(string address)
+    {
+        // Check if address exists in addressable settings
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        if (settings == null) return false;
+        
+        foreach (var group in settings.groups)
+        {
+            foreach (var entry in group.entries)
+            {
+                if (entry.address == address)
+                    return true;
+            }
+        }
+        return false;
+    }
+}
+#endif
+```
+
+#### Runtime Validation and Error Handling
+```lua
+-- Runtime validation helper for Lua scripts
+local AddressableValidator = {
+    _validationCache = {},
+    _missingAssets = {}
+}
+
+function AddressableValidator:ValidateAddress(address, assetType)
+    -- Check cache first
+    if self._validationCache[address] ~= nil then
+        return self._validationCache[address]
+    end
+    
+    -- Validate address format
+    if not address or address == "" then
+        self:LogValidationError(address, "Empty address")
+        return false
+    end
+    
+    if not string.match(address, "^WMD_") and not string.match(address, "/") then
+        self:LogValidationError(address, "Invalid address format - must start with 'WMD_' or contain '/'")
+        return false
+    end
+    
+    -- Try to load asset to validate existence
+    local isValid = false
+    CL.ResourceManager:LoadAssetAsync(address, function(asset)
+        isValid = (asset ~= nil)
+        self._validationCache[address] = isValid
+        
+        if not isValid then
+            self:LogValidationError(address, "Asset not found")
+            table.insert(self._missingAssets, {
+                address = address,
+                assetType = assetType,
+                timestamp = os.time()
+            })
+        end
+    end)
+    
+    return isValid
+end
+
+function AddressableValidator:LogValidationError(address, reason)
+    Debug.LogError(string.format("Addressable validation failed: '%s' - %s", 
+        address or "nil", reason))
+end
+
+function AddressableValidator:GetMissingAssets()
+    return self._missingAssets
+end
+
+function AddressableValidator:ClearCache()
+    self._validationCache = {}
+    self._missingAssets = {}
+end
+```
+
+#### Prefab Setup Checklist
+```lua
+-- Prefab validation checklist for LuaScript components
+local PrefabValidator = {
+    requiredComponents = {
+        "Transform",
+        "LuaScript"
+    },
+    
+    recommendedComponents = {
+        "AudioSource",
+        "Rigidbody",
+        "Collider"
+    }
+}
+
+function PrefabValidator:ValidatePrefab(gameObject)
+    local validation = {
+        isValid = true,
+        errors = {},
+        warnings = {}
+    }
+    
+    -- Check required components
+    for _, componentName in ipairs(self.requiredComponents) do
+        local component = gameObject:GetComponent(componentName)
+        if not component then
+            validation.isValid = false
+            table.insert(validation.errors, 
+                string.format("Missing required component: %s", componentName))
+        end
+    end
+    
+    -- Check recommended components
+    for _, componentName in ipairs(self.recommendedComponents) do
+        local component = gameObject:GetComponent(componentName)
+        if not component then
+            table.insert(validation.warnings, 
+                string.format("Missing recommended component: %s", componentName))
+        end
+    end
+    
+    -- Validate LuaScript parameters
+    local luaScript = gameObject:GetComponent("LuaScript")
+    if luaScript then
+        self:ValidateLuaScriptParameters(luaScript, validation)
+    end
+    
+    return validation
+end
+
+function PrefabValidator:ValidateLuaScriptParameters(luaScript, validation)
+    -- Get all string parameters (potential addressable addresses)
+    local parameters = luaScript:GetStringParameters()
+    
+    for paramName, paramValue in pairs(parameters) do
+        if self:IsAddressableParameter(paramName, paramValue) then
+            local isValid = AddressableValidator:ValidateAddress(paramValue, paramName)
+            if not isValid then
+                table.insert(validation.warnings,
+                    string.format("Invalid addressable address for %s: %s", 
+                        paramName, paramValue))
+            end
+        end
+    end
+end
+
+function PrefabValidator:IsAddressableParameter(paramName, paramValue)
+    -- Common addressable parameter patterns
+    local addressablePatterns = {
+        "Prefab", "Effect", "Audio", "Material", "Texture",
+        "Sound", "Clip", "Asset", "Resource"
+    }
+    
+    -- Check if parameter name suggests addressable usage
+    local lowerParamName = string.lower(paramName)
+    for _, pattern in ipairs(addressablePatterns) do
+        if string.find(lowerParamName, string.lower(pattern)) then
+            return true
+        end
+    end
+    
+    -- Check if value looks like an addressable address
+    return paramValue and (string.match(paramValue, "^WMD_") or string.match(paramValue, "/"))
+end
+```
+
+### 7. Common Prefab Patterns and Templates
+
+#### Weapon Prefab Template
+```yaml
+# WeaponPrefab configuration template
+Prefab: WeaponName_Main
+Components:
+  - Transform
+  - LuaScript:
+      # Direct component references
+      firePoint: "FirePoint"          # Child transform
+      gripPoint: "GripPoint"          # Child transform
+      audioSource: "WeaponAudio"     # Child AudioSource
+      
+      # Addressable asset addresses
+      projectilePrefab: "WMD_DefaultBullet"
+      impactEffect: "Effect/BulletImpact"
+      fireSoundAddress: "Audio/WeaponFire"
+      
+  - Rigidbody:
+      mass: 1.5
+      useGravity: true
+      
+  - Collider:
+      isTrigger: false
+      
+Children:
+  - FirePoint: { Transform }
+  - GripPoint: { Transform }
+  - WeaponAudio: { AudioSource }
+  - Model: { MeshRenderer, MeshFilter }
+```
+
+#### Effect Prefab Template  
+```yaml
+# EffectPrefab configuration template
+Prefab: EffectName_Main
+Components:
+  - Transform
+  - LuaScript:
+      # Addressable effect assets
+      mainEffect: "Effect/CoreEffect"
+      subEffects: 
+        - "Effect/Sparks"
+        - "Effect/Smoke"
+      audioClips:
+        - "Audio/EffectStart"
+        - "Audio/EffectLoop"
+        
+  - ParticleSystem:
+      startLifetime: 2.0
+      startSpeed: 5.0
+      
+Children:
+  - SubEffects: { Multiple ParticleSystem components }
+  - AudioSources: { Multiple AudioSource components }
+```
+
+### 8. Real Project Examples Following BattleTalent Address Format
+
+#### Actual Project Address Examples (from SurvivorMode)
+```lua
+-- UI Creation
+local panel = CL.HUDMgr.Instance:CreateHud("WMD_ItemSelectPanel")
+local winPanel = CL.HUDMgr.Instance:CreateHud("WMD_WinPanel")
+
+-- Prefab Instantiation
+local autoGetItem = CL.ResourceMgr.Instantiate("WMD_AutoGetItem")
+local abilityUpPrefab = CL.ResourceMgr.Instantiate("WMD_AbilityUp")
+local recoverHpPrefab = CL.ResourceMgr.Instantiate("WMD_RecoverHp")
+
+-- Scene Objects
+local selectorTemplate = CL.ResourceMgr.Instantiate("Selector/SpawnTemplate")
+local statue = CL.ResourceMgr.Instantiate("Selector/Statue/SkelStatue")
+
+-- Wave Loading
+local wave = CL.ResourceMgr.Load("Wave/WMD_SuvWave1")
+local wave2 = CL.ResourceMgr.Load("Wave/WMD_SuvWave2")
+
+-- Script Inheritance
+return Class(Require("LuaScript/WMD_WeaponFlyObjBaseScript"), nil, WeaponFlyObj)
+return Class(Require("LuaScript/WMD_FlySpellBaseScript"), nil, flyFireBall)
+```
+
+#### Magic Bow Example with Correct Addresses
+```lua
+-- Magic Bow implementation using actual project address format
+local MagicBow = {
+    -- Spell effects configuration
+    spellEffects = {
+        Fire = {
+            arrowPrefab = "WMD_FireArrow",
+            enchantEffect = "Effect/FireEnchanting",
+            trailEffect = "Effect/FireTrail",
+            impactEffect = "Effect/FireExplosion",
+            damage = 25,
+            burnDuration = 3.0
+        },
+        Ice = {
+            arrowPrefab = "WMD_IceArrow",
+            enchantEffect = "Effect/IceEnchanting", 
+            trailEffect = "Effect/IceTrail",
+            impactEffect = "Effect/IceShatter",
+            damage = 20,
+            slowEffect = 0.5,
+            slowDuration = 5.0
+        }
+    },
+    
+    -- Audio configuration
+    fireSoundAddress = "Audio/BowStringRelease",
+    switchSoundAddress = "Audio/SpellSwitch",
+    chargeSoundAddress = "Audio/ManaCharge"
+}
+
+function MagicBow:LoadMagicArrow(spellType)
+    local spellConfig = self.spellEffects[spellType]
+    if not spellConfig then return nil end
+    
+    -- Load arrow prefab using actual project pattern
+    return CL.ResourceMgr.Instantiate(spellConfig.arrowPrefab)
+end
+
+function MagicBow:CreateSpellEffect(effectAddress, position)
+    -- Create effect using correct address format
+    local effect = CL.ResourceMgr.Instantiate(effectAddress)
+    if effect then
+        effect.transform.position = position
+    end
+    return effect
+end
+```
+
+#### Gun Weapon Example
+```lua
+-- Gun implementation following project patterns
+local GunController = {
+    -- Weapon configuration
+    bulletPrefab = "WMD_Bullet_762",
+    muzzleFlash = "Effect/MuzzleFlash",
+    shellEjection = "Effect/ShellEject",
+    
+    -- Audio configuration  
+    fireSoundAddress = "Audio/GunFire_AK47",
+    reloadSoundAddress = "Audio/GunReload",
+    emptySoundAddress = "Audio/GunEmpty",
+    
+    -- UI elements
+    aimWidget = nil, -- Set in Inspector as direct reference
+    
+    -- Loaded assets
+    _loadedBullet = nil,
+    _loadedMuzzleFlash = nil
+}
+
+function GunController:Awake()
+    -- Preload bullet prefab
+    if self.bulletPrefab then
+        CL.ResourceMgr.LoadAssetAsync(self.bulletPrefab, function(asset)
+            self._loadedBullet = asset
+        end)
+    end
+    
+    -- Preload muzzle flash effect
+    if self.muzzleFlash then
+        CL.ResourceMgr.LoadAssetAsync(self.muzzleFlash, function(asset)
+            self._loadedMuzzleFlash = asset
+        end)
+    end
+end
+
+function GunController:Fire()
+    -- Instantiate bullet using preloaded prefab
+    if self._loadedBullet and self.firePoint then
+        local bullet = CL.ResourceMgr.Instantiate(self._loadedBullet,
+            self.firePoint.position, self.firePoint.rotation)
+    end
+    
+    -- Play muzzle flash effect
+    if self._loadedMuzzleFlash and self.firePoint then
+        local flash = CL.ResourceMgr.Instantiate(self._loadedMuzzleFlash,
+            self.firePoint.position, self.firePoint.rotation)
+    end
+    
+    -- Play fire sound
+    if self.fireSoundAddress and self.audioSource then
+        local fireSound = CL.ResourceMgr.Load(self.fireSoundAddress)
+        if fireSound then
+            self.audioSource:PlayOneShot(fireSound)
+        end
+    end
+end
+
+-- Handle aim widget visibility (following actual project pattern)
+function GunController:OnGrab(attach, isGrabbed)
+    if self.aimWidget ~= nil then
+        if isGrabbed then
+            if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+                self.aimWidget.gameObject:SetActive(true)
+                self.aimWidget.enabled = true
+            end
+        else
+            self.aimWidget.enabled = false
+            self.aimWidget.gameObject:SetActive(false)
+        end
+    end
+end
+
+-- Return with proper inheritance pattern
+return Class(Require("LuaScript/WMD_WeaponFlyObjBaseScript"), nil, GunController)
+```
+
+#### Summary: Correct Address Format Rules
+1. **WMD_ Prefix**: Use for mod-specific assets: `"WMD_ItemName"`
+2. **Category/Name**: Use for system assets: `"Effect/EffectName"`, `"Audio/SoundName"`
+3. **Hierarchical**: Use for complex systems: `"Wave/WMD_SuvWave1"`, `"Selector/SpawnTemplate"`
+4. **Script References**: Use for Lua inheritance: `"LuaScript/WMD_BaseScript"`

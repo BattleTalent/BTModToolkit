@@ -80,18 +80,35 @@ public class NetworkedWeapon : NetworkBehaviour
     [Command]
     public void CmdFireWeapon(Vector3 targetPosition, Vector3 aimDirection)
     {
-        // Server validates the action
+        // Server validation with comprehensive checks
         if (!CanFire())
         {
             Debug.LogWarning($"Player {connectionToClient} attempted invalid fire");
             return;
         }
         
+        // Rate limiting
+        if (Time.time - _lastFireTime < (1f / fireRate))
+        {
+            Debug.LogWarning($"Player {connectionToClient} firing too fast");
+            return;
+        }
+        
+        // Ammo validation
+        if (currentAmmo <= 0)
+        {
+            Debug.LogWarning($"Player {connectionToClient} attempted to fire with no ammo");
+            return;
+        }
+        
         // Server performs authoritative action
+        _lastFireTime = Time.time;
+        currentAmmo = Mathf.Max(0, currentAmmo - 1);
+        
         PerformWeaponFire(targetPosition, aimDirection);
         
-        // Notify all clients
-        RpcOnWeaponFired(targetPosition, aimDirection);
+        // Notify all clients of the fire event
+        RpcOnWeaponFired(targetPosition, aimDirection, connectionToClient.connectionId);
     }
     
     [Command]

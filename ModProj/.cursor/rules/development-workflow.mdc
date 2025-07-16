@@ -13,11 +13,38 @@ tags: ["workflow", "development", "testing", "deployment", "mod-creation"]
 
 ### 1. New Mod Creation Process
 ```bash
-# Create mod directory structure
+# Create mod directory structure following BattleTalent conventions
 Assets/Build/{ModName}/
 ├── Config/              # .asset configuration files
 │   ├── ItemInfoConfig.asset
 │   ├── AddressableGroupConfig.asset
+│   └── {ModName}Config.asset
+├── Script/              # Lua scripts (.txt extension)
+│   ├── {ModName}Script.txt
+│   ├── {ModName}Controller.txt
+│   └── {ModName}Utils.txt
+├── Weapon/              # Weapon prefabs and components
+│   ├── {ModName}_Main.prefab
+│   ├── {ModName}_Variant1.prefab
+│   └── Materials/
+├── Effect/              # Particle effects and materials
+│   ├── {EffectName}.prefab
+│   └── Materials/
+├── Audio/               # Sound effects and audio clips
+│   ├── SFX/
+│   └── Music/
+└── Resources/           # Additional resources
+    ├── Textures/
+    ├── Models/
+    └── Animations/
+```
+
+### 2. File Naming Standards
+- **Mod Directories**: `{ModName}` (PascalCase, e.g., `MagicBow`, `SwordIce`)
+- **Script Files**: `{ComponentName}Script.txt` (e.g., `MagicBowScript.txt`)
+- **Config Files**: `{ModName}Config.asset` 
+- **Prefabs**: `{ModName}_{Variant}.prefab` (e.g., `MagicBow_Fire.prefab`)
+- **Materials**: `{ModName}_{Type}Mat.mat` (e.g., `SwordIce_BladeMat.mat`)
 │   └── ModMetadata.asset
 ├── Script/              # .txt Lua scripts
 │   ├── {ModName}Script.txt

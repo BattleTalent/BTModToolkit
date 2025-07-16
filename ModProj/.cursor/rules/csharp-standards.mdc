@@ -56,27 +56,37 @@ public class WeaponController
     public GameObject WeaponPrefab;
     
     public void ReloadWeapon() { }
+    public void FireProjectile() { }
 }
 
 // Private fields - camelCase with underscore prefix
 private int _currentAmmo;
 private Transform _firePoint;
 private bool _isReloading;
+private AsyncOperationHandle _assetHandle;
 
 // Local variables, parameters - camelCase
 public void FireProjectile(Vector3 targetPosition, float fireRate)
 {
     var projectileInstance = Instantiate(projectilePrefab);
+    var targetDirection = (targetPosition - transform.position).normalized;
     // ...
 }
 
 // Constants - UPPER_SNAKE_CASE
 public const float MAX_WEAPON_RANGE = 100f;
 private const string WEAPON_TAG = "ModWeapon";
+private const int DEFAULT_AMMO_COUNT = 30;
 
 // Events - PascalCase with descriptive action
 public event Action<int> OnAmmoChanged;
 public event Action OnWeaponFired;
+public event Action<WeaponController> OnWeaponReloaded;
+
+// File naming conventions
+// - Scripts: {ComponentName}.cs (e.g., WeaponController.cs, VRInteractable.cs)
+// - Interfaces: I{InterfaceName}.cs (e.g., IWeapon.cs, IDamageable.cs)
+// - Enums: {EnumName}.cs (e.g., WeaponType.cs, DamageType.cs)
 ```
 
 ### Code Quality Standards

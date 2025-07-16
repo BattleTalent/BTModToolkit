@@ -63,35 +63,57 @@ local MagicBow = {
 
 ### 1. Object-Oriented Structure
 ```lua
--- Standard mod class pattern
+-- Standard mod class pattern following BattleTalent conventions
 local WeaponController = {
-    -- Static configuration
+    -- Class constants (UPPER_SNAKE_CASE)
     CLASS_NAME = "WeaponController",
+    MAX_AMMO = 30,
+    FIRE_RATE = 0.1,
     DEFAULT_DAMAGE = 25,
     
-    -- Instance properties
+    -- Instance properties (camelCase)
     isActive = false,
     currentAmmo = 0,
     maxAmmo = 30,
+    enabled = true,
+    initialized = false,
     
-    -- Private state
+    -- Private state (camelCase with underscore prefix)
     _isReloading = false,
     _lastFireTime = 0,
     _audioSources = {},
+    _breakActId = nil,
+    _stabEnterHandler = nil,
+    _stabExitHandler = nil,
+    _onHitHandler = nil,
+}
 }
 
--- Constructor-like initialization
-function WeaponController:Initialize(host, config)
-    self.host = host
-    self.config = config or {}
+-- Constructor-like initialization following BattleTalent patterns
+function WeaponController:Awake()
+    -- Initialize event handlers using proper closure pattern
+    self.stabEnterHandler = function(stabInfo)
+        self:OnStab(stabInfo)
+    end
     
-    -- Initialize components
-    self:SetupComponents()
-    self:RegisterEventHandlers()
+    self.stabExitHandler = function(stabInfo)
+        self:OnStabExit(stabInfo)
+    end
+    
+    self.onHitHandler = function(fullCharacter)
+        self:OnHit(fullCharacter)
+    end
+    
+    -- Set up component references
+    local stabObject = self.host.interact:GetStabObject()
+    if stabObject then
+        stabObject:StabEnterEvent("+", self.stabEnterHandler)
+        stabObject:StabExitEvent("+", self.stabExitHandler)
+    end
+    
+    -- Initialize resources and state
     self:LoadResources()
-    
     self.initialized = true
-    self:Log("Weapon controller initialized successfully")
     
     return self
 end
@@ -589,7 +611,7 @@ end
 -- Configuration management
 function WeaponController:LoadConfiguration()
     local configPath = string.format("Config/%s_Config", self.CLASS_NAME)
-    local configAsset = CL.AssetManager.LoadAsset(configPath)
+    local configAsset = CL.ResourceMgr.Load(configPath)
     
     if configAsset then
         self.config = self:DeserializeConfig(configAsset.text)
@@ -723,4 +745,233 @@ end
 
 -- Return the class using BattleTalent's class system
 return Class(nil, nil, WeaponController)
+```
+
+### 3. BattleTalent Framework Integration Examples
+```lua
+-- Magic Bow implementation following MagicBowScript.txt patterns
+local MagicBow = {
+    -- Spell configuration following project conventions
+    spellType = "Fire", -- Fire, Ice, Thunder, Telekinetic
+    spellPower = 1.0,
+    manaConsumption = 10,
+    
+    -- Spell effects configuration
+    spellEffects = {
+        Fire = {
+            arrowPrefab = "MagicArrow_Fire",
+            enchantEffect = "FireEnchanting",
+            trailEffect = "FireTrail",
+            impactEffect = "FireExplosion",
+            damage = 25,
+            burnDuration = 3.0
+        },
+        Ice = {
+            arrowPrefab = "MagicArrow_Ice",
+            enchantEffect = "IceEnchanting", 
+            trailEffect = "IceTrail",
+            impactEffect = "IceShatter",
+            damage = 20,
+            slowEffect = 0.5,
+            slowDuration = 5.0
+        },
+        Thunder = {
+            arrowPrefab = "MagicArrow_Thunder",
+            enchantEffect = "ThunderEnchanting",
+            trailEffect = "LightningTrail", 
+            impactEffect = "ThunderStrike",
+            damage = 30,
+            chainRange = 3.0,
+            stunDuration = 2.0
+        }
+    },
+    
+    -- Private state
+    _currentMana = 100,
+    _maxMana = 100,
+    _manaRegenRate = 5.0,
+    _lastManaRegen = 0,
+    _enchantEffect = nil,
+    _audioSource = nil
+}
+
+function MagicBow:Awake()
+    -- Initialize audio system
+    self._audioSource = self.host:GetComponent("AudioSource")
+    if not self._audioSource then
+        self._audioSource = self.host:AddComponent("AudioSource")
+    end
+    
+    -- Setup mana regeneration
+    self:StartManaRegeneration()
+    
+    -- Initialize UI elements
+    self:InitializeManaUI()
+end
+
+function MagicBow:Fire(arrow)
+    -- Check mana availability
+    if self._currentMana < self.manaConsumption then
+        self:PlayAudio("spell_no_mana")
+        return false
+    end
+    
+    -- Get current spell configuration
+    local spellConfig = self.spellEffects[self.spellType]
+    if not spellConfig then
+        return false
+    end
+    
+    -- Consume mana
+    self._currentMana = self._currentMana - self.manaConsumption
+    self:UpdateManaUI()
+    
+    -- Apply magical enhancement to arrow
+    self:EnchantArrow(arrow, spellConfig)
+    
+    -- Play spell casting effects
+    self:PlaySpellEffects(spellConfig)
+    
+    return true
+end
+
+function MagicBow:EnchantArrow(arrow, spellConfig)
+    if not arrow then return end
+    
+    -- Change arrow prefab based on spell type
+    local magicArrowPrefab = CL.ResourceManager:LoadPrefab(spellConfig.arrowPrefab)
+    if magicArrowPrefab then
+        -- Replace arrow model with magical variant
+        arrow:ReplacePrefab(magicArrowPrefab)
+    end
+    
+    -- Add trail effect
+    local trailEffect = CL.EffectManager:CreateEffect(spellConfig.trailEffect)
+    if trailEffect then
+        trailEffect.transform.parent = arrow.transform
+        trailEffect.transform.localPosition = UE.Vector3.zero
+    end
+    
+    -- Set damage and special properties
+    arrow.damage = spellConfig.damage * self.spellPower
+    arrow.spellType = self.spellType
+    arrow.impactEffect = spellConfig.impactEffect
+    
+    -- Apply spell-specific properties
+    if self.spellType == "Fire" then
+        arrow.burnDuration = spellConfig.burnDuration
+    elseif self.spellType == "Ice" then
+        arrow.slowEffect = spellConfig.slowEffect
+        arrow.slowDuration = spellConfig.slowDuration
+    elseif self.spellType == "Thunder" then
+        arrow.chainRange = spellConfig.chainRange
+        arrow.stunDuration = spellConfig.stunDuration
+    end
+end
+
+function MagicBow:SwitchSpell(newSpellType)
+    if not self.spellEffects[newSpellType] then
+        return false
+    end
+    
+    -- Remove current enchantment effect
+    if self._enchantEffect then
+        CL.EffectManager:DestroyEffect(self._enchantEffect)
+        self._enchantEffect = nil
+    end
+    
+    -- Switch spell type
+    self.spellType = newSpellType
+    
+    -- Apply new enchantment effect
+    local spellConfig = self.spellEffects[self.spellType]
+    self._enchantEffect = CL.EffectManager:CreateEffect(spellConfig.enchantEffect)
+    if self._enchantEffect then
+        self._enchantEffect.transform.parent = self.host.transform
+    end
+    
+    -- Play switch sound
+    self:PlayAudio("spell_switch_" .. string.lower(newSpellType))
+    
+    return true
+end
+
+function MagicBow:StartManaRegeneration()
+    -- Use scheduler for mana regeneration
+    self._manaRegenId = CL.Scheduler.Create(self.host,
+        function(scheduler, time, step)
+            if self._currentMana < self._maxMana then
+                self._currentMana = math.min(self._maxMana, 
+                    self._currentMana + self._manaRegenRate * 0.1)
+                self:UpdateManaUI()
+            end
+        end,
+        0.1, -1  -- Every 100ms, indefinitely
+    ).actionId
+end
+
+function MagicBow:PlayAudio(audioName)
+    if not self._audioSource then return end
+    
+    -- Load audio through addressable system
+    local audioClip = CL.ResourceManager:LoadAudio("Audio/" .. audioName)
+    if audioClip then
+        self._audioSource:PlayOneShot(audioClip)
+    end
+end
+
+-- Return class with proper inheritance
+return Class(Require("LuaScript/WMD_BowBaseScript"), nil, MagicBow)
+```
+
+### 4. Weapon FlyObj Pattern (Following Project Structure)
+```lua
+-- WeaponFlyObj pattern used in Gun scripts
+local WeaponFlyObj = {
+    aimWidget = nil,
+    laserSight = nil,
+    _isGrabbed = false
+}
+
+function WeaponFlyObj:OnGrab(attach, isGrabbed)
+    self._isGrabbed = isGrabbed
+    
+    -- Handle aim widget visibility
+    if self.aimWidget ~= nil then
+        if isGrabbed then
+            -- Check if laser aim is unlocked
+            if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+                self.aimWidget.gameObject:SetActive(true)
+                self.aimWidget.enabled = true
+            end
+        else
+            self.aimWidget.enabled = false
+            self.aimWidget.gameObject:SetActive(false)
+        end
+    end
+    
+    -- Handle laser sight
+    if self.laserSight ~= nil then
+        self.laserSight:SetActive(isGrabbed)
+    end
+end
+
+function WeaponFlyObj:OnTriggerStay(other)
+    -- Handle collision detection for weapon interactions
+    if not self._isGrabbed then return end
+    
+    local character = CL.CharacterMgr.Instance:GetFullCharacterByChild(other)
+    if character then
+        -- Process weapon-character interaction
+        self:ProcessCharacterInteraction(character, other)
+    end
+end
+
+function WeaponFlyObj:ProcessCharacterInteraction(character, collider)
+    -- Override in derived classes for specific weapon behavior
+    -- This is called when weapon interacts with a character
+end
+
+-- Return with proper base class inheritance
+return Class(Require("LuaScript/WMD_WeaponFlyObjBaseScript"), nil, WeaponFlyObj)
 ```
