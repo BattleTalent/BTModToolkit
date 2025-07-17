@@ -300,14 +300,6 @@ namespace UnityMcpBridge.Editor.Windows
             {
                 ToggleUnityBridge();
             }
-            
-            // Copy UnityMCP to Programs button
-            EditorGUILayout.Space(5);
-            if (GUILayout.Button("Copy UnityMCP to Programs Folder"))
-            {
-                CopyUnityMCPToPrograms();
-            }
-            
             EditorGUILayout.EndVertical();
 
             foreach (McpClient mcpClient in mcpClients.clients)
@@ -709,82 +701,7 @@ namespace UnityMcpBridge.Editor.Windows
             }
             catch (Exception e)
             {
-                Debug.LogError($"Error checking MCP configuration: {e.Message}");
-                mcpClient.SetStatus(McpStatus.CommunicationError);
-            }
-        }
-
-        private void CopyUnityMCPToPrograms()
-        {
-            try
-            {
-                string userName = System.Environment.UserName;
-                string sourceDir = GetUnityMCPSourcePath();
-                string targetDir = Path.Combine($@"C:\Users\{userName}\AppData\Local\Programs", "UnityMCPTest");
-
-                if (!Directory.Exists(sourceDir))
-                {
-                    EditorUtility.DisplayDialog("Error", 
-                        $"UnityMCP source directory not found at: {sourceDir}", "OK");
-                    return;
-                }
-
-                if (Directory.Exists(targetDir))
-                {
-                    bool overwrite = EditorUtility.DisplayDialog("Directory Exists", 
-                        $"UnityMCP already exists at: {targetDir}\n\nDo you want to overwrite it?", 
-                        "Yes", "No");
-                    
-                    if (!overwrite)
-                        return;
-                        
-                    Directory.Delete(targetDir, true);
-                }
-
-                CopyDirectory(sourceDir, targetDir);
-                
-                EditorUtility.DisplayDialog("Success", 
-                    $"UnityMCP has been successfully copied to:\n{targetDir}", "OK");
-                    
-                Debug.Log($"UnityMCP copied from {sourceDir} to {targetDir}");
-            }
-            catch (Exception ex)
-            {
-                string errorMsg = $"Failed to copy UnityMCP: {ex.Message}";
-                EditorUtility.DisplayDialog("Error", errorMsg, "OK");
-                Debug.LogError(errorMsg);
-            }
-        }
-
-        private string GetUnityMCPSourcePath()
-        {
-            // Get the parent directory of Assets folder, then go up one more level
-            string assetsPath = Application.dataPath;
-            string projectRoot = Directory.GetParent(assetsPath).FullName;
-            string parentDir = Directory.GetParent(projectRoot).FullName;
-            string unityMCPPath = Path.Combine(parentDir, "UnityMCP");
-            
-            return unityMCPPath;
-        }
-
-        private void CopyDirectory(string sourceDir, string targetDir)
-        {
-            Directory.CreateDirectory(targetDir);
-
-            // Copy all files
-            foreach (string file in Directory.GetFiles(sourceDir))
-            {
-                string fileName = Path.GetFileName(file);
-                string targetFile = Path.Combine(targetDir, fileName);
-                File.Copy(file, targetFile, true);
-            }
-
-            // Copy all subdirectories recursively
-            foreach (string subDir in Directory.GetDirectories(sourceDir))
-            {
-                string subDirName = Path.GetFileName(subDir);
-                string targetSubDir = Path.Combine(targetDir, subDirName);
-                CopyDirectory(subDir, targetSubDir);
+                mcpClient.SetStatus(McpStatus.Error, e.Message);
             }
         }
     }
