@@ -16,6 +16,30 @@ tags: ["multiplayer", "networking", "vr", "lua"]
 - **Client Prediction**: Immediate local response for VR comfort
 - **Object Ownership**: Which player controls specific objects
 
+## Network Prefab Registration
+
+### Registration Rules
+```lua
+-- All FlyObjects created via CL.FlyObject.CreateFlyObj() must be registered
+-- Example for weapon projectiles:
+local projectilePrefabs = {
+    "WMD_FireBall",           -- Fire projectile
+    "WMD_IceShard",           -- Ice projectile  
+    "WMD_LightningBolt",      -- Lightning projectile
+    "WMD_MagicArrowTrail"     -- Trail effects
+}
+
+-- Network prefab naming convention: WMD_{ItemName}
+```
+
+### Multiplayer-Specific Assets
+```lua
+-- Network versions often have "_Network" suffix
+"WMD_Sword_Slash_Network"     -- Network-enabled sword
+"WMD_FlySlash_Network"        -- Network projectile
+"WMD_Bow_Simple_Network"      -- Network bow
+```
+
 ### Lua Network Event Patterns
 
 ### Player Events
