@@ -1,0 +1,62 @@
+--luaBehaviour
+local BowMagicBase = {
+    --string fireballPrefab
+    --shootWeaponSpeed
+}
+
+function BowMagicBase:Start()
+    self.pullerScript.gameObject:SetActive(false)
+    self.puller = self.pullerScript:GetSelf()
+end
+
+function BowMagicBase:OnPut(a)
+    -- Magic bow does not spawn arrows
+end
+
+function BowMagicBase:OnRelease(a, shootFactor)
+    -- Shoot fireball
+    local pos = self.puller.trans.position
+    local dir = self.puller.trans.forward
+    local vel = self.shootWeaponSpeed * shootFactor
+    
+    -- Use universal CL.FlyObject.CreateFlyObj method
+    local fo = CL.FlyObject.CreateFlyObj(self.fireballPrefab, self.host.interact, pos, dir)
+    if fo then
+        fo.col.enabled = true
+        fo.rb.isKinematic = false 
+        fo.trans.parent = nil
+        fo.col.isTrigger = false
+        fo.rb.velocity = dir * vel
+        if self.isOnline then
+            fo.networkFO.networkRB.enabled = false
+        end
+        
+        -- Set proper physics ignore with weapon initially
+        CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.host.interact:GetCols(), true)
+        
+        -- Re-enable collision after brief delay
+        CL.Scheduler.Create(self.host.gameObject, 
+            function(sche, t, s)
+                if not IsNullOrDestroyed(fo) and not IsNullOrDestroyed(self.host.interact) then
+                    CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.host.interact:GetCols(), false)
+                end
+            end,
+        0, 0, 0.2)
+        
+        -- Optional: play effect/sound
+        self.host.interact:CostDurability()
+    end
+end
+
+function BowMagicBase:OnCancel()
+    -- Magic bow does not need to recycle arrows
+end
+
+function BowMagicBase:OnGrab(attach, t)
+    self.pullerScript.gameObject:SetActive(t)
+    if t then
+        self.holdingCharacter = attach.attachedHand.character
+    end
+end
+
+return Class(nil, nil, BowMagicBase) 
