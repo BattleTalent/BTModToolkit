@@ -1,0 +1,215 @@
+---
+description: 'Unified core patterns and best practices for Lua VR mod development, including structure, events, performance, error handling, and naming.'
+globs: ["**/*.lua", "**/*.txt"]
+alwaysApply: true
+---
+
+# Lua VR Mod Basics
+
+## Module Structure Template
+```lua
+local {ModName} = {
+    enabled = true,
+    initialized = false,
+    _config = {},
+    _handlers = {},
+    _resources = {},
+}
+
+function {ModName}:Awake()
+    self:InitializeHandlers()
+    self:LoadConfig()
+    self.initialized = true
+end
+
+return {ModName}
+```
+
+## Base Classes & Reference Scripts
+
+**Important: When generating code for specific mod types, always examine and extend the appropriate base classes from Common/CommonScene folders.**
+
+### Common Base Scripts (Assets/Build/Common/Script/)
+**Use these as base classes or reference patterns for your mods:**
+
+#### Spell/Magic Mods
+- **`SpellBaseScript.txt`** - Base class for all spell mods with networking, enchantment, and casting logic
+- **`FlySpellBaseScript.txt`** - Base for projectile-based spells
+- **`SpellThrowScript.txt`** - Base for throwable spell objects
+
+#### Weapon/Projectile Mods  
+- **`WeaponFlyObjBaseScript.txt`** - Base class for weapons that shoot projectiles
+- **`BulletScript.txt`** - Base class for simple bullets and projectiles
+- **`BulletWithBlowUpScript.txt`** - Base for explosive projectiles
+
+#### Tower/Turret Mods
+- **`TowerBaseScript.txt`** - Base class for tower/turret mods with transformation logic
+
+#### Character/Avatar Mods
+- **`AvatarSoundPlayerScript.txt`** - For avatar audio functionality
+- **`RestoreRoleAttrScript.txt`** - For character attribute management
+
+#### Utility Scripts
+- **`JumpForwardScript.txt`** - For movement-based interactions
+- **`ModWaveScript.txt`** - For wave-based game mechanics
+- **`NoCheatScript.txt`** - For anti-cheat functionality
+- **`ClothBoneToolScript.txt`** - For cloth physics and bone tools
+
+### CommonScene Base Scripts (Assets/Build/CommonScene/Script/)
+**Use these for scene-related functionality:**
+
+#### Scene Setup
+- **`SceneInitScript.txt`** - Base class for scene initialization (character spawn, HUD, pathfinding)
+- **`NetSceneInitScript.txt`** - Base for networked scene initialization
+
+#### Scene Objects
+- **`EnemyGenScript.txt`** - Base for enemy spawner objects
+- **`RespawnPointScript.txt`** - Base for player respawn points
+- **`WaveStatueScript.txt`** - Base for wave management objects
+- **`WeaponPendantScript.txt`** - Base for weapon display/interaction objects
+
+### Usage Guidelines
+
+**When creating new mods, inherit from or reference these base classes:**
+
+```lua
+-- Example: Extending SpellBase for a custom spell
+local MySpell = Class(require("Assets/Build/Common/Script/SpellBaseScript"), nil, {
+    -- Your custom properties
+    customDamage = 100,
+    customEffect = "MyEffect",
+})
+
+function MySpell:OnAwake()
+    -- Call parent OnAwake
+    self._super.OnAwake(self)
+    -- Your custom initialization
+    self:SetupCustomBehavior()
+end
+
+-- Example: Extending WeaponFlyObjBase for a custom gun
+local MyGun = Class(require("Assets/Build/Common/Script/WeaponFlyObjBaseScript"), nil, {
+    flyObjName = "MyCustomBullet",
+    shootVel = 50,
+    releaseBulletNumber = 3,
+})
+```
+
+**Best Practices:**
+1. **Always examine the base class** before creating new functionality
+2. **Override only necessary methods** - use parent implementations when possible
+3. **Call parent methods** using `self._super.MethodName(self)` when extending
+4. **Follow the established patterns** for networking, resource management, and event handling
+
+## Directory & Naming Standards
+```
+Assets/Build/{ModName}/
+├── Script/{Component}Script.txt
+├── Config/{ModName}_Info.asset
+├── Effect/{ModName}_Effect.prefab
+├── Audio/{ModName}_Action.wav
+├── ICon/{ModName}_icon.png
+```
+- Lua scripts: `{Component}Script.txt`
+- Config: `{ModName}_Info.asset`
+- Prefab: `{ModName}_{Variant}.prefab`
+- Audio: `{ModName}_{Action}.wav`
+- Icon: `{ModName}_icon.png`
+
+## Performance Patterns
+```lua
+function Module:Update()
+    if UE.Time.frameCount % 5 == 0 then
+        self:UpdateLowFrequency()
+    end
+end
+function Module:UpdateLowFrequency()
+    -- Heavy calculations here
+end
+function Module:CleanupResources()
+    for _, asset in pairs(self._cachedAssets or {}) do
+        if asset then UE.Object.Destroy(asset) end
+    end
+    self._cachedAssets = {}
+end
+```
+
+## Error Handling Patterns
+```lua
+function Module:SafeCall(apiCall, ...)
+    local success, result = pcall(apiCall, ...)
+    if not success then
+        UE.Debug.LogError("API call failed: " .. tostring(result))
+        return nil
+    end
+    return result
+end
+function Module:ValidateGameObject(obj, name)
+    if not obj or UE.Object.op_Equality(obj, nil) then
+        UE.Debug.LogWarning((name or "GameObject") .. " is null or destroyed")
+        return false
+    end
+    return true
+end
+```
+
+## VR Event Handler Patterns
+```lua
+function Module:InitializeHandlers()
+    self._grabHandler = function(grabInfo) self:OnGrab(grabInfo) end
+    self._releaseHandler = function(releaseInfo) self:OnRelease(releaseInfo) end
+    -- Register with C# layer if needed
+end
+function Module:OnGrab(grabInfo)
+    -- handle grab event
+end
+```
+
+## Core API Quick Reference
+```lua
+-- Unity Engine (UE)
+UE.Time.time, UE.Time.deltaTime, UE.Vector3.Lerp(a, b, t)
+UE.GameObject(name), UE.Object.Destroy(obj)
+UE.Physics.Raycast(origin, dir, dist)
+UE.Debug.Log(msg)
+
+-- CrossLink (CL)
+CL.ResourceMgr.Load(address), CL.ResourceMgr.Instantiate(address)
+CL.EffectMgr.Instance:PlayEffect(name, pos, rot)
+CL.Scheduler.Create(target, action)
+CL.FlyObject.CreateFlyObj(prefab, source, pos, dir)
+```
+
+## State Manager Example
+```lua
+local StateManager = {
+    currentState = "idle",
+    states = {},
+    _stateData = {},
+}
+function StateManager:ChangeState(newState, data)
+    if self.currentState == newState then return false end
+    self:ExitState(self.currentState)
+    self.currentState = newState
+    self._stateData = data or {}
+    self:EnterState(newState)
+    return true
+end
+```
+
+## Resource Cache Example
+```lua
+local ResourceCache = {
+    _cache = {},
+}
+function ResourceCache:GetResource(address, callback)
+    if self._cache[address] then
+        if callback then callback(self._cache[address]) end
+        return self._cache[address]
+    end
+    CL.ResourceMgr.LoadAsync(address, function(asset)
+        self._cache[address] = asset
+        if callback then callback(asset) end
+    end)
+end
+```

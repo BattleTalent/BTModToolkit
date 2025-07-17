@@ -1,0 +1,384 @@
+---
+description: 'Unified rules for asset loading, addressable paths, config structure, and directory/naming standards for Battle Talent VR mods.'
+globs: ["Assets/Build/**/*", "**/*.asset"]
+alwaysApply: false
+---
+
+# Battle Talent Mod Asset & Structure Guide
+
+## Addressable Path Conventions
+```lua
+-- Use these prefixes for addressable loading:
+"Weapon/MagicSword"      -- Weapon prefab
+"LuaScript/WeaponBase"   -- Lua script
+"ICon/weapon_sword"      -- Icon texture
+"Effect/explosion"       -- Effect prefab
+"Audio/Sound/bow_release"-- Audio clip
+"FlyObj/magic_arrow"     -- Projectile prefab
+"Role/CustomWarrior"     -- Character role
+"Avatar/PlayerModel"     -- Player avatar
+"Scene/CustomArena"      -- Scene prefab
+"SceneObj/MyCube"        -- Scene object prefab
+"Spell/FireBall"         -- Spell/Magic prefab
+"Item/HealthPotion"      -- Item/Potion prefab
+"Tower/Turret"           -- Tower/Turret prefab
+"Equipment/Scabbard"     -- Accessory/Equipment prefab
+"Skin/CharacterSkin"     -- Character skin model
+"BrokenArmor/Helmet"     -- Broken armor pieces
+"ArmorProfile/Profile"   -- Armor configuration profile
+"Audio/Background/epic_music" -- Background song
+```
+
+## Asset Loading Patterns
+```lua
+-- Instantiate prefabs
+local weapon = CL.ResourceMgr.Instantiate("Weapon/MagicBow")
+local projectile = CL.ResourceMgr.Instantiate("WMD_FireArrow")
+
+-- Load assets
+local audioClip = CL.ResourceMgr.Load("Audio/BowStringRelease")
+local texture = CL.ResourceMgr.Load("ICon/weapon_icon")
+
+-- Async loading for heavy assets
+CL.ResourceMgr.LoadAsync("WMD_FireArrow", function(asset)
+    self._arrowPrefab = asset
+end)
+
+-- Play effects
+CL.EffectMgr.Instance:PlayEffect("explosion")
+```
+
+## Directory & Naming Standards
+```
+Assets/Build/{ModName}/
+├── Script/{Component}Script.txt        # Lua behavior scripts
+├── Config/{ModName}_Info.asset         # Mod configuration
+├── Weapon/{ModName}.prefab             # Weapon prefabs
+├── Role/{ModName}.prefab               # Character role prefabs
+├── Avatar/{ModName}.prefab             # Player avatar prefabs
+├── Scene/{ModName}.prefab              # Scene prefabs
+├── SceneObj/{ModName}.prefab           # Scene object prefabs
+├── Spell/{ModName}.prefab              # Spell/Magic prefabs
+├── Skin/{ModName}.fbx                  # Character skin model
+├── BrokenArmor/{ArmorPiece}.prefab     # Broken armor pieces
+├── ArmorProfile/{ModName}.asset        # Armor configuration profile
+├── Effect/{ModName}_Effect.prefab      # Visual effects
+├── Audio/{ModName}_Action.wav          # Sound effects
+├── Audio/{ModName}_Background.ogg      # Background songs
+├── ICon/{ModName}_icon.png             # UI icons
+└── FlyObj/{ModName}_Projectile.prefab  # Projectiles
+```
+
+**Naming Conventions:**
+- Lua scripts: `{Component}Script.txt`
+- Config assets: `{ModName}_Info.asset`
+- Prefabs: `{ModName}_{Variant}.prefab`
+- Audio files: `{ModName}_{Action}.wav`
+- Background songs: `{ModName}_Background.ogg`
+- Icons: `{ModName}_icon.png`
+- Effects: `{ModName}_{Effect}.prefab`
+
+## Config Asset Structure Examples
+
+**Important: Examine the reference config assets below to understand the correct structure for each mod type.**
+
+### Weapon Mod Config (Swords, Bows, Guns, etc.)
+**Reference Examples:**
+- `Assets/Build/SwordLightBlade/Config/SwordLightBlade_Info.asset`
+- `Assets/Build/Bow_Magic/Config/Bow_Magic_Info.asset`
+- `Assets/Build/Gun_AK47/Config/Gun_AK47_Info.asset`
+- `Assets/Build/Wand_FireBall/Config/Wand_FireBall_Info.asset`
+- `Assets/Build/Dagger_Explode/Config/Dagger_Explode_Info.asset`
+- `Assets/Build/Spear_Thunder/Config/Spear_Thunder_Info.asset`
+
+### Role/Character Config
+**Reference Example:** `Assets/Build/SimpleRole/Config/SimpleRole_Info.asset`
+
+### Avatar Config
+**Reference Example:** `Assets/Build/SimpleAvatar/Config/SimpleAvatar_Info.asset`
+**Large Avatar Example:** `Assets/Build/SimpleAvatar_Huge/Config/SimpleAvatar_Huge_Info.asset`
+
+### Character Skin Config
+**Reference Example:** `Assets/Build/SimpleCharacterSkin/Config/SimpleCharacterSkin_Info.asset`
+
+### Armor Profile Config
+**Reference Example:** `Assets/Build/SimpleRole/ArmorProfile/SimpleArmorProfile.asset`
+
+### Hand Pose Config
+**Reference Example:** `Assets/Build/SimpleHandPose/Config/SimpleHandPose_Info.asset`
+**Bow with Hand Pose:** `Assets/Build/Bow_SimpleWithHandPose/Config/Bow_SimpleWithHandPose_Info.asset`
+
+### Scene Config
+**Reference Examples:**
+- `Assets/Build/SimpleScene/Config/SimpleScene.asset`
+- `Assets/Build/SimpleScene_Net/Config/SimpleScene_Net.asset`
+- `Assets/Build/SceneArena/Config/SceneArena.asset`
+- `Assets/Build/SpiderTagScene/Config/SpiderTagScene.asset`
+- `Assets/Build/SurvivorMode/Config/SurvivorScene.asset`
+
+### Scene Object Config
+**Reference Example:** `Assets/Build/SimpleSceneObj_Cube/Config/SimpleSceneObj_Cube.asset`
+
+### Background Song Config
+**Reference Example:** `Assets/Build/SimpleBackgroundSong/Config/SimpleBackgroundSong.asset`
+
+### Spell/Magic Config
+**Reference Examples:**
+- `Assets/Build/Spell_FireBall/Config/Spell_FireBall_Info.asset`
+- `Assets/Build/Spell_Thunder/Config/Spell_Thunder_Info.asset`
+- `Assets/Build/Spell_Telekinetic/Config/Spell_Telekinetic_Info.asset`
+
+### Item/Potion Config
+**Reference Example:** `Assets/Build/Potion_HP/Config/Potion_HP_Info.asset`
+
+### Tower/Turret Config
+**Reference Example:** `Assets/Build/Tower_Turret/Config/Tower_Turret_Info.asset`
+
+### Accessory/Equipment Config
+**Reference Examples:**
+- `Assets/Build/Scabbard/Config/Scabbard_Info.asset`
+- `Assets/Build/Scabbard_Sword/Config/Scabbard_Sword_Info.asset`
+
+### Tool Config
+**Reference Example:** `Assets/Build/HandPoseTool/Config/HandPoseTool_Info.asset`
+
+## Network Prefab Registration
+```lua
+-- All interactive objects that need multiplayer sync
+networkPrefabRegister = {
+    "WMD_MagicBow",                   -- Weapon
+    "WMD_FireBall",                   -- Projectile
+    "WMD_MagicArrowTrail",           -- Trail effect
+    "WMD_CustomRole",                -- Character role
+}
+```
+
+## Mod Development Requirements
+- Config assets must be of type `ItemInfoConfig` (Unity ScriptableObject)
+- Config assets are automatically handled by the mod system
+- No manual loading code needed for config assets
+- All interactive objects require proper network setup for multiplayer
+
+## Addressable Asset Groups Setup
+
+**Critical: After generating mod resources, you MUST update the Addressable Asset Groups to register your assets for proper loading.**
+
+### Required Steps for AI Tools:
+1. **Examine existing entries** in `Assets/AddressableAssetsData/AssetGroups/Default Local Group.asset`
+2. **Add new entries** following the established patterns below
+3. **Update the YAML structure** to include all generated mod assets
+4. **Maintain consistency** with existing naming conventions
+
+### Addressable Registration Patterns
+**Reference the existing entries in `Default Local Group.asset` and follow these patterns:**
+
+#### Weapon Assets
+```yaml
+# Main weapon prefab
+- m_Address: Weapon/WMD_YourWeaponName
+  # References: Assets/Build/YourMod/Weapon/YourWeapon.prefab
+
+# Weapon icon
+- m_Address: ICon/WMD_YourWeaponName  
+  # References: Assets/Build/YourMod/ICon/YourWeapon_icon.png
+
+# Weapon effects (if any)
+- m_Address: Effect/WMD_YourEffectName
+  # References: Assets/Build/YourMod/Effect/YourEffect.prefab
+
+# Weapon projectiles (if any)
+- m_Address: FlyObj/WMD_YourProjectileName
+  # References: Assets/Build/YourMod/FlyObj/YourProjectile.prefab
+```
+
+#### Lua Scripts
+```yaml
+# All Lua scripts must be registered
+- m_Address: LuaScript/WMD_YourScriptName
+  # References: Assets/Build/YourMod/Script/YourScript.txt
+```
+
+#### Role/Avatar Assets
+```yaml
+# Character roles
+- m_Address: Role/WMD_YourRoleName
+  # References: Assets/Build/YourMod/Role/YourRole.prefab
+
+# Player avatars  
+- m_Address: Avatar/WMD_YourAvatarName
+  # References: Assets/Build/YourMod/Avatar/YourAvatar.prefab
+```
+
+#### Scene Assets
+```yaml
+# Custom scenes
+- m_Address: Scene/WMD_YourSceneName
+  # References: Assets/Build/YourMod/Scene/YourScene.prefab
+
+# Scene objects
+- m_Address: SceneObj/WMD_YourObjectName
+  # References: Assets/Build/YourMod/SceneObj/YourObject.prefab
+```
+
+#### Spell/Magic Assets
+```yaml
+# Spell prefabs
+- m_Address: Spell/WMD_YourSpellName
+  # References: Assets/Build/YourMod/Spell/YourSpell.prefab
+```
+
+#### Other Assets
+```yaml
+# Items/Potions
+- m_Address: Item/WMD_YourItemName
+  # References: Assets/Build/YourMod/Item/YourItem.prefab
+
+# Towers/Turrets
+- m_Address: Tower/WMD_YourTowerName
+  # References: Assets/Build/YourMod/Tower/YourTower.prefab
+
+# Equipment/Accessories
+- m_Address: Equipment/WMD_YourEquipmentName
+  # References: Assets/Build/YourMod/Equipment/YourEquipment.prefab
+```
+
+### Example Registration Process:
+1. **Generate your mod assets** (prefabs, scripts, configs)
+2. **Open Default Local Group.asset** in Unity Inspector
+3. **Add each asset** following the naming pattern: `Category/WMD_YourAssetName`
+4. **Verify addressable paths** match your Lua loading code
+5. **Test loading** with `CL.ResourceMgr.Load("Category/WMD_YourAssetName")`
+
+### Important Notes:
+- **All mod assets** must be registered in Addressables to be loaded at runtime
+- **Use "WMD_" prefix** for all addressable names to match existing conventions
+- **Group related assets** (weapon + icon + effects + projectiles) together in the file
+- **Maintain alphabetical order** within each category when possible
+- **Config assets** (.asset files) are automatically handled and don't need Addressable registration
+
+## Prefab Structure Standards
+
+**Important: Always examine the reference prefabs listed below before creating new ones. Let AI tools read and analyze these examples to understand the correct structure.**
+
+### Weapon Prefabs
+**Template References:**
+- `Assets/Toolkit/TemplateWizard/Dummy/Sword.prefab`
+- `Assets/Toolkit/TemplateWizard/Dummy/Axe.prefab`
+- `Assets/Toolkit/TemplateWizard/Dummy/Gun.prefab`
+- `Assets/Toolkit/TemplateWizard/Dummy/Shotgun.prefab`
+
+**Weapon Example Implementations:**
+- **Swords:** `Assets/Build/SwordLightBlade/Weapon/SwordLightBlade.prefab`, `Assets/Build/Sword_Ice/Weapon/Sword_Ice.prefab`
+- **Bows:** `Assets/Build/Bow_Magic/Weapon/Bow_Magic.prefab`, `Assets/Build/Bow_Simple/Weapon/Bow_Simple.prefab`
+- **Guns:** `Assets/Build/Gun_AK47/Weapon/Gun_AK47.prefab`, `Assets/Build/Gun_UMP/Weapon/Gun_UMP.prefab`
+- **Wands:** `Assets/Build/Wand_FireBall/Weapon/Wand_FireBall.prefab`, `Assets/Build/Wand_Ice/Weapon/Wand_Ice.prefab`
+- **Daggers:** `Assets/Build/Dagger_Explode/Weapon/Dagger_Explode.prefab`, `Assets/Build/Dagger_Mind/Weapon/Dagger_Mind.prefab`
+- **Spears:** `Assets/Build/Spear_Thunder/Weapon/Spear_Thunder.prefab`, `Assets/Build/Spear_Sprint/Weapon/Spear_Sprint.prefab`
+- **Other:** `Assets/Build/Crossbow/Weapon/Crossbow.prefab`, `Assets/Build/Scythe/Weapon/Scythe.prefab`
+
+### Projectile/FlyObject Prefabs
+**Template Reference:** `Assets/Toolkit/TemplateWizard/Dummy/Bullet.prefab`
+**Example Implementations:**
+- `Assets/Build/Bow_Magic/FlyObj/Bow_Magic_Arrow.prefab`
+- `Assets/Build/FlyFlame/FlyObj/FlyFlame.prefab`
+- `Assets/Build/Gun_AK47/FlyObj/Gun_AK47_Bullet.prefab`
+
+### Effect Prefabs
+**Reference Examples:**
+- `Assets/Resources/Effects/EnergySpark.prefab`
+- `Assets/Build/Spell_FireBall/Effect/Spell_FireBall_Effect.prefab`
+- `Assets/Build/Spell_Thunder/Effect/Spell_Thunder_Effect.prefab`
+
+### Role/Character Prefabs
+**Reference Example:** `Assets/Build/SimpleRole/Role/SimpleRole.prefab`
+**Template Reference:** `Assets/Toolkit/TemplateWizard/Dummy/Role.prefab`
+
+### Avatar Prefabs
+**Reference Examples:**
+- `Assets/Build/SimpleAvatar/Avatar/SimpleAvatar.prefab`
+- `Assets/Build/SimpleAvatar_Huge/Avatar/SimpleAvatar_Huge.prefab`
+**Template Reference:** `Assets/Toolkit/TemplateWizard/Dummy/Avatar.prefab`
+
+### Character Skin Prefabs
+**Reference Example:** `Assets/Build/SimpleCharacterSkin/Skin/SimpleCharacterSkin.fbx`
+
+### Broken Armor Prefabs
+**Reference Example:** `Assets/Build/SimpleRole/BrokenArmor/Helmet.prefab`
+
+### Armor Profile Assets
+**Reference Example:** `Assets/Build/SimpleRole/ArmorProfile/SimpleArmorProfile.asset`
+
+### Scene Prefabs
+**Reference Examples:**
+- `Assets/Build/SimpleScene/Scene/SimpleScene.prefab`
+- `Assets/Build/SceneArena/Scene/SceneArena.prefab`
+- `Assets/Build/SpiderTagScene/Scene/SpiderTagScene.prefab`
+- `Assets/Build/SurvivorMode/Scene/SurvivorScene.prefab`
+
+### Scene Object Prefabs
+**Reference Example:** `Assets/Build/SimpleSceneObj_Cube/SceneObj/SimpleSceneObj_Cube.prefab`
+
+### Spell/Magic Prefabs
+**Reference Examples:**
+- `Assets/Build/Spell_FireBall/Spell/Spell_FireBall.prefab`
+- `Assets/Build/Spell_Thunder/Spell/Spell_Thunder.prefab`
+- `Assets/Build/Spell_Telekinetic/Spell/Spell_Telekinetic.prefab`
+
+### Item/Potion Prefabs
+**Reference Example:** `Assets/Build/Potion_HP/Item/Potion_HP.prefab`
+
+### Tower/Turret Prefabs
+**Reference Example:** `Assets/Build/Tower_Turret/Tower/Tower_Turret.prefab`
+
+### Accessory/Equipment Prefabs
+**Reference Examples:**
+- `Assets/Build/Scabbard/Equipment/Scabbard.prefab`
+- `Assets/Build/Scabbard_Sword/Equipment/Scabbard_Sword.prefab`
+
+### Additional Prefab Examples
+**Utility Prefabs:**
+- `Assets/Toolkit/SpellScrystal/SpellCrystal.prefab`
+- `Assets/Toolkit/Prefabs/WeaponPendant.prefab`
+- `Assets/Toolkit/Prefabs/Trail.prefab`
+- `Assets/Toolkit/Prefabs/SkeletonStatue.prefab`
+
+## Component Requirements by Prefab Type
+
+### Essential Components for All Interactive Objects:
+- `Transform` (required for all GameObjects)
+- `InteractBase` or `InteractTriggerX` (for interaction)
+- `LuaBehaviour` (for custom logic)
+- `NetworkIdentity` (for multiplayer support)
+
+### Weapon-Specific Components:
+- `Rigidbody` (physics simulation)
+- `WeaponData` (weapon statistics)
+- `AudioSource` (impact/swing sounds)
+
+### Network Multiplayer Components:
+- `NetworkInteractBase` (network synchronization)
+- `NetworkTransformFix` (position sync)
+- `NetworkRigidbodySyncBase` (physics sync)
+- `NetworkIBStateX` (state synchronization)
+
+### Projectile-Specific Components:
+- `InteractTriggerX` (advanced collision detection)
+- `FlyObjectX` (projectile behavior and physics)
+- `TrailRenderer` (visual flight trail)
+
+### Character-Specific Components:
+- `SkinnedMeshRenderer` (deformable character mesh)
+- `Animator` (animation state machine)
+- `RagdollBoneInfo` (physics death effects)
+- `CharacterMotion` (movement controller)
+- `InteractCharacter` (character interaction system)
+
+## Best Practices
+
+1. **Always examine reference prefabs** before creating new ones
+2. **Follow Unity Humanoid standards** for character bone naming
+3. **Test multiplayer compatibility** with NetworkIdentity components
+4. **Optimize performance** by using appropriate LOD levels
+5. **Maintain consistent naming** across all mod assets
+6. **Document custom Lua scripts** with clear comments
+7. **Test thoroughly** in both single-player and multiplayer modes
