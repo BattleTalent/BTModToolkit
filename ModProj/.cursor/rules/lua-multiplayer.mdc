@@ -1,320 +1,108 @@
 ---
-title: "VR Multiplayer Patterns for Lua"
-description: "Essential multiplayer concepts for Lua VR mod development"
+title: "Multiplayer Patterns for Lua Mods"
+description: "Network synchronization patterns for Lua VR mod code generation"
 type: "patterns"
-globs: ["**/*Network*.txt", "**/*Multiplayer*.txt"]
+globs: ["**/*.lua", "**/*.txt"]
 alwaysApply: false
-tags: ["multiplayer", "networking", "vr", "lua"]
+tags: ["multiplayer", "network", "lua"]
 ---
 
-# VR Multiplayer Patterns for Lua
+# Multiplayer Patterns for Lua Mods
 
-## Core Concepts
-
-### Network Authority
-- **Server Authority**: Game state managed by host
-- **Client Prediction**: Immediate local response for VR comfort
-- **Object Ownership**: Which player controls specific objects
-
-## Network Prefab Registration
-
-### Registration Rules
+## RPC Patterns
 ```lua
--- All FlyObjects created via CL.FlyObject.CreateFlyObj() must be registered
--- Example for weapon projectiles:
-local projectilePrefabs = {
-    "WMD_FireBall",           -- Fire projectile
-    "WMD_IceShard",           -- Ice projectile  
-    "WMD_LightningBolt",      -- Lightning projectile
-    "WMD_MagicArrowTrail"     -- Trail effects
+-- Basic RPC
+RPCTarget = UE.NetworkBehaviour.RPCTarget
+function self:CastSpell(power)
+    self.netObj:RPC("DoSpell", RPCTarget.All, power)
+end
+
+function self:DoSpell(power)
+    -- Execute spell on all clients
+    local effect = CL.EffectMgr.Instance:PlayEffect("magic_explosion")
+end
+
+-- Server only RPC
+function self:DamageTarget(damage)
+    if UE.NetworkManager.Singleton.IsServer then
+        self.netObj:RPC("TakeDamage", RPCTarget.All, damage)
+    end
+end
+```
+
+## Network Variables
+```lua
+local NetworkVariable = UE.Unity.Netcode.NetworkVariable
+local NetworkVariableWritePermission = UE.Unity.Netcode.NetworkVariableWritePermission
+
+-- Setup in Init()
+self.netHealth = NetworkVariable.new(100, NetworkVariableWritePermission.Server)
+self.netPosition = NetworkVariable.new(UE.Vector3.zero, NetworkVariableWritePermission.Owner)
+
+-- Read values
+local currentHealth = self.netHealth.Value
+local pos = self.netPosition.Value
+
+-- Write values (only if authorized)
+if UE.NetworkManager.Singleton.IsServer then
+    self.netHealth.Value = newHealth
+end
+```
+
+## FlyObject Network Registration
+```lua
+-- In Config asset, register all networked objects
+networkPrefabRegister = {
+    "WMD_MagicArrow",          -- Projectiles
+    "WMD_FireBall",            -- Spells
+    "WMD_Shield",              -- Defensive objects
 }
 
--- Network prefab naming convention: WMD_{ItemName}
-```
-
-### Multiplayer-Specific Assets
-```lua
--- Network versions often have "_Network" suffix
-"WMD_Sword_Slash_Network"     -- Network-enabled sword
-"WMD_FlySlash_Network"        -- Network projectile
-"WMD_Bow_Simple_Network"      -- Network bow
-```
-
-### Lua Network Event Patterns
-
-### Player Events
-```lua
-function Module:RegisterNetworkEvents()
-    if CL.Network.IsConnected() then
-        CL.Network.OnPlayerJoined:Add(function(playerId, playerData)
-            self:OnPlayerJoined(playerId, playerData)
-        end)
-        
-        CL.Network.OnPlayerLeft:Add(function(playerId)
-            self:OnPlayerLeft(playerId)
-        end)
-        
-        CL.Network.OnDataReceived:Add(function(senderId, dataType, data)
-            self:OnNetworkData(senderId, dataType, data)
-        end)
-    end
+-- Create networked FlyObject
+function self:CreateProjectile()
+    local flyObj = CL.FlyObject.CreateFlyObj("WMD_MagicArrow")
+    -- flyObj automatically has network sync if registered
 end
 ```
 
-### Data Synchronization
+## Ownership Patterns
 ```lua
--- Send data to all players
-function Module:SendToAll(dataType, data)
-    if CL.Network.IsHost() then
-        CL.Network.SendToAllClients(dataType, data)
-    else
-        CL.Network.SendToHost(dataType, data)
-    end
+-- Check ownership before modifying
+if self.netObj.IsOwner then
+    self.transform.position = newPosition
+    self.netPosition.Value = newPosition
 end
 
--- Send to specific player
-function Module:SendToPlayer(playerId, dataType, data)
-    CL.Network.SendToPlayer(playerId, dataType, data)
+-- Check server authority
+if UE.NetworkManager.Singleton.IsServer then
+    self.netHealth.Value = self.netHealth.Value - damage
 end
 
--- Handle incoming network data
-function Module:OnNetworkData(senderId, dataType, data)
-    if dataType == "WeaponFired" then
-        self:HandleWeaponFired(senderId, data)
-    elseif dataType == "PlayerAction" then
-        self:HandlePlayerAction(senderId, data)
-    end
-end
-```
-
-## VR Player Synchronization
-
-### Hand and Head Tracking
-```lua
-function Module:SyncVRPlayerState()
-    if not CL.Network.IsConnected() then return end
+-- Client-side prediction with server validation
+function self:MoveWeapon(targetPos)
+    -- Immediate client update
+    self.transform.position = targetPos
     
-    local playerState = {
-        headPos = CL.VR.GetHeadPosition(),
-        headRot = CL.VR.GetHeadRotation(),
-        leftHandPos = CL.VR.GetHandPosition("Left"),
-        leftHandRot = CL.VR.GetHandRotation("Left"),
-        rightHandPos = CL.VR.GetHandPosition("Right"),
-        rightHandRot = CL.VR.GetHandRotation("Right"),
-        timestamp = CL.GetTime()
-    }
-    
-    self:SendToAll("VRPlayerState", playerState)
-end
-
-function Module:ApplyRemoteVRState(playerId, state)
-    local player = self:GetPlayer(playerId)
-    if player then
-        player:SetHeadTransform(state.headPos, state.headRot)
-        player:SetHandTransform("Left", state.leftHandPos, state.leftHandRot)
-        player:SetHandTransform("Right", state.rightHandPos, state.rightHandRot)
+    -- Request server validation
+    if self.netObj.IsOwner then
+        self.netObj:RPC("ValidateMove", RPCTarget.Server, targetPos)
     end
 end
 ```
 
-### Object Interaction Sync
+## Event Sync Pattern
 ```lua
-function Module:OnObjectGrabbed(objectId, handType)
-    if CL.Network.HasObjectAuthority(objectId) then
-        local grabData = {
-            objectId = objectId,
-            handType = handType,
-            grabTime = UE.Time.time
-        }
-        self:SendToAll("ObjectGrabbed", grabData)
+function self:TriggerNetworkEvent(eventName, data)
+    if self.netObj.IsOwner then
+        self.netObj:RPC("OnNetworkEvent", RPCTarget.All, eventName, data)
     end
 end
 
-function Module:OnObjectReleased(objectId, velocity, angularVelocity)
-    if CL.Network.HasObjectAuthority(objectId) then
-        local releaseData = {
-            objectId = objectId,
-            velocity = velocity,
-            angularVelocity = angularVelocity,
-            releaseTime = UE.Time.time
-        }
-        self:SendToAll("ObjectReleased", releaseData)
+function self:OnNetworkEvent(eventName, data)
+    if eventName == "spell_cast" then
+        self:PlaySpellEffect(data.effectName, data.position)
+    elseif eventName == "weapon_swing" then
+        self:PlaySwingAnimation(data.direction)
     end
 end
 ```
-
-## State Synchronization
-
-### Synchronized Properties
-```lua
-local NetworkedWeapon = {
-    -- Network-synced state
-    ammo = 30,
-    isReloading = false,
-    fireMode = "Single",
-    
-    -- Local-only state (prefix with _)
-    _localEffects = {},
-    _uiElements = {},
-}
-
-function NetworkedWeapon:SetAmmo(newAmmo)
-    if CL.Network.HasAuthority(self.networkId) then
-        self.ammo = newAmmo
-        self:SendPropertyUpdate("ammo", newAmmo)
-    end
-end
-
-function NetworkedWeapon:OnPropertyChanged(property, value)
-    if property == "ammo" then
-        self:UpdateAmmoUI(value)
-    elseif property == "isReloading" then
-        self:UpdateReloadState(value)
-    end
-end
-```
-
-### Event Synchronization
-```lua
-function Module:TriggerNetworkEvent(eventType, eventData)
-    -- Handle locally first (for responsiveness)
-    self:HandleEvent(eventType, eventData)
-    
-    -- Then sync to network
-    if CL.Network.IsConnected() then
-        local networkData = {
-            eventType = eventType,
-            data = eventData,
-            timestamp = UE.Time.time,
-            playerId = CL.Network.GetLocalPlayerId()
-        }
-        self:SendToAll("SyncEvent", networkData)
-    end
-end
-```
-
-## Performance Optimization
-
-### Update Rate Management
-```lua
-function Module:Update()
-    -- High frequency data (30Hz)
-    if UE.Time.frameCount % 2 == 0 then
-        self:SyncVRTracking()
-    end
-    
-    -- Medium frequency data (6Hz)
-    if UE.Time.frameCount % 10 == 0 then
-        self:SyncGameState()
-    end
-    
-    -- Low frequency data (1Hz)
-    if UE.Time.frameCount % 60 == 0 then
-        self:SyncPlayerStats()
-    end
-end
-```
-
-### Data Compression
-```lua
-function Module:CompressVRData(data)
-    -- Reduce precision for network transmission
-    return {
-        pos = self:Vector3ToBytes(data.position, 0.01), -- 1cm precision
-        rot = self:QuaternionToBytes(data.rotation, 0.001), -- Lower rotation precision
-    }
-end
-```
-
-## Network State Management
-
-### Connection Handling
-```lua
-function Module:ValidateNetworkState()
-    if not CL.Network.IsConnected() then
-        self:SwitchToOfflineMode()
-        return false
-    end
-    
-    if CL.Network.GetPing() > self.maxAllowedPing then
-        self:ShowHighLatencyWarning()
-    end
-    
-    return true
-end
-
-function Module:HandleConnectionLoss()
-    self:LogWarning("Network connection lost")
-    self:SaveCurrentState()
-    self:SwitchToOfflineMode()
-    self:ShowReconnectUI()
-end
-```
-
-### Authority Management
-```lua
-function Module:RequestObjectAuthority(objectId)
-    if CL.Network.IsConnected() then
-        CL.Network.RequestAuthority(objectId, function(success)
-            if success then
-                self:OnAuthorityGranted(objectId)
-            else
-                self:OnAuthorityDenied(objectId)
-            end
-        end)
-    end
-end
-
-function Module:TransferAuthority(objectId, targetPlayerId)
-    if CL.Network.HasObjectAuthority(objectId) then
-        CL.Network.TransferAuthority(objectId, targetPlayerId)
-    end
-end
-```
-
-## Common Multiplayer Patterns
-
-### Weapon Synchronization
-```lua
-local MultiplayerWeapon = {
-    networkId = nil,
-    ownerId = nil,
-}
-
-function MultiplayerWeapon:Fire()
-    if CL.Network.HasAuthority(self.networkId) then
-        -- Authoritative fire
-        self:PerformFire()
-        self:SendToAll("WeaponFired", {
-            weaponId = self.networkId,
-            fireTime = UE.Time.time
-        })
-    end
-end
-
-function MultiplayerWeapon:OnWeaponFired(data)
-    -- Play effects for all players
-    self:PlayFireEffects()
-    self:PlayFireSound()
-end
-```
-
-### Shared Object Interaction
-```lua
-function Module:OnSharedObjectInteraction(objectId, interactionType, data)
-    if CL.Network.HasObjectAuthority(objectId) then
-        -- Process interaction authoritatively
-        self:ProcessInteraction(objectId, interactionType, data)
-        
-        -- Notify other players
-        self:SendToAll("ObjectInteraction", {
-            objectId = objectId,
-            type = interactionType,
-            data = data,
-            timestamp = UE.Time.time
-        })
-    end
-end
-```
-
-This provides essential multiplayer patterns for Lua VR mod development while leveraging the underlying networking infrastructure.

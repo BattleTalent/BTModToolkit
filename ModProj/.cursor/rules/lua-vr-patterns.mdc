@@ -1,6 +1,6 @@
 ---
 title: "Lua VR Mod Development Patterns"
-description: "Essential Lua patterns for BattleTalent VR mod development using C# API"
+description: "Essential Lua patterns for VR mod code generation"
 type: "patterns"
 globs: ["Assets/Build/**/Script/**/*.txt", "**/*.lua"]
 alwaysApply: true
@@ -10,21 +10,10 @@ tags: ["lua", "vr", "api", "patterns"]
 # Lua VR Mod Development Patterns
 
 ## Core Module Structure
-
-### Standard Module Template
 ```lua
--- Module header
--- ModName: {ModName}
--- Author: {Author}
--- Version: {Version}
--- Description: {Description}
-
 local {ModName} = {
-    -- Public API
     enabled = true,
     initialized = false,
-    
-    -- Configuration
     _config = {},
     _handlers = {},
     _resources = {},
@@ -39,9 +28,7 @@ end
 return {ModName}
 ```
 
-## VR Interaction Patterns
-
-### Event Handler Setup
+## VR Event Handlers
 ```lua
 function Module:InitializeHandlers()
     -- VR grab/release events
@@ -61,10 +48,7 @@ function Module:InitializeHandlers()
         end
     end
 end
-```
 
-### Hand Tracking and Gestures
-```lua
 function Module:OnGrab(grabInfo)
     local handType = grabInfo.handType -- "Left" or "Right"
     local grabStrength = grabInfo.strength
@@ -75,205 +59,98 @@ function Module:OnGrab(grabInfo)
         self:OnPartialGrab(handType, grabStrength)
     end
 end
-
-function Module:OnHandTracking(handData)
-    local position = handData.position
-    local rotation = handData.rotation
-    local fingerPositions = handData.fingers
-    
-    self:UpdateHandInteraction(position, rotation, fingerPositions)
-end
 ```
 
-## API Integration
+## Essential APIs
 
 ### Unity Engine APIs (UE namespace)
 ```lua
 -- Time functions
-function Module:GetCurrentTime()
-    return UE.Time.time
-end
+UE.Time.time
+UE.Time.deltaTime
+UE.Time.frameCount
 
-function Module:GetUnscaledTime()
-    return UE.Time.unscaledTime
-end
-
-function Module:GetDeltaTime()
-    return UE.Time.deltaTime
-end
-
--- Math operations
-function Module:LerpVector3(from, to, t)
-    return UE.Vector3.Lerp(from, to, t)
-end
-
-function Module:DotProduct(a, b)
-    return UE.Vector3.Dot(a, b)
-end
-
-function Module:LookRotation(forward, up)
-    return UE.Quaternion.LookRotation(forward, up)
-end
+-- Math operations  
+UE.Vector3.Lerp(from, to, t)
+UE.Vector3.Dot(a, b)
+UE.Quaternion.LookRotation(forward, up)
 
 -- GameObject operations
-function Module:CreateGameObject(name)
-    return UE.GameObject(name)
-end
-
-function Module:DestroyObject(obj, delay)
-    UE.Object.Destroy(obj, delay)
-end
+UE.GameObject(name)
+UE.Object.Destroy(obj, delay)
 
 -- Physics
-function Module:Raycast(origin, direction, distance)
-    return UE.Physics.Raycast(origin, direction, distance)
+UE.Physics.Raycast(origin, direction, distance)
+
+-- Debug logging
+UE.Debug.Log(message)
+UE.Debug.LogError(message)
+```
+
+### CrossLink Core APIs (CL namespace)
+```lua
+-- Resource Management (from Readme)
+CL.ResourceMgr.Load(address)
+CL.ResourceMgr.LoadAsync(address, callback)  
+CL.ResourceMgr.Instantiate(address)
+CL.ResourceMgr.Instantiate(address, pos, rot)
+
+-- Effect Management
+CL.EffectMgr.Instance:PlayEffect(name, pos, rot)
+CL.EffectMgr.Instance:GiveBack(effectObj)
+
+-- Audio Management  
+CL.AudioMgr.Instance:GiveBackAndLerpToZero(soundInfo)
+
+-- Scheduler System
+CL.Scheduler.Create(target, action)
+CL.Scheduler.RemoveSchedule(actionId)
+CL.Scheduler.UpdateChannel.FixedUpdate
+
+-- FlyObject Creation
+CL.FlyObject.CreateFlyObj(prefab, source, pos, dir)
+```
+
+### Event System (from Readme)
+```lua
+-- LuaFunction → Actual Event mapping
+-- AwakeInit → Awake
+-- StartInit → Start
+
+function Module:OnAwake()     -- Called by AwakeInit
+    self:Initialize()
+end
+
+function Module:OnStart()     -- Called by StartInit  
+    self:BeginLogic()
 end
 ```
 
-### CrossLink Game APIs (CL namespace)
-
-### Asset and Resource Management
+## VR Component Setup (from Readme)
 ```lua
--- Basic instantiation (detailed patterns in lua-asset-management.mdc)
-function Module:InstantiateAsset(address, position, rotation)
-    return CL.ResourceMgr.Instantiate(address, position, rotation)
-end
-```
-
-### Audio System
-```lua
-function Module:PlaySound(soundAddress, volume)
-    local audioClip = CL.ResourceMgr.Load(soundAddress)
-    if audioClip and self.audioSource then
-        self.audioSource:PlayOneShot(audioClip, volume or 1.0)
-    end
-end
-```
-
-### Effect System
-```lua
-function Module:CreateEffect(effectAddress, position, rotation)
-    local effect = CL.ResourceMgr.Instantiate(effectAddress, position, rotation)
-    return effect
-end
-```
-
-### Physics Queries
-```lua
-function Module:Raycast(origin, direction, distance)
-    return UE.Physics.Raycast(origin, direction, distance)
-end
-
-function Module:OnCollision(collisionInfo)
-    local velocity = collisionInfo.relativeVelocity
-    local force = velocity.magnitude
+function Module:SetupComponents()
+    -- Essential VR Components
+    self.weapon = self.host.interact:GetComponent("InteractWeapon")
+    self.trigger = self.host.interact:GetComponent("InteractTriggerX")
+    self.stabObj = self.host.interact:GetStabObject()
+    self.hitInfo = self.host.interact:GetComponent("RagdollHitInfoObj")
+    self.attachPoint = self.host.interact:GetComponent("AttachPoint")
     
-    if force > self._config.damageThreshold then
-        self:DealDamage(collisionInfo.other, force)
+    -- FlyObject setup for projectiles
+    self.flyObj = self.host:GetComponent("FlyObjX")
+    if self.flyObj then
+        self.flyObj:OnHit(function(hitInfo) self:OnProjectileHit(hitInfo) end)
     end
 end
 ```
 
-## Configuration Management
+## Common Patterns
 
-### Config Pattern
-```lua
-local DEFAULT_CONFIG = {
-    damage = 25.0,
-    range = 10.0,
-    cooldown = 1.0,
-    effects = {
-        enabled = true,
-        scale = 1.0,
-        color = {1, 1, 1, 1}
-    }
-}
-
-function Module:LoadConfig()
-    self._config = self:DeepCopy(DEFAULT_CONFIG)
-    
-    -- Override with external config if available
-    -- Note: Specific config loading depends on game implementation
-    if self.configPath then
-        -- Load config through game-specific systems
-        self:LoadExternalConfig()
-    end
-end
-```
-
-## Error Handling
-
-### Safe API Calls
-```lua
-function Module:SafeCall(apiCall, ...)
-    local success, result = pcall(apiCall, ...)
-    if not success then
-        self:LogError("API call failed: " .. tostring(result))
-        return nil
-    end
-    return result
-end
-
-function Module:ValidateGameObject(obj, name)
-    if not obj or UE.Object.op_Equality(obj, nil) then
-        self:LogWarning((name or "GameObject") .. " is null or destroyed")
-        return false
-    end
-    return true
-end
-```
-
-### Logging System
-```lua
-function Module:Log(message, level)
-    level = level or "Info"
-    local formatted = string.format("[%s][%s] %s: %s", 
-        UE.Time.time, level, self.MODULE_NAME, message)
-    -- Use Unity's Debug.Log or game-specific logging
-    UE.Debug.Log(formatted)
-end
-
-function Module:LogError(message) self:Log(message, "Error") end
-function Module:LogWarning(message) self:Log(message, "Warning") end
-```
-
-## Performance Optimization
-
-### Update Loop Management
-```lua
-function Module:Update()
-    -- Frame-based throttling for expensive operations
-    if UE.Time.frameCount % 5 == 0 then
-        self:UpdateLowFrequency()
-    end
-    
-    if UE.Time.frameCount % 30 == 0 then
-        self:UpdateUI()
-    end
-end
-```
-
-### Resource Management
-```lua
--- Asset management patterns are detailed in lua-asset-management.mdc
-function Module:PreloadCriticalAssets()
-    -- Load essential VR interaction assets
-    self:LoadAsset("WMD_DefaultController", function(asset)
-        self._controllerPrefab = asset
-    end)
-end
-```
-
-## Common VR Mod Patterns
-
-### Weapon Controller Base
+### Weapon Controller
 ```lua
 local WeaponController = {
-    -- Constants
     MAX_AMMO = 30,
     FIRE_RATE = 0.1,
-    
-    -- State
     currentAmmo = 0,
     isReloading = false,
     _lastFireTime = 0,
@@ -286,7 +163,6 @@ function WeaponController:Fire()
     self.currentAmmo = self.currentAmmo - 1
     
     self:CreateProjectile()
-    self:PlayFireEffects()
     return true
 end
 
@@ -297,89 +173,23 @@ function WeaponController:CanFire()
 end
 ```
 
-### Magic System Base
+### Magic System
 ```lua
 local MagicController = {
-    spellTypes = {"Fire", "Ice", "Lightning"},
-    currentSpell = "Fire",
-    manaCost = 10,
-    
     spellConfig = {
-        Fire = {
-            projectile = "WMD_Fireball",
-            effect = "Effect/FireCast",
-            damage = 25
-        },
-        Ice = {
-            projectile = "WMD_IceShard", 
-            effect = "Effect/IceCast",
-            damage = 20
-        }
-    }
+        Fire = { projectile = "WMD_Fireball", effect = "Effect/FireCast" },
+        Ice = { projectile = "WMD_IceShard", effect = "Effect/IceCast" }
+    },
+    currentSpell = "Fire"
 }
 
 function MagicController:CastSpell(targetPosition)
     local spell = self.spellConfig[self.currentSpell]
     if not spell then return false end
     
-    local projectile = self:InstantiateAsset(spell.projectile, 
+    local projectile = CL.ResourceMgr.Instantiate(spell.projectile, 
         self.castPoint.position, self.castPoint.rotation)
-    
-    self:CreateEffect(spell.effect, self.castPoint.position)
+    CL.EffectMgr.Instance:PlayEffect(spell.effect, self.castPoint.position)
     return true
 end
 ```
-
-## Asset Address Reference
-Detailed asset naming conventions and loading patterns are in `lua-asset-management.mdc`.
-
-## CrossLink API Categories
-
-### Core Management APIs
-```lua
--- Resource Management
-CL.ResourceMgr.Load(address)                    -- Sync load
-CL.ResourceMgr.LoadAsync(address, callback)     -- Async load  
-CL.ResourceMgr.Instantiate(address)            -- Create instance
-CL.ResourceMgr.Instantiate(address, pos, rot)  -- Create at position
-
--- Effect Management
-CL.EffectMgr.Instance:PlayEffect(name, pos, rot)           -- Play effect
-CL.EffectMgr.Instance:PlayEffect(name, pos, rot, netId)    -- With network ID
-CL.EffectMgr.Instance:GiveBack(effectObj)                  -- Return to pool
-CL.EffectMgr.GetEffectObjNetId()                          -- Get network ID
-
--- Audio Management  
-CL.AudioMgr.Instance:GiveBackAndLerpToZero(soundInfo)     -- Stop audio with fade
-CL.AudioMgr.SetAsGlobalSoundOnce()                        -- Global sound setting
-
--- Scheduler System
-CL.Scheduler.Create(target, action)                        -- Create timer
-CL.Scheduler.RemoveSchedule(actionId)                      -- Remove timer
-CL.Scheduler.GetSchedule(actionId)                         -- Get timer
-CL.Scheduler.UpdateChannel.FixedUpdate                     -- Update channel type
-
--- Interaction System
-CL.InteractTrigger.WeaponPath                              -- Weapon path prefix
-```
-
-### Real Usage Examples
-```lua
--- Asset instantiation pattern
-local weapon = CL.ResourceMgr.Instantiate("Weapon/MagicSword")
-local effect = CL.EffectMgr.Instance:PlayEffect("SwordTrail", pos, rot)
-
--- Timer pattern with proper cleanup
-self.timerId = CL.Scheduler.RemoveSchedule(self.timerId)
-self.timerId = CL.Scheduler.Create(self,
-    function()
-        -- Timer action
-    end
-):SetDelay(1.0)
-:SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
-
--- Audio with cleanup
-CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.soundInfo)
-```
-
-This provides the essential patterns for Lua-based VR mod development while leveraging the C# API layer.

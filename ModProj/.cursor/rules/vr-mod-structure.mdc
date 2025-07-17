@@ -1,97 +1,136 @@
 ---
-title: "VR Mod Project Structure"
-description: "Essential project structure and workflow for Lua VR mod development"
-type: "overview"
-globs: ["**/*"]
-alwaysApply: true
-tags: ["overview", "vr", "lua", "structure"]
+title: "VR Mod Structure"
+description: "Project structure and file naming standards for Lua VR mod code generation"
+type: "structure"
+globs: ["Assets/Build/**/*", "Assets/Mods/**/*", "**/*.asset"]
+alwaysApply: false
+tags: ["structure", "vr", "lua"]
 ---
 
-# VR Mod Project Structure
+# VR Mod Structure
 
-## Project Mission
-Develop VR mods for BattleTalent using Lua scripts that interface with C# APIs. Focus on game logic, VR interactions, and mod content without Unity implementation details.
-
-## Essential Directory Structure
-
+## Standard Mod Directory Structure
 ```
 Assets/Build/{ModName}/
-├── Script/              # Lua scripts (.txt files)
-│   ├── {ModName}Script.txt      # Main mod logic  
-│   ├── {ModName}Controller.txt  # VR interactions
-│   └── Utils/                   # Helper functions
-├── Config/              # Configuration assets
-│   └── {ModName}Config.asset
-├── Effect/              # Visual effects prefabs
-├── Audio/               # Sound files
-└── Icon/                # UI icons and thumbnails
+├── Script/
+│   ├── {ModName}Script.txt        # Main logic
+│   ├── {ModName}Controller.txt    # VR interactions  
+│   └── Utils/                     # Helper functions
+├── Config/
+│   └── {ModName}Config.asset      # Configuration
+├── Effect/                        # Visual effects prefabs
+├── Audio/                         # Sound files (.wav, .mp3)
+├── Icon/                          # UI assets (.png)
+└── Documentation/                 # Mod documentation
 ```
 
-## API Reference
-Detailed API usage patterns and examples are available in `lua-vr-patterns.mdc`.
+## File Naming Standards
+- **Lua Scripts**: `{ComponentName}Script.txt`
+- **Config Files**: `{ModName}Config.asset`
+- **Prefabs**: `{ModName}_{Variant}.prefab`
+- **Audio Files**: `{ModName}_{Action}.{ext}`
+- **Icons**: `{ModName}_{Type}_icon.png`
+- **Effects**: `{ModName}_{Effect}.prefab`
 
-## Development Workflow
+## Legacy Structure (for reference)
+```
+Assets/Mods/ModName/
+├── Config.asset                 # Mod configuration
+├── LuaScript/
+│   ├── Entry.txt               # Mod entry point
+│   ├── WeaponBase.txt          # Base weapon logic
+│   └── SpellSystem.txt         # Magic system
+├── Weapon/
+│   ├── WMD_ModWeapon.prefab   # Weapon prefab
+│   └── Materials/
+├── FlyObj/
+│   ├── WMD_Projectile.prefab  # Projectiles
+│   └── WMD_Effect.prefab      # Effects
+├── Audio/
+│   └── Sound/
+├── ICon/
+│   └── weapon_icon.png
+└── Effect/
+    └── magic_trail.prefab
+```
 
-### 1. Planning Phase
-- Define VR interaction patterns
-- Identify required C# APIs
-- Plan asset addresses and structure
-
-### 2. Implementation Phase  
-- Create Lua scripts using provided APIs
-- Configure VR interactions through C# layer
-- Test on target VR platforms
-
-### 3. Testing Phase
-- VR comfort validation (no motion sickness)
-- Performance testing (90fps target)
-- Cross-platform compatibility
-
-## Key Principles
-
-### VR-First Design
-- Natural hand movements and gestures
-- Comfortable interaction distances  
-- Intuitive physics-based interactions
-- Haptic feedback for important events
-
-### API-Driven Development
-- Use C# interfaces exclusively
-- Never modify underlying C# code
-- Focus on game logic in Lua
-- Leverage existing systems through APIs
-
-### Performance Focus
-- Efficient Lua patterns
-- Minimize API calls in update loops
-- Proper resource cleanup
-- Frame rate optimization
-
-## Common Mod Types
-
-### Weapons
-- Melee weapons (swords, clubs)
-- Ranged weapons (bows, guns)
-- Magic weapons (wands, staves)
-
-### Spells and Magic
-- Projectile spells
-- Area effect spells  
-- Utility spells (teleport, shield)
-
-### Interactive Objects
-- Grabbable items
-- Physics-based tools
-- Environmental interactions
-
-## Asset Address Conventions
-
+## Entry Point Template
 ```lua
--- Use these patterns for asset loading
-"WMD_{ItemName}"           -- Mod items
-"Effect/{EffectName}"      -- Visual effects
-"Audio/{SoundName}"        -- Audio clips
-"LuaScript/{ScriptName}"   -- Script inheritance
+-- LuaScript/Entry.txt
+self.ModName = "YourModName"
+self.ModVersion = "1.0.0"
+
+function self:Awake()
+    UE.Debug.Log("[" .. self.ModName .. "] Mod loaded")
+    self:InitializeWeapons()
+end
+
+function self:InitializeWeapons()
+    -- Register weapons, effects, etc.
+end
 ```
 
-This structure provides the foundation for efficient VR mod development using Lua while leveraging the underlying C# systems.
+## Config Asset Structure
+```yaml
+# Config.asset
+modInfo:
+  name: "YourModName"
+  version: "1.0.0"
+  author: "YourName"
+
+networkPrefabRegister:
+  - "WMD_ModWeapon"
+  - "WMD_Projectile"
+  - "WMD_Effect"
+
+weaponCategories:
+  - "Melee"
+  - "Magic"
+  - "Ranged"
+```
+
+## VR Component Patterns
+```lua
+-- Hand interaction setup
+function self:SetupHandGrab()
+    local grabComponent = self.gameObject:GetComponent(typeof(CL.HandGrab))
+    if not grabComponent then
+        grabComponent = self.gameObject:AddComponent(typeof(CL.HandGrab))
+    end
+    
+    grabComponent.grabType = CL.GrabType.Weapon
+    grabComponent.handType = CL.HandType.Both
+end
+
+-- Physics setup for VR
+function self:SetupPhysics()
+    local rigidbody = self.gameObject:GetComponent(typeof(UE.Rigidbody))
+    rigidbody.useGravity = true
+    rigidbody.isKinematic = false
+    
+    local collider = self.gameObject:GetComponent(typeof(UE.Collider))
+    collider.isTrigger = false
+end
+
+-- VR haptics
+function self:TriggerHaptic(intensity, duration)
+    if self.handController then
+        self.handController:SendHapticImpulse(intensity, duration)
+    end
+end
+```
+
+## Weapon Registration Pattern
+```lua
+-- Register with weapon manager
+function self:RegisterWeapon()
+    local weaponData = {
+        name = "ModWeapon",
+        category = "Magic",
+        damage = 50,
+        prefabPath = "Weapon/WMD_ModWeapon"
+    }
+    
+    CL.WeaponMgr.Instance:RegisterWeapon(weaponData)
+end
+```

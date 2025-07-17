@@ -1,37 +1,20 @@
 ---
 title: "Lua VR Mod Development Workflow" 
-description: "Streamlined development workflow for Lua-based VR mod creation"
+description: "Code generation patterns for Lua VR mod development"
 type: "workflow"
 globs: ["Assets/Build/**/*", "**/*.txt"]
 alwaysApply: true
-tags: ["workflow", "development", "vr", "lua"]
+tags: ["workflow", "lua", "vr"]
 ---
 
 # Lua VR Mod Development Workflow
 
-## Quick Start Setup
-
-### 1. Create Mod Structure
-```
-Assets/Build/{ModName}/
-├── Script/
-│   ├── {ModName}Script.txt        # Main logic
-│   ├── {ModName}Controller.txt    # VR interactions  
-│   └── Utils/                     # Helper functions
-├── Config/
-│   └── {ModName}Config.asset      # Configuration
-├── Effect/                        # Visual effects
-├── Audio/                         # Sound files
-└── Icon/                          # UI assets
-```
-
-### 2. Basic Module Template
+## Module Structure Template
 ```lua
 -- {ModName}Script.txt
 local {ModName} = {
     enabled = true,
     initialized = false,
-    
     _config = {},
     _handlers = {},
 }
@@ -43,164 +26,56 @@ function {ModName}:Awake()
 end
 
 function {ModName}:InitializeHandlers()
-    -- Set up VR event handlers
+    -- VR event handlers
     self._grabHandler = function(grabInfo) self:OnGrab(grabInfo) end
-    -- Register handlers with C# layer
+    self._releaseHandler = function(releaseInfo) self:OnRelease(releaseInfo) end
+    
+    -- Register with C# layer
+    if self.host and self.host.interact then
+        local stabObject = self.host.interact:GetStabObject()
+        if stabObject then
+            stabObject:StabEnterEvent("+", self._stabEnterHandler)
+        end
+    end
 end
 
 return {ModName}
 ```
 
-## Development Phases
-
-### Phase 1: Core Logic
-1. Implement basic module structure
-2. Set up VR interaction handlers
-3. Configure asset addresses
-4. Test basic functionality
-
-### Phase 2: VR Integration
-1. Implement hand tracking and gestures
-2. Add haptic feedback
-3. Test comfort and usability
-4. Optimize for VR performance
-
-### Phase 3: Polish and Testing
-1. Performance optimization (90fps target)
-2. Cross-platform testing (PC VR + Quest)
-3. Multiplayer compatibility (if needed)
-4. Documentation and packaging
-
-## Development References
-
-### Specialized Pattern Files
-- **VR Interaction Patterns** → `lua-vr-patterns.mdc`
-- **Asset Management** → `lua-asset-management.mdc`  
-- **Multiplayer/Networking** → `lua-multiplayer.mdc`
-
-### Development Focus
-- Lua hot-reload for rapid iteration
-- VR comfort testing and validation
-- Cross-platform compatibility
-- Performance optimization (90fps target)
-
-## Performance Guidelines
-
-### Frame Rate Optimization
+## Performance Patterns
 ```lua
 function Module:Update()
-    -- Throttle expensive operations
+    -- Throttle expensive operations for VR performance
     if UE.Time.frameCount % 5 == 0 then
         self:UpdateLowFrequency()
     end
-    
-    -- Monitor performance
-    if UE.Time.deltaTime > 0.011 then -- 90fps threshold
-        self:ReduceQuality()
-    end
-end
-```
-
-### Memory Management
-```lua
-function Module:Initialize()
-    -- Preload critical assets
-    local criticalAssets = {
-        "WMD_MainWeapon",
-        "Effect/PrimaryEffect"
-    }
-    
-    for _, address in ipairs(criticalAssets) do
-        CL.ResourceMgr.LoadAsync(address, function(asset)
-            self:CacheAsset(address, asset)
-        end)
-    end
 end
 
-function Module:Cleanup()
-    -- Release unused resources
-    for address, asset in pairs(self._cachedAssets) do
-        if asset then
-            UE.Object.Destroy(asset)
-        end
+function Module:CleanupResources()
+    -- Release resources to prevent memory leaks
+    for _, asset in pairs(self._cachedAssets) do
+        if asset then UE.Object.Destroy(asset) end
     end
     self._cachedAssets = {}
 end
 ```
 
-## Testing Checklist
-
-### VR Comfort Testing
-- [ ] Natural hand positions and movements
-- [ ] No motion sickness inducing effects
-- [ ] Proper haptic feedback timing
-- [ ] Comfortable interaction distances
-- [ ] Stable 90fps on PC VR, 72fps on Quest
-
-### Functionality Testing
-- [ ] All asset addresses load correctly
-- [ ] VR interactions work as expected
-- [ ] Audio plays at appropriate volumes
-- [ ] Effects render properly
-- [ ] No console errors or warnings
-
-### Performance Testing
-- [ ] Memory usage stays within limits
-- [ ] Frame rate remains stable
-- [ ] Loading times are acceptable
-- [ ] Works on minimum hardware specs
-
-## Common Issues and Solutions
-
-### Asset Loading Problems
+## Error Handling Patterns
 ```lua
--- Validate asset addresses
-function Module:ValidateAssets()
-    local requiredAssets = {
-        "WMD_MainWeapon",
-        "Effect/PrimaryEffect"
-    }
-    
-    for _, address in ipairs(requiredAssets) do
-        CL.ResourceMgr.LoadAsync(address, function(asset)
-            if not asset then
-                self:LogError("Missing asset: " .. address)
-            end
-        end)
+function Module:SafeCall(apiCall, ...)
+    local success, result = pcall(apiCall, ...)
+    if not success then
+        UE.Debug.LogError("API call failed: " .. tostring(result))
+        return nil
     end
+    return result
+end
+
+function Module:ValidateGameObject(obj, name)
+    if not obj or UE.Object.op_Equality(obj, nil) then
+        UE.Debug.LogWarning((name or "GameObject") .. " is null or destroyed")
+        return false
+    end
+    return true
 end
 ```
-
-### VR Interaction Debugging
-```lua
--- Debug object state and position
-function Module:DebugObjectState()
-    if self.host and self.host.interact then
-        local position = self.host.interact.trans.position
-        self:LogDebug("Object position: " .. tostring(position))
-        
-        -- Check if object is being interacted with
-        if self.host.interact.isGrabbed then
-            self:LogDebug("Object is currently grabbed")
-        end
-    end
-end
-```
-
-## Deployment Process
-
-### Pre-Release Checklist
-- [ ] All Lua scripts tested and working
-- [ ] Performance meets VR standards
-- [ ] Asset references validated
-- [ ] Documentation complete
-- [ ] Compatible with target game version
-
-### Package Creation
-1. Validate all asset addresses
-2. Test mod loading/unloading
-3. Verify configuration files
-4. Test on clean installation
-5. Create release package
-
-This streamlined workflow focuses on the essential steps for creating VR mods using Lua while leveraging the C# API infrastructure.
