@@ -17,7 +17,7 @@ Assets/Build/{ModName}/
 │   ├── {ModName}Controller.txt    # VR interactions  
 │   └── Utils/                     # Helper functions
 ├── Config/
-│   └── {ModName}Config.asset      # Configuration
+│   └── {ModName}_Info.asset       # Configuration
 ├── Effect/                        # Visual effects prefabs
 ├── Audio/                         # Sound files (.wav, .mp3)
 ├── Icon/                          # UI assets (.png)
@@ -26,111 +26,33 @@ Assets/Build/{ModName}/
 
 ## File Naming Standards
 - **Lua Scripts**: `{ComponentName}Script.txt`
-- **Config Files**: `{ModName}Config.asset`
+- **Config Files**: `{ModName}_Info.asset`
 - **Prefabs**: `{ModName}_{Variant}.prefab`
 - **Audio Files**: `{ModName}_{Action}.{ext}`
 - **Icons**: `{ModName}_{Type}_icon.png`
 - **Effects**: `{ModName}_{Effect}.prefab`
 
-## Legacy Structure (for reference)
-```
-Assets/Mods/ModName/
-├── Config.asset                 # Mod configuration
-├── LuaScript/
-│   ├── Entry.txt               # Mod entry point
-│   ├── WeaponBase.txt          # Base weapon logic
-│   └── SpellSystem.txt         # Magic system
-├── Weapon/
-│   ├── WMD_ModWeapon.prefab   # Weapon prefab
-│   └── Materials/
-├── FlyObj/
-│   ├── WMD_Projectile.prefab  # Projectiles
-│   └── WMD_Effect.prefab      # Effects
-├── Audio/
-│   └── Sound/
-├── ICon/
-│   └── weapon_icon.png
-└── Effect/
-    └── magic_trail.prefab
-```
-
-## Entry Point Template
-```lua
--- LuaScript/Entry.txt
-self.ModName = "YourModName"
-self.ModVersion = "1.0.0"
-
-function self:Awake()
-    UE.Debug.Log("[" .. self.ModName .. "] Mod loaded")
-    self:InitializeWeapons()
-end
-
-function self:InitializeWeapons()
-    -- Register weapons, effects, etc.
-end
-```
-
 ## Config Asset Structure
 ```yaml
-# Config.asset
-modInfo:
-  name: "YourModName"
-  version: "1.0.0"
-  author: "YourName"
-
-networkPrefabRegister:
-  - "WMD_ModWeapon"
-  - "WMD_Projectile"
-  - "WMD_Effect"
-
-weaponCategories:
-  - "Melee"
-  - "Magic"
-  - "Ranged"
-```
-
-## VR Component Patterns
-```lua
--- Hand interaction setup
-function self:SetupHandGrab()
-    local grabComponent = self.gameObject:GetComponent(typeof(CL.HandGrab))
-    if not grabComponent then
-        grabComponent = self.gameObject:AddComponent(typeof(CL.HandGrab))
-    end
-    
-    grabComponent.grabType = CL.GrabType.Weapon
-    grabComponent.handType = CL.HandType.Both
-end
-
--- Physics setup for VR
-function self:SetupPhysics()
-    local rigidbody = self.gameObject:GetComponent(typeof(UE.Rigidbody))
-    rigidbody.useGravity = true
-    rigidbody.isKinematic = false
-    
-    local collider = self.gameObject:GetComponent(typeof(UE.Collider))
-    collider.isTrigger = false
-end
-
--- VR haptics
-function self:TriggerHaptic(intensity, duration)
-    if self.handController then
-        self.handController:SendHapticImpulse(intensity, duration)
-    end
-end
-```
-
-## Weapon Registration Pattern
-```lua
--- Register with weapon manager
-function self:RegisterWeapon()
-    local weaponData = {
-        name = "ModWeapon",
-        category = "Magic",
-        damage = 50,
-        prefabPath = "Weapon/WMD_ModWeapon"
-    }
-    
-    CL.WeaponMgr.Instance:RegisterWeapon(weaponData)
-end
+# {ModName}_Info.asset
+loadOnSpawn: 1
+storeItemInfo:
+- addStoreItemName: WMD_{ModName}
+  dependItemName: 
+  dependencies: []
+  name: {DisplayName}
+  desc: {ModDescription}
+  itemType: 0                    # 0=Weapon, 1=Prop, 2=Avatar, etc.
+  dungeonInfos: []
+  supportedMultiplayer: 1        # 1=Support multiplayer, 0=Single only
+sceneModInfo: []
+propInfo: []
+avatarInfo: []
+skinInfo: []
+roleModInfo: []
+handPoseInfo: []
+hitInfo: []
+networkPrefabRegister:           # Network objects for multiplayer
+- WMD_{NetworkObject1}_Network
+- WMD_{NetworkObject2}_Network
 ```

@@ -65,58 +65,33 @@ end
 
 ### Unity Engine APIs (UE namespace)
 ```lua
--- Time functions
-UE.Time.time
-UE.Time.deltaTime
-UE.Time.frameCount
-
--- Math operations  
-UE.Vector3.Lerp(from, to, t)
-UE.Vector3.Dot(a, b)
+-- Time and math essentials
+UE.Time.time, UE.Time.deltaTime, UE.Time.frameCount
+UE.Vector3.Lerp(from, to, t), UE.Vector3.Dot(a, b)
 UE.Quaternion.LookRotation(forward, up)
-
--- GameObject operations
-UE.GameObject(name)
-UE.Object.Destroy(obj, delay)
-
--- Physics
+UE.GameObject(name), UE.Object.Destroy(obj, delay)
 UE.Physics.Raycast(origin, direction, distance)
-
--- Debug logging
-UE.Debug.Log(message)
-UE.Debug.LogError(message)
+UE.Debug.Log(message), UE.Debug.LogError(message)
 ```
 
 ### CrossLink Core APIs (CL namespace)
 ```lua
--- Resource Management (from Readme)
-CL.ResourceMgr.Load(address)
-CL.ResourceMgr.LoadAsync(address, callback)  
-CL.ResourceMgr.Instantiate(address)
-CL.ResourceMgr.Instantiate(address, pos, rot)
+-- Resource Management
+CL.ResourceMgr.Load(address), CL.ResourceMgr.LoadAsync(address, callback)
+CL.ResourceMgr.Instantiate(address), CL.ResourceMgr.Instantiate(address, pos, rot)
 
--- Effect Management
+-- Effect and Audio
 CL.EffectMgr.Instance:PlayEffect(name, pos, rot)
-CL.EffectMgr.Instance:GiveBack(effectObj)
-
--- Audio Management  
 CL.AudioMgr.Instance:GiveBackAndLerpToZero(soundInfo)
 
--- Scheduler System
-CL.Scheduler.Create(target, action)
-CL.Scheduler.RemoveSchedule(actionId)
-CL.Scheduler.UpdateChannel.FixedUpdate
-
--- FlyObject Creation
+-- Scheduler and FlyObject
+CL.Scheduler.Create(target, action), CL.Scheduler.RemoveSchedule(actionId)
 CL.FlyObject.CreateFlyObj(prefab, source, pos, dir)
 ```
 
-### Event System (from Readme)
+### Event System
 ```lua
 -- LuaFunction → Actual Event mapping
--- AwakeInit → Awake
--- StartInit → Start
-
 function Module:OnAwake()     -- Called by AwakeInit
     self:Initialize()
 end
@@ -126,7 +101,7 @@ function Module:OnStart()     -- Called by StartInit
 end
 ```
 
-## VR Component Setup (from Readme)
+## VR Component Setup
 ```lua
 function Module:SetupComponents()
     -- Essential VR Components
@@ -134,7 +109,6 @@ function Module:SetupComponents()
     self.trigger = self.host.interact:GetComponent("InteractTriggerX")
     self.stabObj = self.host.interact:GetStabObject()
     self.hitInfo = self.host.interact:GetComponent("RagdollHitInfoObj")
-    self.attachPoint = self.host.interact:GetComponent("AttachPoint")
     
     -- FlyObject setup for projectiles
     self.flyObj = self.host:GetComponent("FlyObjX")
@@ -146,50 +120,67 @@ end
 
 ## Common Patterns
 
-### Weapon Controller
+### State Manager Pattern
 ```lua
-local WeaponController = {
-    MAX_AMMO = 30,
-    FIRE_RATE = 0.1,
-    currentAmmo = 0,
-    isReloading = false,
-    _lastFireTime = 0,
+local StateManager = {
+    currentState = "idle",
+    states = {},
+    _stateData = {},
+    _lastStateChange = 0,
 }
 
-function WeaponController:Fire()
-    if not self:CanFire() then return false end
+function StateManager:ChangeState(newState, data)
+    if self.currentState == newState then return false end
     
-    self._lastFireTime = UE.Time.time
-    self.currentAmmo = self.currentAmmo - 1
-    
-    self:CreateProjectile()
+    self:ExitState(self.currentState)
+    self.currentState = newState
+    self._stateData = data or {}
+    self._lastStateChange = UE.Time.time
+    self:EnterState(newState)
     return true
 end
 
-function WeaponController:CanFire()
-    return self.currentAmmo > 0 
-        and not self.isReloading 
-        and (UE.Time.time - self._lastFireTime) >= self.FIRE_RATE
+function StateManager:CanChangeState(newState)
+    return self.states[newState] ~= nil
+        and self.currentState ~= newState
 end
 ```
 
-### Magic System
+### Resource Cache Pattern
 ```lua
-local MagicController = {
-    spellConfig = {
-        Fire = { projectile = "WMD_Fireball", effect = "Effect/FireCast" },
-        Ice = { projectile = "WMD_IceShard", effect = "Effect/IceCast" }
-    },
-    currentSpell = "Fire"
+local ResourceCache = {
+    _cache = {},
+    _loadingQueue = {},
+    maxCacheSize = 50,
 }
 
-function MagicController:CastSpell(targetPosition)
-    local spell = self.spellConfig[self.currentSpell]
-    if not spell then return false end
+function ResourceCache:GetResource(address, callback)
+    if self._cache[address] then
+        if callback then callback(self._cache[address]) end
+        return self._cache[address]
+    end
     
-    local projectile = CL.ResourceMgr.Instantiate(spell.projectile, 
-        self.castPoint.position, self.castPoint.rotation)
-    CL.EffectMgr.Instance:PlayEffect(spell.effect, self.castPoint.position)
-    return true
+    if not self._loadingQueue[address] then
+        self._loadingQueue[address] = {}
+        CL.ResourceMgr.LoadAsync(address, function(asset)
+            self:OnResourceLoaded(address, asset)
+        end)
+    end
+    
+    if callback then
+        table.insert(self._loadingQueue[address], callback)
+    end
+end
+
+function ResourceCache:OnResourceLoaded(address, asset)
+    self._cache[address] = asset
+    
+    -- Execute queued callbacks
+    if self._loadingQueue[address] then
+        for _, callback in ipairs(self._loadingQueue[address]) do
+            callback(asset)
+        end
+        self._loadingQueue[address] = nil
+    end
 end
 ```

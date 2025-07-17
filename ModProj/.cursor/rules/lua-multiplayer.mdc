@@ -9,100 +9,103 @@ tags: ["multiplayer", "network", "lua"]
 
 # Multiplayer Patterns for Lua Mods
 
+## Network Injection Pattern
+```lua
+-- Required in NetworkInject() function
+function self:NetworkInject()
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcCastSpell", self.RpcCastSpell)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcTakeDamage", self.RpcTakeDamage)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcSyncState", self.RpcSyncState)
+end
+```
+
 ## RPC Patterns
 ```lua
--- Basic RPC
-RPCTarget = UE.NetworkBehaviour.RPCTarget
-function self:CastSpell(power)
-    self.netObj:RPC("DoSpell", RPCTarget.All, power)
+-- Server RPC call
+function self:ServerCastSpell(power, target)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntFunc("RpcCastSpell", power, false)
 end
 
-function self:DoSpell(power)
-    -- Execute spell on all clients
+-- RPC handler (executed on all clients)
+function self:RpcCastSpell(power)
+    -- Execute spell effect on all clients
     local effect = CL.EffectMgr.Instance:PlayEffect("magic_explosion")
 end
 
--- Server only RPC
+-- Server authority check
 function self:DamageTarget(damage)
-    if UE.NetworkManager.Singleton.IsServer then
-        self.netObj:RPC("TakeDamage", RPCTarget.All, damage)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host.interact.networkIB.networkIBState:ServerRpcIntFunc("RpcTakeDamage", damage, false)
     end
 end
 ```
 
-## Network Variables
+## Network State Checks
 ```lua
-local NetworkVariable = UE.Unity.Netcode.NetworkVariable
-local NetworkVariableWritePermission = UE.Unity.Netcode.NetworkVariableWritePermission
-
--- Setup in Init()
-self.netHealth = NetworkVariable.new(100, NetworkVariableWritePermission.Server)
-self.netPosition = NetworkVariable.new(UE.Vector3.zero, NetworkVariableWritePermission.Owner)
-
--- Read values
-local currentHealth = self.netHealth.Value
-local pos = self.netPosition.Value
-
--- Write values (only if authorized)
-if UE.NetworkManager.Singleton.IsServer then
-    self.netHealth.Value = newHealth
-end
-```
-
-## FlyObject Network Registration
-```lua
--- In Config asset, register all networked objects
-networkPrefabRegister = {
-    "WMD_MagicArrow",          -- Projectiles
-    "WMD_FireBall",            -- Spells
-    "WMD_Shield",              -- Defensive objects
-}
-
--- Create networked FlyObject
-function self:CreateProjectile()
-    local flyObj = CL.FlyObject.CreateFlyObj("WMD_MagicArrow")
-    -- flyObj automatically has network sync if registered
-end
-```
-
-## Ownership Patterns
-```lua
--- Check ownership before modifying
-if self.netObj.IsOwner then
-    self.transform.position = newPosition
-    self.netPosition.Value = newPosition
+-- Check if multiplayer is active
+if CL.Network.VRNetworkManager.IsOnline then
+    -- Network mode logic
+    if CL.Network.VRNetworkManager.ServerOnline then
+        -- Server-side logic
+    elseif CL.Network.VRNetworkManager.ClientOnline then
+        -- Client-side logic
+        return  -- Skip server-only logic
+    end
+else
+    -- Single-player mode
 end
 
 -- Check server authority
-if UE.NetworkManager.Singleton.IsServer then
-    self.netHealth.Value = self.netHealth.Value - damage
+if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+    -- Server-only operations
 end
+```
 
--- Client-side prediction with server validation
-function self:MoveWeapon(targetPos)
-    -- Immediate client update
-    self.transform.position = targetPos
-    
-    -- Request server validation
-    if self.netObj.IsOwner then
-        self.netObj:RPC("ValidateMove", RPCTarget.Server, targetPos)
+## FlyObject Network Creation
+```lua
+-- In Config asset, register all networked objects with _Network suffix
+networkPrefabRegister = {
+    "WMD_Arrow_Network",       -- Projectiles
+    "WMD_Spell_Network",       -- Magic effects
+    "WMD_Shield_Network",      -- Defensive objects
+}
+
+-- Create networked FlyObject (server only)
+function self:CreateProjectile()
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local flyObj = self.host:NetworkCreateFlyObj("WMD_Arrow_Network", position, direction)
+            return flyObj
+        end
+    else
+        -- Single-player mode
+        local flyObj = self.host:CreateFlyObj("WMD_Arrow_Network", position, direction)
+        return flyObj
     end
 end
 ```
 
-## Event Sync Pattern
+## Client Prediction Pattern
 ```lua
-function self:TriggerNetworkEvent(eventName, data)
-    if self.netObj.IsOwner then
-        self.netObj:RPC("OnNetworkEvent", RPCTarget.All, eventName, data)
+function self:UpdateWeapon()
+    -- Skip client-side physics in multiplayer
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
     end
+    
+    -- Server or single-player logic
+    local velocity = self.host.interact:GetPrimaryHand().velocityEstimator:GetVelocityEstimateLocal()
+    -- ... physics calculations
 end
 
-function self:OnNetworkEvent(eventName, data)
-    if eventName == "spell_cast" then
-        self:PlaySpellEffect(data.effectName, data.position)
-    elseif eventName == "weapon_swing" then
-        self:PlaySwingAnimation(data.direction)
+-- Delayed execution for clients
+function self:OnNetworkAction()
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        -- Client delay for network sync
+        self:DelayedAction()
+    else
+        -- Immediate execution for server
+        self:ExecuteAction()
     end
 end
 ```

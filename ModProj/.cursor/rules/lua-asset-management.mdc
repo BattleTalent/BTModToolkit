@@ -25,7 +25,7 @@ tags: ["assets", "addressables", "lua"]
 
 ## Loading Patterns
 ```lua
--- Basic asset loading
+-- Basic asset loading (see lua-vr-patterns.mdc for full API reference)
 local weapon = CL.ResourceMgr.Instantiate("WMD_MagicBow")
 local audioClip = CL.ResourceMgr.Load("Audio/BowStringRelease")
 
@@ -39,33 +39,32 @@ CL.EffectMgr.Instance:PlayEffect("explosion")   -- "Effect/explosion"
 CL.EffectMgr.Instance:PlayEffect("trail_magic") -- "Effect/trail_magic"
 ```
 
-## Asset Manager Pattern
+## Simplified Asset Manager
 ```lua
+-- Lightweight asset caching (see lua-vr-patterns.mdc for full ResourceCache)
 local AssetManager = {
     _loadedAssets = {},
 }
 
-function AssetManager:LoadAsset(address, callback)
-    if self._loadedAssets[address] then
-        if callback then callback(self._loadedAssets[address]) end
-        return
-    end
-    
-    CL.ResourceMgr.LoadAsync(address, function(asset)
-        self._loadedAssets[address] = asset
-        if callback then callback(asset) end
-    end)
-end
-
-function AssetManager:GetAsset(address)
+function AssetManager:GetCached(address)
     return self._loadedAssets[address]
 end
 
-function AssetManager:CleanupAssets()
-    for address, asset in pairs(self._loadedAssets) do
-        if asset then UE.Object.Destroy(asset) end
-        self._loadedAssets[address] = nil
+function AssetManager:Cache(address, asset)
+    self._loadedAssets[address] = asset
+end
+
+function AssetManager:LoadWithCache(address, callback)
+    local cached = self:GetCached(address)
+    if cached then
+        if callback then callback(cached) end
+        return cached
     end
+    
+    CL.ResourceMgr.LoadAsync(address, function(asset)
+        self:Cache(address, asset)
+        if callback then callback(asset) end
+    end)
 end
 ```
 

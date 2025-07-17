@@ -11,32 +11,15 @@ tags: ["workflow", "lua", "vr"]
 
 ## Module Structure Template
 ```lua
--- {ModName}Script.txt
+-- Simple mod template without VR specifics (use lua-vr-patterns.mdc for VR details)
 local {ModName} = {
     enabled = true,
     initialized = false,
-    _config = {},
-    _handlers = {},
 }
 
 function {ModName}:Awake()
-    self:InitializeHandlers()
-    self:LoadConfig()
+    self:Initialize()
     self.initialized = true
-end
-
-function {ModName}:InitializeHandlers()
-    -- VR event handlers
-    self._grabHandler = function(grabInfo) self:OnGrab(grabInfo) end
-    self._releaseHandler = function(releaseInfo) self:OnRelease(releaseInfo) end
-    
-    -- Register with C# layer
-    if self.host and self.host.interact then
-        local stabObject = self.host.interact:GetStabObject()
-        if stabObject then
-            stabObject:StabEnterEvent("+", self._stabEnterHandler)
-        end
-    end
 end
 
 return {ModName}
@@ -51,9 +34,15 @@ function Module:Update()
     end
 end
 
+function Module:UpdateLowFrequency()
+    -- Heavy calculations here
+    self:CheckDistanceToPlayer()
+    self:UpdateAI()
+end
+
 function Module:CleanupResources()
     -- Release resources to prevent memory leaks
-    for _, asset in pairs(self._cachedAssets) do
+    for _, asset in pairs(self._cachedAssets or {}) do
         if asset then UE.Object.Destroy(asset) end
     end
     self._cachedAssets = {}
