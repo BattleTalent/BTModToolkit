@@ -40,13 +40,79 @@ local builtinAudio = CL.ResourceMgr.Load("Audio/hit_sound")
 
 ## Asset Building Process
 
-**Before building mod:**
-1. Generate all mod assets (prefabs, scripts, configs)
-2. **Open AddressableConfig in Unity Inspector**
-3. **Click "ClearAddressables" button**
-4. **Click "CreateAndRefreshAddressableName" button**
-5. **Click "RefreshAddressableNameOnly**
-6. Build and test the mod
+**After generating Build/Mod folder structure:**
+1. Generate all mod assets (prefabs, scripts, configs) in `Assets/Build/{ModName}/`
+2. **Configure Addressable Paths:**
+   - Open `Assets/Resources/AddressableConfig.asset` in Unity Inspector
+   - In the **"Addressable Paths"** list, add new entry: `Assets/Build/{ModName}`
+   - This registers the mod folder for addressable asset processing
+3. **Process Addressable Assets:**
+   - Click **"ClearAddressables"** button to clear existing addressables
+   - Click **"CreateAndRefreshAddressableName"** button to generate WMD_ prefixes
+   - Click **"RefreshAddressableNameOnly"** button to update addressable names
+4. Build and test the mod
+
+**Critical: Every new mod folder in Assets/Build/ MUST be added to AddressableConfig's Addressable Paths before processing addressables.**
+
+## AddressableConfig Configuration Guide
+
+### Step-by-Step Configuration Process
+
+1. **Create Mod Folder Structure:**
+   ```
+   Assets/Build/{ModName}/
+   ├── Script/
+   ├── Config/
+   ├── Weapon/ (or Role/, Avatar/, Scene/, etc.)
+   ├── ICon/
+   └── ... (other asset folders)
+   ```
+
+2. **Register in AddressableConfig:**
+   - Navigate to `Assets/Resources/AddressableConfig.asset`
+   - Open in Unity Inspector
+   - Locate **"Addressable Paths"** array
+   - Click **"+"** to add new entry
+   - Enter: `Assets/Build/{ModName}` (replace {ModName} with actual mod name)
+   - **Example:** `Assets/Build/Bow_Magnetic`, `Assets/Build/Sword_Lightning`
+
+3. **Generate Addressable Names:**
+   - With AddressableConfig selected, click **"ClearAddressables"**
+   - Click **"CreateAndRefreshAddressableName"** 
+   - All assets in registered paths get WMD_ prefixes automatically
+   - **Example:** `BowMagneticScript.txt` becomes addressable as `WMD_BowMagneticScript`
+
+4. **Verify Configuration:**
+   - Check Unity Addressables window (`Window > Asset Management > Addressables > Groups`)
+   - Confirm mod assets appear with WMD_ prefixes
+   - Test asset loading in Lua: `CL.ResourceMgr.Load("WMD_AssetName")`
+
+### Common Configuration Errors
+
+❌ **Incorrect Path Format:**
+- Wrong: `Assets/Build/{ModName}/` (with trailing slash)
+- Wrong: `Build/{ModName}` (missing Assets/)
+- ✅ Correct: `Assets/Build/{ModName}`
+
+❌ **Skipping Path Registration:**
+- Assets won't get WMD_ prefixes
+- Lua loading will fail: `CL.ResourceMgr.Load("WMD_AssetName")` returns null
+
+❌ **Processing Order:**
+- Must add path BEFORE clicking "CreateAndRefreshAddressableName"
+- If added after, click "RefreshAddressableNameOnly" to update
+
+### Batch Configuration for Multiple Mods
+
+When working with multiple mods, add all paths at once:
+```
+Assets/Build/Bow_Magnetic
+Assets/Build/Sword_Lightning  
+Assets/Build/Gun_Plasma
+Assets/Build/Spell_Teleport
+```
+
+Then run the addressable generation process once for all mods.
 
 ## Directory & Naming Standards
 ```
@@ -237,7 +303,9 @@ networkPrefabRegister = {
 5. **Maintain consistent naming** across all mod assets
 6. **Document custom Lua scripts** with clear comments
 7. **Test thoroughly** in both single-player and multiplayer modes
-8. **Use AddressableConfig tools** to generate WMD_ prefixes automatically
+8. **Configure AddressableConfig immediately** after creating Build/{ModName}/ folder
+9. **Add mod path to AddressableConfig.Addressable Paths** before processing addressables
+10. **Use AddressableConfig tools** to generate WMD_ prefixes automatically
 
 ## 🚨 AI PREFAB CHECKLIST
 
