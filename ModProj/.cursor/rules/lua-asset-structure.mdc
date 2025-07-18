@@ -13,57 +13,14 @@ alwaysApply: false
 2. **COPY exact structure** - only modify asset references
 3. **NEVER create from scratch**
 
-## Addressable Path Conventions
+## Asset Loading in Lua Code
 
-**⚠️ CRITICAL: WMD_ Prefix Usage Rules**
-- **WMD_ prefix is ONLY used for Addressable paths** in the asset loading system
-- **Asset files themselves should NOT use WMD_ prefix** in their actual filenames
-- **Directory names and file names follow standard naming conventions** without WMD_ prefix
-- **Only use WMD_ prefix in Lua code resource loading paths**
-
-**Correct Usage Examples:**
-```
-✅ File Path: Assets/Build/MagicSword/Weapon/MagicSword.prefab
-✅ Addressable Path: Weapon/WMD_MagicSword
-✅ Lua Loading Code: CL.ResourceMgr.Load("Weapon/WMD_MagicSword")
-
-❌ WRONG: Assets/Build/WMD_MagicSword/Weapon/WMD_MagicSword.prefab
-❌ WRONG: Using WMD_ prefix in directory names
-```
-
-**Addressable Path Category Templates:**
-```lua
--- Custom mod assets use WMD_ prefix for loading:
-"Weapon/WMD_MagicSword"      -- Weapon prefab
-"LuaScript/WMD_WeaponBase"   -- Lua script
-"ICon/WMD_weapon_sword"      -- Icon texture
-"Effect/WMD_explosion"       -- Effect prefab
-"Audio/WMD_bow_release"      -- Audio clip
-"FlyObj/WMD_magic_arrow"     -- Projectile prefab
-"Role/WMD_CustomWarrior"     -- Character role
-"Avatar/WMD_PlayerModel"     -- Player avatar
-"Scene/WMD_CustomArena"      -- Scene prefab
-"SceneObj/WMD_MyCube"        -- Scene object prefab
-"Spell/WMD_FireBall"         -- Spell/Magic prefab
-"Item/WMD_HealthPotion"      -- Item/Potion prefab
-"Tower/WMD_Turret"           -- Tower/Turret prefab
-"Equipment/WMD_Scabbard"     -- Accessory/Equipment prefab
-"Skin/WMD_CharacterSkin"     -- Character skin model
-"BrokenArmor/WMD_Helmet"     -- Broken armor pieces
-"ArmorProfile/WMD_Profile"   -- Armor configuration profile
-"Audio/WMD_epic_music"       -- Background song
-```
-
-## Asset Loading Patterns
-
-**⚠️ IMPORTANT: Use WMD_ prefix in Addressable paths for custom mods**
+**Use WMD_ prefix in Lua code when loading custom mod assets:**
 
 ```lua
--- Instantiate prefabs (use WMD_ prefix for custom mod assets)
+-- Load custom mod assets (use WMD_ prefix)
 local weapon = CL.ResourceMgr.Instantiate("Weapon/WMD_MagicBow")
 local projectile = CL.ResourceMgr.Instantiate("FlyObj/WMD_FireArrow")
-
--- Load assets (use WMD_ prefix for custom mod assets)
 local audioClip = CL.ResourceMgr.Load("Audio/WMD_BowStringRelease")
 local texture = CL.ResourceMgr.Load("ICon/WMD_weapon_icon")
 local script = CL.ResourceMgr.Load("LuaScript/WMD_WeaponScript")
@@ -73,13 +30,23 @@ CL.ResourceMgr.LoadAsync("FlyObj/WMD_FireArrow", function(asset)
     self._arrowPrefab = asset
 end)
 
--- Play effects (use WMD_ prefix for custom effects)
+-- Play custom effects
 CL.EffectMgr.Instance:PlayEffect("WMD_explosion")
 
 -- Built-in game assets (no WMD_ prefix needed)
 local builtinEffect = CL.ResourceMgr.Load("Effect/explosion")
 local builtinAudio = CL.ResourceMgr.Load("Audio/hit_sound")
 ```
+
+## Asset Building Process
+
+**Before building mod:**
+1. Generate all mod assets (prefabs, scripts, configs)
+2. **Open AddressableConfig in Unity Inspector**
+3. **Click "ClearAddressables" button**
+4. **Click "CreateAndRefreshAddressableName" button**
+5. **Click "RefreshAddressableNameOnly**
+6. Build and test the mod
 
 ## Directory & Naming Standards
 ```
@@ -177,11 +144,10 @@ Assets/Build/{ModName}/
 
 ## Network Prefab Registration
 
-**⚠️ IMPORTANT: Use WMD_ prefix in Addressable paths for network registration**
+**Use WMD_ prefix in Lua code for network registration:**
 
 ```lua
 -- All interactive objects that need multiplayer sync
--- Use full Addressable paths with WMD_ prefix
 networkPrefabRegister = {
     "Weapon/WMD_MagicBow",            -- Weapon
     "FlyObj/WMD_FireBall",            -- Projectile
@@ -198,123 +164,6 @@ networkPrefabRegister = {
 - No manual loading code needed for config assets
 - All interactive objects require proper network setup for multiplayer
 
-## Addressable Asset Groups Setup
-
-**Critical: After generating mod resources, you MUST update the Addressable Asset Groups to register your assets for proper loading.**
-
-### Required Steps for AI Tools:
-1. **Examine existing entries** in `Assets/AddressableAssetsData/AssetGroups/Default Local Group.asset`
-2. **Add new entries** following the established patterns below
-3. **Update the YAML structure** to include all generated mod assets
-4. **Maintain consistency** with existing naming conventions
-
-### Addressable Registration Patterns
-**Reference the existing entries in `Default Local Group.asset` and follow these patterns:**
-
-**⚠️ IMPORTANT: WMD_ Prefix Usage**
-- **Addressable Path (m_Address)**: Uses `WMD_` prefix for identification
-- **File Path (References)**: Uses normal naming without `WMD_` prefix
-- **Example**: `m_Address: "Weapon/WMD_MagicSword"` → `References: "Assets/Build/MagicSword/Weapon/MagicSword.prefab"`
-
-#### Weapon Assets
-```yaml
-# Main weapon prefab
-- m_Address: Weapon/WMD_YourWeaponName
-  # References: Assets/Build/YourMod/Weapon/YourWeapon.prefab
-
-# Weapon icon
-- m_Address: ICon/WMD_YourWeaponName  
-  # References: Assets/Build/YourMod/ICon/YourWeapon_icon.png
-
-# Weapon effects (if any)
-- m_Address: Effect/WMD_YourEffectName
-  # References: Assets/Build/YourMod/Effect/YourEffect.prefab
-
-# Weapon projectiles (if any)
-- m_Address: FlyObj/WMD_YourProjectileName
-  # References: Assets/Build/YourMod/FlyObj/YourProjectile.prefab
-```
-
-#### Lua Scripts
-```yaml
-# All Lua scripts must be registered
-- m_Address: LuaScript/WMD_YourScriptName
-  # References: Assets/Build/YourMod/Script/YourScript.txt
-```
-
-#### Role/Avatar Assets
-```yaml
-# Character roles
-- m_Address: Role/WMD_YourRoleName
-  # References: Assets/Build/YourMod/Role/YourRole.prefab
-
-# Player avatars  
-- m_Address: Avatar/WMD_YourAvatarName
-  # References: Assets/Build/YourMod/Avatar/YourAvatar.prefab
-```
-
-#### Scene Assets
-```yaml
-# Custom scenes
-- m_Address: Scene/WMD_YourSceneName
-  # References: Assets/Build/YourMod/Scene/YourScene.prefab
-
-# Scene objects
-- m_Address: SceneObj/WMD_YourObjectName
-  # References: Assets/Build/YourMod/SceneObj/YourObject.prefab
-```
-
-#### Spell/Magic Assets
-```yaml
-# Spell prefabs
-- m_Address: Spell/WMD_YourSpellName
-  # References: Assets/Build/YourMod/Spell/YourSpell.prefab
-```
-
-#### Other Assets
-```yaml
-# Items/Potions
-- m_Address: Item/WMD_YourItemName
-  # References: Assets/Build/YourMod/Item/YourItem.prefab
-
-# Towers/Turrets
-- m_Address: Tower/WMD_YourTowerName
-  # References: Assets/Build/YourMod/Tower/YourTower.prefab
-
-# Equipment/Accessories
-- m_Address: Equipment/WMD_YourEquipmentName
-  # References: Assets/Build/YourMod/Equipment/YourEquipment.prefab
-```
-
-### Example Registration Process:
-1. **Generate your mod assets** (prefabs, scripts, configs)
-2. **Open Default Local Group.asset** in Unity Inspector
-3. **Add each asset** following the naming pattern: `Category/WMD_YourAssetName`
-4. **Verify addressable paths** match your Lua loading code
-5. **Test loading** with `CL.ResourceMgr.Load("Category/WMD_YourAssetName")`
-
-### Important Notes:
-- **All mod assets** must be registered in Addressables to be loaded at runtime
-- **Use "WMD_" prefix** for all addressable names (m_Address field) to match existing conventions
-- **Do NOT use "WMD_" prefix** for actual file names or directory names
-- **Group related assets** (weapon + icon + effects + projectiles) together in the file
-- **Maintain alphabetical order** within each category when possible
-- **Config assets** (.asset files) are automatically handled and don't need Addressable registration
-
-### File Naming vs Addressable Naming Examples:
-```
-✅ CORRECT:
-File: Assets/Build/MagicSword/Weapon/MagicSword.prefab
-Addressable: Weapon/WMD_MagicSword
-
-✅ CORRECT:
-File: Assets/Build/FireBall/Script/FireBallScript.txt
-Addressable: LuaScript/WMD_FireBallScript
-
-❌ INCORRECT:
-File: Assets/Build/WMD_MagicSword/Weapon/WMD_MagicSword.prefab
-Addressable: Weapon/WMD_MagicSword
-```
 
 ## Prefab Structure Standards
 
@@ -388,36 +237,7 @@ Addressable: Weapon/WMD_MagicSword
 5. **Maintain consistent naming** across all mod assets
 6. **Document custom Lua scripts** with clear comments
 7. **Test thoroughly** in both single-player and multiplayer modes
-
-## WMD_ Prefix Usage Summary
-
-**⚠️ Key Points:**
-- **WMD_ prefix is ONLY used for Addressable paths and Lua resource loading code**
-- **Asset files and directory naming should NOT use WMD_ prefix**
-- **Follow existing project standard naming conventions**
-
-**Correct Examples:**
-```
-File Structure:
-Assets/Build/MagicSword/
-├── Weapon/MagicSword.prefab          ✅ No WMD_ prefix
-├── Script/MagicSwordScript.txt       ✅ No WMD_ prefix
-├── ICon/MagicSword_icon.png          ✅ No WMD_ prefix
-└── Config/MagicSword_Info.asset      ✅ No WMD_ prefix
-
-Addressable Configuration:
-- m_Address: "Weapon/WMD_MagicSword"  ✅ Use WMD_ prefix
-- References: "Assets/Build/MagicSword/Weapon/MagicSword.prefab"
-
-Lua Loading Code:
-local weapon = CL.ResourceMgr.Load("Weapon/WMD_MagicSword")  ✅ Use WMD_ prefix
-```
-
-**Wrong Examples:**
-```
-❌ Assets/Build/WMD_MagicSword/Weapon/WMD_MagicSword.prefab
-❌ Using WMD_ prefix in directory names and file names
-```
+8. **Use AddressableConfig tools** to generate WMD_ prefixes automatically
 
 ## 🚨 AI PREFAB CHECKLIST
 
