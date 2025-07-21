@@ -1,0 +1,320 @@
+---
+description: 'Unified rules for asset loading, addressable paths, config structure, and directory/naming standards for Battle Talent VR mods.'
+globs: ["Assets/Build/**/*", "**/*.asset"]
+alwaysApply: false
+---
+
+# Battle Talent Mod Asset & Structure Guide
+
+## 🚨 CRITICAL: AI MUST READ REFERENCE PREFABS FIRST
+
+**Before generating ANY prefab:**
+1. **READ the reference prefab** from examples below
+2. **COPY exact structure** - only modify asset references
+3. **NEVER create from scratch**
+
+## Asset Loading in Lua Code
+
+**Use WMD_ prefix in Lua code when loading custom mod assets:**
+
+```lua
+-- Load custom mod assets (use WMD_ prefix)
+local weapon = CL.ResourceMgr.Instantiate("Weapon/WMD_MagicBow")
+local projectile = CL.ResourceMgr.Instantiate("FlyObj/WMD_FireArrow")
+local audioClip = CL.ResourceMgr.Load("Audio/WMD_BowStringRelease")
+local texture = CL.ResourceMgr.Load("ICon/WMD_weapon_icon")
+local script = CL.ResourceMgr.Load("LuaScript/WMD_WeaponScript")
+
+-- Async loading for heavy assets
+CL.ResourceMgr.LoadAsync("FlyObj/WMD_FireArrow", function(asset)
+    self._arrowPrefab = asset
+end)
+
+-- Play custom effects
+CL.EffectMgr.Instance:PlayEffect("WMD_explosion")
+
+-- Built-in game assets (no WMD_ prefix needed)
+local builtinEffect = CL.ResourceMgr.Load("Effect/explosion")
+local builtinAudio = CL.ResourceMgr.Load("Audio/hit_sound")
+```
+
+## Asset Building Process
+
+**After generating Build/Mod folder structure:**
+1. Generate all mod assets (prefabs, scripts, configs) in `Assets/Build/{ModName}/`
+2. **Configure Addressable Paths:**
+   - Open `Assets/Resources/AddressableConfig.asset` in Unity Inspector
+   - In the **"Addressable Paths"** list, add new entry: `Assets/Build/{ModName}`
+   - This registers the mod folder for addressable asset processing
+3. **Process Addressable Assets:**
+   - Click **"ClearAddressables"** button to clear existing addressables
+   - Click **"CreateAndRefreshAddressableName"** button to generate WMD_ prefixes
+   - Click **"RefreshAddressableNameOnly"** button to update addressable names
+4. Build and test the mod
+
+**Critical: Every new mod folder in Assets/Build/ MUST be added to AddressableConfig's Addressable Paths before processing addressables.**
+
+## AddressableConfig Configuration Guide
+
+### Step-by-Step Configuration Process
+
+1. **Create Mod Folder Structure:**
+   ```
+   Assets/Build/{ModName}/
+   ├── Script/
+   ├── Config/
+   ├── Weapon/ (or Role/, Avatar/, Scene/, etc.)
+   ├── ICon/
+   └── ... (other asset folders)
+   ```
+
+2. **Register in AddressableConfig:**
+   - Navigate to `Assets/Resources/AddressableConfig.asset`
+   - Open in Unity Inspector
+   - Locate **"Addressable Paths"** array
+   - Click **"+"** to add new entry
+   - Enter: `Assets/Build/{ModName}` (replace {ModName} with actual mod name)
+   - **Example:** `Assets/Build/Bow_Magnetic`, `Assets/Build/Sword_Lightning`
+
+3. **Generate Addressable Names:**
+   - With AddressableConfig selected, click **"ClearAddressables"**
+   - Click **"CreateAndRefreshAddressableName"** 
+   - All assets in registered paths get WMD_ prefixes automatically
+   - **Example:** `BowMagneticScript.txt` becomes addressable as `WMD_BowMagneticScript`
+
+4. **Verify Configuration:**
+   - Check Unity Addressables window (`Window > Asset Management > Addressables > Groups`)
+   - Confirm mod assets appear with WMD_ prefixes
+   - Test asset loading in Lua: `CL.ResourceMgr.Load("WMD_AssetName")`
+
+### Common Configuration Errors
+
+❌ **Incorrect Path Format:**
+- Wrong: `Assets/Build/{ModName}/` (with trailing slash)
+- Wrong: `Build/{ModName}` (missing Assets/)
+- ✅ Correct: `Assets/Build/{ModName}`
+
+❌ **Skipping Path Registration:**
+- Assets won't get WMD_ prefixes
+- Lua loading will fail: `CL.ResourceMgr.Load("WMD_AssetName")` returns null
+
+❌ **Processing Order:**
+- Must add path BEFORE clicking "CreateAndRefreshAddressableName"
+- If added after, click "RefreshAddressableNameOnly" to update
+
+### Batch Configuration for Multiple Mods
+
+When working with multiple mods, add all paths at once:
+```
+Assets/Build/Bow_Magnetic
+Assets/Build/Sword_Lightning  
+Assets/Build/Gun_Plasma
+Assets/Build/Spell_Teleport
+```
+
+Then run the addressable generation process once for all mods.
+
+## Directory & Naming Standards
+```
+Assets/Build/{ModName}/
+├── Script/{Component}Script.txt        # Lua behavior scripts
+├── Config/{ModName}_Info.asset         # Mod configuration
+├── Weapon/{ModName}.prefab             # Weapon prefabs
+├── Role/{ModName}.prefab               # Character role prefabs
+├── Avatar/{ModName}.prefab             # Player avatar prefabs
+├── Scene/{ModName}.prefab              # Scene prefabs
+├── SceneObj/{ModName}.prefab           # Scene object prefabs
+├── Spell/{ModName}.prefab              # Spell/Magic prefabs
+├── Skin/{ModName}.fbx                  # Character skin model
+├── BrokenArmor/{ArmorPiece}.prefab     # Broken armor pieces
+├── ArmorProfile/{ModName}.asset        # Armor configuration profile
+├── Effect/{ModName}_Effect.prefab      # Visual effects
+├── Audio/{ModName}_Action.wav          # Sound effects
+├── Audio/{ModName}_Background.ogg      # Background songs
+├── ICon/{ModName}_icon.png             # UI icons
+└── FlyObj/{ModName}_Projectile.prefab  # Projectiles
+```
+
+**Naming Conventions:**
+- Lua scripts: `{Component}Script.txt`
+- Config assets: `{ModName}_Info.asset`
+- Prefabs: `{ModName}_{Variant}.prefab`
+- Audio files: `{ModName}_{Action}.wav`
+- Background songs: `{ModName}_Background.ogg`
+- Icons: `{ModName}_icon.png`
+- Effects: `{ModName}_{Effect}.prefab`
+
+## Config Asset Structure Examples
+
+**Important: Examine the reference config assets below to understand the correct structure for each mod type.**
+
+### Weapon Mod Config (Swords, Bows, Guns, etc.)
+**Reference Examples:**
+- `Assets/Build/SwordLightBlade/Config/SwordLightBlade_Info.asset`
+- `Assets/Build/Bow_Magic/Config/Bow_Magic_Info.asset`
+- `Assets/Build/Gun_AK47/Config/Gun_AK47_Info.asset`
+- `Assets/Build/Wand_FireBall/Config/Wand_FireBall_Info.asset`
+- `Assets/Build/Dagger_Explode/Config/Dagger_Explode_Info.asset`
+- `Assets/Build/Spear_Thunder/Config/Spear_Thunder_Info.asset`
+
+### Role/Character Config
+**Reference Example:** `Assets/Build/SimpleRole/Config/SimpleRole_Info.asset`
+
+### Avatar Config
+**Reference Example:** `Assets/Build/SimpleAvatar/Config/SimpleAvatar_Info.asset`
+**Large Avatar Example:** `Assets/Build/SimpleAvatar_Huge/Config/SimpleAvatar_Huge_Info.asset`
+
+### Character Skin Config
+**Reference Example:** `Assets/Build/SimpleCharacterSkin/Config/SimpleCharacterSkin_Info.asset`
+
+### Armor Profile Config
+**Reference Example:** `Assets/Build/SimpleRole/ArmorProfile/SimpleArmorProfile.asset`
+
+### Hand Pose Config
+**Reference Example:** `Assets/Build/SimpleHandPose/Config/SimpleHandPose_Info.asset`
+**Bow with Hand Pose:** `Assets/Build/Bow_SimpleWithHandPose/Config/Bow_SimpleWithHandPose_Info.asset`
+
+### Scene Config
+**Reference Examples:**
+- `Assets/Build/SimpleScene/Config/SimpleScene.asset`
+- `Assets/Build/SimpleScene_Net/Config/SimpleScene_Net.asset`
+- `Assets/Build/SceneArena/Config/SceneArena.asset`
+- `Assets/Build/SpiderTagScene/Config/SpiderTagScene.asset`
+- `Assets/Build/SurvivorMode/Config/SurvivorScene.asset`
+
+### Scene Object Config
+**Reference Example:** `Assets/Build/SimpleSceneObj_Cube/Config/SimpleSceneObj_Cube.asset`
+
+### Background Song Config
+**Reference Example:** `Assets/Build/SimpleBackgroundSong/Config/SimpleBackgroundSong.asset`
+
+### Spell/Magic Config
+**Reference Examples:**
+- `Assets/Build/Spell_FireBall/Config/Spell_FireBall_Info.asset`
+- `Assets/Build/Spell_Thunder/Config/Spell_Thunder_Info.asset`
+- `Assets/Build/Spell_Telekinetic/Config/Spell_Telekinetic_Info.asset`
+
+### Item/Potion Config
+**Reference Example:** `Assets/Build/Potion_HP/Config/Potion_HP_Info.asset`
+
+### Tower/Turret Config
+**Reference Example:** `Assets/Build/Tower_Turret/Config/Tower_Turret_Info.asset`
+
+### Accessory/Equipment Config
+**Reference Examples:**
+- `Assets/Build/Scabbard/Config/Scabbard_Info.asset`
+- `Assets/Build/Scabbard_Sword/Config/Scabbard_Sword_Info.asset`
+
+### Tool Config
+**Reference Example:** `Assets/Build/HandPoseTool/Config/HandPoseTool_Info.asset`
+
+## Network Prefab Registration
+
+**Use WMD_ prefix in Lua code for network registration:**
+
+```lua
+-- All interactive objects that need multiplayer sync
+networkPrefabRegister = {
+    "Weapon/WMD_MagicBow",            -- Weapon
+    "FlyObj/WMD_FireBall",            -- Projectile
+    "Effect/WMD_MagicArrowTrail",     -- Trail effect
+    "Role/WMD_CustomRole",            -- Character role
+    "Spell/WMD_FireBallSpell",        -- Spell
+    "Tower/WMD_Turret",               -- Tower
+}
+```
+
+## Mod Development Requirements
+- Config assets must be of type `ItemInfoConfig` (Unity ScriptableObject)
+- Config assets are automatically handled by the mod system
+- No manual loading code needed for config assets
+- All interactive objects require proper network setup for multiplayer
+
+
+## Prefab Structure Standards
+
+**AI Workflow: READ → COPY → MODIFY**
+1. **READ** reference prefab using `read_file` or `mcp_unityMCP_manage_asset`
+2. **COPY** exact GameObject hierarchy and components
+3. **MODIFY** only asset references (meshes, materials, scripts)
+
+### Weapon Prefabs
+**Templates:** `Assets/Toolkit/TemplateWizard/Dummy/Sword.prefab`, `Gun.prefab`, `Axe.prefab`, `Shotgun.prefab`
+**Examples:** `Assets/Build/SwordLightBlade/Weapon/SwordLightBlade.prefab`, `Gun_AK47/Weapon/Gun_AK47.prefab`
+
+### Projectile/FlyObject Prefabs
+**Template:** `Assets/Toolkit/TemplateWizard/Dummy/Bullet.prefab`
+**Examples:** `Assets/Build/Bow_Magic/FlyObj/Bow_Magic_Arrow.prefab`, `Gun_AK47/FlyObj/Gun_AK47_Bullet.prefab`
+
+### Effect Prefabs
+**Examples:** `Assets/Resources/Effects/EnergySpark.prefab`, `Assets/Build/Spell_FireBall/Effect/Spell_FireBall_Effect.prefab`
+
+### Role/Character Prefabs
+**Template:** `Assets/Toolkit/TemplateWizard/Dummy/Role.prefab`
+**Example:** `Assets/Build/SimpleRole/Role/SimpleRole.prefab`
+
+### Avatar Prefabs
+**Template:** `Assets/Toolkit/TemplateWizard/Dummy/Avatar.prefab`
+**Examples:** `Assets/Build/SimpleAvatar/Avatar/SimpleAvatar.prefab`, `SimpleAvatar_Huge/Avatar/SimpleAvatar_Huge.prefab`
+
+### Character Skin Prefabs
+**Example:** `Assets/Build/SimpleCharacterSkin/Skin/SimpleCharacterSkin.fbx`
+
+### Scene Prefabs
+**Examples:** `Assets/Build/SimpleScene/Scene/SimpleScene.prefab`, `SceneArena/Scene/SceneArena.prefab`, `SurvivorMode/Scene/SurvivorScene.prefab`
+
+### Spell/Magic Prefabs
+**Examples:** `Assets/Build/Spell_FireBall/Spell/Spell_FireBall.prefab`, `Spell_Thunder/Spell/Spell_Thunder.prefab`
+
+### Item/Potion Prefabs
+**Example:** `Assets/Build/Potion_HP/Item/Potion_HP.prefab`
+
+### Tower/Turret Prefabs
+**Example:** `Assets/Build/Tower_Turret/Tower/Tower_Turret.prefab`
+
+### Equipment Prefabs
+**Examples:** `Assets/Build/Scabbard/Equipment/Scabbard.prefab`, `Scabbard_Sword/Equipment/Scabbard_Sword.prefab`
+
+## Component Requirements by Prefab Type
+
+### Essential Components (All Interactive Objects):
+- `Transform`, `InteractBase`/`InteractTriggerX`, `LuaBehaviour`, `NetworkIdentity`
+
+### Weapon Components:
+- `Rigidbody`, `WeaponData`, `AudioSource`, `MeshRenderer`, `MeshFilter`, `Collider`
+
+### Projectile Components:
+- `InteractTriggerX`, `FlyObjectX`, `TrailRenderer`, `Rigidbody`
+
+### Character Components:
+- `SkinnedMeshRenderer`, `Animator`, `RagdollBoneInfo`, `CharacterMotion`, `InteractCharacter`
+
+### Network Components:
+- `NetworkInteractBase`, `NetworkTransformFix`, `NetworkRigidbodySyncBase`, `NetworkIBStateX`
+
+
+
+## Best Practices
+
+1. **Always examine reference prefabs** before creating new ones
+2. **Follow Unity Humanoid standards** for character bone naming
+3. **Test multiplayer compatibility** with NetworkIdentity components
+4. **Optimize performance** by using appropriate LOD levels
+5. **Maintain consistent naming** across all mod assets
+6. **Document custom Lua scripts** with clear comments
+7. **Test thoroughly** in both single-player and multiplayer modes
+8. **Configure AddressableConfig immediately** after creating Build/{ModName}/ folder
+9. **Add mod path to AddressableConfig.Addressable Paths** before processing addressables
+10. **Use AddressableConfig tools** to generate WMD_ prefixes automatically
+
+## 🚨 AI PREFAB CHECKLIST
+
+**Before generating prefabs:**
+- [ ] Read reference prefab structure
+- [ ] Copy exact hierarchy and components  
+- [ ] Only modify asset references
+
+**Never do:**
+- ❌ Create prefabs from scratch
+- ❌ Skip required components
+- ❌ Modify GameObject hierarchy

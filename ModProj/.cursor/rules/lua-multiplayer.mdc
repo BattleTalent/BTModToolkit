@@ -1,0 +1,111 @@
+---
+title: "Multiplayer Patterns for Lua Mods"
+description: "Network synchronization patterns for Lua VR mod code generation"
+type: "patterns"
+globs: ["**/*.lua", "**/*.txt"]
+alwaysApply: false
+tags: ["multiplayer", "network", "lua"]
+---
+
+# Multiplayer Patterns for Lua Mods
+
+## Network Injection Pattern
+```lua
+-- Required in NetworkInject() function
+function self:NetworkInject()
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcCastSpell", self.RpcCastSpell)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcTakeDamage", self.RpcTakeDamage)
+    self.host.interact.networkIB.networkIBState:InjectFunc("RpcSyncState", self.RpcSyncState)
+end
+```
+
+## RPC Patterns
+```lua
+-- Server RPC call
+function self:ServerCastSpell(power, target)
+    self.host.interact.networkIB.networkIBState:ServerRpcIntFunc("RpcCastSpell", power, false)
+end
+
+-- RPC handler (executed on all clients)
+function self:RpcCastSpell(power)
+    -- Execute spell effect on all clients
+    local effect = CL.EffectMgr.Instance:PlayEffect("magic_explosion")
+end
+
+-- Server authority check
+function self:DamageTarget(damage)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host.interact.networkIB.networkIBState:ServerRpcIntFunc("RpcTakeDamage", damage, false)
+    end
+end
+```
+
+## Network State Checks
+```lua
+-- Check if multiplayer is active
+if CL.Network.VRNetworkManager.IsOnline then
+    -- Network mode logic
+    if CL.Network.VRNetworkManager.ServerOnline then
+        -- Server-side logic
+    elseif CL.Network.VRNetworkManager.ClientOnline then
+        -- Client-side logic
+        return  -- Skip server-only logic
+    end
+else
+    -- Single-player mode
+end
+
+-- Check server authority
+if CL.Network.VRNetworkManager.IsOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+    -- Server-only operations
+end
+```
+
+## FlyObject Network Creation
+```lua
+-- In Config asset, register all networked objects with _Network suffix
+networkPrefabRegister = {
+    "WMD_Arrow_Network",       -- Projectiles
+    "WMD_Spell_Network",       -- Magic effects
+    "WMD_Shield_Network",      -- Defensive objects
+}
+
+-- Create networked FlyObject (server only)
+function self:CreateProjectile()
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local flyObj = self.host:NetworkCreateFlyObj("WMD_Arrow_Network", position, direction)
+            return flyObj
+        end
+    else
+        -- Single-player mode
+        local flyObj = self.host:CreateFlyObj("WMD_Arrow_Network", position, direction)
+        return flyObj
+    end
+end
+```
+
+## Client Prediction Pattern
+```lua
+function self:UpdateWeapon()
+    -- Skip client-side physics in multiplayer
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    -- Server or single-player logic
+    local velocity = self.host.interact:GetPrimaryHand().velocityEstimator:GetVelocityEstimateLocal()
+    -- ... physics calculations
+end
+
+-- Delayed execution for clients
+function self:OnNetworkAction()
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        -- Client delay for network sync
+        self:DelayedAction()
+    else
+        -- Immediate execution for server
+        self:ExecuteAction()
+    end
+end
+```
