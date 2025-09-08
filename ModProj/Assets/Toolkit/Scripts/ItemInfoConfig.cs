@@ -294,6 +294,7 @@ namespace CrossLink
         public SoundEffectInfo tauntSound;
 
         //BodyFragment[] bodyFragments;
+        public AIPreset aiPreset;
     }
 
     [System.Serializable]

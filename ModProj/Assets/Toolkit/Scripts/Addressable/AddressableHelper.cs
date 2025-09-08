@@ -13,6 +13,8 @@ using CrossLink;
 using System;
 using CrossLink.Network;
 using UnityEngine.SceneManagement;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.AddressableAssets;
 
 #if UNITY_EDITOR
 namespace CrossLink
@@ -37,6 +39,7 @@ namespace CrossLink
         { "UI", "UI/" },
         { "BrokenArmor", "Character/BrokenArmor/"},
         { "ArmorProfile", "Character/ArmorProfile/"},
+        { "Action", "Action/"},
     };
 
 
@@ -939,6 +942,54 @@ namespace CrossLink
             }
 
             return false;
+        }
+
+        static private AddressableAssetEntry FindAddressableAsset(string name)
+        {
+            AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                Debug.LogError("AddressableAssetSettings not found!");
+                return null;
+            }
+
+            AddressableAssetGroup group = settings.DefaultGroup;
+            if (group == null)
+            {
+                Debug.LogError("Default AddressableAssetGroup not found!");
+                return null;
+            }
+
+            var entries = new List<AddressableAssetEntry>();
+            group.GatherAllAssets(entries, true, true, true);
+
+            AddressableAssetEntry targetEntry = null;
+
+            foreach (var entry in entries)
+            {
+                if (entry.address.Contains(name))
+                {
+                    targetEntry = entry;
+                    break;
+                }
+            }
+
+            if (targetEntry == null)
+            {
+                Debug.LogError($"Asset '{name}' not found in Default Group!");
+                return null;
+            }
+
+            return targetEntry;
+        }
+
+        static public string GetAddressableAssetPath(string name)
+        {
+            AddressableAssetEntry targetEntry = FindAddressableAsset(name);
+            if (targetEntry == null)
+                return string.Empty;
+
+            return targetEntry.AssetPath;
         }
     }
 }

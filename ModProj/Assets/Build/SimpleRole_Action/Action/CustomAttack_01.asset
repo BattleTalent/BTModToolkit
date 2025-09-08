@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a5a13aec27b91c458e3ba9321714c77, type: 3}
+  m_Name: CustomAttack_01
+  m_EditorClassIdentifier: 
+  performRangeMin: 3
+  performRangeMax: 10
+  haveAtkIntention: 0
+  isRangeAtk: 0
+  atkTimeLen: 0
+  timeLen: 1.5
+  ignoreDynamicSpeed: 0
+  ignoreRagdollProfile: 1
+  switchAtkOption: 0
+  combineList: []
+  timelines:
+  - prepareTime: 0
+    startTime: 0
+    endTime: 1.5
+    actionDatas:
+    - id: 0
+  - prepareTime: 0
+    startTime: 1
+    endTime: 1.5
+    actionDatas:
+    - id: 1
+  - prepareTime: 0
+    startTime: 1.2
+    endTime: 1.5
+    actionDatas:
+    - id: 2
+  references:
+    version: 1
+    00000000:
+      type: {class: ActionAnimData, ns: CrossLink, asm: Assembly-CSharp}
+      data:
+        slotId: 0
+        animName: WMD_MeleeAttack_01
+        animLayer: 0
+        crossfadeTime: 0.1
+        timeScale: 1
+        customLayoutLen: 0
+        motionTimeOffset: 0
+        rootMotion: WMD_MeleeAttack_01
+        loopMotion: 0
+        moveType: 0
+        turnStartAngle: 10
+        turnStopAngle: 10
+        turnSpeedMlp: 1
+        rotateSpeed: -1
+        unknockable: 0
+        motionScale: 1
+        trackPosBeginTime: 0
+        trackPosTime: 1
+        ignorePosBeginTime: 0
+        ignorePosTime: 0
+        trackRotBeginTime: 0
+        trackRotTime: 1
+        ignoreRotTime: 0
+        ignoreProfile: 0
+        trackLinearAnchorPoint: {x: 0, y: 0, z: 0}
+        trackAngularAnchorPoint: {x: 0, y: 0, z: 0}
+        linearTrackPointFloatingRangeMin: {x: 0, y: 0, z: 0}
+        linearTrackPointFloatingRangeMax: {x: 0, y: 0, z: 0}
+        jointUpdateDisabledTime: 0
+        jointUpdateDisabledStopTime: 0
+        checkCancelDis: 0
+    00000001:
+      type: {class: ActionCombatData, ns: CrossLink, asm: Assembly-CSharp}
+      data:
+        slotId: 0
+        hitbackDis: 4
+        blockAction: 0
+        beHeavyBlockable: 0
+        heldBlockSupport: 1
+        notDizzyProb: 0
+        disarmAttackPob: 0
+        stuckAction: 0
+        hitDmgAdd: 0
+        muscleNames:
+        - RWeapon
+        blockAnimsRandom:
+        - HitBlockRight
+        blockAnimConfig: 0
+        heavyBlockAnimsRandom:
+        - HitBlockRight
+        useCustomProfile: 0
+        triggerCombatEvent: 0
+        pushingWeaponEnabled: 0
+    00000002:
+      type: {class: ActionEffectData, ns: CrossLink, asm: Assembly-CSharp}
+      data:
+        slotId: 0
+        effectName: WMD_HitExplode
+        pos:
+          boneName: RWeapon
+          follow: 0
+          baseOnLocal: 1
+          pos: {x: -0.1, y: 0, z: 0.5}
+          dir: {x: 0, y: 1, z: 0}
+          up: {x: 0, y: 0, z: 1}
+          weaponPos: 0
+        rotationBaseLocal: 0
+        removeWhenActionFinish: 0
+        stopWhenActionFinish: 0
+        loopId: -1

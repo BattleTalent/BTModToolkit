@@ -1,0 +1,114 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f0360b0d473ef848b1017f1219d1ab5, type: 3}
+  m_Name: SimpleRole
+  m_EditorClassIdentifier: 
+  loadOnSpawn: 1
+  storeItemInfo: []
+  sceneModInfo: []
+  propInfo: []
+  avatarInfo: []
+  skinInfo: []
+  roleModInfo:
+  - roleName: WMD_SimpleRole
+    name: Simple Role
+    desc: A simple role
+    replaceRole:
+    - Goblin_Axe
+    - Goblin_Rogue
+    - Goblin_Axe_B
+    - Goblin_Rogue_B
+    - Goblin_Rogue_Elf
+    - Goblin_Rogue_Twin
+    - Goblin_Rogue_Dual
+    - GoblinTall_TwinSword
+    - GoblinSmall_ThrowBomb
+    - GoblinSmall_ThrowKnife
+    - GoblinSmall_Mace
+    - SkelSmall_Axe
+    - SkelSmall_Mace
+    - SkelSmall_Sward
+    - SkelSmall_Axe_B
+    - SkelSmall_Mace_B
+    - SkelSmall_Sward_B
+    - Skeleton_RSword_Shield
+    - Elf_Blade
+    - Elf_Blade_B
+    - Elf_DualSword
+    - Elf_DualSword_B
+    - ElfRogue_Archer
+    defaultReplacement: 
+    weapon: 
+    leftWeapon: WMD_Stick
+    rightWeapon: WMD_Sword_Slash
+    attr:
+    - hpMax: 500
+      mpMax: 200
+      atkMlp: 1
+      massMlp: 1
+    armorProfile: WMD_SimpleArmorProfile
+    armorConfigs: 2d010000
+    armorConfigsRandom: 
+    disableMotionFeature: 1
+    boneBreakSound:
+      templateName: 
+      soundNames: []
+      vol: 0.5
+      volRandomRange: 0
+      pitchMax: -1
+      pitchMin: 0.8
+    hurtSound:
+      templateName: 
+      soundNames: []
+      vol: 0.5
+      volRandomRange: 0
+      pitchMax: -1
+      pitchMin: 0.8
+    deathSound:
+      templateName: 
+      soundNames: []
+      vol: 0.5
+      volRandomRange: 0
+      pitchMax: -1
+      pitchMin: 0.8
+    groundSound:
+      templateName: 
+      soundNames: []
+      vol: 0.5
+      volRandomRange: 0
+      pitchMax: -1
+      pitchMin: 0.8
+    warningSound:
+      templateName: 
+      soundNames: []
+      vol: 0.5
+      volRandomRange: 0
+      pitchMax: -1
+      pitchMin: 0.8
+    attackSound:
+      templateName: 
+      soundNames: []
+      vol: 0.5
+      volRandomRange: 0
+      pitchMax: -1
+      pitchMin: 0.8
+    tauntSound:
+      templateName: 
+      soundNames: []
+      vol: 0.5
+      volRandomRange: 0
+      pitchMax: -1
+      pitchMin: 0.8
+    aiPreset: {fileID: 11400000, guid: e8079feb9963ab745b9b23f2577f4527, type: 2}
+  handPoseInfo: []
+  hitInfo: []
+  networkPrefabRegister: []
