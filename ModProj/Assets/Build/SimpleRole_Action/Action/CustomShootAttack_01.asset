@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a5a13aec27b91c458e3ba9321714c77, type: 3}
+  m_Name: CustomShootAttack_01
+  m_EditorClassIdentifier: 
+  performRangeMin: 4
+  performRangeMax: 12
+  haveAtkIntention: 0
+  isRangeAtk: 0
+  atkTimeLen: 0
+  timeLen: 1
+  ignoreDynamicSpeed: 0
+  ignoreRagdollProfile: 1
+  switchAtkOption: 0
+  combineList: []
+  timelines:
+  - prepareTime: 0
+    startTime: 0
+    endTime: 1
+    actionDatas:
+    - id: 0
+  - prepareTime: 0
+    startTime: 0.75
+    endTime: 1
+    actionDatas:
+    - id: 1
+    - id: 2
+  references:
+    version: 1
+    00000000:
+      type: {class: ActionAnimData, ns: CrossLink, asm: Assembly-CSharp}
+      data:
+        slotId: 0
+        animName: WMD_ShootAttack
+        animLayer: 0
+        crossfadeTime: 0.1
+        timeScale: 1
+        customLayoutLen: 0
+        motionTimeOffset: 0
+        rootMotion: 
+        loopMotion: 0
+        moveType: 0
+        turnStartAngle: 10
+        turnStopAngle: 10
+        turnSpeedMlp: 1
+        rotateSpeed: -1
+        unknockable: 0
+        motionScale: 1
+        trackPosBeginTime: 0
+        trackPosTime: -1
+        ignorePosBeginTime: 0
+        ignorePosTime: 0
+        trackRotBeginTime: 0
+        trackRotTime: -1
+        ignoreRotTime: 0
+        ignoreProfile: 0
+        trackLinearAnchorPoint: {x: 0, y: 0, z: 0}
+        trackAngularAnchorPoint: {x: 0, y: 0, z: 0}
+        linearTrackPointFloatingRangeMin: {x: 0, y: 0, z: 0}
+        linearTrackPointFloatingRangeMax: {x: 0, y: 0, z: 0}
+        jointUpdateDisabledTime: 0
+        jointUpdateDisabledStopTime: 0
+        checkCancelDis: 0
+    00000001:
+      type: {class: ActionFlyObjectData, ns: CrossLink, asm: Assembly-CSharp}
+      data:
+        slotId: 0
+        flyObjectName: WMD_FireBall
+        velocity: 10
+        aimTarget: 0
+        flyDelay: 0
+        spawnOnAimTarget: 0
+        aimTargetOffset: {x: 0, y: 0, z: 0}
+        aimRandom: 0
+        limitAimHelpRange: 0
+        pos:
+          boneName: 
+          follow: 0
+          baseOnLocal: 0
+          pos: {x: -0.15, y: 1.2, z: 1}
+          dir: {x: 0, y: 0, z: 1}
+          up: {x: 0, y: 1, z: 0}
+          weaponPos: 0
+        disYFactor: 0
+        disYFactorStartDis: 0
+        maxAimSpeed: 0
+        rotateDelay: 0
+        deadOnExit: 0
+    00000002:
+      type: {class: ActionSoundData, ns: CrossLink, asm: Assembly-CSharp}
+      data:
+        slotId: 0
+        pos:
+          boneName: Pelvis
+          follow: 1
+          baseOnLocal: 0
+          pos: {x: 0, y: 0, z: 0}
+          dir: {x: 0, y: 0, z: 1}
+          up: {x: 0, y: 1, z: 0}
+          weaponPos: 0
+        delayToPlay: 0
+        loop: 0
+        sound:
+          templateName: 
+          soundNames:
+          - WMD_ShootBullet
+          vol: 0.5
+          volRandomRange: 0
+          pitchMax: -1
+          pitchMin: 0.8
+        roleSound: 0

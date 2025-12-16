@@ -42,6 +42,9 @@ namespace CrossLink
         public const string RFoot = "RightFoot";
         public const string LFoot = "LeftFoot";
 
+        public const string RWeapon = "RWeapon";
+        public const string LWeapon = "LWeapon";
+
         static public string[] BasicCutableBones = new string[] {
             Head, Spine,
             RUpArm, RForeArm, LUpArm, LForeArm,
