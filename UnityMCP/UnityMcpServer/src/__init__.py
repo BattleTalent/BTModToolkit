@@ -1,3 +1,0 @@
-"""
-Unity MCP Server package.
-""" 
