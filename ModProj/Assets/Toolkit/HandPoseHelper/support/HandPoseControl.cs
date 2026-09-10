@@ -138,14 +138,52 @@ namespace CrossLink
                 return;
             }
 
-            List<HandFinger> fingerList = new List<HandFinger>();
-            for (int i = 0; i < numOfFinger; ++i)
+            Animator animator = handTrans.GetComponentInParent<Animator>();
+            if (animator == null || !animator.isHuman)
             {
-                var finger = ConvertToFingerRunTime(handTrans.GetChild(i), fingerNodeDepth);
-                if (finger.fingerNodes == null || finger.fingerNodes.Length == 0)
-                    continue;
-                fingerList.Add(finger);
+                Debug.LogError("AutoConfigFingers requires handTrans to belong to a Humanoid Animator.");
+                return;
             }
+
+            HumanBodyBones[] fingerRootBones;
+            if (handTrans == animator.GetBoneTransform(HumanBodyBones.LeftHand))
+            {
+                fingerRootBones = new HumanBodyBones[]
+                {
+                    HumanBodyBones.LeftThumbProximal,
+                    HumanBodyBones.LeftIndexProximal,
+                    HumanBodyBones.LeftMiddleProximal,
+                    HumanBodyBones.LeftRingProximal,
+                    HumanBodyBones.LeftLittleProximal,
+                };
+            }
+            else if (handTrans == animator.GetBoneTransform(HumanBodyBones.RightHand))
+            {
+                fingerRootBones = new HumanBodyBones[]
+                {
+                    HumanBodyBones.RightThumbProximal,
+                    HumanBodyBones.RightIndexProximal,
+                    HumanBodyBones.RightMiddleProximal,
+                    HumanBodyBones.RightRingProximal,
+                    HumanBodyBones.RightLittleProximal,
+                };
+            }
+            else
+            {
+                Debug.LogError("handTrans is not this Animator's LeftHand or RightHand bone.");
+                return;
+            }
+
+            List<HandFinger> fingerList = new List<HandFinger>(fingerRootBones.Length);
+            foreach (HumanBodyBones fingerRootBone in fingerRootBones)
+            {
+                Transform fingerRoot = animator.GetBoneTransform(fingerRootBone);
+                if (fingerRoot == null)
+                    continue;
+
+                fingerList.Add(ConvertToFingerRunTime(fingerRoot, fingerNodeDepth));
+            }
+
             fingers = fingerList.ToArray();
             UnityEditor.EditorUtility.SetDirty(this);
         }
