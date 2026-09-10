@@ -369,6 +369,9 @@ namespace CrossLink
 
 
 #if UNITY_EDITOR
+        private const string DefaultAvatarPath = "Assets/Toolkit/Prefabs/Skin/Warrior_Rig_TPose Variant.prefab";
+        private const float CharacterBuilderDefaultHeight = 2f;
+
         [EasyButtons.Button]
         public void ReplaceAllCharacters()
         {
@@ -607,6 +610,72 @@ namespace CrossLink
             return -1;
         }
 
+
+        private bool TryFindRolePrefab(string roleName, string prefix, out GameObject prefab)
+        {
+            prefab = null;
+
+            if (string.IsNullOrEmpty(roleName))
+                return false;
+
+            string itemInfoPath = AssetDatabase.GetAssetPath(this);
+            if (string.IsNullOrEmpty(itemInfoPath))
+            {
+                Debug.LogWarning($"CharacterBuilderTools auto open skipped: ItemInfoConfig asset path is empty.");
+                return false;
+            }
+
+            string configFolderPath = System.IO.Path.GetDirectoryName(itemInfoPath);
+            if (string.IsNullOrEmpty(configFolderPath))
+            {
+                Debug.LogWarning($"CharacterBuilderTools auto open skipped: ItemInfoConfig folder not found for {itemInfoPath}.");
+                return false;
+            }
+
+            configFolderPath = configFolderPath.Replace("\\", "/");
+            if (!configFolderPath.EndsWith("/Config"))
+            {
+                Debug.LogWarning($"CharacterBuilderTools auto open skipped: {itemInfoPath} is not in a Config folder.");
+                return false;
+            }
+
+            string modRootPath = System.IO.Path.GetDirectoryName(configFolderPath);
+            if (string.IsNullOrEmpty(modRootPath))
+            {
+                Debug.LogWarning($"CharacterBuilderTools auto open skipped: mod root folder not found for {itemInfoPath}.");
+                return false;
+            }
+
+            modRootPath = modRootPath.Replace("\\", "/");
+            if (!modRootPath.StartsWith("Assets/Build"))
+            {
+                Debug.LogWarning($"CharacterBuilderTools auto open skipped: {itemInfoPath} is not in Assets/Build.");
+                return false;
+            }
+
+            string prefabName = !string.IsNullOrEmpty(prefix) && roleName.StartsWith(prefix)
+                ? roleName.Substring(prefix.Length)
+                : roleName;
+
+            if (string.IsNullOrEmpty(prefabName))
+                return false;
+
+            string[] guids = AssetDatabase.FindAssets($"{prefabName} t:prefab", new[] { modRootPath });
+            foreach (string guid in guids)
+            {
+                string prefabPath = AssetDatabase.GUIDToAssetPath(guid);
+                if (System.IO.Path.GetFileNameWithoutExtension(prefabPath) != prefabName)
+                    continue;
+
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab != null)
+                    return true;
+            }
+
+            Debug.LogWarning($"CharacterBuilderTools auto open skipped: prefab {prefabName}.prefab for RoleModInfo {roleName} was not found under {modRootPath}.");
+            return false;
+        }
+
         [EasyButtons.Button]
         public void AutoAddPrefix()
         {
@@ -765,6 +834,18 @@ namespace CrossLink
         {
             bool isPass = true;
             string prefix = AddressableConfig.GetConfig().GetPrefix();
+            HashSet<string> replaceableCharacters = null;
+            ReplaceableCharacterConfig replaceableCharacterConfig = ReplaceableCharacterConfig.GetConfig();
+            if (replaceableCharacterConfig != null && replaceableCharacterConfig.characters != null)
+            {
+                replaceableCharacters = new HashSet<string>(replaceableCharacterConfig.characters);
+            }
+            else
+            {
+                Debug.LogWarning("ReplaceableCharacterConfig characters is missing, skip replaceRole spell check.");
+            }
+
+            GameObject rolePrefabForCharacterBuilder = null;
 
             //Weapon
             if (storeItemInfo != null)
@@ -836,7 +917,10 @@ namespace CrossLink
             {
                 foreach (var item in roleModInfo)
                 {
-                    if (!item.roleName.Contains(prefix))
+                    if (item == null)
+                        continue;
+
+                    if (string.IsNullOrEmpty(item.roleName) || !item.roleName.Contains(prefix))
                     {
                         Debug.LogError("The Prefix of roleName:" + item.roleName + " is wrong or missing, please fill in " +
                             "the same prefix as in AddressableConfig.");
@@ -848,7 +932,32 @@ namespace CrossLink
                         Debug.LogError("Please fill in the name of the RoleModInfo.");
                         isPass = false;
                     }
+
+                    if (replaceableCharacters != null && item.replaceRole != null)
+                    {
+                        foreach (var replaceRole in item.replaceRole)
+                        {
+                            if (string.IsNullOrEmpty(replaceRole))
+                                continue;
+
+                            if (!replaceableCharacters.Contains(replaceRole))
+                            {
+                                Debug.LogWarning("The replaceRole: " + replaceRole + " in RoleModInfo: " + item.roleName +
+                                    " is not in ReplaceableCharacterConfig.characters, please check whether it is misspelled.");
+                            }
+                        }
+                    }
+
+                    if (rolePrefabForCharacterBuilder == null && TryFindRolePrefab(item.roleName, prefix, out GameObject rolePrefab))
+                    {
+                        rolePrefabForCharacterBuilder = rolePrefab;
+                    }
                 }
+            }
+
+            if (rolePrefabForCharacterBuilder != null)
+            {
+                CharacterBuilderTools.Open(rolePrefabForCharacterBuilder, CharacterBuilderDefaultHeight);
             }
 
             //handpose
