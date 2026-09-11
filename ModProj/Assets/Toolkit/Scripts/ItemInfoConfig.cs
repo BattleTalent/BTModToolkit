@@ -154,6 +154,13 @@ namespace CrossLink
 #endif
     }
 
+    [System.Serializable]
+    public class HandPoseOffset
+    {
+        public Quaternion leftHandRotationOffset;
+        public Quaternion rightHandRotationOffset;
+    }
+
     //static public void SetDefaultPoseValue(HandPoseModifier handPose)
     //{
     //    string name = string.Empty;
@@ -227,6 +234,8 @@ namespace CrossLink
 
         [Tooltip("Adjust the data of the HandPose exclusive to this model, the default handPose are HoldPose, GunPose, GunPose2, GrabPose, DefaultPose, GlovePose.")]
         public HandPoseModifier[] handposes;
+
+        public HandPoseOffset handposeOffset;
     }
 
     [System.Serializable]
@@ -369,7 +378,6 @@ namespace CrossLink
 
 
 #if UNITY_EDITOR
-        private const string DefaultAvatarPath = "Assets/Toolkit/Prefabs/Skin/Warrior_Rig_TPose Variant.prefab";
         private const float CharacterBuilderDefaultHeight = 2f;
 
         [EasyButtons.Button]
@@ -957,7 +965,7 @@ namespace CrossLink
 
             if (rolePrefabForCharacterBuilder != null)
             {
-                CharacterBuilderTools.Open(rolePrefabForCharacterBuilder, CharacterBuilderDefaultHeight);
+                CharacterBuilderTools.Open(rolePrefabForCharacterBuilder, CharacterBuilderDefaultHeight, this);
             }
 
             //handpose

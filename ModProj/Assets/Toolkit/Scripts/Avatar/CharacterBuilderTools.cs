@@ -8,6 +8,8 @@ namespace CrossLink
     internal class CharacterBuilderTools : EditorWindow
     {
         private const string WindowTitle = "Character Builder Tools";
+        private const string DefaultAvatarPath = "Assets/Toolkit/Prefabs/Skin/Warrior_Rig_TPose Variant.prefab";
+        private const string HandPoseLibraryPath = "Assets/Toolkit/HandPoseHelper/HandPoseLib.asset";
         private const string TargetLayerName = "InvisibleFPS";
         private const string AndroidPlatformName = "Android";
         private const string SpellScrystalTexturePath = "assets/toolkit/spellscrystal/textures/";
@@ -32,6 +34,8 @@ namespace CrossLink
         private readonly List<TextureCheckResult> textureResults = new List<TextureCheckResult>();
         private readonly List<string> meshWarnings = new List<string>();
         private GameObject avatarPrefab;
+        private GameObject characterTPose;
+        private ItemInfoConfig itemInfoConfig;
         private float characterHeight = 2f;
         private int currentIndex;
         private int currentTextureIndex;
@@ -41,6 +45,7 @@ namespace CrossLink
         private string checkMessage;
         private string textureCheckMessage;
         private string meshCheckMessage;
+        private string handPoseOffsetMessage;
         private bool textureCheckHasWarnings;
         private bool meshCheckHasWarnings;
 
@@ -70,6 +75,20 @@ namespace CrossLink
             CharacterBuilderTools window = GetWindow<CharacterBuilderTools>(WindowTitle);
             window.minSize = new Vector2(380f, 210f);
             window.avatarPrefab = prefab;
+            window.characterTPose = null;
+            window.itemInfoConfig = null;
+            window.characterHeight = Mathf.Max(0.1f, height);
+            window.ClearAllResults();
+            window.Show();
+        }
+
+        public static void Open(GameObject prefab, float height, ItemInfoConfig config)
+        {
+            CharacterBuilderTools window = GetWindow<CharacterBuilderTools>(WindowTitle);
+            window.minSize = new Vector2(380f, 210f);
+            window.avatarPrefab = prefab;
+            window.characterTPose = null;
+            window.itemInfoConfig = config;
             window.characterHeight = Mathf.Max(0.1f, height);
             window.ClearAllResults();
             window.Show();
@@ -125,6 +144,7 @@ namespace CrossLink
             checkMessage = null;
             textureCheckMessage = null;
             meshCheckMessage = null;
+            handPoseOffsetMessage = null;
             textureCheckHasWarnings = false;
             meshCheckHasWarnings = false;
             Repaint();
@@ -195,6 +215,34 @@ namespace CrossLink
             DrawTextureReview();
             DrawMeshWarnings();
 
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Configure hand offset", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Select the Avatar in the FBX, click ConfigureAvatar in the Inspector, then drag the model root node to Character T-Pose.",
+                MessageType.Info);
+            characterTPose = (GameObject)EditorGUILayout.ObjectField(
+                "Character T-Pose",
+                characterTPose,
+                typeof(GameObject),
+                true);
+            itemInfoConfig = (ItemInfoConfig)EditorGUILayout.ObjectField("Item Info Config", itemInfoConfig, typeof(ItemInfoConfig), false);
+
+            if (GUILayout.Button("Calculate Avatar Hand Pose Offset"))
+            {
+                CalculateAvatarHandPoseOffset();
+            }
+
+            if (GUILayout.Button("Generate Avatar Handposes From Offset"))
+            {
+                GenerateAvatarHandposesFromOffset();
+            }
+
+            if (!string.IsNullOrEmpty(handPoseOffsetMessage))
+            {
+                EditorGUILayout.HelpBox(handPoseOffsetMessage, MessageType.Info);
+            }
+
+            EditorGUILayout.Space();
             EditorGUILayout.Space();
             if (GUILayout.Button("Cancel"))
             {
@@ -278,6 +326,419 @@ namespace CrossLink
                 GUIUtility.ExitGUI();
             }
             EditorGUILayout.EndHorizontal();
+        }
+
+        private void CalculateAvatarHandPoseOffset()
+        {
+            if (itemInfoConfig == null)
+            {
+                Debug.LogError("CalculateAvatarHandPoseOffset failed: assign the target ItemInfoConfig first.");
+                return;
+            }
+
+            if (characterTPose == null)
+            {
+                Debug.LogError("CalculateAvatarHandPoseOffset failed: assign Character T-Pose in CharacterBuilderTools first.", itemInfoConfig);
+                return;
+            }
+
+            GameObject defaultAvatarPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(DefaultAvatarPath);
+            if (defaultAvatarPrefab == null)
+            {
+                Debug.LogError($"CalculateAvatarHandPoseOffset failed: default avatar prefab was not found at {DefaultAvatarPath}.");
+                return;
+            }
+
+            GameObject defaultAvatarInstance = null;
+            GameObject targetAvatarInstance = null;
+            try
+            {
+                defaultAvatarInstance = PrefabUtility.InstantiatePrefab(defaultAvatarPrefab) as GameObject;
+                if (defaultAvatarInstance == null)
+                {
+                    Debug.LogError("CalculateAvatarHandPoseOffset failed: could not instantiate the default avatar prefab.");
+                    return;
+                }
+
+                defaultAvatarInstance.hideFlags = HideFlags.HideAndDontSave;
+                GameObject targetAvatarObject = characterTPose;
+                if (EditorUtility.IsPersistent(characterTPose))
+                {
+                    targetAvatarInstance = PrefabUtility.InstantiatePrefab(characterTPose) as GameObject;
+                    if (targetAvatarInstance == null)
+                    {
+                        Debug.LogError("CalculateAvatarHandPoseOffset failed: could not instantiate Character T-Pose.", itemInfoConfig);
+                        return;
+                    }
+
+                    targetAvatarInstance.hideFlags = HideFlags.HideAndDontSave;
+                    targetAvatarObject = targetAvatarInstance;
+                }
+
+                Animator defaultAnimator = GetRequiredHumanoidAnimator(defaultAvatarInstance, "default avatar");
+                Animator avatarAnimator = GetRequiredHumanoidAnimator(targetAvatarObject, "target avatar T-Pose");
+                if (defaultAnimator == null || avatarAnimator == null)
+                {
+                    return;
+                }
+
+                Transform defaultLeftHand = GetRequiredHandBone(defaultAnimator, HumanBodyBones.LeftHand, "default avatar");
+                Transform defaultRightHand = GetRequiredHandBone(defaultAnimator, HumanBodyBones.RightHand, "default avatar");
+                Transform avatarLeftHand = GetRequiredHandBone(avatarAnimator, HumanBodyBones.LeftHand, "target avatar T-Pose");
+                Transform avatarRightHand = GetRequiredHandBone(avatarAnimator, HumanBodyBones.RightHand, "target avatar T-Pose");
+                if (defaultLeftHand == null || defaultRightHand == null || avatarLeftHand == null || avatarRightHand == null)
+                {
+                    return;
+                }
+
+                AvatarInfo avatarInfo = FindAvatarInfo(itemInfoConfig, characterTPose.name, "CalculateAvatarHandPoseOffset");
+                if (avatarInfo == null)
+                {
+                    return;
+                }
+
+                Undo.RecordObject(itemInfoConfig, "Calculate Avatar Hand Pose Offset");
+                if (avatarInfo.handposeOffset == null)
+                {
+                    avatarInfo.handposeOffset = new HandPoseOffset();
+                }
+
+                Quaternion defaultLeftHandRootRotation = GetRootRelativeRotation(defaultAnimator.transform, defaultLeftHand);
+                Quaternion avatarLeftHandRootRotation = GetRootRelativeRotation(avatarAnimator.transform, avatarLeftHand);
+                Quaternion defaultRightHandRootRotation = GetRootRelativeRotation(defaultAnimator.transform, defaultRightHand);
+                Quaternion avatarRightHandRootRotation = GetRootRelativeRotation(avatarAnimator.transform, avatarRightHand);
+
+                avatarInfo.handposeOffset.leftHandRotationOffset =
+                    Quaternion.Inverse(defaultLeftHandRootRotation) * avatarLeftHandRootRotation;
+                avatarInfo.handposeOffset.rightHandRotationOffset =
+                    Quaternion.Inverse(defaultRightHandRootRotation) * avatarRightHandRootRotation;
+
+                EditorUtility.SetDirty(itemInfoConfig);
+                AssetDatabase.SaveAssets();
+                handPoseOffsetMessage = $"Updated hand pose offset for {avatarInfo.avatarName}.";
+                Debug.Log($"CalculateAvatarHandPoseOffset succeeded: updated {avatarInfo.avatarName} in {AssetDatabase.GetAssetPath(itemInfoConfig)}.", itemInfoConfig);
+                Repaint();
+            }
+            finally
+            {
+                if (targetAvatarInstance != null)
+                {
+                    DestroyImmediate(targetAvatarInstance);
+                }
+
+                if (defaultAvatarInstance != null)
+                {
+                    DestroyImmediate(defaultAvatarInstance);
+                }
+            }
+        }
+
+        private void GenerateAvatarHandposesFromOffset()
+        {
+            if (itemInfoConfig == null)
+            {
+                Debug.LogError("GenerateAvatarHandposesFromOffset failed: assign the target ItemInfoConfig first.");
+                return;
+            }
+
+            if (characterTPose == null)
+            {
+                Debug.LogError("GenerateAvatarHandposesFromOffset failed: assign Character T-Pose in CharacterBuilderTools first.", itemInfoConfig);
+                return;
+            }
+
+            AvatarInfo avatarInfo = FindAvatarInfo(itemInfoConfig, characterTPose.name, "GenerateAvatarHandposesFromOffset");
+            if (avatarInfo == null)
+            {
+                return;
+            }
+
+            if (avatarInfo.handposeOffset == null)
+            {
+                Debug.LogError("GenerateAvatarHandposesFromOffset failed: AvatarInfo has no HandPoseOffset.", itemInfoConfig);
+                return;
+            }
+
+            if (!IsValidQuaternion(avatarInfo.handposeOffset.leftHandRotationOffset)
+                || !IsValidQuaternion(avatarInfo.handposeOffset.rightHandRotationOffset))
+            {
+                Debug.LogError("GenerateAvatarHandposesFromOffset failed: HandPoseOffset contains an invalid hand rotation.", itemInfoConfig);
+                return;
+            }
+
+            HandPoseLib handPoseLibrary = AssetDatabase.LoadAssetAtPath<HandPoseLib>(HandPoseLibraryPath);
+            if (handPoseLibrary == null || handPoseLibrary.poseDefines == null)
+            {
+                Debug.LogError($"GenerateAvatarHandposesFromOffset failed: HandPoseLib was not found or has no pose definitions at {HandPoseLibraryPath}.");
+                return;
+            }
+
+            HashSet<string> existingPoseNames = new HashSet<string>();
+            if (avatarInfo.handposes != null)
+            {
+                for (int i = 0; i < avatarInfo.handposes.Length; i++)
+                {
+                    HandPoseModifier existingPose = avatarInfo.handposes[i];
+                    if (existingPose != null && !string.IsNullOrEmpty(existingPose.name))
+                    {
+                        existingPoseNames.Add(existingPose.name);
+                    }
+                }
+            }
+
+            List<HandPoseModifier> generatedPoses = new List<HandPoseModifier>();
+            for (int i = 0; i < handPoseLibrary.poseDefines.Length; i++)
+            {
+                HandPoseLib.HandPoseDefine poseDefine = handPoseLibrary.poseDefines[i];
+                if (poseDefine == null || string.IsNullOrEmpty(poseDefine.poseName))
+                {
+                    Debug.LogError($"GenerateAvatarHandposesFromOffset failed: HandPoseLib contains an empty pose definition at index {i}.");
+                    return;
+                }
+
+                if (existingPoseNames.Contains(poseDefine.poseName))
+                {
+                    continue;
+                }
+
+                if (!TryBuildHandPoseModifier(poseDefine, avatarInfo.handposeOffset, out HandPoseModifier generatedPose, out string error))
+                {
+                    Debug.LogError($"GenerateAvatarHandposesFromOffset failed for {poseDefine.poseName}: {error}.", itemInfoConfig);
+                    return;
+                }
+
+                generatedPoses.Add(generatedPose);
+                existingPoseNames.Add(poseDefine.poseName);
+            }
+
+            if (generatedPoses.Count == 0)
+            {
+                handPoseOffsetMessage = $"No missing handposes found for {avatarInfo.avatarName}; existing handposes were preserved.";
+                Debug.Log($"GenerateAvatarHandposesFromOffset skipped: all default handposes already exist for {avatarInfo.avatarName}.", itemInfoConfig);
+                Repaint();
+                return;
+            }
+
+            Undo.RecordObject(itemInfoConfig, "Generate Avatar Handposes From Offset");
+            List<HandPoseModifier> mergedPoses = new List<HandPoseModifier>();
+            if (avatarInfo.handposes != null)
+            {
+                mergedPoses.AddRange(avatarInfo.handposes);
+            }
+
+            mergedPoses.AddRange(generatedPoses);
+            avatarInfo.handposes = mergedPoses.ToArray();
+            EditorUtility.SetDirty(itemInfoConfig);
+            AssetDatabase.SaveAssets();
+            handPoseOffsetMessage = $"Added {generatedPoses.Count} handpose(s) for {avatarInfo.avatarName}; existing handposes were preserved.";
+            Debug.Log($"GenerateAvatarHandposesFromOffset succeeded: added {generatedPoses.Count} handpose(s) for {avatarInfo.avatarName}.", itemInfoConfig);
+            Repaint();
+        }
+
+        private static bool TryBuildHandPoseModifier(HandPoseLib.HandPoseDefine poseDefine, HandPoseOffset handPoseOffset, out HandPoseModifier modifier, out string error)
+        {
+            modifier = null;
+            error = null;
+            if (poseDefine.handPoses == null || poseDefine.handPoses.Length <= RagdollBoneInfo.LEFT_HAND)
+            {
+                error = "the pose does not contain both right and left hand presets";
+                return false;
+            }
+
+            HandPoseSetup rightSetup = GetHandPoseSetup(poseDefine.handPoses[RagdollBoneInfo.RIGHT_HAND]);
+            HandPoseSetup leftSetup = GetHandPoseSetup(poseDefine.handPoses[RagdollBoneInfo.LEFT_HAND]);
+            if (rightSetup == null || leftSetup == null)
+            {
+                error = "the pose is missing a HandPoseSetup";
+                return false;
+            }
+
+            if (rightSetup.preset == null || leftSetup.preset == null)
+            {
+                error = "the pose is missing a HandPosePreset";
+                return false;
+            }
+
+            if (rightSetup.preset.fingerWeight == null || leftSetup.preset.fingerWeight == null)
+            {
+                error = "the pose is missing finger weights";
+                return false;
+            }
+
+            Quaternion rightRotation = NormalizeQuaternion(rightSetup.transform.localRotation * handPoseOffset.rightHandRotationOffset);
+            Quaternion leftRotation = NormalizeQuaternion(leftSetup.transform.localRotation * handPoseOffset.leftHandRotationOffset);
+            if (!IsValidQuaternion(rightRotation) || !IsValidQuaternion(leftRotation))
+            {
+                error = "the generated hand rotation is invalid";
+                return false;
+            }
+
+            modifier = new HandPoseModifier
+            {
+                name = poseDefine.poseName,
+                leftHandPosition = leftSetup.transform.localPosition,
+                leftHandRotation = leftRotation,
+                rightHandPosition = rightSetup.transform.localPosition,
+                rightHandRotation = rightRotation,
+                fingerWeight = CopyFingerWeightList(leftSetup.preset.fingerWeight)
+            };
+            return true;
+        }
+
+        private static HandPoseSetup GetHandPoseSetup(UnityEngine.Object handPoseObject)
+        {
+            GameObject handPosePrefab = handPoseObject as GameObject;
+            return handPosePrefab != null ? handPosePrefab.GetComponentInChildren<HandPoseSetup>(true) : null;
+        }
+
+        private static float[] CopyFingerWeightList(List<float> source)
+        {
+            float[] copy = new float[source.Count];
+            for (int i = 0; i < source.Count; i++)
+            {
+                copy[i] = source[i];
+            }
+
+            return copy;
+        }
+
+        private static Quaternion GetRootRelativeRotation(Transform root, Transform source)
+        {
+            if (root == null || source == null)
+            {
+                return Quaternion.identity;
+            }
+
+            return Quaternion.Inverse(root.rotation) * source.rotation;
+        }
+
+        private static bool IsValidQuaternion(Quaternion value)
+        {
+            float squaredMagnitude = value.x * value.x + value.y * value.y + value.z * value.z + value.w * value.w;
+            return !float.IsNaN(value.x)
+                && !float.IsNaN(value.y)
+                && !float.IsNaN(value.z)
+                && !float.IsNaN(value.w)
+                && !float.IsInfinity(value.x)
+                && !float.IsInfinity(value.y)
+                && !float.IsInfinity(value.z)
+                && !float.IsInfinity(value.w)
+                && squaredMagnitude > 0.000001f;
+        }
+
+        private static Quaternion NormalizeQuaternion(Quaternion value)
+        {
+            float squaredMagnitude = value.x * value.x + value.y * value.y + value.z * value.z + value.w * value.w;
+            if (squaredMagnitude <= 0.000001f)
+            {
+                return Quaternion.identity;
+            }
+
+            float inverseMagnitude = 1f / Mathf.Sqrt(squaredMagnitude);
+            return new Quaternion(
+                value.x * inverseMagnitude,
+                value.y * inverseMagnitude,
+                value.z * inverseMagnitude,
+                value.w * inverseMagnitude);
+        }
+
+        private static Animator GetRequiredHumanoidAnimator(GameObject avatarObject, string label)
+        {
+            Animator[] animators = avatarObject.GetComponentsInChildren<Animator>(true);
+            if (animators == null || animators.Length == 0)
+            {
+                Debug.LogError($"CalculateAvatarHandPoseOffset failed: {label} is missing an Animator.");
+                return null;
+            }
+
+            for (int i = 0; i < animators.Length; i++)
+            {
+                Animator animator = animators[i];
+                if (animator != null && animator.avatar != null && animator.avatar.isValid && animator.avatar.isHuman)
+                {
+                    return animator;
+                }
+            }
+
+            Debug.LogError($"CalculateAvatarHandPoseOffset failed: {label} has no valid Humanoid Animator.");
+            return null;
+        }
+
+        private static Transform GetRequiredHandBone(Animator animator, HumanBodyBones bone, string label)
+        {
+            Transform hand = animator.GetBoneTransform(bone);
+            if (hand == null)
+            {
+                Debug.LogError($"CalculateAvatarHandPoseOffset failed: {label} is missing HumanBodyBones.{bone}.");
+            }
+
+            return hand;
+        }
+
+        private static AvatarInfo FindAvatarInfo(ItemInfoConfig config, string avatarObjectName, string operationName)
+        {
+            if (config.avatarInfo == null || config.avatarInfo.Length == 0)
+            {
+                Debug.LogError($"{operationName} failed: ItemInfoConfig has no AvatarInfo entries.", config);
+                return null;
+            }
+
+            if (config.avatarInfo.Length == 1)
+            {
+                if (config.avatarInfo[0] == null)
+                {
+                    Debug.LogError($"{operationName} failed: ItemInfoConfig contains an empty AvatarInfo entry.", config);
+                    return null;
+                }
+
+                return config.avatarInfo[0];
+            }
+
+            string targetName = TrimCloneSuffix(avatarObjectName);
+            string targetNameWithoutPrefix = StripAddressablePrefix(targetName);
+            for (int i = 0; i < config.avatarInfo.Length; i++)
+            {
+                AvatarInfo info = config.avatarInfo[i];
+                if (info == null || string.IsNullOrEmpty(info.avatarName))
+                {
+                    continue;
+                }
+
+                string infoName = TrimCloneSuffix(info.avatarName);
+                if (string.Equals(infoName, targetName, System.StringComparison.Ordinal)
+                    || string.Equals(StripAddressablePrefix(infoName), targetNameWithoutPrefix, System.StringComparison.Ordinal))
+                {
+                    return info;
+                }
+            }
+
+            Debug.LogError($"{operationName} failed: no AvatarInfo matches target avatar {avatarObjectName}.", config);
+            return null;
+        }
+
+        private static string StripAddressablePrefix(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            AddressableConfig addressableConfig = AddressableConfig.GetConfig();
+            string prefix = addressableConfig != null ? addressableConfig.GetPrefix() : string.Empty;
+            return !string.IsNullOrEmpty(prefix) && value.StartsWith(prefix, System.StringComparison.Ordinal)
+                ? value.Substring(prefix.Length)
+                : value;
+        }
+
+        private static string TrimCloneSuffix(string value)
+        {
+            const string cloneSuffix = "(Clone)";
+            if (!string.IsNullOrEmpty(value) && value.EndsWith(cloneSuffix, System.StringComparison.Ordinal))
+            {
+                return value.Substring(0, value.Length - cloneSuffix.Length);
+            }
+
+            return value;
         }
 
         private void DrawMeshWarnings()
