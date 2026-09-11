@@ -711,6 +711,16 @@ namespace CrossLink
                 actor.editor.animator.CrossFade(animName, crossfadeTime, animLayer, 0);
             }
 
+            if (string.IsNullOrEmpty(rootMotion) == false)
+            {
+                actor.ApplyRootMotion(this);
+            }
+
+        }
+
+        public override void OnExit(Actor actor)
+        {
+            actor.StopRootMotion(this);
         }
     }
 

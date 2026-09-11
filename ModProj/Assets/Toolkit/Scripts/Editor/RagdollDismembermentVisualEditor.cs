@@ -38,6 +38,7 @@ public class RagdollDismembermentVisualEditor : Editor
     public static bool ShowViewSettings = true;
     public static bool ShowFragmentsSettings = true;
 
+    private const string DrawBoundsPreferenceKey = "CrossLink.RagdollDismembermentVisualEditor.DrawBounds";
     public static bool DrawBounds = true;
     public static bool DrawEffects = true;
     public static bool DrawWireframe = false;
@@ -46,6 +47,7 @@ public class RagdollDismembermentVisualEditor : Editor
 
     void OnEnable()
     {
+        DrawBounds = EditorPrefs.GetBool(DrawBoundsPreferenceKey, true);
         CheckMeshReadableStatus();
     }
 
@@ -501,7 +503,12 @@ public class RagdollDismembermentVisualEditor : Editor
 
     private void DrawViewSettings()
     {
-        DrawBounds = EditorGUILayout.Toggle("Draw bounds", DrawBounds);
+        bool drawBounds = EditorGUILayout.Toggle("Draw bounds", DrawBounds);
+        if (drawBounds != DrawBounds)
+        {
+            DrawBounds = drawBounds;
+            EditorPrefs.SetBool(DrawBoundsPreferenceKey, DrawBounds);
+        }
         DrawEffects = EditorGUILayout.Toggle("Draw effects", DrawEffects);
         DrawWireframe = EditorGUILayout.Toggle("Draw wireframe", DrawWireframe);
         SceneView.RepaintAll();

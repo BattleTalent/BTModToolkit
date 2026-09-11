@@ -8,7 +8,13 @@ namespace CrossLink
     {
         public Animator animator;
         public Actor actor;
+        [Tooltip("AIPreset containing the exported root-motion layouts used by ActionData previews")]
+        public AIPreset rootMotionPreset;
         public Dictionary<string, Transform> bones;
+
+        Vector3 previewOriginPosition;
+        Quaternion previewOriginRotation;
+        bool previewOriginCaptured;
 
         private void Reset()
         {
@@ -32,6 +38,14 @@ namespace CrossLink
             actor.editor = this;
 
             SetupBones();
+            CapturePreviewOrigin();
+        }
+
+        void CapturePreviewOrigin()
+        {
+            previewOriginPosition = transform.position;
+            previewOriginRotation = transform.rotation;
+            previewOriginCaptured = true;
         }
 
         void SetupBones()
@@ -84,7 +98,38 @@ namespace CrossLink
         [EasyButtons.Button]
         public void PlayAction(ActionData actionData)
         {
+            if (!previewOriginCaptured)
+            {
+                CapturePreviewOrigin();
+            }
+
+            actor.StopAction();
+            transform.SetPositionAndRotation(previewOriginPosition, previewOriginRotation);
             actor.PlayAction(actionData);
+        }
+
+        public AnimLayoutDataItem GetRootMotionLayout(string rootMotionName)
+        {
+            if (rootMotionPreset == null)
+            {
+                Debug.LogWarning($"ActionEditor cannot preview root motion '{rootMotionName}': no AIPreset is assigned.", this);
+                return null;
+            }
+
+            var layouts = rootMotionPreset.animLayoutDatas;
+            if (layouts != null)
+            {
+                for (int i = 0; i < layouts.Length; i++)
+                {
+                    if (layouts[i] != null && layouts[i].Name == rootMotionName)
+                    {
+                        return layouts[i];
+                    }
+                }
+            }
+
+            Debug.LogWarning($"ActionEditor cannot preview root motion '{rootMotionName}': the assigned AIPreset does not contain that layout.", this);
+            return null;
         }
 
         public void SetLayer(int layer, float weight)
