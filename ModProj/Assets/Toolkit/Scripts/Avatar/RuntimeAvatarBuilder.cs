@@ -40,6 +40,8 @@ namespace CrossLink
 
 
 #if UNITY_EDITOR
+        private const string HudTargetName = "hudTarget";
+
         [EasyButtons.Button]
         public void AutoConfigBuilder()
         {
@@ -59,7 +61,7 @@ namespace CrossLink
 
             if (handposeControlLeft == null||handposeControlRight == null)
             {
-                Debug.LogError("Please assign values to handPoseControlLeft and handPoseControlLeft");
+                Debug.LogError("Missing handposeControlLeft or handposeControlRight. Please use Assets/Toolkit/AvatarBuilder/RuntimeAvatarBuilder.prefab: drag it into the scene, put the target FBX under this RuntimeAvatarBuilder object, assign the FBX Prefab field, then click AutoConfigBuilder.");
                 return;
             }
 
@@ -98,6 +100,7 @@ namespace CrossLink
             PutSlots();
 
             AutoCorrectRenderer();
+            CharacterBuilderTools.Open(fbxPrefab, characterHeight);
 
 
             Debug.LogWarning("Please check if this is correct after use. If not, " +
@@ -212,6 +215,53 @@ namespace CrossLink
             PutSlots();
         }
 
+        [EasyButtons.Button("Configure HUD Target (HP bar)")]
+        public void ConfigHudTarget()
+        {
+            if (fbxPrefab == null)
+            {
+                Debug.LogError("Please assign a value to \"FbxPrefab\".");
+                return;
+            }
+
+            var animator = fbxPrefab.transform.root.GetComponentInChildren<Animator>(true);
+            if (animator == null)
+            {
+                Debug.LogError("Please ensure that the fbxPrefab has an Animator " +
+                    "and that the AnimationType option in the fbx file is Humanoid.");
+                return;
+            }
+
+            if (animator.avatar == null || !animator.avatar.isValid || !animator.avatar.isHuman)
+            {
+                Debug.LogError("ConfigHudTarget failed: Animator Avatar must be a valid Humanoid.");
+                return;
+            }
+
+            Transform head = animator.GetBoneTransform(HumanBodyBones.Head);
+            if (head == null)
+            {
+                Debug.LogError("ConfigHudTarget failed: HumanBodyBones.Head is missing.");
+                return;
+            }
+
+            Transform hudTarget = head.Find(HudTargetName);
+            if (hudTarget == null)
+            {
+                GameObject hudTargetObject = new GameObject(HudTargetName);
+                UnityEditor.Undo.RegisterCreatedObjectUndo(hudTargetObject, "Create hudTarget");
+                hudTarget = hudTargetObject.transform;
+                hudTarget.SetParent(head, false);
+                hudTarget.localPosition = Vector3.zero;
+                hudTarget.localRotation = Quaternion.identity;
+                hudTarget.localScale = Vector3.one;
+                UnityEditor.EditorUtility.SetDirty(head.gameObject);
+            }
+
+            UnityEditor.Selection.activeGameObject = hudTarget.gameObject;
+            UnityEditor.EditorGUIUtility.PingObject(hudTarget.gameObject);
+        }
+
         [Range(-1f, 1f)]
         public float leftHandPreview = 0f;
 
@@ -314,4 +364,5 @@ namespace CrossLink
         }
 #endif
     }
+
 }

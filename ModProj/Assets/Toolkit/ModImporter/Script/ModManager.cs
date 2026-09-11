@@ -25,7 +25,9 @@ namespace CrossLink
 
         public List<string> gos = new List<string>();
         public List<string> scripts = new List<string>();
-        public bool LoadingCompeleted() { return res.Count == handles.Count; }
+        public int completedHandleCount;
+        public bool initialized;
+        public bool LoadingCompeleted() { return completedHandleCount >= handles.Count; }
     }
 
 
@@ -33,7 +35,8 @@ namespace CrossLink
     {
         public static ModManager Instance = new ModManager();
 
-        static string ModsPath = "Mods/";
+        static string ModsPath = "";
+        static string resolvedModsPath = "";
 
         public const string LuaKey = "LuaScript";
         public const string WeaponPath = "Weapon/";
@@ -53,10 +56,18 @@ namespace CrossLink
         public List<ModInfo> GetModInfos() { return mods; }
 
         System.IO.FileSystemWatcher watcher;
+        int loadCount = 0;
+        int pendingModLoads = 0;
+        int importVersion = 0;
         public void Init()
         {
             SetProjectInfo("CrossLink", "BattleTalent");
-            
+
+            importVersion = importVersion + 1;
+            ClearMods();
+            loadCount = 0;
+            pendingModLoads = 0;
+            ResourceMgr.ClearCache();
             DiscoverMods();
             LoadMods();
         }
@@ -73,23 +84,13 @@ namespace CrossLink
 
         public void ClearMods()
         {
-            if (mods.Count == 0)
-                return;
-
-
-
             for (int i = 0; i < mods.Count; ++i)
             {
-
-
-
                 for (int j = 0; j < mods[i].handles.Count; ++j)
                 {
                     try
                     {
                         if (mods[i].handles[j].IsValid() == false)
-                            continue;
-                        if (mods[i].handles[j].Result == null)
                             continue;
                     }
                     catch (System.Exception e)
@@ -98,29 +99,17 @@ namespace CrossLink
                         continue;
                     }
 #if LOAD_ASSET_LOG
-                    Debug.Log("ReleaseInstanceHanlde:" + mods[i].handles[j].Result.name);
+                    Debug.Log("ReleaseAssetHandle:" + mods[i].handles[j].Result.name);
 #endif
-                    Addressables.ReleaseInstance(mods[i].handles[j]);
+                    Addressables.Release(mods[i].handles[j]);
                 }
-
-
-                var resIte = mods[i].res.GetEnumerator();
-                while (resIte.MoveNext())
-                {
-                    if (resIte.Current.Value == null)
-                        continue;
-
-#if LOAD_ASSET_LOG
-                    Debug.Log("ReleaseRes:" + resIte.Current.Key);
-#endif
-                    Addressables.Release(resIte.Current.Value);
-                }
-
-
 
                 try
                 {
-                    Addressables.RemoveResourceLocator(mods[i].resLocator);
+                    if (mods[i].resLocator != null)
+                    {
+                        Addressables.RemoveResourceLocator(mods[i].resLocator);
+                    }
                 }
                 catch (System.Exception e)
                 {
@@ -128,10 +117,9 @@ namespace CrossLink
                 }
             }
             mods.Clear();
-            Addressables.ClearResourceLocators();
+            ResourceMgr.ClearCache();
             Caching.ClearCache();
             Resources.UnloadUnusedAssets();
-            Debug.Log("Mod Cleared");
         }
 
 
@@ -148,23 +136,27 @@ namespace CrossLink
 
         public void SetLoadModPath(string path)
         {
-            ModsPath = path;
-            ModsPath = ModsPath.Replace("\\", "/");
+            ModsPath = string.IsNullOrEmpty(path) ? "" : path.Replace("\\", "/").TrimEnd('/');
         }
 
         // find all folders that contain mod files
         public void DiscoverMods()
         {
 
-            ModsPath = ModsPath == "" ? Application.persistentDataPath + "/Mods/" : ModsPath + "/";
+            resolvedModsPath = string.IsNullOrEmpty(ModsPath) ? Application.persistentDataPath + "/Mods" : ModsPath;
             //ModsPath = "Assets/Resources/Mods/";
             //ModsPath = Application.dataPath + "/Resources/Mods/";
 
 
-            Debug.Log("Discovering Mods:" + ModsPath);
+            Debug.Log("Discovering Mods:" + resolvedModsPath);
 
+            if (!Directory.Exists(resolvedModsPath))
+            {
+                Debug.LogWarning("Mods folder not found:" + resolvedModsPath);
+                return;
+            }
 
-            DirectoryInfo modDirectory = new DirectoryInfo(ModsPath);
+            DirectoryInfo modDirectory = new DirectoryInfo(resolvedModsPath);
             var dirs = modDirectory.GetDirectories();
             //var files = modDirectory.GetFiles("*", SearchOption.TopDirectoryOnly);
 
@@ -187,20 +179,26 @@ namespace CrossLink
 
         // load all mods from discoverd
 
-        int loadCount = 0;
         public void LoadMods()
         {
             Addressables.InternalIdTransformFunc = InternalIdTransformFunc;
 
+            pendingModLoads = mods.Count;
+            if (mods.Count == 0)
+            {
+                AllLoadCompeleted();
+                return;
+            }
+
             for (int i = 0; i < mods.Count; ++i)
             {
-                LoadAndInitMod(mods[i]);
+                LoadAndInitMod(mods[i], importVersion);
             }
         }
 
         // load specific mod, locate all res, and load them all into memory at the beginning
         // then wait until loading finished, we start to init
-        async void LoadAndInitMod(ModInfo mod, loadCompleted cp = null)
+        async void LoadAndInitMod(ModInfo mod, int version, loadCompleted cp = null)
         {
             // locate to the correct platform
             //var modpath = mod.path + "/" + BuildTarget + "/"
@@ -211,31 +209,50 @@ namespace CrossLink
             }
             catch (System.Exception e)
             {
-                Debug.Log(e);
+                Debug.LogWarning("Mod catalog folder could not be read:" + mod.path + "\n" + e.Message);
+                CompleteModLoad(version);
                 return;
             }
             //string[] fileEntries = Directory.GetFiles("C: \\Users\\hank\\AppData\\LocalLow\\CrossLink\\BattleTalent\\Mods\\ModProj\\StandaloneWindows", "(*.json)", SearchOption.TopDirectoryOnly);
 
             if (fileEntries.Length == 0)
+            {
+                Debug.LogWarning("Mod catalog not found:" + mod.path);
+                CompleteModLoad(version);
                 return;
+            }
 
             Debug.Log("Mod Loading:" + fileEntries[0]);
 
-            // load catalog as res locator
+            IResourceLocator modLocator;
             try
             {
+                modLocator = await LoadCatalogAsync(fileEntries[0]);
             }
             catch (System.Exception e)
             {
-                Debug.Log(e);
+                Debug.LogWarning("Mod catalog failed to load:" + fileEntries[0] + "\n" + e.Message);
+                CompleteModLoad(version);
+                return;
             }
-            IResourceLocator modLocator = await LoadCatalogAsync(fileEntries[0]);
+
+            if (modLocator == null)
+            {
+                Debug.LogWarning("Mod catalog loaded no resource locator:" + fileEntries[0]);
+                CompleteModLoad(version);
+                return;
+            }
+
             mod.resLocator = modLocator;
 
 
             var keyIte = modLocator.Keys.GetEnumerator();
+            int queuedHandles = 0;
             while (keyIte.MoveNext())
             {
+                if (keyIte.Current == null)
+                    continue;
+
                 var resKey = keyIte.Current.ToString();
                 var locate = FindAssetInMod<Object>(resKey, modLocator);
                 if (locate == null)
@@ -248,41 +265,79 @@ namespace CrossLink
                     //Debug.Log("Asset Loading:" + resKey);
                     mod.handles.Add(handle);
                     loadCount = loadCount + 1;
+                    queuedHandles = queuedHandles + 1;
                     handle.Completed += (aso) =>
                     {
-                        if (aso.Result.GetType() == typeof(UnityEngine.GameObject))
+                        if (version != importVersion)
+                            return;
+
+                        mod.completedHandleCount = mod.completedHandleCount + 1;
+
+                        if (aso.Status == AsyncOperationStatus.Succeeded && aso.Result != null)
                         {
-                            mod.gos.Add(resKey);
-                        }else if(resKey.Contains(LuaKey))
+                            if (aso.Result.GetType() == typeof(UnityEngine.GameObject))
+                            {
+                                mod.gos.Add(resKey);
+                            }
+                            else if (resKey.Contains(LuaKey))
+                            {
+                                mod.scripts.Add(resKey);
+                            }
+
+                            mod.res[resKey] = aso.Result;
+                        }
+                        else
                         {
-                            mod.scripts.Add(resKey);
+                            Debug.LogWarning("Mod asset failed to load:" + resKey);
                         }
 
-                        mod.res[resKey] = aso.Result;
-                        if (mod.LoadingCompeleted())
+                        if (mod.LoadingCompeleted() && mod.initialized == false)
                         {
+                            mod.initialized = true;
                             InitMod(mod);
                             if (cp != null)
                                 cp();
+                            CompleteModLoad(version);
                         }
 
                         loadCount = loadCount - 1;
-                        if (loadCount <= 0)
-                        {
-                            AllLoadCompeleted();
-                        }
                     };
                 }
                 catch (System.Exception e)
                 {
-                    Debug.Log(e);
+                    Debug.LogWarning("Mod asset load could not start:" + resKey + "\n" + e.Message);
                 }
+            }
+
+            if (queuedHandles == 0)
+            {
+                Debug.LogWarning("Mod catalog had no loadable assets:" + fileEntries[0]);
+                CompleteModLoad(version);
+            }
+        }
+
+        void CompleteModLoad(int version)
+        {
+            if (version != importVersion)
+                return;
+
+            pendingModLoads = pendingModLoads - 1;
+            if (pendingModLoads <= 0)
+            {
+                AllLoadCompeleted();
             }
         }
 
         void AllLoadCompeleted()
         {
-            ModImporter.Instance.RefleshView();
+            if (ModImporter.Instance != null)
+            {
+                ModImporter.Instance.RefleshView();
+            }
+            else
+            {
+                Debug.LogWarning("ModImporter is missing, cannot refresh view.");
+            }
         }
 
         
@@ -309,9 +364,9 @@ namespace CrossLink
                 string path = location.InternalId;
                 string projModPath = Application.persistentDataPath + "/Mods/";
                 path = path.Replace("\\", "/");
-                if (path.Contains(projModPath))
+                if (path.Contains(projModPath) && string.IsNullOrEmpty(resolvedModsPath) == false)
                 {
-                    path = path.Replace(projModPath, ModsPath);
+                    path = path.Replace(projModPath, resolvedModsPath + "/");
                     return path;
                 }
             }
@@ -338,6 +393,9 @@ namespace CrossLink
             Debug.Log("Asset Finding:" + key);
 #endif
 
+            if (string.IsNullOrEmpty(key) || modLocator == null)
+                return null;
+
             if (key.Length == 32 && key.Contains("/") == false && key.Contains(".") == false)
                 return null;
 
@@ -347,6 +405,9 @@ namespace CrossLink
             //Use the IResourceLocator.Locate function to find IResourceLocation
             if (modLocator.Locate(key, typeof(T), out locs))
             {
+                if (locs == null || locs.Count == 0)
+                    return null;
+
                 // only cache those res in the list
                 if (locs[0].HasDependencies == false)
                     return null;

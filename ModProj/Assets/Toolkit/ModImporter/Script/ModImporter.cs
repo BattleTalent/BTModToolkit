@@ -7,7 +7,7 @@ namespace CrossLink
 {
     public class ModImporter : MonoBehaviour
     {
-        public static ModImporter Instance = new ModImporter();
+        public static ModImporter Instance;
 
         public string prefabPath = "Assets/Resources/GenPrefab";
 
@@ -17,10 +17,23 @@ namespace CrossLink
 
         private string defaultPath = "C:/Users[username]/AppData/LocalLow/CrossLink/BattleTalent/Mods";
 
+        void Awake()
+        {
+            Instance = this;
+        }
+
         void Start()
         {
-            modPanel = GetComponentInChildren<ModPanel>();
+            modPanel = GetComponentInChildren<ModPanel>(true);
             ImportMods();
+        }
+
+        void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                Instance = null;
+            }
         }
 
         public void ImportMods()
@@ -33,6 +46,12 @@ namespace CrossLink
         [EasyButtons.Button]
         public void RefleshView()
         {
+            if (modPanel == null)
+            {
+                Debug.LogWarning("ModPanel is missing, cannot refresh ModImporter view.");
+                return;
+            }
+
             modPanel.UpdateScrollView(ModManager.Instance.mods);
         }
 
