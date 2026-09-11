@@ -768,6 +768,27 @@ namespace CrossLink
                 SerializedProperty triggerCombatEventProp = combatDataProp.FindPropertyRelative("triggerCombatEvent");
                 SerializedProperty pushingWeaponEnabledProp = combatDataProp.FindPropertyRelative("pushingWeaponEnabled");
 
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Set R Weapon"))
+                {
+                    SetStringArray(muscleNamesProp, RagdollBoneInfo.RWeapon);
+                    SetStringArray(blockAnimsRandomProp, "HitBlockRight");
+                    SetStringArray(heavyBlockAnimsRandomProp, "BlockBreakRight");
+                }
+                if (GUILayout.Button("Set L Weapon"))
+                {
+                    SetStringArray(muscleNamesProp, RagdollBoneInfo.LWeapon);
+                    SetStringArray(blockAnimsRandomProp, "HitBlockLeft");
+                    SetStringArray(heavyBlockAnimsRandomProp, "BlockBreakLeft");
+                }
+                if (GUILayout.Button("Set Both Weapons"))
+                {
+                    SetStringArray(muscleNamesProp, RagdollBoneInfo.RWeapon, RagdollBoneInfo.LWeapon);
+                    SetStringArray(blockAnimsRandomProp, "HitBlockRight", "HitBlockLeft");
+                    SetStringArray(heavyBlockAnimsRandomProp, "BlockBreakRight", "BlockBreakLeft");
+                }
+                EditorGUILayout.EndHorizontal();
+
                 if (slotIdProp != null) EditorGUILayout.PropertyField(slotIdProp);
                 if (hitbackDisProp != null) EditorGUILayout.PropertyField(hitbackDisProp);
                 if (blockActionProp != null) EditorGUILayout.PropertyField(blockActionProp);
@@ -788,6 +809,20 @@ namespace CrossLink
             catch (Exception e)
             {
                 EditorGUILayout.HelpBox($"draw ActionCombatData attr error: {e.Message}", MessageType.Error);
+            }
+        }
+
+        private static void SetStringArray(SerializedProperty arrayProp, params string[] values)
+        {
+            if (arrayProp == null || !arrayProp.isArray)
+            {
+                return;
+            }
+
+            arrayProp.arraySize = values.Length;
+            for (int i = 0; i < values.Length; i++)
+            {
+                arrayProp.GetArrayElementAtIndex(i).stringValue = values[i];
             }
         }
 

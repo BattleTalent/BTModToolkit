@@ -618,8 +618,7 @@ namespace CrossLink
             return -1;
         }
 
-
-        private bool TryFindRolePrefab(string roleName, string prefix, out GameObject prefab)
+		private bool TryFindRolePrefab(string roleName, string prefix, out GameObject prefab)
         {
             prefab = null;
 
@@ -682,9 +681,7 @@ namespace CrossLink
 
             Debug.LogWarning($"CharacterBuilderTools auto open skipped: prefab {prefabName}.prefab for RoleModInfo {roleName} was not found under {modRootPath}.");
             return false;
-        }
-
-        [EasyButtons.Button]
+        }        [EasyButtons.Button]
         public void AutoAddPrefix()
         {
             //Weapon
