@@ -1,0 +1,96 @@
+
+local SpellAbyssalFaith = {
+    skillOn = false,
+    
+    activeColor = UE.Color(0.76, 1.66, 2, 1.44),
+    disableColor = UE.Color(0.4, 0.8, 0.97, 0),
+}
+
+function SpellAbyssalFaith:OnChargeBegin()
+    if self.skillOn then
+        self.host:CloseSkill()
+        return
+    end
+end
+
+function SpellAbyssalFaith:OnChargeReady()
+    local hand = self:GetSlotHand()
+    if not hand then
+        self.host:CloseSkill()
+        return
+    end
+    self:AddEffect(hand.character)
+    self.originalState = CL.PlayerCombatAttr.LockHp
+    
+    CL.PlayerCombatAttr.LockHp = true
+    self.skillOn = true
+    
+    self:StartDura()
+    self:DisableState()
+    
+    self.host:CloseSkill()
+end
+
+function SpellAbyssalFaith:DisableState()
+    SetMaterialEmissionWithinTime(self.modelTrans, {self.host.skillChangeColors[0]}
+        , self.disableColor, 0.3)
+end
+
+function SpellAbyssalFaith:ActiveState()
+    SetMaterialEmissionWithinTime(self.modelTrans, {self.host.skillChangeColors[0]}
+        , self.activeColor, 0.1)
+    
+    local hand = self:GetSlotHand()
+    if hand then
+        hand:HapticPulse(hand.character.skillOpenHapticCurve, 0.3, 0.8)
+    end
+end
+
+function SpellAbyssalFaith:StartDura()
+    self.duraTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            CL.PlayerCombatAttr.LockHp = self.originalState
+            self:RemoveEffect()
+            self:StartCd()
+        end
+    , 0, 0, self.duration).actionId
+end
+
+function SpellAbyssalFaith:StartCd()
+    self.cdTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            self.skillOn = false
+            self:ActiveState()
+        end
+    , 0, 0, self.cd).actionId
+end
+
+function SpellAbyssalFaith:AddEffect(character)
+    local trans = character.hands[1].trans
+    self.effect_l = CL.EffectMgr.Instance:PlayEffect(self.effectName, trans.position, trans.rotation)
+    self.effect_l.trans:SetParent(trans.parent)
+    self.effect_l:OnResetToPlay()
+    
+    trans = character.hands[0].trans
+    self.effect_r = CL.EffectMgr.Instance:PlayEffect(self.effectName, trans.position, trans.rotation)
+    self.effect_r.trans:SetParent(trans.parent)
+    self.effect_r:OnResetToPlay()
+end
+
+function SpellAbyssalFaith:RemoveEffect()
+    local time = 1
+    local intensity = 1
+    self.effect_l:Stop()
+    self.effect_r:Stop()
+    CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if t >= time then
+                CL.EffectMgr.Instance:GiveBack(self.effect_l)
+                CL.EffectMgr.Instance:GiveBack(self.effect_r)
+                sche:Stop()
+            end
+        end
+    , 0, time)
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellAbyssalFaith)

@@ -1,0 +1,115 @@
+local flyEx = {
+    -- explodeRange
+    -- explodeEffect
+    
+    pushbackForce = 10,
+    pushUpwardForce = 0,
+    maxImpulse = 0,
+}
+
+
+
+
+function flyEx:FlyStart(vel)
+    self.pushPu = {}
+
+    if self.explodeRange > 0 then
+        CL.EffectMgr.Instance:PlayEffect(self.explodeEffect, self.trans.position, self.trans.rotation)
+        
+        -- push player away
+        CL.InteractTrigger.HitScanAction = function(beHitPu, beHitCol, selfPu, rb, col, hitDir, hitterCamp)
+            if beHitPu:GetType() == typeof(CL.DungBall) then
+                beHitPu:DoExplode(18)
+            elseif beHitPu:GetType() == typeof(CL.DestructibleObj) or beHitPu:GetType() == typeof(CL.StabableDestructibleObj) then
+                if not beHitPu:IsIgnoreDamage(self.host.unitType) and not beHitPu:IsIgnoreDamage(col) then
+                    if beHitPu.breakImpulseThreshold > 0 then
+                        local cols = beHitPu:GetCols()
+                        for i = 0, cols.Length - 1 do
+                            local closetPos = cols[i]:ClosestPoint(self.trans.position)
+                            local dir = closetPos - self.trans.position
+                            local dis = dir.magnitude
+                            local impulse = self.maxImpulse * CL.EasingEquations.EaseInQuart(0, 1, (1 - UE.Mathf.Clamp01(dis / self.explodeRange)))
+                            --CL.DebugDraw.DrawLine(closetPos, self.trans.position, UE.Color.red, 5)
+                            --print("explode impulse:" .. impulse .. " dis:" .. dis)
+                            if impulse >= beHitPu.breakImpulseThreshold and not beHitPu:IsDead() then
+                                local beHitRb = beHitPu.rb
+                                if not IsNullOrDestroyed(beHitRb) and beHitRb.mass > UE.Mathf.Epsilon then
+                                    beHitRb:AddForce(dir.normalized * (impulse / beHitRb.mass), UE.ForceMode.VelocityChange)
+                                end
+                                
+                                beHitPu:Dead()
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+            
+            local roleController = nil
+            local rootPu = beHitPu.trans.parent and CL.PhysicsUnit.GetPhysicsUnitTopDown(beHitPu.trans) or beHitPu
+            if self.pushPu[rootPu] then
+                return
+            end
+            
+            if (rootPu.unitType == CL.Tagger.Tag.PlayerRole) then
+                roleController = rootPu.character
+--[[                
+            elseif (beHitPu.unitType == CL.Tagger.Tag.PlayerHand) then
+                player = beHitPu.logicHand.character
+]]                
+            elseif (rootPu.unitType == CL.Tagger.Tag.InteractRole) then
+                roleController = rootPu.controller
+            end
+            
+            if roleController then
+                --player:AddPushback()
+                local pushDir = roleController:GetCentrePos() - selfPu.trans.position
+                local force = pushDir.normalized * self.pushbackForce
+                -- this is for player only
+                if (rootPu.unitType ~= CL.Tagger.Tag.InteractRole) then
+                    roleController:AddForce(force)
+                end
+                --roleController:AddPushbackByForce(force, true)
+                
+                if rootPu.unitType == CL.Tagger.Tag.PlayerRole then
+                    roleController:AddForce(((roleController.trans.position + roleController:GetBodyHeight()/2 * UE.Vector3.up) - selfPu.trans.position).normalized * 200, UE.ForceMode.Impulse)
+                end
+                --print("HitScanAction" .. tostring(roleController) .. " pushDir:" .. tostring(pushDir))
+                self.pushPu[rootPu] = true
+            else
+                if self.pushUpwardForce > 0 then
+                    local dir = ((rootPu.trans.position - selfPu.trans.position).normalized + UE.Vector3.up).normalized
+                    CL.DebugDraw.DrawLine(selfPu.trans.position, selfPu.trans.position + dir, UE.Color.red, 5)
+                    rootPu:AddForce(dir * self.pushUpwardForce)
+                end
+            end
+            
+            if self.isIgnite == 1 then
+                self:TryIgnite(rootPu, beHitCol)
+            end
+        end
+        
+        CL.InteractTrigger.ApplyExplode(
+            -- want to do exploding a bit closer
+            self.trans.position - vel.normalized * 0.25, 
+            self.explodeRange, self.host, self.host.rb, self.host.col, CL.AIProxy.CampNone)
+    end
+end
+
+
+function flyEx:TryIgnite(pu, col)
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+        
+    local trigger = pu:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+        
+    local tb = trigger.script:GetSelf()
+    if tb.fuseCol and tb.Ignite then
+        tb:Ignite()
+    end
+end
+return Class(nil, nil, flyEx)

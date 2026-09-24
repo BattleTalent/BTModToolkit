@@ -1,0 +1,177 @@
+
+local BulletElementFire = {
+    flyObjName = "Zone_Fire_Small_Short",
+    isUsed = false,
+}
+
+
+function BulletElementFire:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+
+    if mu == nil or mu.col == nil or IsNullOrDestroyed(mu.col) then
+        return
+    end
+
+    self.isUsed = true
+    self.host:CollisionCountUpdate()
+    local pos = self:GetClosetPoint(mu.col, point)
+    self:SpawnFire(mu.col.transform, pos, normal)
+    
+    self.host:PlayImpact(point, normal)
+    rb:AddForceAtPosition(rb.velocity, point, UE.ForceMode.Force)
+end
+
+
+function BulletElementFire:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function BulletElementFire:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+end
+
+function BulletElementFire:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    local pos = self:GetClosetPoint(col, point)
+    self:SpawnFire(col.transform, pos, normal)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+function BulletElementFire:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function BulletElementFire:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function BulletElementFire:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    local pos = self:GetClosetPoint(col, point)
+    self:SpawnFire(col.transform, pos, normal)
+end
+
+
+
+
+
+
+function BulletElementFire:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithSceneHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity)
+end
+
+function BulletElementFire:RpcOnCollisionWithScene(rb, col, point, normal, relaVel)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+end
+
+function BulletElementFire:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self.host:OnCollisionUpdate(rb, col, point, normal, relaVel)
+
+    local pos = not (col == nil or IsNullOrDestroyed(col)) and self:GetClosetPoint(col, point) or point
+    local trans = nil
+    if col ~= nil and not IsNullOrDestroyed(col) then
+        trans = col.transform
+    end
+    self:SpawnFire(trans, pos, normal)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:PlaySceneImpactEffect(point, normal)
+end
+
+function BulletElementFire:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, pu)
+end
+
+function BulletElementFire:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+
+    if CL.Network.VRNetworkManager.IsOnline then
+        --print("RpcOnCollision bullet fire: " .. pu.trans.name)
+        pu:OnSimulateCollision(self.host.rb, self.host.col, point, -normal, relaVel)
+    end
+end
+
+function BulletElementFire:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self.host:OnCollisionUpdate(rb, col, point, normal, relaVel)
+    
+    local pos = not IsNullOrDestroyed(col) and self:GetClosetPoint(col, point) or point
+    self:SpawnFire(IsNullOrDestroyed(col) and nil or col.transform, pos, normal)
+end
+
+
+function BulletElementFire:SpawnFire(trans, pos, normal)
+    local fo = nil
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo =  CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.flyObjName, self.host.owner, pos, UE.Vector3.up)
+        else
+            return
+        end
+    else
+        fo = CL.FlyObject.CreateFlyObj(self.flyObjName, self.host.owner, pos, UE.Vector3.up)
+    end
+    
+    if trans and not IsNullOrDestroyed(trans) then
+        fo.trans.position = pos
+        --local col = trans:GetComponent(typeof(UE.Collider))
+        --if not IsNullOrDestroyed(col) then
+        --    if col.sharedMesh and not col.convex then
+        --        fo.trans.position = pos
+        --    else
+        --        fo.trans.position = col:ClosestPoint(pos)
+        --    end
+        --end
+        
+        local follower = fo.trans:GetComponent(typeof(CL.FlyObjectFollower))
+        if not IsNullOrDestroyed(follower) then
+            follower:SetData(trans, trans:InverseTransformPoint(fo.trans.position))
+        end
+    end
+    --fire effect
+end
+
+function BulletElementFire:GetClosetPoint(col, point)
+    if col.sharedMesh and not col.convex then
+        return point
+    else
+        return col:ClosestPoint(point)
+    end
+end
+
+
+function BulletElementFire:ResetState()
+    self.isUsed = false
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, BulletElementFire)

@@ -1,0 +1,13 @@
+
+local GrenadeLuncherBomb= {
+
+}
+
+function GrenadeLuncherBomb:OnColliderExit(collision)
+    if self.lastTrans ~= collision.transform then
+        self.rb.velocity = self.rb.velocity * self.attenuation
+        self.lastTrans = collision.transform
+    end
+end
+
+return Class(nil, nil, GrenadeLuncherBomb)

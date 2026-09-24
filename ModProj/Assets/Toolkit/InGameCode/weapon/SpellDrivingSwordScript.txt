@@ -1,0 +1,2827 @@
+
+local SpellDrivingSword = {
+    fingerWeights = {[1] = 1, [2] = 0.1, [3] = 0, [4] = 1, [5] = 1},
+    
+    state = -1,
+    state_standBy = 0,
+    state_storage = 1,
+    state_surround  = 2,
+    state_attack  = 3,
+    state_cut = 4,
+    state_swordBack = 5,
+    state_spinInPlace = 6,
+    state_ride = 7,
+    
+    initXAxisMlp = 0.5,
+    initYAxisMlp = 0.7,
+    
+    storageXAxisMlp = 0.15,
+    storageYAxisMlp = 0.3,
+    storageZAxisMlp = -0.15,
+
+    speedOfFollow = 10,
+    angularSpeedOfFollow = 10,
+    lerpOfFollow = 0.5,
+    
+    speedOfAttack = 10,
+    angularSpeedOfAttack = 50,
+    
+    speedOfBack = 10,
+    angularSpeedOfBack = 20,
+    
+    speedOfSurround = 10,
+    angularSpeedOfSurround = 50,
+    
+    backSlotTrans = {},
+    
+    swordLength = 1.45,
+    
+    vecList = {},
+    
+    destroyTime = 2,
+    
+    floatingOnHit = 0,
+    
+    --ride
+    floatingHeight = 1,
+    forceOfStopRide = 10,
+    ignoreEnvList = {},
+    ignoreColActId = -1,
+    enteredRideState = false,
+    
+    --control
+    controlList = {},
+    controlJoints = {},
+    
+    muLerpSpeed = 0.1,
+    targetMuLerpSpeed = 0.1,
+    
+    endSpinTime = -1,
+}
+
+SpellDrivingSword_ControlList = {}
+
+function SpellDrivingSword:CleanupDrivingSwordRuntime()
+    self.disconnectActId = SafeRemoveSchedule(self.disconnectActId)
+    self.delayToDisappear = SafeRemoveSchedule(self.delayToDisappear)
+    self.controlActId = SafeRemoveSchedule(self.controlActId)
+    self.ignoreColActId = SafeRemoveSchedule(self.ignoreColActId)
+    self.netRideActId = SafeRemoveSchedule(self.netRideActId)
+    self.gestureActId = SafeRemoveSchedule(self.gestureActId)
+    self.ctlActId = SafeRemoveSchedule(self.ctlActId)
+    self.sampleTimeId = SafeRemoveSchedule(self.sampleTimeId)
+    self.buttonActId = SafeRemoveSchedule(self.buttonActId)
+
+    self:GiveBackHandEffect()
+
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+    self.whooshSoundInfo = nil
+
+    self.isCharge = false
+end
+
+function SpellDrivingSword:GiveBackHandEffect()
+    self.handEoUpdateId = SafeRemoveSchedule(self.handEoUpdateId)
+    if not IsNullOrDestroyed(self.handEo) then
+        CL.EffectMgr.Instance:GiveBack(self.handEo)
+    end
+    self.handEo = nil
+end
+
+function SpellDrivingSword:OnAwake()
+    self.stabFc = nil
+    self.enteredRideState = false
+    self.rideStateCharacter = nil
+
+    self.onStabEnter = function(si)
+        local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+        self.stabFc = fc
+        
+        if CL.Network.VRNetworkManager.ClientOnline then
+            return
+        end
+        
+        if not self:IsExistSword() then
+            return
+        end
+        
+        if not IsNullOrDestroyed(fc) then
+            if not self.isEnhanceAttack then
+                --print("hp factor:" .. fc.attr:GetHpFactor())
+                if fc.attr:GetHpFactor() > self.stabHpFactor then
+                    self:DelayToBreakStab(si)
+                    return
+                end
+            end
+            
+            if not fc.muscleState:IsPowerfulCharacter() then
+                fc.motion:Knockout()
+                
+                local mu = fc.ra:GetMuscle(si.stabTarget)
+                if mu and not IsNullOrDestroyed(self.drivingIB) then
+                    self.stabFc = fc
+                    local mucs = fc.bone:GetTemporaryListMuscleChain(mu.muscleName)
+                    local cmu = nil
+                    local vel = nil
+                    CL.Scheduler.Create(self.trans, 
+                        function(sche, t, s)
+                            if not self:IsExistSword() or self.state ~= self.state_attack or IsNullOrDestroyed(si.joint) 
+                                or self.stabFc ~= fc or IsNullOrDestroyed(self.drivingIB) or fc.ra:HasBeenRipped() then
+                                sche:Stop()
+                                return
+                            end
+                            
+                            mu.rb.velocity = UE.Vector3.Lerp(mu.rb.velocity, self.drivingIB.rb.velocity, self.targetMuLerpSpeed)
+                            --print("lerp muscle vel-----------------:" .. mu.rb.velocity.magnitude .. "  ib:" .. self.drivingIB.rb.velocity.magnitude)
+                            vel = mu.rb.velocity
+                            for i = 0, mucs.Count - 1 do
+                                cmu = fc.bone.ragdoll:GetMuscle(mucs[i])
+                                if cmu and cmu.muscleName ~= mu.muscleName and not IsNullOrDestroyed(cmu.rb) then
+                                    cmu.rb.velocity = UE.Vector3.Lerp(cmu.rb.velocity, vel, self.muLerpSpeed)
+                                end
+                            end
+                        end,
+                    0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+                end
+            end
+        end
+    end
+    
+    self.onStabExit = function(si)
+        local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+        if not IsNullOrDestroyed(fc) then
+            self.stabFc = nil
+        end
+    end
+    
+    self.onGrabSword = function(a, t)
+        if t then
+            if not self:IsExistSword() then
+                return
+            end
+            
+            local ib = self.drivingIB
+            self:DisconnectWithSword()
+            
+            --ib.durability = CL.InteractTrigger.BrokenWarning + 1
+            
+            self:StopDelayToDisappear()
+            if CL.Network.VRNetworkManager.IsOnline then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerCloseSkill() end
+                end
+            else
+                self.host:CloseSkill()
+            end
+        end
+    end
+    
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.Network.VRNetworkManager.ClientOnline then
+            return
+        end
+        
+        if self.isEnhanceAttack then
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp + self.enhanceFinalMlp
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd = CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd + self.enhanceFinalAdd
+            if not fc.attr:IsDead() then
+                self.lastHitFc = fc
+            end
+        else
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp + self.defaultFinalMlp
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd = CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd + self.defaultFinalAdd
+        end
+    end
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.Network.VRNetworkManager.ClientOnline then
+            return
+        end
+        
+        --print("self.hitPhase2 relaVel----------- -- ".. relaVel.magnitude)
+        if self.isEnhanceAttack and fc.attr:IsDead() and relaVel.magnitude > self.explodeExpectSpeed then
+            local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+            if frag then
+                CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag
+            end
+        end
+        
+        self.lastHitFc = nil
+        
+        if not fc.muscleState:IsPowerfulCharacter() then
+            if self.floatingOnHit < 0 or (self.floatingOnHit >= 0 and UE.Time.time <= self.floatingOnHit) then
+                if self.drivingIBScp then
+                    self.drivingIBScp:PlayHitEffect(point)
+                end
+                CL.FullBodyMuscleState.dmgEffectData.knockout = true
+                CL.FullBodyMuscleState.dmgEffectData.floating = true
+                self.floatingOnHit = 0
+                
+                local si = self.impactSound:PlaySoundInfo()
+                if si then
+                    si.ao.trans.position = point
+                end
+            end
+        end
+    end
+    
+    self.hitCharacterPhase = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        local dmgMlp = 1
+        if self.state == self.state_spinInPlace then
+            dmgMlp = 1
+        elseif self.state == self.state_ride then
+            dmgMlp = 1
+        elseif self.state == self.state_swordBack then
+            dmgMlp = 1
+        elseif self.state == self.state_standBy then
+            dmgMlp = 1
+        elseif self.state == self.state_surround then
+            dmgMlp = self.pvpSurroundDmgMlp
+        elseif self.state == self.state_attack then
+            dmgMlp = 1
+        end
+        character.aiProxy.finalDmgMlp = character.aiProxy.finalDmgMlp * dmgMlp
+    end
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetId and self.initNetId == netId then
+            self.initNetId = nil
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            --print("client local init sword------------------")
+            self:InitSword(netIb.ib)
+        end
+    end
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+    
+    self.onSlotCharacterDead = function()
+        local sh = self:GetSlotHand()
+        if sh and not IsNullOrDestroyed(sh) then
+            if CL.Network.VRNetworkManager.IsOnline and sh.character.IsLocalPlayer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandCloseSkill(sh.character.networkPlayer.netId) end
+            end
+            self.host:CloseSkill()
+        end
+
+        if CL.Network.VRNetworkManager.ClientOnline and self.OnSpawnNetworkIB then
+            CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+        end
+    end
+    
+    self.defaultMana = self.host.manaCost
+end
+
+function SpellDrivingSword:OnDead()
+    self:DrivingHandPose(false)
+    self:CleanupDrivingSwordRuntime()
+    self:StopStateAction()
+end
+
+function SpellDrivingSword:OnDestroy()
+    self:CleanupDrivingSwordRuntime()
+    self:StopStateAction()
+    self:ReleaseAllWeapon()
+    if CL.Network.VRNetworkManager.ClientOnline and self.OnSpawnNetworkIB then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+    end
+    if self.slotCharacter then
+        self.slotCharacter.attr:DeadEvent("-", self.onSlotCharacterDead)
+        self.slotCharacter = nil
+    end
+    self.__base.OnDestroy(self)
+end
+
+function SpellDrivingSword:DelayToBreakStab(si)
+    CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then return end
+            self:BreakAllStab()
+        end,
+    0, 0, 0.02):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function SpellDrivingSword:RefleshFingerTrans()
+    local sh = self:GetSlotHand()
+    local handBone = self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and 
+            UE.HumanBodyBones.RightIndexDistal or UE.HumanBodyBones.LeftIndexDistal
+    self.indexTrans = sh.character.anim:GetBoneTransform(handBone)
+    if IsNullOrDestroyed(self.indexTrans) then
+        self.indexTrans = sh.physicsHand.aimPoint
+    else
+        local child = self.indexTrans:GetChild(0)
+        if not IsNullOrDestroyed(child) then
+            self.indexTrans = child
+        end
+    end
+    
+    handBone = self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and 
+            UE.HumanBodyBones.RightMiddleDistal or UE.HumanBodyBones.LeftMiddleDistal
+    self.middleTrans = sh.character.anim:GetBoneTransform(handBone)
+    if IsNullOrDestroyed(self.middleTrans) then
+        self.middleTrans = sh.physicsHand.aimPoint
+    else
+        local child = self.middleTrans:GetChild(0)
+        if not IsNullOrDestroyed(child) then
+            self.middleTrans = child
+        end
+    end
+end
+
+function SpellDrivingSword:SlotSpell(slot)
+    local hand = self:GetSlotHand()
+    if not hand or IsNullOrDestroyed(hand) then
+        return
+    end
+    self.lastHandIdx = hand:GetHandIndex()
+    
+    self.connectRB.isKinematic = true
+    
+    self:RefleshFingerTrans()
+    
+    self:SettingPlayer()
+    
+    self:StartControlUpdate()
+    
+    if self.slotCharacter then
+        self.slotCharacter.attr:DeadEvent("-", self.onSlotCharacterDead)
+    end
+    
+    self.slotCharacter = hand.character
+    self.slotCharacter.attr:DeadEvent("+", self.onSlotCharacterDead)
+end
+
+function SpellDrivingSword:UnSlotSpell(slot)
+    self:CleanupDrivingSwordRuntime()
+    self:StopStateAction()
+
+    self:DisconnectWithSword()
+    
+    self:StopControlUpdate()
+    
+    if self.slotCharacter then
+        self.slotCharacter.attr:DeadEvent("-", self.onSlotCharacterDead)
+        self.slotCharacter = nil
+    end
+    self.__base.UnSlotSpell(self, slot)
+end
+
+function SpellDrivingSword:SettingPlayer()
+    local character = self:GetSlotHand().character
+    for i = 0, character.bodySlots.Length - 1 do
+        if character.bodySlots[i].slotName == "Slot_BackLeft" then
+            self.backSlotTrans[1] = character.bodySlots[i].transform
+        elseif character.bodySlots[i].slotName == "Slot_BackRight" then
+            self.backSlotTrans[0] = character.bodySlots[i].transform
+        end
+    end
+end
+
+function SpellDrivingSword:OpenSkill()
+    self:DrivingHandPose(true)
+    self.isCharge = true
+
+    if CL.Network.VRNetworkManager.IsOnline and
+        not SafeIsOwnerLocalPlayer(self.host.interact) then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            if self:IsExistSword() then
+                self:PrepareStandBy()
+            end
+        end
+        return
+    end
+    
+    self:StartSampleDir()
+    
+    self:StartGestureDetect()
+    
+    self:StartListenButton()
+    
+    --self:StopDelayToDisappear()
+    self:StopDelayToDisconnect()
+    
+    if not self:IsExistSword() then
+        local character = self.host:GetTriggeringCharacter()
+        if IsNullOrDestroyed(character) then
+            return
+        end
+        
+        local needMana = self.spawnMana
+        
+        if not character:HasEnoughMana(needMana) then
+            NoManaTips()
+            
+            if CL.Network.VRNetworkManager.IsOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandCloseSkill(CL.InteractCharacter.PlayerInstance.networkPlayer.netId) end
+            end
+            self.host:CloseSkill()
+            return
+        end
+        
+        
+        self:SommonSword()
+        
+        self:ResetState()
+    else
+        self:PrepareStandBy()
+    end
+end
+
+function SpellDrivingSword:CloseSkill()
+    --print("oncharge release------------------------")
+    
+    self:DrivingHandPose(false)
+    
+    self:StopStateAction()
+
+    self:TryDisconnectWithSword()
+        
+    self:StopGestureDetect()
+    
+    self:StopListenButton()
+    
+    self:StopSampleDir()
+    
+    self.isCharge = false
+    self.__base.CloseSkill(self)
+end
+
+function SpellDrivingSword:TryDisconnectWithSword()
+    if self.state == self.state_storage or self.state == self.state_standBy then
+        self:DelayToDisconnect()
+    else
+        if CL.Network.VRNetworkManager.ClientOnline then
+            if self:IsExistSword() then
+                local netId = self.drivingIB.netId
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandDisconnect(netId, CL.InteractCharacter.PlayerInstance.networkPlayer.netId) end
+            end
+        end
+        self:DisconnectWithSword()
+    end
+end
+
+function SpellDrivingSword:DelayToDisconnect()
+    if CL.Network.VRNetworkManager.IsOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    self:StopDelayToDisconnect()
+    self.disconnectActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if self:IsExistSword() then
+                if CL.Network.VRNetworkManager.IsOnline then
+                    local netId = self.drivingIB.netId
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if not CL.Network.VRNetworkManager.Instance.IsServer then
+                            state:CommandDisconnect(netId, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                        else
+                            state:ServerDisconnect(netId, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                        end
+                    end
+                end
+            end
+            self:DisconnectWithSword()
+        end,
+    0, 0, self.releaseTime).actionId
+end
+
+function SpellDrivingSword:StopDelayToDisconnect()
+    self.disconnectActId = CL.Scheduler.RemoveSchedule(self.disconnectActId)
+end
+
+function SpellDrivingSword:NetworkDisconnectWithSword(netId)
+    if not self:IsExistSword() then
+        return
+    end
+    --print("network discoonnect-----------")
+    if self.drivingIB.netId == netId then
+        --print("dot discoonnect-----------")
+        self:DisconnectWithSword()
+    end
+end
+
+function SpellDrivingSword:DisconnectWithSword()
+    --print("disconect with sword---------------")
+    self:StartDelayToDisappear(self.drivingIB)
+    
+    self:DisbanSword(true)
+end
+
+function SpellDrivingSword:StartDelayToDisappear(ib)
+    if IsNullOrDestroyed(ib) then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    
+    self.delayToDisappear = CL.Scheduler.Create(ib.trans, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(ib) and not ib:IsGrabbed() then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    if CL.Network.VRNetworkManager.ServerOnline then
+                        state:ServerDoDisappear(ib.netId)
+                    elseif CL.Network.VRNetworkManager.ClientOnline then
+                        state:CommandDoDisappear(ib.netId)
+                    end
+                end
+                
+                ib:Dead()
+            end
+        end,
+    0, 0, self.destroyTime).actionId
+end
+
+function SpellDrivingSword:NetworkDoDisappear(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    end
+    netIb.ib:Dead()
+end
+
+function SpellDrivingSword:StopDelayToDisappear()
+    self.delayToDisappear = CL.Scheduler.RemoveSchedule(self.delayToDisappear)
+end
+
+function SpellDrivingSword:IsExistSword()
+    return self.drivingIB ~= nil and not IsNullOrDestroyed(self.drivingIB)
+end
+
+function SpellDrivingSword:SommonSword()
+    local needMana = self.spawnMana * self.host.AppliedManaCostMultiplier
+    if not CostMana(self.host, needMana) then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local pos, rot = self:GetHangPos()
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.swordName, pos, 
+            rot, false, false, 0, true, 
+            function(netIB, weaponGo)
+                if not IsNullOrDestroyed(weaponGo) then
+                    self:InitSword(netIB.ib)
+                    
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerInitSword(netIB.netId) end
+                end
+            end)
+        else
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CommandSommonSword() end
+        end
+    else
+        local go = CL.PrefabPool.SpawnPrefab(self.swordName, "Weapon/")
+        local ib = go:GetComponent(typeof(CL.InteractBase))
+        self:InitSword(ib)
+    end
+end
+
+function SpellDrivingSword:IgnoreCollisionWithPlayer(ib, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), self.host.interact:GetCols(), ignore)
+    
+    local hand = self:GetSlotHand()
+    if not IsNullOrDestroyed(hand) then
+        CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), hand.physicsHand.colliders, ignore)
+        CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), hand:GetAnotherHand().physicsHand.colliders, ignore)
+        local playerCols = hand.character:GetPlayerUnit():GetCols()
+        CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), playerCols, ignore)
+    end
+end
+
+function SpellDrivingSword:InitSword(ib)
+    ib.rb.velocity = UE.Vector3.zero
+    --self.randomOffsetY = 0--math.random(0, 0.2)
+    
+    local pos, rot = self:GetHangPos()
+    ib.trans.position = pos
+    ib.trans.rotation = rot
+    
+    
+    --ib:ActivateTrail(true, CL.InteractTrigger.WhiteColor)
+    --ib.beAbleToShowGrab = false
+    ib.grabDistanceLimit = true
+    ib.gaze = nil
+    
+    ib.durability = -1
+    ib.durailityMax = -1
+    ib.decomposable = false
+    
+    self:IgnoreCollisionWithPlayer(ib, true)
+    
+    self.swordStabObj = ib:GetStabObject()
+    self.swordStabObj:StabEnterEvent("+", self.onStabEnter)
+    self.swordStabObj:StabExitEvent("+", self.onStabExit)
+    
+    ib:GrabBeginEvent("+", self.onGrabSword)
+    --ib:GrabEvent("+", self.onGrabSword)
+    
+    self.swordHitInfo = ib:GetRagdollHitInfo()
+    self.swordHitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    self.swordHitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    
+    self.swordHitInfo:OnInteractCharacterHitPhase1Event("+", self.hitCharacterPhase) 
+    
+    --self.swordStabObj.isActive = false
+    
+    self:ConnectSword(ib)
+    
+    ib.rb.useGravity = false
+    self.cacheMass = ib.rb.mass
+    ib.rb.mass = self.connectMass
+    --ib.rb.collisionDetectionMode = UE.CollisionDetectionMode.Discrete
+    
+    local it = ib:GetInteractTrigger()
+    if not IsNullOrDestroyed(it) and it.script then
+        self.drivingIBScp = it.script:GetSelf()
+        
+        self.drivingIBScp:PlayGlowEffect(true)
+        self.drivingIBScp:PlayGenEffect()
+    end
+    
+    
+    local si = self.summonSound:PlaySoundInfo()
+    if si then
+        si.ao.trans.position = pos
+    end
+    
+    self.drivingIB = ib
+    
+    local hand = self.host.interact:GetSlotHand()
+    if hand then
+        self.drivingIB:SetLatestHolder(hand.character.aiProxy)
+    end
+    
+    self.hoverSoundInfo = self.hoverSound:PlaySoundInfo()
+    if self.hoverSoundInfo then
+        self.hoverSoundInfo.ao.trans:SetParent(self.drivingIB.trans)
+        self.hoverSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+    end
+    
+    self:SwitchState(self.state_standBy, true)
+end
+
+function SpellDrivingSword:NetworkInitSword(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        self.initNetId = netId
+        return
+    end
+    
+    self:InitSword(netIb.ib)
+end
+
+function SpellDrivingSword:ConnectSword(ib)
+    local hand = self:GetSlotHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    --joint Contect
+    self.joint.transform:SetParent(nil)
+    self.joint.transform.localScale = UE.Vector3.one
+    self.joint.transform.position = UE.Vector3.zero
+    self.joint.transform.rotation = UE.Quaternion.identity
+    
+    self.joint.connectedBody = ib.rb
+    self.joint.anchor = ib.trans.position
+    self.joint.connectedAnchor = UE.Vector3.zero --ib.rb.centerOfMass
+    
+    self.riginQua = ib.trans.rotation
+    
+    local spring = self.jointSpring
+    local damper = self.jointDamper
+    if CL.Network.VRNetworkManager.ClientOnline then
+        spring = 0
+        damper = 0
+        
+        ib.networkIB:UpdateJointDrive(500000, 100)
+    end
+    local ld = self.joint.xDrive        
+    ld.positionSpring = spring
+    ld.positionDamper = damper
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = spring
+    sd.positionDamper = damper
+    self.joint.slerpDrive = sd
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+end
+
+function SpellDrivingSword:BreakConnect()
+    self.joint.connectedBody = nil
+    
+    local ld = self.joint.xDrive        
+    ld.positionSpring = 0
+    ld.positionDamper = 0
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = 0
+    sd.positionDamper = 0
+    sd.positionDamper = 0
+    
+    self.joint.transform:SetParent(self.trans)
+end
+
+function SpellDrivingSword:GetHangPos()
+    local hand = self:GetSlotHand()
+    local character = hand.character
+    local headset = character:GetHeadSet()
+    local height = character:GetPlayerHeight()
+    local length = headset.position.y - character.trans.position.y
+    local pos = character.trans.position 
+        + (self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and 1 or -1) * character.trans.right * height * self.initXAxisMlp
+        + character.trans.up * (length * self.initYAxisMlp) --+ self.randomOffsetY)
+    
+    local rot = nil
+    if self.isCharge then
+        local velocity = self:GetSampleDir() / 2
+        velocity = character.trans:TransformDirection(velocity)
+        local dis = velocity.magnitude
+        if dis < self.offsetOfHangPos then
+            pos = pos + velocity
+        else
+            pos = pos + velocity.normalized * self.offsetOfHangPos
+        end
+        
+        rot = UE.Quaternion.Lerp(UE.Quaternion.LookRotation(hand:GetIndexDir()), character.trans.rotation, self.lerpOfHangRot) * UE.Quaternion.Euler(0, 0, 90)
+    else
+        rot = character.trans.rotation * UE.Quaternion.Euler(0, 0, 90)
+    end
+    return pos, rot
+end
+
+function SpellDrivingSword:GetRidePos()
+    local hand = self:GetSlotHand()
+    local character = hand.character
+    local pos = character.trans.position 
+        - character.trans.forward * self.swordLength / 2
+    
+    local rot = character.trans.rotation
+    return pos, rot
+end
+
+function SpellDrivingSword:GetStoragePos()
+    local character = self:GetSlotHand().character
+    local height = character:GetPlayerHeight()
+    local offset = self.swordLength > height and self.swordLength - height or 0
+    local trans = self.backSlotTrans[self.lastHandIdx]
+    local pos = trans.position 
+        + (self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and 1 or -1) * trans.right * height * self.storageXAxisMlp
+        - (trans.forward * (offset + height * self.storageYAxisMlp))
+        + trans.up * height * self.storageZAxisMlp
+    return pos, trans.rotation
+end
+
+function SpellDrivingSword:StartControlUpdate()
+    self:StopControlUpdate()
+    self.controlActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if CL.Network.VRNetworkManager.ClientOnline then
+                self:NetworkDrivingUpdate()
+            else
+                self:DrivingSwordUpdate()
+            end
+        end,
+    0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpellDrivingSword:StopControlUpdate()
+    self.controlActId = CL.Scheduler.RemoveSchedule(self.controlActId)
+end
+
+function SpellDrivingSword:DrivingSwordUpdate()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    if UE.Time.time < self.endSpinTime then
+        return
+    end
+    
+    if self.state == self.state_standBy then
+        self:StandBy()
+    elseif self.state == self.state_storage then
+        self:Storage()
+    elseif self.state == self.state_surround then
+        self:Surround()
+    elseif self.state == self.state_attack then
+        self:Attack()
+    elseif self.state == self.state_cut then
+        self:AttackCut()
+    elseif self.state == self.state_swordBack then
+        self:SwordBack()
+    elseif self.state == self.state_spinInPlace then
+        self:Surround()
+    elseif self.state == self.state_ride then
+        self:Ride()
+    end
+end
+
+function SpellDrivingSword:DisbanSword(resetDura)
+    self:BreakConnect()
+--    if self:IsExistSword() then
+--        self.drivingIB:Dead()
+--    end
+
+    if self:IsExistSword() then
+        if self.state == self.state_spinInPlace then
+            self:BreakSpinInPlace()
+        end
+        --self:EndSpinInPlace()
+        --elseif self.state == self.state_ride then
+        --    self:StopRide()
+        --elseif self.state == self.state_swordBack then
+        --    self:EndSwordBack()
+        --elseif self.state == self.state_standBy then
+        --    self:EndStandBy()
+        --elseif self.state == self.state_surround then
+        --    self:EndSurround()
+        --elseif self.state == self.state_attack then
+        --    self:EndAttack()
+        --end
+        
+        self.drivingIB.rb.useGravity = true
+        self.drivingIB.rb.mass = self.cacheMass
+        self:IgnoreCollisionWithPlayer(self.drivingIB, false)
+        
+        self.drivingIB:ClearThrowAssist()
+        
+        self.drivingIB.gaze = self.drivingIB.trans:GetComponent(typeof(CL.GazeObj))
+        self.drivingIB.beAbleToShowGrab = true
+        self.drivingIB.grabDistanceLimit = false
+        self.drivingIB.durailityMax = self.defaultDuraMax
+        self.drivingIB.durability = self.drivingIB.durailityMax
+        
+        if CL.Network.NetworkRoomMgr.IsInPvpMode then
+            self.drivingIB.durailityMax = self.pvpDuraMax
+            self.drivingIB.durability = self.drivingIB.durailityMax
+        end
+        
+        if self.drivingIBScp then
+            self.drivingIBScp:PlayGlowEffect(false)
+            self.drivingIBScp:PlayTrailEffect(false)
+            self.drivingIBScp:PlayChargingEffect(false)
+            self.drivingIBScp:CloseEmission()
+            self.drivingIBScp:DrivingStop()
+        end
+        
+        self.drivingIB:GrabBeginEvent("-", self.onGrabSword)
+    end
+    if self.swordStabObj and not IsNullOrDestroyed(self.swordStabObj) then
+        self.swordStabObj:StabEnterEvent("-", self.onStabEnter)
+        self.swordStabObj:StabExitEvent("-", self.onStabExit)
+    end
+    if self.swordHitInfo then
+        self.swordHitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+        self.swordHitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+    end
+    self.swordHitInfo = nil
+    
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.hoverSoundInfo)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.rotSoundInfo)
+    
+    self.stabFc = nil
+    self.state = -1
+    self.drivingIBScp = nil
+    self.drivingIB = nil
+end
+
+function SpellDrivingSword:DrivingHandPose(flag)
+    local sh = self.host.interact:GetSlotHand()        
+    if flag then
+        if IsNullOrDestroyed(sh) then
+            return
+        end
+
+        if IsNullOrDestroyed(self.indexTrans) or IsNullOrDestroyed(self.middleTrans) then
+            return
+        end
+        if not self.handEo or IsNullOrDestroyed(self.handEo) then
+            self.handEo = CL.EffectMgr.Instance:PlayEffect(self.fingerEffectName, self.indexTrans.position, UE.Quaternion.identity)
+        end
+        self.handEo.trans:SetParent(self.indexTrans)
+        self.handEo.trans.position = (self.indexTrans.position + self.middleTrans.position)/2
+        
+        self.handEoUpdateId = SafeRemoveSchedule(self.handEoUpdateId)
+        self.handEoUpdateId = CL.Scheduler.Create(self.handEo,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.handEo) or IsNullOrDestroyed(self.indexTrans) or IsNullOrDestroyed(self.middleTrans) then
+                sche:Stop()
+                return
+            end
+            
+            self.handEo.trans.position = (self.indexTrans.position + self.middleTrans.position)/2
+        end,
+        0, 1).actionId
+    else
+        self:GiveBackHandEffect()
+        if IsNullOrDestroyed(sh) then
+            return
+        end
+    end
+    
+    --print("freeze hand---------------")
+    sh.handPoseControl:SetFingerFreeze(flag)
+    
+    if flag then
+        --print("submit hand pose---------------")
+        sh.handPoseControl:SubmitHandPose(self.fingerWeights, 1, true)
+    end
+end
+
+function SpellDrivingSword:PlaySwitchStateEffect()
+    if IsNullOrDestroyed(self.indexTrans) then
+        return
+    end
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.switchEffectName, self.indexTrans.position, UE.Quaternion.identity)
+    eo.trans:SetParent(self.indexTrans)
+    eo.trans.position = (self.indexTrans.position + self.middleTrans.position)/2
+end
+
+function SpellDrivingSword:UpdateHandEffect()
+    if not IsNullOrDestroyed(self.handEo) and not IsNullOrDestroyed(self.indexTrans) and not IsNullOrDestroyed(self.middleTrans) then
+        self.handEo.trans.position = (self.indexTrans.position + self.middleTrans.position)/2
+    end
+end
+---------------------------------------------State----------------------------------------------
+
+function SpellDrivingSword:ResetState()
+    self.state = self.state_standBy
+end
+
+function SpellDrivingSword:PrepareStandBy()
+    self.chargeRotateAngle = 0
+    
+    if not self:IsExistSword() then
+        return
+    end
+    
+    if self.drivingIBScp then
+        self.drivingIBScp:PlayTrailEffect(false)
+    end
+    local hangPos, hangRot = self:GetHangPos()
+    local hand = self:GetSlotHand()
+    local character = hand.character
+    self.rotTrans:SetParent(nil)
+    self.rotTrans.position = hangPos
+    self.followTrans.localPosition = UE.Vector3.zero
+    self.followTrans.localRotation = UE.Quaternion.identity
+    
+    --update mana
+    self.host.manaCost = self.defaultMana
+end
+
+function SpellDrivingSword:EndStandBy()
+    self.rotTrans:SetParent(self.trans)
+    self.rotTrans.localPosition = UE.Vector3.zero
+    
+    self.followTrans.localPosition = UE.Vector3.zero
+    self.followTrans.localRotation = UE.Quaternion.identity
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.rotSoundInfo)
+    self.rotSoundInfo = nil
+    
+    if self.drivingIBScp then
+        self.drivingIBScp:PlayChargingEffect(false)
+    end
+end
+
+function SpellDrivingSword:StandBy()
+    local hangPos, hangRot = self:GetHangPos()
+    local pos = self:GetCenterOfSword()
+    
+    --self.testPoint.position = hangPos
+    
+    local vec = hangPos - pos
+    local dis = vec.magnitude
+    local dir = vec.normalized
+    local disOfDelta = (CL.EasingEquations.EaseInQuint(0, 1, dis) * self.lerpOfFollow) * self.speedOfFollow * UE.Time.deltaTime
+    
+    local targetPos = dis > disOfDelta and pos + dir * disOfDelta or hangPos
+    --CL.PhysicsFollow.TrackPosition(self.drivingIB.rb, targetPos)
+    
+    --hangRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, hangRot, UE.Time.deltaTime * self.angularSpeedOfFollow)
+    --CL.PhysicsFollow.TrackRotation(self.drivingIB.rb, hangRot)
+    
+    self.joint.anchor = targetPos
+    
+    if self.isPress and (self.enhanceAvaliable or self.isEnhanceAttack) then
+        local angle = 360 * self.turnOfCharge * UE.Time.deltaTime * (self.lastHandIdx * 2 - 1)
+        self.chargeRotateAngle = (self.chargeRotateAngle + angle)-- % 360
+        self.rotTrans.localRotation = hangRot
+        --self.followTrans.localRotation = hangRot * UE.Quaternion.Euler(0, 0, self.chargeRotateAngle)
+        self.followTrans:Rotate(0, 0, angle, UE.Space.Self)
+        
+        hangRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, self.followTrans.rotation, UE.Time.unscaledDeltaTime * self.angularSpeedOfFollow)
+        self.joint.targetRotation = self.followTrans.rotation * UE.Quaternion.Inverse(self.riginQua)
+        
+        if not self.rotSoundInfo then
+            self.rotSoundInfo = self.rotSound:PlaySoundInfo()
+            if self.rotSoundInfo then
+                self.rotSoundInfo.ao.transform:SetParent(self.drivingIB.trans)
+                self.rotSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+            end
+        end
+        if self.drivingIBScp then
+            self.drivingIBScp:PlayChargingEffectAtPosition(targetPos, self.rotTrans.rotation)
+        end
+    else
+        hangRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, hangRot, UE.Time.unscaledDeltaTime * self.angularSpeedOfFollow)
+        self.joint.targetRotation = hangRot * UE.Quaternion.Inverse(self.riginQua)
+        
+        if self.rotSoundInfo then
+            CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.rotSoundInfo)
+            self.rotSoundInfo = nil
+        end
+        if self.drivingIBScp then
+            self.drivingIBScp:PlayChargingEffect(false)
+        end
+    end
+end
+
+function SpellDrivingSword:Storage()
+    local hangPos, hangRot = self:GetStoragePos()
+    local pos = self:GetCenterOfSword()
+    
+    --self.testPoint.position = hangPos
+    
+    local vec = hangPos - pos
+    local dis = vec.magnitude
+    local dir = vec.normalized
+    local disOfDelta = self.speedOfFollow * UE.Time.deltaTime
+    local targetPos = dis > disOfDelta and pos + dir * disOfDelta or hangPos
+    --CL.PhysicsFollow.TrackPosition(self.drivingIB.rb, targetPos)
+    
+    hangRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, hangRot, UE.Time.unscaledDeltaTime * self.angularSpeedOfFollow)
+    --CL.PhysicsFollow.TrackRotation(self.drivingIB.rb, hangRot)
+    
+    self.joint.anchor = targetPos
+    --self.joint.targetRotation = hangRot * UE.Quaternion.Inverse(self.riginQua)
+    
+    if dis > 3 then
+        local targetRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, UE.Quaternion.LookRotation(dir) * UE.Quaternion.Euler(0, 0, 90), UE.Time.deltaTime * self.angularSpeedOfBack)
+        self.joint.targetRotation = targetRot * UE.Quaternion.Inverse(self.riginQua)
+    else
+        local targetRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, hangRot, UE.Time.unscaledDeltaTime * self.angularSpeedOfBack * 10)
+        self.joint.targetRotation = targetRot * UE.Quaternion.Inverse(self.riginQua)
+    end
+end
+
+function SpellDrivingSword:PrepareStorage()
+    if self.drivingIBScp then
+        self.drivingIBScp:PlayTrailEffect(false)
+    end
+end
+
+function SpellDrivingSword:PrepareSurround()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    self.rotTrans.forward = self.surroundDir
+    local hand = self:GetSlotHand()
+    if not hand or IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local character = hand.character
+    local characterPos = character.trans.position
+    
+    local pos = self:GetCenterOfSword()
+    local planeNormal = self.rotTrans.up
+    local center = self:GetIntersectWithLineAndPlane(characterPos, character.trans.up, self.rotTrans.up, pos)
+    
+    local vec = pos - center
+    local dis = vec.magnitude
+    local dir = (pos - center).normalized
+    
+    self.rotTrans:SetParent(character.trans)
+    self.rotTrans.position = center
+    local surroundForward = UE.Vector3.RotateTowards(
+        UE.Vector3.Dot(UE.Vector3.up, self.surroundDir) < 0 and UE.Vector3.up or UE.Vector3.down, 
+        self.surroundDir, (90 + (self.baseHorizontalAngle + self.maxHorizontalAngle * (1 - math.min(1, dis/self.maxRadius)))) * UE.Mathf.Deg2Rad, 0)
+    self.rotTrans.forward = surroundForward
+    
+    --CL.DebugDraw.DrawLine(hand.trans.position, hand.trans.position + self.surroundDir, UE.Color.green, 5)
+    --CL.DebugDraw.DrawLine(hand.trans.position, hand.trans.position + surroundForward, UE.Color.red, 5)
+    --CL.DebugDraw.DrawLine(hand.trans.position, hand.trans.position + (UE.Vector3.Dot(UE.Vector3.up, self.surroundDir) < 0 and UE.Vector3.up or UE.Vector3.down), UE.Color.yellow, 5)
+    --self.rotTrans.forward = self.surroundDir
+    
+    self.followTrans.position =  dis > self.maxRadius and center + dir * self.maxRadius or pos
+    self.followTrans.forward = dir
+    
+    local curFollowPos = self.followTrans.position
+    local height = character:GetPlayerHeight()
+    local limitHeight = characterPos.y + height * self.maxSurroundHeightMlp
+    if curFollowPos.y > limitHeight then
+        self.followTrans.position = UE.Vector3(curFollowPos.x, limitHeight, curFollowPos.z)
+    end
+    limitHeight = characterPos.y + height * self.minSurroundHeightMlp
+    if curFollowPos.y < limitHeight then
+        self.followTrans.position = UE.Vector3(curFollowPos.x, limitHeight, curFollowPos.z)
+    end
+    
+    --self.testPoint.position = center
+    self.surroundRotSpeed = self.surroundRotAngle + dis * self.rotateMlp
+    
+    if not IsNullOrDestroyed(self.swordStabObj) then
+        self.swordStabObj.isActive = false
+    end
+    
+    self.lastRotIndex = self.rotIndex
+    
+    if self.drivingIBScp then
+        self.drivingIBScp:PlayTrailEffect(true)
+    end
+    
+    self.whooshSoundInfo = self.whooshSound:PlaySoundInfo()
+    if self.whooshSoundInfo then
+        self.whooshSoundInfo.ao.trans:SetParent(self.trans)
+        self.whooshSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+    end
+    
+    self.surroundSound:PlaySoundInfo()
+    
+    self.host.manaCost = CL.Network.NetworkRoomMgr.IsInPvpMode and self.pvpSurroundMana or self.surroundMana  
+end
+
+function SpellDrivingSword:EndSurround()
+    self.rotTrans:SetParent(self.trans)
+    self.rotTrans.localPosition = UE.Vector3.zero
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+end
+
+function SpellDrivingSword:GetIntersectWithLineAndPlane(point, dir, planeNormal, planePoint)
+    local d = UE.Vector3.Dot(planePoint - point, planeNormal) / UE.Vector3.Dot(dir, planeNormal)
+    return d * dir + point
+end
+
+function SpellDrivingSword:Surround()
+    local followPos = self.followTrans.position
+    local pos = self:GetCenterOfSword()
+    --self.testPoint.position = self.attackPos
+    
+    local vec = followPos - pos
+    local dis = vec.magnitude
+    local dir = vec.normalized
+    
+    
+    local disOfDelta = self.speedOfSurround * UE.Time.deltaTime
+    local targetPos = dis > disOfDelta and pos + dir * disOfDelta or followPos
+    --CL.PhysicsFollow.TrackPosition(self.drivingIB.rb, targetPos)
+    local targetRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, self.followTrans.rotation, UE.Time.unscaledDeltaTime * self.angularSpeedOfSurround)
+    --CL.PhysicsFollow.TrackRotation(self.drivingIB.rb, targetRot)
+    
+    self.joint.anchor = targetPos
+    self.joint.targetRotation = targetRot * UE.Quaternion.Inverse(self.riginQua)
+    
+    self.drivingIB:MarkThrowAssist(10)
+
+    
+    if dis < disOfDelta * 3 then
+        local angle = self.surroundRotSpeed * UE.Time.deltaTime
+        self.rotTrans:Rotate(0, self.rotIndex * angle, 0)
+        --self.totalSurroundDegree = self.totalSurroundDegree + angle
+    end
+    
+    --self.pumpAudioInfo.audio.pitch = UE.Mathf.Lerp(lPumpPitch, self.maxPumpPitch, tt/self.chargeTime) 
+    if self.whooshSoundInfo then
+        if self.state == self.state_surround then
+            local hand = self:GetSlotHand()
+            local character = hand.character
+            local dot = UE.Vector3.Dot(character.trans.forward, (pos - character.trans.position).normalized)
+            self.whooshSoundInfo.audio.volume = math.max(dot, 0) * self.whooshMaxVol + self.whooshBaseVol
+        else
+            local dot = UE.Vector3.Dot(self.rotTrans.forward, self.followTrans.forward)
+            self.whooshSoundInfo.audio.volume = math.max(dot, 0) * self.whooshMaxVol + self.whooshBaseVol
+        end
+    end
+end
+
+function SpellDrivingSword:PrepareSpinInPlace()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    local pos = self:GetCenterOfSword()
+    local rot = self.drivingIB.trans.rotation
+    self.rotTrans:SetParent(nil)
+    self.rotTrans.position = pos
+    self.rotTrans.rotation = rot
+    
+    self.followTrans.position = pos + self.drivingIB.trans.forward * self.spinRadius
+    self.followTrans.rotation = rot
+    
+    self.spinPrevPos = pos
+    self.spinPrevRot = rot
+    
+    self.rotIndex = 1--self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and 1 or -1
+    
+    --self.testPoint.position = center
+    self.surroundRotSpeed = self.spinRotAngle + self.spinRadius * self.rotateMlp
+    
+    self.floatingOnHit = -1
+    
+    self.drivingIB:MarkThrowAssist(10)
+
+    if not IsNullOrDestroyed(self.swordStabObj) then
+        self.swordStabObj.isActive = false
+    end
+    
+    if self.ignoreEnvOnSpin > 0 then
+        if self.ignoreColActId > 0 then
+            self:StopDelayIgnoreCollsionWithEnv()
+            self:IgnoreCollisionWithEnv(nil, nil, false)
+        end
+        self:DelayIgnoreCollsionWithEnv(pos, self.spinRadius + self.swordLength - 0.18, true, 0.2)
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerPrepareSpinOnPos(pos, rot) end
+    end
+    
+    if self.drivingIBScp then
+        self.drivingIBScp:PlayTrailEffect(true)
+    end
+    
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = self.jointSpring * 2
+    sd.positionDamper = self.jointDamper * 2
+    self.joint.slerpDrive = sd
+    
+    self.spinOnSound:PlaySoundInfo()
+    self.whooshSoundInfo = self.whooshSound:PlaySoundInfo()
+    if self.whooshSoundInfo then
+        self.whooshSoundInfo.ao.trans:SetParent(self.drivingIB.trans)
+        self.whooshSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+    end
+    
+    self.host.manaCost = self.defaultMana * 2
+end
+
+function SpellDrivingSword:LocalPrepareSpinInPlace()
+    self.spinOnSound:PlaySoundInfo()
+end
+
+function SpellDrivingSword:NetworkPrepareSpinOnPos(pos, rot)
+    if not self:IsExistSword() then
+        return
+    end
+    
+    --self.rotTrans:SetParent(nil)
+    --self.rotTrans.position = pos
+    --self.rotTrans.rotation = rot
+    --self.followTrans.position = pos + self.drivingIB.trans.forward * self.spinRadius
+    --self.followTrans.rotation = rot
+    
+    self.spinPrevPos = pos
+    self.spinPrevRot = rot
+    
+    self.rotIndex = 1--self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and 1 or -1
+    
+    --self.testPoint.position = center
+    self.surroundRotSpeed = self.spinRotAngle + self.spinRadius * self.rotateMlp
+    
+    self.floatingOnHit = -1
+    
+    self.drivingIB:MarkThrowAssist(10)
+    
+    if not IsNullOrDestroyed(self.swordStabObj) then
+        self.swordStabObj.isActive = false
+    end
+    
+    if self.ignoreEnvOnSpin > 0 then
+        if self.ignoreColActId > 0 then
+            self:StopDelayIgnoreCollsionWithEnv()
+            self:IgnoreCollisionWithEnv(nil, nil, false)
+        end
+        self:DelayIgnoreCollsionWithEnv(pos, self.spinRadius + self.swordLength - 0.18, true, 0.2)
+    end
+    
+    if self.drivingIBScp then
+        self.drivingIBScp:PlayTrailEffect(true)
+    end
+    
+    self.whooshSoundInfo = self.whooshSound:PlaySoundInfo()
+    if self.whooshSoundInfo then
+        self.whooshSoundInfo.ao.trans:SetParent(self.drivingIB.trans)
+        self.whooshSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+    end
+end
+
+function SpellDrivingSword:BreakSpinInPlace()
+    self.drivingIB.trans.position = self.spinPrevPos
+    self.drivingIB.trans.rotation = self.spinPrevRot
+    
+    if self.ignoreColActId > 0 then
+        self:StopDelayIgnoreCollsionWithEnv()
+    end
+    if self:IsExistIgnoreCol() then
+        self:IgnoreCollisionWithEnv(nil, nil, false)
+    end
+    
+    self:EndSpinInPlace()
+end
+
+function SpellDrivingSword:EndSpinInPlace()
+    self.floatingOnHit = 0
+    
+    if self.ignoreColActId > 0 then
+        self:StopDelayIgnoreCollsionWithEnv()
+    end
+    if self:IsExistIgnoreCol() then
+        self.endSpinTime = UE.Time.time + 0.5
+        --print("end spin in place----------------delay ignoreCollision with env and pull back:  false")
+        self:DelayIgnoreCollsionWithEnvAndPullBack(nil, nil, false, 0.5)
+    end
+    
+    if not CL.Network.VRNetworkManager.ClientOnline then
+        local sd = self.joint.slerpDrive
+        sd.positionSpring = self.jointSpring
+        sd.positionDamper = self.jointDamper
+        self.joint.slerpDrive = sd
+    end
+    
+    self.rotTrans:SetParent(self.trans)
+    self.rotTrans.localPosition = UE.Vector3.zero
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+end
+
+function SpellDrivingSword:DelayIgnoreCollsionWithEnvAndPullBack(pos, radius, ignore, time)
+    self:StopDelayIgnoreCollsionWithEnv()
+    self.ignoreColActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if not self:IsExistSword() then
+                sche:Stop()
+                return
+            end
+            
+            if not self.joint or IsNullOrDestroyed(self.joint) then
+                self:IgnoreCollisionWithEnv(pos, radius, ignore)
+                sche:Stop()
+                return
+            end
+            local startPos = self.spinPrevPos
+            self:CheckObstacle(startPos, self.drivingIB.trans.forward, self.swordLength)
+            if not self.isObstacle then
+                self.endSpinTime = -1
+                self:IgnoreCollisionWithEnv(pos, radius, ignore)
+                sche:Stop()
+                --CL.DebugDraw.DrawLine(startPos, startPos + self.drivingIB.trans.forward * self.swordLength, UE.Color.red, 5)
+                return
+            else
+                self.joint.anchor = self.spinPrevPos
+                self.joint.targetRotation = self.spinPrevRot * UE.Quaternion.Inverse(self.riginQua)
+            end
+            
+            if t >= time then
+                self:IgnoreCollisionWithEnv(pos, radius, ignore)
+            end
+        end,
+    0, time).actionId
+end
+
+function SpellDrivingSword:DelayIgnoreCollsionWithEnv(pos, radius, ignore, time)
+    self:StopDelayIgnoreCollsionWithEnv()
+    --print("delay ignore collision with env---------------:".. tostring(ignore))
+    self.ignoreColActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if not self.joint or IsNullOrDestroyed(self.joint) then
+                self:IgnoreCollisionWithEnv(pos, radius, ignore)
+                sche:Stop()
+                return
+            end
+            
+            if t >= time then
+                self:IgnoreCollisionWithEnv(pos, radius, ignore)
+            end
+        end,
+    0, 0, time).actionId
+end
+
+function SpellDrivingSword:StopDelayIgnoreCollsionWithEnv()
+    self.ignoreColActId = CL.Scheduler.RemoveSchedule(self.ignoreColActId)
+end
+
+function SpellDrivingSword:IgnoreCollisionWithEnv(pos, radius, ignore)
+    if ignore then
+        if not self:IsExistSword() then
+            return
+        end
+        --print("ignore collision with env-------------: ..true")
+        self.ignoreEnvList = {}
+        local num = UE.Physics.OverlapSphereNonAlloc(pos, radius, 
+            CL.PhysicsHelper.shareOverlapColArray, CL.LayerDefine.EnvLayerMask.value)
+        local otherCollider = nil
+        if num <= 0 then
+            return
+        end
+        local cols = self.drivingIB:GetCols()
+        local curCol = nil
+        for i = 0, num - 1 do
+            curCol = CL.PhysicsHelper.shareOverlapColArray[i]
+            CL.PhysicsHelper.IgnoreCollisions(curCol, cols, ignore)
+            table.insert(self.ignoreEnvList, #self.ignoreEnvList + 1, curCol)
+            --print("ignorecollsion with env---------:" .. curCol.transform.name)
+        end
+    else
+        --print("ignore collision with env-------------: ..false")
+        if #self.ignoreEnvList <= 0 then
+            return
+        end
+        if self:IsExistSword() then
+            local cols = self.drivingIB:GetCols()
+            for k, v in ipairs(self.ignoreEnvList) do
+                CL.PhysicsHelper.IgnoreCollisions(v, cols, ignore)
+            end
+        end
+        self.ignoreEnvList = {}
+    end
+end
+
+function SpellDrivingSword:IsExistIgnoreCol()
+    return #self.ignoreEnvList > 0
+end
+
+function SpellDrivingSword:GetCenterOfSword()
+    --return self.drivingIB.trans:TransformPoint(self.drivingIB.rb.centerOfMass)
+    return self.drivingIB.trans.position
+end
+
+function SpellDrivingSword:PrepareAttack()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    --print("prepare Stab------------")
+    --self.attackPos = self.createPoint.position + self.attackDir
+    --    * self.attackSpeed * self.attackScale
+    self.attackRot = UE.Quaternion.LookRotation(self.attackDir) * UE.Quaternion.Euler(0, 0, 90)
+    
+    if not IsNullOrDestroyed(self.swordStabObj) then
+        self.swordStabObj.isActive = true
+    end
+    self.isEnhanceAttack = self.enhanceAvaliable
+    
+    self.enhanceAvaliable = false
+
+    
+    self.curSpeedOfAttack = self.isEnhanceAttack and self.speedOfEnhanceAttack or self.speedOfAttack
+    
+    self.drivingIB:MarkThrowAssist(5)
+        
+    if self.drivingIBScp then
+        if self.isEnhanceAttack then
+            self.drivingIBScp:PlayStabEffect()
+        end
+        self.drivingIBScp:PlayTrailEffect(true)
+    end
+    
+    if self.isEnhanceAttack then
+        if self.chargeShotSound then
+            self.chargeShotSound:PlaySoundInfo()
+        end
+        
+        self.rotSoundInfo = self.rotSound:PlaySoundInfo()
+        if self.rotSoundInfo then
+            self.rotSoundInfo.ao.trans:SetParent(self.drivingIB.trans)
+            self.rotSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+        end
+        self:AllWeaponAttack(self.attackDir)
+    else
+        if self.attackSound then
+            self.attackSound:PlaySoundInfo()
+        end
+    end
+    
+    self.whooshSoundInfo = self.whooshSound:PlaySoundInfo()
+    if self.whooshSoundInfo then
+        self.whooshSoundInfo.ao.trans:SetParent(self.drivingIB.trans)
+        self.whooshSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+    end
+    
+    self.nextCheckObstacle = -1
+    
+    self.host.manaCost = self.defaultMana
+end
+
+function SpellDrivingSword:Attack()
+    local pos = self:GetCenterOfSword()
+    --self.testPoint.position = self.attackPos
+    local realSpeed = self.drivingIB.rb.velocity.magnitude
+    --print("rb speed----------:" .. realSpeed .. "  target speed:" ..  self.curSpeedOfAttack)
+        
+    local disOfDelta = self.curSpeedOfAttack * UE.Time.deltaTime
+    
+    if UE.Time.time > self.nextCheckObstacle then
+        self:CheckObstacle(pos - self.attackDir * 0.2, self.attackDir, disOfDelta + self.swordLength)
+        self.nextCheckObstacle = UE.Time.time + 0.2
+    end
+    if self.isObstacle or (self.stabFc and not IsNullOrDestroyed(self.stabFc) and self.stabFc.muscleState:IsPowerfulCharacter() and not self.stabFc.attr:IsDead()) then
+        local minSpeed = self.isEnhanceAttack and self.speedOfEnhanceAttack or self.speedOfAttack
+        self.curSpeedOfAttack = minSpeed + UE.Time.deltaTime * self.accOfAttack
+        --print("isObstacle---------: " .. tostring(self.isObstacle))
+    else
+        self.curSpeedOfAttack = self.curSpeedOfAttack < self.maxSpeedOfAttack and self.curSpeedOfAttack 
+        + UE.Time.deltaTime * self.accOfAttack or self.maxSpeedOfAttack
+    end
+    
+    disOfDelta = self.curSpeedOfAttack * UE.Time.deltaTime
+    local targetPos = pos + self.attackDir * disOfDelta
+    --CL.PhysicsFollow.TrackPosition(self.drivingIB.rb, targetPos)
+    
+    --local targetRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, self.attackRot, UE.Time.deltaTime * self.angularSpeedOfAttack)
+    --CL.PhysicsFollow.TrackRotation(self.drivingIB.rb, targetRot)
+    self.joint.anchor = targetPos
+    
+    local targetRot = self.attackRot
+    if self.isEnhanceAttack then
+        local angle = 360 * self.turnOfCharge * UE.Time.deltaTime * (self.lastHandIdx * 2 - 1)
+        self.chargeRotateAngle = (self.chargeRotateAngle + angle)-- % 360
+        
+        if IsNullOrDestroyed(self.stabFc) then
+            
+        end
+        targetRot = targetRot * UE.Quaternion.Euler(0, 0, self.chargeRotateAngle)
+    end
+    
+    self.joint.targetRotation = targetRot * UE.Quaternion.Inverse(self.riginQua)
+    
+    --if (pos - self.attackPos).sqrMagnitude < 0.0025 then
+    --    --self:SwitchState(self.state_swordBack)
+    --    self.isAttackEnd = true
+    --end
+    
+    if self.whooshSoundInfo then
+        self.whooshSoundInfo.audio.volume = math.min(realSpeed, self.maxSpeedOfAttack) * self.whooshMaxVol + self.whooshBaseVol
+    end
+end
+
+function SpellDrivingSword:CheckObstacle(pos, dir, length)
+    local isHit, hitInfo = UE.Physics.SphereCast(pos, 0.01, 
+        dir, length, CL.LayerDefine.EnvLayerMask.value)
+
+    self.isObstacle = isHit
+end
+
+function SpellDrivingSword:EndAttack()
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.rotSoundInfo)
+    self.whooshSoundInfo = nil
+    self.rotSoundInfo = nil
+    
+    if self.isEnhanceAttack then
+        self:ReleaseAllWeapon(self.attackDir * self.speedOfThrow)
+        self.isEnhanceAttack = false
+    end
+end
+
+function SpellDrivingSword:PrepareSwordBack(lastState)
+    if not self:IsExistSword() then
+        return
+    end
+    self.swordBackTime = 0
+    if lastState == self.state_attack then
+        self.swordBackTime = UE.Time.time + self.attackHoldingTime
+        self.swordBackRotDis = 1
+    elseif lastState == self.state_surround then
+        self.swordBackRotDis = 3
+    end
+    
+    if not IsNullOrDestroyed(self.swordStabObj) then
+        self.swordStabObj.isActive = false
+    end
+    
+    self.rotateOnBack = true
+    
+    self.curSpeedOfBack = self.speedOfBack
+    
+    self.floatingOnHit = UE.Time.time + self.backFloatingTime
+    --self.totalSurroundDegree = 0
+    
+    if self.drivingIBScp then
+        self.drivingIBScp:PlayTrailEffect(false)
+    end
+    
+    self.whooshSoundInfo = self.whooshSound:PlaySoundInfo()
+    if self.whooshSoundInfo then
+        self.whooshSoundInfo.ao.trans:SetParent(self.drivingIB.trans)
+        self.whooshSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+    end
+    self.backSound:PlaySoundInfo()
+    
+    self.host.manaCost = self.defaultMana
+end
+
+function SpellDrivingSword:EndSwordBack()
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+    
+    if not IsNullOrDestroyed(self.swordStabObj) then
+        self.swordStabObj.isActive = true
+    end
+end
+
+function SpellDrivingSword:SwordBack()
+    local hangPos, hangRot = self:GetHangPos()
+    local pos = self:GetCenterOfSword()
+    
+    --self.testPoint.position = hangPos
+    
+    local vec = hangPos - pos
+    local dis = vec.magnitude
+    local dir = vec.normalized
+    
+    self.curSpeedOfBack = self.curSpeedOfBack < self.maxSpeedOfBack and self.curSpeedOfBack 
+        + UE.Time.deltaTime * self.accOfBack or self.maxSpeedOfBack
+    local speed = self.curSpeedOfBack
+    local disOfDelta = speed * UE.Time.deltaTime
+    local targetPos = dis > disOfDelta and pos + dir * speed * UE.Time.deltaTime or hangPos
+    --CL.PhysicsFollow.TrackPosition(self.drivingIB.rb, targetPos)
+    
+    --local targetRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, hangRot, UE.Time.deltaTime * self.angularSpeedOfBack)
+    --CL.PhysicsFollow.TrackRotation(self.drivingIB.rb, targetRot)
+    self.joint.anchor = targetPos
+    
+    if dis < 3 then
+        local targetRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, hangRot, UE.Time.unscaledDeltaTime * self.angularSpeedOfBack)
+        self.joint.targetRotation = targetRot * UE.Quaternion.Inverse(self.riginQua)
+    else
+        if self.rotateOnBack then
+            --local handIdx = self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and -1 or 1
+            local angle = 360 * self.turnOfBack * UE.Time.deltaTime --* handIdx
+            local rotate = self.drivingIB.trans.rotation * UE.Quaternion.Euler(0, angle, 0)
+            --self.totalSurroundDegree = self.totalSurroundDegree + angle
+            self.joint.targetRotation = rotate * UE.Quaternion.Inverse(self.riginQua)
+            if dis < 5 then
+                if UE.Vector3.Dot(hangRot.eulerAngles, self.drivingIB.trans.forward) > 0.9 then
+                    self.rotateOnBack = false
+                end
+            end
+        end
+    end
+    if self.whooshSoundInfo then
+        if dis > 1 then
+            local speed = self.drivingIB.rb.velocity.magnitude
+            self.whooshSoundInfo.audio.volume = math.min(speed, self.speedOfBack) * self.whooshMaxVol + self.whooshBaseVol
+        else
+            CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+            self.whooshSoundInfo = nil
+        end
+    end    
+    if (pos - hangPos).sqrMagnitude < 0.0025 then
+        self:SwitchState(self.state_standBy, true)
+    end
+end
+
+function SpellDrivingSword:PrepareRide()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    self.isRidePos = false
+    self.curSpeedOfBack = self.speedOfBack
+    
+    if self.drivingIBScp then
+        self.drivingIBScp:PlayTrailEffect(false)
+    end
+    
+    self.host.manaCost = self.rideMana
+    
+    self.rideSound:PlaySoundInfo()
+end
+
+function SpellDrivingSword:GetRideCharacter()
+    local hand = self:GetSlotHand()
+    if hand == nil or IsNullOrDestroyed(hand)
+        or hand.character == nil or IsNullOrDestroyed(hand.character) then
+        return nil
+    end
+
+    return hand.character
+end
+
+function SpellDrivingSword:ShouldCheckRideState()
+    return not CL.Network.VRNetworkManager.IsOnline or SafeIsOwnerLocalPlayer(self.host.interact)
+end
+
+function SpellDrivingSword:IsRideStateBlocked()
+    if not self:ShouldCheckRideState() then
+        return false
+    end
+
+    local character = self:GetRideCharacter()
+    if character == nil then
+        return false
+    end
+
+    return character:IsInBeastFormState() or character:IsInRideState()
+end
+
+function SpellDrivingSword:Ride()
+    self:MoveToRidePos()
+    
+    
+    if CL.Network.VRNetworkManager.IsOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if not self.isRidePos then
+        return
+    end
+    
+    local hand = self:GetSlotHand()
+    local dir = hand.character.trans.forward
+    --local dir = hand:GetIndexDir()
+    --local characterDir = hand.character.trans.forward
+    --if UE.Vector3.Dot(dir, characterDir) < 0 then
+    --    dir = UE.Vector3.RotateTowards(characterDir, dir, 90 * UE.Mathf.Deg2Rad, 0)
+    --    --CL.DebugDraw.DrawLine(hand.trans.position, hand.trans.position + dir, UE.Color.red, 0.1)
+    --end
+    
+    --dir =  UE.Vector3.RotateTowards(hand.character.trans.forward, dir, UE.Time.deltaTime * 360 * self.angularSpeedOfRide * UE.Mathf.Deg2Rad, 0)
+    local pos = hand.character.trans.position
+    local floatingDis = self.floatingSpeed * UE.Time.deltaTime
+    local isHit, dis = self:CheckGround(pos, self.floatingHeight + floatingDis)
+    if isHit then
+        if self.floatingHeight >= dis then
+            pos = pos + UE.Vector3.up * floatingDis
+        end
+    else
+        pos = pos + UE.Vector3.down * floatingDis
+    end
+    local nextPos = pos + dir * self.speedOfRide * UE.Time.deltaTime
+    
+    self.rideJoint.anchor = nextPos
+end
+
+function SpellDrivingSword:StartRide()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    self.protectRideTime = UE.Time.time + 0.2
+    self.isRidePos = true
+    local hand = self:GetSlotHand()
+    if hand == nil or IsNullOrDestroyed(hand)
+        or hand.character == nil or IsNullOrDestroyed(hand.character) then
+        self:SwitchState(self.state_standBy, true)
+        return
+    end
+
+    local character = hand.character
+
+    if self:ShouldCheckRideState() and (character:IsInRideState() or character:IsInBeastFormState()) then
+        CL.SoundTable.PlaySound("Error")
+        self:SwitchState(self.state_standBy, true)
+        return
+    end
+
+    character:EnterRideState()
+    self.enteredRideState = true
+    self.rideStateCharacter = character
+    
+    self.rideJoint.connectedBody = character.capsuleRB
+    local pos = character.trans.position
+    self.rideJoint.anchor = pos
+    self.rideJoint.autoConfigureConnectedAnchor = false
+    self.rideJoint.connectedAnchor = UE.Vector3.zero
+    
+    if CL.Network.VRNetworkManager.IsOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        self.rideJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.rideJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.rideJoint.zMotion = UE.ConfigurableJointMotion.Free
+    else
+        self.rideJoint.xMotion = UE.ConfigurableJointMotion.Locked
+        self.rideJoint.yMotion = UE.ConfigurableJointMotion.Locked
+        self.rideJoint.zMotion = UE.ConfigurableJointMotion.Locked
+    end
+    
+    self.whooshSoundInfo = self.whooshSound:PlaySoundInfo()
+    if self.whooshSoundInfo then
+        self.whooshSoundInfo.ao.transform:SetParent(self.drivingIB.trans)
+        self.whooshSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+        self.whooshSoundInfo.audio.volume = self.whooshBaseVol * 2
+    end
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerStartRide(true) end
+    end
+    
+    --print("start ride------------------------")
+end
+
+function SpellDrivingSword:NetworkStartRide()
+    if not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if not self:IsExistSword() then
+        return
+    end
+    
+    self:PrepareRide()
+    
+    self.protectRideTime = UE.Time.time + 0.2
+        
+    self.drivingIB.networkIB.networkRB.enabled = false
+    self.drivingIB.networkIB:LooseIBJoint(true)
+    
+    local ld = self.joint.xDrive        
+    ld.positionSpring = self.jointSpring * 2
+    ld.positionDamper = self.jointDamper
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = self.jointSpring * 2
+    sd.positionDamper = self.jointDamper
+    self.joint.slerpDrive = sd
+    
+    --self:StartRide()
+    
+    CL.Scheduler.RemoveSchedule(self.netRideActId)
+    self.netRideActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self:Ride()
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpellDrivingSword:StopRide()
+    if self.enteredRideState then
+        local character = self.rideStateCharacter
+        if character == nil or IsNullOrDestroyed(character) then
+            character = self:GetRideCharacter()
+        end
+
+        if character ~= nil then
+            character:ExitRideState()
+        end
+    end
+    self.enteredRideState = false
+    self.rideStateCharacter = nil
+
+    self.rideJoint.connectedBody = nil
+    self.rideJoint.xMotion = UE.ConfigurableJointMotion.Free
+    self.rideJoint.yMotion = UE.ConfigurableJointMotion.Free
+    self.rideJoint.zMotion = UE.ConfigurableJointMotion.Free
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+    self.whooshSoundInfo = nil
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerStartRide(false) end
+    end
+    
+    self.host.manaCost = self.defaultMana
+    --print("stop ride------------------------")
+end
+
+function SpellDrivingSword:NetworkStopRide()
+    CL.Scheduler.RemoveSchedule(self.netRideActId)
+    
+    local ld = self.joint.xDrive        
+    ld.positionSpring = 0
+    ld.positionDamper = 0
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = 0
+    sd.positionDamper = 0
+    self.joint.slerpDrive = sd
+    
+    if self:IsExistSword() then
+        self.drivingIB.networkIB.networkRB.enabled = true
+        self.drivingIB.networkIB:LooseIBJoint(false)
+    end
+    self:StopRide()
+end
+
+function SpellDrivingSword:AddForceToIB(ib)
+    if IsNullOrDestroyed(ib) then
+        return
+    end
+    ib.rb:AddForce(ib.trans.forward * self.forceOfStopRide, UE.ForceMode.VelocityChange)
+end
+
+function SpellDrivingSword:MoveToRidePos()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    local hangPos, hangRot = self:GetRidePos()
+    local pos = self:GetCenterOfSword()
+    --self.testPos1.position = hangPos
+    if self.isRidePos then
+        self.joint.anchor = hangPos
+        self.joint.targetRotation = hangRot * UE.Quaternion.Inverse(self.riginQua)
+        
+        local vec = hangPos - pos
+        local dis = vec.magnitude
+        if not CL.Network.VRNetworkManager.IsOnline 
+            or (CL.Network.VRNetworkManager.IsOnline and SafeIsOwnerLocalPlayer(self.host.interact)) then
+            if dis > 0.35 and UE.Time.time > self.protectRideTime then
+                self:SwitchState(self.state_standBy, true)
+            end    
+        end
+    else
+        local vec = hangPos - pos
+        local dis = vec.magnitude
+        local dir = vec.normalized
+        
+        self.curSpeedOfBack = self.curSpeedOfBack < self.maxSpeedOfBack and self.curSpeedOfBack 
+        + UE.Time.deltaTime * self.accOfBack or self.maxSpeedOfBack
+        
+        local disOfDelta = self.curSpeedOfBack * UE.Time.deltaTime
+        local targetPos = dis > disOfDelta and pos + dir * disOfDelta or hangPos
+        self.joint.anchor = targetPos
+        --self.testPos2.position = targetPos
+        local targetRot = UE.Quaternion.Lerp(self.drivingIB.trans.rotation, hangRot, UE.Time.unscaledDeltaTime * self.angularSpeedOfFollow)
+        self.joint.targetRotation = targetRot * UE.Quaternion.Inverse(self.riginQua)
+        if dis < 0.5 then
+            self:StartRide()
+        end
+    end
+end
+
+function SpellDrivingSword:CheckGround(pos, length)
+    local isHit, hitInfo = UE.Physics.SphereCast(pos + UE.Vector3.up, 0.5, 
+        UE.Vector3.down, length, CL.LayerDefine.EnvLayerMask.value)
+
+    return isHit ,hitInfo.distance
+end
+
+function SpellDrivingSword:StopStateAction()
+    if self.state == self.state_spinInPlace then
+        self:EndSpinInPlace()
+    elseif self.state == self.state_ride then
+        self:StopRide()
+    elseif self.state == self.state_swordBack then
+        self:EndSwordBack()
+    elseif self.state == self.state_standBy then
+        self:EndStandBy()
+    elseif self.state == self.state_surround then
+        self:EndSurround()
+    elseif self.state == self.state_attack then
+        self:EndAttack()
+    end
+end
+
+function SpellDrivingSword:NetworkDrivingUpdate()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    if self.state == self.state_standBy then
+        self:NetworkStandBy()
+    elseif self.state == self.state_surround then
+        self:NetworkSurround()
+    elseif self.state == self.state_attack then
+        self:NetworkAttack()
+    elseif self.state == self.state_swordBack then
+        self:NetworkSwordBack()
+    elseif self.state == self.state_spinInPlace then
+        self:NetworkSurround()
+    elseif self.state == self.state_ride then
+        self:NetworkRide()
+    end
+end
+
+function SpellDrivingSword:NetworkStandBy()
+    if self.enhanceAvaliable then
+        if not self.rotSoundInfo then
+            self.rotSoundInfo = self.rotSound:PlaySoundInfo()
+            if self.rotSoundInfo then
+                self.rotSoundInfo.ao.transform:SetParent(self.drivingIB.trans)
+                self.rotSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+            end
+        end
+        if self.drivingIBScp then
+            self.drivingIBScp:PlayChargingEffectAtPosition(self.drivingIBScp.trans.position, 
+                UE.Quaternion.LookRotation(self.drivingIBScp.trans.forward))
+        end
+    else
+        if self.rotSoundInfo then
+            CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.rotSoundInfo)
+            self.rotSoundInfo = nil
+        end
+        if self.drivingIBScp then
+            self.drivingIBScp:PlayChargingEffect(false)
+        end
+    end
+end
+
+function SpellDrivingSword:NetworkSurround()
+    if self.whooshSoundInfo then
+        if not self:IsExistSword() then
+            return
+        end
+        local pos = self.drivingIB.trans.position
+        if self.state == self.state_surround then
+            local hand = self:GetSlotHand()
+            local character = hand.character
+            local dot = UE.Vector3.Dot(character.trans.forward, (pos - character.trans.position).normalized)
+            self.whooshSoundInfo.audio.volume = math.max(dot, 0) * self.whooshMaxVol + self.whooshBaseVol
+        else
+            local dot = UE.Vector3.Dot(self.rotTrans.forward, self.drivingIB.trans.forward)
+            self.whooshSoundInfo.audio.volume = math.max(dot, 0) * self.whooshMaxVol + self.whooshBaseVol
+        end
+    end
+end
+
+function SpellDrivingSword:NetworkAttack()
+    if not self:IsExistSword() then
+        return
+    end
+        
+    local realSpeed = self.drivingIB.rb.velocity.magnitude
+    if self.whooshSoundInfo then
+        self.whooshSoundInfo.audio.volume = math.min(realSpeed, self.maxSpeedOfAttack) * self.whooshMaxVol + self.whooshBaseVol
+    end
+end
+
+function SpellDrivingSword:NetworkSwordBack()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    if self.whooshSoundInfo then
+        local hangPos, hangRot = self:GetHangPos()
+        local pos = self:GetCenterOfSword()
+        local vec = hangPos - pos
+        local dis = vec.magnitude
+        if dis > 1 then
+            local speed = self.drivingIB.rb.velocity.magnitude
+            self.whooshSoundInfo.audio.volume = math.min(speed, self.speedOfBack) * self.whooshMaxVol + self.whooshBaseVol
+        else
+            CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+            self.whooshSoundInfo = nil
+        end
+    end
+end
+
+function SpellDrivingSword:NetworkRide()
+    
+end
+---------------------------------------------Gesture--------------------------------------------
+
+function SpellDrivingSword:StartGestureDetect()
+    local hand = nil
+    local velocity = nil
+    local dir = nil
+    local speed = 0
+    local nextCmd = true
+    local lastMaxSpeed = 0
+    
+    self.rotTrans:SetParent(nil)
+    
+    self.gestureActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            hand = self:GetSlotHand()
+            if not hand or IsNullOrDestroyed(hand) then
+                sche:Stop()
+                return
+            end
+            
+            --velocity = hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+            velocity = self:GetSampleDir()
+            velocity = hand.character.trans:TransformDirection(velocity)
+            dir = velocity.normalized
+            speed = velocity.magnitude
+            
+            
+            --local surroundForward = UE.Vector3.RotateTowards(
+            --    UE.Vector3.Dot(UE.Vector3.up, hand:GetIndexDir()) < 0 and UE.Vector3.up or UE.Vector3.down, 
+            --    hand:GetIndexDir(), (90 + self.maxHorizontalAngle) * UE.Mathf.Deg2Rad, 0)
+            --self.rotTrans.forward = surroundForward
+            
+            
+            --CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + velocity, UE.Color.red, 0.1)
+            --velocityEstimator:GetAvgVelocityLocal(0.2)
+            if not hand and IsNullOrDestroyed(hand) then
+                return
+            end
+            
+            if not nextCmd then
+                if speed < 1 then
+                    nextCmd = true
+                    --print("allow to do next command--------------------")
+                    lastMaxSpeed = 0
+                else
+                    return
+                end
+            end
+            
+                if speed < self.gestureSpeed then
+                    lastMaxSpeed = speed
+                    return
+                end
+                
+                
+                if speed > lastMaxSpeed then
+                    lastMaxSpeed = speed
+                    return
+                end
+                
+                --print("check hand gesture command--------------------")
+                if self:IsSpinInPlaceGesture(hand, dir) then
+                    self:SwitchState(self.state_spinInPlace)
+                    nextCmd = false
+                --elseif self:IsStorageGesture(hand, dir) then
+                --    self:SwitchState(self.state_storage)
+                --    CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + velocity, UE.Color.green, 0.3)
+                --    nextCmd = false
+                elseif self:IsSurroundGesture(hand, dir, speed) then
+                    self:SwitchState(self.state_surround)
+                    nextCmd = false
+                elseif self:IsAttackGesture(hand, dir, speed) then
+                    self:SwitchState(self.state_attack)
+                    nextCmd = false
+                elseif self:IsRecallGesture(hand, dir) then
+                    self:SwitchState(self.state_swordBack)
+                    nextCmd = false
+                elseif self:IsRideGesture(hand, dir) then
+                    self:SwitchState(self.state_ride)
+                    nextCmd = false
+                end
+        end,
+    0, -1).actionId
+end
+
+
+function SpellDrivingSword:SwitchState(state, isServerLocal)
+    if state == self.state_ride and self:IsRideStateBlocked() then
+        CL.SoundTable.PlaySound("Error")
+        return
+    end
+
+    if CL.Network.VRNetworkManager.IsOnline then
+        if SafeIsOwnerLocalPlayer(self.host.interact) or isServerLocal then
+            local state_ = GetNetworkIBState(self)
+            if state_ ~= nil then
+                if not CL.Network.VRNetworkManager.Instance.IsServer then
+                    --print("CommandSwitchState:" .. state)
+                    state_:CommandSwitchState(state, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                else
+                    --print("ServerSwitchState:" .. state)
+                    state_:ServerSwitchState(state, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                end
+            end
+        end
+    end
+    
+    --print("switch state from:" .. self.state .. " to:" .. state)
+    if self.state == self.state_spinInPlace and state ~= self.state_spinInPlace then
+        self:EndSpinInPlace()
+    elseif self.state == self.state_ride and state ~= self.state_ride then
+        self:StopRide()
+    elseif self.state == self.state_swordBack and state ~= self.state_swordBack then
+        self:EndSwordBack()
+    elseif self.state == self.state_standBy and state ~= self.state_standBy then
+        self:EndStandBy()
+    elseif self.state == self.state_surround and state ~= self.state_surround then
+        self:EndSurround()
+    elseif self.state == self.state_attack and state ~= self.state_attack then
+        self:EndAttack()
+    end
+    
+    local isChange = false
+    if state == self.state_attack then
+        if self.state ~= self.state_attack then
+            self:PrepareAttack()
+            --print("switch to attack--------------")
+            self.state = self.state_attack
+            isChange = true
+        end
+    elseif state == self.state_swordBack then
+        if self.state ~= self.state_swordBack then
+            self:PrepareSwordBack(self.state)
+            --print("switch to sword back--------------")
+            isChange = true
+        end
+        self.state = self.state_swordBack
+    elseif state == self.state_storage then
+        if self.state ~= self.state_storage then
+            self:PrepareStorage()
+            isChange = true
+        end
+        --print("switch to storage--------------")
+        self.state = self.state_storage
+    elseif state == self.state_surround then
+        if self.state ~= self.state_surround or self.rotIndex ~= self.lastRotIndex then
+            --print("switch to surround--------------")
+            self:PrepareSurround()
+            isChange = true
+        end
+        self.state = self.state_surround
+    elseif state == self.state_standBy then
+        if self.state ~= self.state_standBy then
+            self:PrepareStandBy()
+        end
+        --print("switch to standby--------------")
+        self.state = self.state_standBy
+    elseif state == self.state_spinInPlace then
+        --print("switch to spinInPlace--------------")
+        if self.state ~= self.state_spinInPlace then
+            if CL.Network.VRNetworkManager.ClientOnline then
+                self:LocalPrepareSpinInPlace()
+            else
+                self:PrepareSpinInPlace()
+            end
+            isChange = true
+        end
+        self.state = self.state_spinInPlace
+    elseif state == self.state_ride then
+        --print("switch to ride--------------")
+        if self.state ~= self.state_ride then
+            self:PrepareRide()
+            isChange = true
+        end
+        self.state = self.state_ride
+    end
+    
+    if state ~= self.state_standBy and isChange then
+        self:PlaySwitchStateEffect()
+    end
+    
+    self:BreakAllStab()
+end
+
+function SpellDrivingSword:BreakAllStab()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    local stab = self.drivingIB:GetStabObject()
+    if not IsNullOrDestroyed(stab) then
+        stab:BreakAllStab()
+    end
+end
+
+function SpellDrivingSword:StopGestureDetect()
+    self.gestureActId = CL.Scheduler.RemoveSchedule(self.gestureActId)
+end
+
+
+function SpellDrivingSword:IsStorageGesture(hand, velDir)
+    if UE.Vector3.Dot(hand.character.trans.up, velDir) < 0.9 then
+        return false
+    end
+    
+    --print("Storage dot---:" .. UE.Vector3.Dot(hand.character.trans.up, hand:GetIndexDir()))
+    return UE.Vector3.Dot(hand.character.trans.up, hand:GetIndexDir()) > 0.9
+end
+
+function SpellDrivingSword:IsSpinInPlaceGesture(hand, velDir)
+    if UE.Vector3.Dot(hand.character.trans.up, velDir) < 0.5 then
+        return false
+    end
+    
+    if self.state ~= self.state_attack and self.state ~= self.state_surround then
+        return false
+    end
+    --if UE.Vector3.Dot(hand.character.trans.up, hand:GetIndexDir()) > 0.9 then
+    --    return true
+    --end
+    
+    return UE.Vector3.Dot(hand.character.trans.up, hand:GetIndexDir()) > 0.7
+end
+
+function SpellDrivingSword:IsRideGesture(hand, velDir)
+    if UE.Vector3.Dot(-hand.character.trans.up, velDir) < 0.9 then
+        return false
+    end
+    
+    --if UE.Vector3.Dot(hand.character.trans.up, hand:GetIndexDir()) > 0.9 then
+    --    return true
+    --end
+    return UE.Vector3.Dot(-hand.character.trans.up, hand:GetIndexDir()) > 0.7
+end
+
+function SpellDrivingSword:UpdateSurroundInfo(dir, isRight)
+    self.rotIndex = isRight and 1 or -1
+    self.surroundDir = dir
+end
+
+function SpellDrivingSword:IsSurroundGesture(hand, velDir, speed)
+    local dir = hand.character.trans.right
+    
+    
+    local dot = UE.Vector3.Dot(dir, velDir)
+    --print("IsSurroundGesture vel dot- target --:" .. dot)
+    
+    
+    if dot > 0.6 then
+        local handDot = self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and 0.5 or 0.7
+        if UE.Vector3.Dot(dir, hand:GetIndexDir()) > 0.6 then
+            --------surround info-----------
+            self.surroundDir = velDir
+            self.rotIndex = 1
+            
+            if CL.Network.VRNetworkManager.IsOnline then
+                if SafeIsOwnerLocalPlayer(self.host.interact) then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if not CL.Network.VRNetworkManager.Instance.IsServer then
+                            state:CommandSurroundInfo(self.surroundDir, true, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                        else
+                            state:ServerSurroundInfo(self.surroundDir, true, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                        end
+                    end
+                end
+            end
+            
+            --CL.DebugDraw.DrawLine(self.drivingIB.trans.position, self.drivingIB.trans.position + velDir, UE.Color.red, 5)
+            --CL.DebugDraw.DrawLine(self.drivingIB.trans.position, self.drivingIB.trans.position + self.drivingIB.trans.forward, UE.Color.green, 5)
+            ------------------------------
+            return true
+        end
+    elseif dot < -0.6 then
+        local handDot = self.lastHandIdx == CL.RagdollBoneInfo.RIGHT_HAND and 0.7 or 0.5
+        --print("IsSurroundGesture hand dot- target " .. handDot .."--:  " .. UE.Vector3.Dot(dir, hand:GetIndexDir()))
+        if UE.Vector3.Dot(dir, hand:GetIndexDir()) < -0.6 then
+            
+            --------surround info-----------
+            self.surroundDir = velDir
+            self.rotIndex = -1
+            
+            if CL.Network.VRNetworkManager.IsOnline then
+                if SafeIsOwnerLocalPlayer(self.host.interact) then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if not CL.Network.VRNetworkManager.Instance.IsServer then   
+                            state:CommandSurroundInfo(self.surroundDir, false, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                        else
+                            state:ServerSurroundInfo(self.surroundDir, false, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                        end
+                    end
+                end
+            end
+            
+            --CL.DebugDraw.DrawLine(self.drivingIB.trans.position, self.drivingIB.trans.position + velDir, UE.Color.red, 5)
+            --CL.DebugDraw.DrawLine(self.drivingIB.trans.position, self.drivingIB.trans.position + self.drivingIB.trans.forward, UE.Color.green, 5)
+            ------------------------------
+            return true
+        end
+    end
+    --print("Surround dot---handIdx:" .. self.lastHandIdx .."  " .. UE.Vector3.Dot(dir, hand:GetIndexDir()))
+    
+    return false
+end
+
+function SpellDrivingSword:UpdateAttackInfo(vel)
+    self.attackDir = vel.normalized
+    self.attackSpeed = vel.magnitude
+end
+
+function SpellDrivingSword:IsAttackGesture(hand, velDir, speed)
+    local headset = hand.character:GetHeadset()
+    if UE.Vector3.Dot(headset.forward, velDir) < 0.7 then
+        return false
+    end
+    
+    local isPass = UE.Vector3.Dot(headset.forward, hand:GetIndexDir()) > 0.7
+    if isPass then
+        --------attack info-----------
+        self.attackSpeed = speed
+        self.attackDir = velDir
+        ------------------------------
+        if CL.Network.VRNetworkManager.IsOnline then
+            if SafeIsOwnerLocalPlayer(self.host.interact) then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    if not CL.Network.VRNetworkManager.Instance.IsServer then
+                        state:CommandAttackInfo(self.attackDir * self.attackSpeed, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                    else
+                        state:ServerAttackInfo(self.attackDir * self.attackSpeed, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                    end
+                end
+            end
+        end
+        return true
+    end
+    
+    --print("attack dot---:" .. UE.Vector3.Dot(hand.character.trans.forward, hand:GetIndexDir()))
+    return false
+end
+
+function SpellDrivingSword:IsCutGesture(hand, velDir, speed)
+    local dot = UE.Vector3.Dot(hand.character.trans.forward, velDir)
+    --print("cut dot--------------:" .. dot .. " speed:" .. speed)
+    if dot < 0.2 and dot > -0.2 then
+        return false
+    end
+    
+    self.cutDir = velDir
+    
+    --print("cut attack hand dot---:" .. UE.Vector3.Dot(hand.character.trans.forward, hand:GetIndexDir()))
+    return UE.Vector3.Dot(hand.character.trans.forward, hand:GetIndexDir()) > 0.5
+end
+
+function SpellDrivingSword:IsRecallGesture(hand, velDir, speed)
+    if UE.Vector3.Dot(-hand.character:GetHeadset().forward, velDir) < 0.9 then
+        --print("recall dot------------------< -0.9 :".. UE.Vector3.Dot(hand.character.trans.forward, velDir))
+        return false
+    end
+    
+    --local dot = UE.Vector3.Dot(hand.character.trans.forward, hand:GetIndexDir())
+    --if dot < 0.7 then
+    --    print("recall dot index------------------< 0.7 :".. dot)
+    --end
+    --return dot > 0.7
+    return true
+end
+
+--------------------------------------------ControlAllWeapon-------------------------------------------
+function SpellDrivingSword:ControlAllWeapon()
+    if not self:IsExistSword() then
+        return
+    end
+    
+    local hand = self:GetSlotHand()
+    local needMana = self.chargeMana * self.host.AppliedManaCostMultiplier
+    if IsNullOrDestroyed(hand) or not CostMana(self.host, needMana, hand.character) then
+        return
+    end
+    
+    self:ReleaseAllWeapon()
+    
+    self.controller:SetParent(nil)
+    self.controller.transform.position = UE.Vector3.zero
+    self.controller.transform.rotation = UE.Quaternion.identity
+    
+    self.controlAttack = false
+    self.controlEndTime = -1
+    
+    self:GetAllWeapon()
+    
+    self:StartFollowCharacter()
+end
+
+function SpellDrivingSword:ReleaseAllWeapon(force)
+    for k, v in pairs(self.controlList) do
+        if not IsNullOrDestroyed(k) and not IsNullOrDestroyed(v.joint) then
+            if force ~= nil then
+                k.rb:AddForce(force, UE.ForceMode.VelocityChange)
+            end
+        end
+        self:ReleaseWeapon(k)
+        SpellDrivingSword_ControlList[k] = nil
+    end
+    
+    self.controlList = {}
+    self.controller:SetParent(self.trans)
+    self.controller.localPosition = UE.Vector3.zero
+    
+    for k, v in ipairs(self.controlJoints) do
+        if not IsNullOrDestroyed(v) then
+            UE.Object.Destroy(v)
+        end
+    end
+    self.controlJoints = {}
+    self.controlAttack = false
+    self:StopFollowCharacter()
+end
+
+function SpellDrivingSword:AllWeaponAttack(dir)
+    self.controlAttack = true
+    self.controlEndTime = UE.Time.time + self.controlFlyTime
+end
+
+function SpellDrivingSword:StartFollowCharacter()
+    CL.Scheduler.RemoveSchedule(self.ctlActId)
+    self.ctlActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if not self:IsExistSword() or (self.controlEndTime > 0 and UE.Time.time > self.controlEndTime) then
+                self:ReleaseAllWeapon()
+                sche:Stop()
+                return
+            end
+            
+            if not self.isPress or not self.isCharge then
+                self:ReleaseAllWeapon()
+                sche:Stop()
+                return
+            else
+                for k, v in pairs(self.controlList) do
+                    if not IsNullOrDestroyed(k) and not IsNullOrDestroyed(v.joint) then
+                        if not self.controlAttack then
+                            self:ControlFollow(k)
+                        else
+                            self:ControlAttack(k)
+                        end
+                    end
+                end
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpellDrivingSword:GetControlPos(pu)
+    if not self.controlList[pu] or IsNullOrDestroyed(self.controlList[pu].joint) then
+        return
+    end
+    
+    local hand = self:GetSlotHand()
+    local character = hand.character
+    
+    local info = self.controlList[pu]
+    local pos =  character.trans:TransformPoint(info.localHangPos)
+    
+    --local velocity = self:GetSampleDir() / 3
+    --velocity = character.trans:TransformDirection(velocity)
+    --local dis = velocity.magnitude
+    --if dis < self.offsetOfHangPos then
+    --    pos = pos + velocity
+    --else
+    --    pos = pos + velocity.normalized * self.offsetOfHangPos
+    --end
+    local rot = UE.Quaternion.Lerp(UE.Quaternion.LookRotation(hand:GetIndexDir()), character.trans.rotation, self.lerpOfHangRot) * UE.Quaternion.Euler(0, 0, 90)
+    return pos, rot
+end
+
+function SpellDrivingSword:ControlFollow(pu)
+    local hangPos, hangRot = self:GetControlPos(pu)
+    local info = self.controlList[pu]
+    
+    if not info then
+        return
+    end
+    
+    local pos = pu.trans.position
+    
+    local vec = hangPos - pos
+    local dis = vec.magnitude
+    local dir = vec.normalized
+    local disOfDelta = self.speedOfFollow * UE.Time.deltaTime
+    
+    local targetPos = dis > disOfDelta and pos + dir * disOfDelta or hangPos
+    info.joint.anchor = targetPos
+    
+    
+    hangRot = UE.Quaternion.Lerp(pu.trans.rotation, hangRot, UE.Time.unscaledDeltaTime * self.angularSpeedOfFollow / 2)
+    info.joint.targetRotation = hangRot * UE.Quaternion.Inverse(info.riginRot)
+end
+
+function SpellDrivingSword:ControlAttack(pu)
+    local info = self.controlList[pu]
+    if not info then
+        return
+    end
+    
+    self.curSpeedOfAttack = self.curSpeedOfAttack < self.maxSpeedOfAttack and self.curSpeedOfAttack 
+        + UE.Time.deltaTime * self.accOfAttack or self.maxSpeedOfAttack
+        
+    local disOfDelta = self.curSpeedOfAttack * UE.Time.deltaTime
+    
+    local pos = pu.trans.position
+    local targetPos = pos + self.attackDir * disOfDelta
+    info.joint.anchor = targetPos
+    
+    local targetRot = UE.Quaternion.Lerp(pu.trans.rotation, self.attackRot, UE.Time.unscaledDeltaTime * self.angularSpeedOfAttack)
+    info.joint.targetRotation = targetRot * UE.Quaternion.Inverse(info.riginRot)
+end
+
+function SpellDrivingSword:StopFollowCharacter()
+    CL.Scheduler.RemoveSchedule(self.ctlActId)
+end
+
+function SpellDrivingSword:GetAllWeapon()
+    local hand = self:GetSlotHand()
+    local targets = CL.PhysicsUnit.QueryLogicTargetInRadiusTemp(hand.character.trans.position, self.controlRadius)
+    local count = targets.Count
+    for i = 0, targets.Count - 1 do
+        if targets[i].unitType == CL.Tagger.Tag.InteractBase or targets[i].unitType == CL.Tagger.Tag.InteractWeapon then
+            if not SpellDrivingSword_ControlList[targets[i]] then
+                if not targets[i]:IsHeldByNpc() and not targets[i]:IsSlotEquiped() 
+                    and IsNullOrDestroyed(targets[i].trans.parent) and not targets[i]:IsUnsold() 
+                    and targets[i] ~= self.drivingIB and targets[i].gameObject.activeSelf 
+                    and not targets[i]:IsAttached() then
+                    self:HoldWeapon(targets[i])
+                    SpellDrivingSword_ControlList[targets[i]] = targets[i]
+                end
+            end
+        end
+    end
+end
+
+function SpellDrivingSword:HoldWeapon(pu)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerHoldWeapon(pu.netId) end
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnly then
+        if pu.unitType == CL.Tagger.Tag.InteractObj or pu.unitType == CL.Tagger.Tag.InteractWeapon then
+            if not pu:IsGrabbed() then
+                pu.networkIB.networkIBProperties:RemoveClientAuthority()
+            end
+        end
+    end
+    
+    local joint = self.controller.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    joint.connectedBody = pu.rb
+    joint.autoConfigureConnectedAnchor = false
+    joint.connectedAnchor = UE.Vector3.zero
+    joint.anchor = pu.trans.position
+    
+
+    local spring = pu:GetTotalMass() * self.controlJointSpringMlp
+    local damper = pu:GetTotalMass() * self.controlJointDamperMlp
+    local ld = joint.xDrive        
+    ld.positionSpring = spring 
+    ld.positionDamper = damper
+    joint.xDrive = ld
+    joint.yDrive = ld
+    joint.zDrive = ld
+    local sd = joint.slerpDrive
+    sd.positionSpring = spring
+    sd.positionDamper = damper
+    joint.slerpDrive = sd
+    joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    
+    self.controlList[pu] = {}
+    self.controlList[pu].joint = joint
+    self.controlList[pu].riginRot = pu.trans.rotation
+    
+    local hand = self:GetSlotHand()
+    local character = hand.character
+    local headset = character:GetHeadSet()
+    local height = character:GetPlayerHeight()
+    local length = headset.position.y - character.trans.position.y
+    local characterPos = character.trans.position
+    local pos = pu.transform.position
+    pos.y = characterPos.y
+    pos = pos + character.trans.up * (length * self.initYAxisMlp + math.random(0, self.offsetOfControl))
+    self.controlList[pu].localHangPos = character.trans:InverseTransformPoint(pos)
+    table.insert(self.controlJoints, #self.controlJoints + 1, joint)
+end
+
+function SpellDrivingSword:ReleaseWeapon(pu)
+    if not self.controlList[pu] or IsNullOrDestroyed(self.controlList[pu].joint) then
+        return
+    end
+    local joint = self.controlList[pu].joint
+    if not IsNullOrDestroyed(joint) then
+        joint.xMotion = UE.ConfigurableJointMotion.Free
+        joint.yMotion = UE.ConfigurableJointMotion.Free
+        joint.zMotion = UE.ConfigurableJointMotion.Free
+        
+        local drive = joint.xDrive
+        drive.positionSpring = 0
+        drive.positionDamper = 0
+        joint.xDrive = drive
+        joint.yDrive = drive
+        joint.zDrive = drive
+        
+        UE.Object.Destroy(joint)
+    end
+end
+
+--------------------------------------------SampleVelocity---------------------------------------------
+function SpellDrivingSword:StartSampleDir()
+    local hand = self:GetSlotHand()
+    local character = hand.character
+    
+    self.vecList = {}
+    local lastPos =  character.trans:InverseTransformPoint(self.trans.position)
+    local curVec = UE.Vector3.zero
+    local curPos = nil
+    CL.Scheduler.RemoveSchedule(self.sampleTimeId)
+    self.sampleTimeId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if #self.vecList > 10 then
+                table.remove(self.vecList, 1)
+            end
+            curPos = character.trans:InverseTransformPoint(self.trans.position)
+            
+            local worldVel = hand.velocityEstimator:GetVelocityEstimateLocal()
+            curVec = (curPos - lastPos) / UE.Time.deltaTime
+            if worldVel.magnitude < curVec.magnitude then
+                curVec = curVec.normalized * worldVel.magnitude
+            end
+            lastPos = curPos
+            table.insert(self.vecList, #self.vecList + 1, curVec)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpellDrivingSword:ClearSampleData()
+    self.vecList = {}
+end
+
+function SpellDrivingSword:StopSampleDir()
+    CL.Scheduler.RemoveSchedule(self.sampleTimeId)
+end
+
+function SpellDrivingSword:GetSampleDir()
+    local value = UE.Vector3.zero
+    if #self.vecList > 0 then
+        for k, v in ipairs(self.vecList) do
+            value = v * 2 + value
+        end
+        value = value / #self.vecList / 2
+    end
+    return value
+end
+
+------------------------------------------Button---------------------------------------
+function SpellDrivingSword:StartListenButton()
+    CL.Scheduler.RemoveSchedule(self.buttonActId)
+    self.buttonActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self:ButtonClick()
+        end
+    , 0, -1).actionId
+end
+
+function SpellDrivingSword:UpdateEnhance(flag)
+    self.enhanceAvaliable = flag
+    self.isPress = flag
+end
+
+function SpellDrivingSword:ButtonClick()
+    if not self.slotHand then
+        return
+    end
+    local p = self.slotHand.inputs[CL.VRTKInputButton.ButtonType.ButtonOne].IsPressed
+    if not self.isPress and p then
+        local needMana = self.chargeMana
+
+        local isEnoughMana = self.slotHand.character:HasEnoughMana(needMana)
+        if not isEnoughMana and self.slotHand.character.IsLocalPlayer then
+            NoManaTips()
+        end
+        if self.state ~= self.state_ride and isEnoughMana then
+            self.enhanceAvaliable = true 
+            
+            if CL.Network.VRNetworkManager.IsOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    if CL.Network.VRNetworkManager.ClientOnline then
+                        state:CommandUpdateEnhance(true, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                        state:CommandControlAllWeapon()
+                    else
+                        state:ServerUpdateEnhance(true, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                        self:ControlAllWeapon()
+                    end
+                end
+            else
+                self:ControlAllWeapon()
+            end
+        end
+        
+    end
+    if not p then
+        self.enhanceAvaliable = false
+        if CL.Network.VRNetworkManager.IsOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ClientOnline then
+                    state:CommandUpdateEnhance(false, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                else
+                    state:ServerUpdateEnhance(false, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+                end
+            end
+        end
+    end
+    self.isPress = p
+end
+
+function SpellDrivingSword:StopListenButton()
+    self.isPress = false
+    CL.Scheduler.RemoveSchedule(self.buttonActId)
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellDrivingSword)

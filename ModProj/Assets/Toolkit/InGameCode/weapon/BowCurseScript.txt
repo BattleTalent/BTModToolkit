@@ -1,0 +1,136 @@
+local BowCurse = {
+    lastArrow = nil,
+    
+    skillColor = UE.Color(3, 0, 10, 1),
+    defaultColor = UE.Color(0, 0, 0, 1),
+    count = 0,
+    }
+
+function BowCurse:Start()
+    if not IsNullOrDestroyed(self.curseLb) then
+        self.curseLb.transform:SetParent(nil)
+        if self.curseLb.script ~= nil then
+            self.curseObj = self.curseLb.script:GetSelf()
+        end
+    end
+    
+    self.__base.Start(self)
+end
+
+function BowCurse:RegisterSpawnNetworkIBCallback()
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetIds[netId] then
+            self.initNetIds[netId] = nil
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) or IsNullOrDestroyed(netIb.ib) then
+                return
+            end
+            local lb = netIb.ib.gameObject:GetComponent(typeof(CL.LuaBehaviour))
+            if IsNullOrDestroyed(lb) or lb.script == nil then
+                return
+            end
+            local arrow = lb.script:GetSelf()
+            self:ClearArrowStabObject(netIb.ib)
+            self:EnchantArrowIB(netIb.ib)
+            self:IgnoreArrowCollision(netIb.ib, true)
+            self:LinkArrow(arrow)
+            self:OnReleaseClientAfterGen(netIb.ib)
+        end
+    end
+    
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function BowCurse:NetworkSpawnArrow(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if not IsNullOrDestroyed(netIb) and not IsNullOrDestroyed(netIb.ib) then
+        local lb = netIb.ib.gameObject:GetComponent(typeof(CL.LuaBehaviour))
+        if IsNullOrDestroyed(lb) or lb.script == nil then
+            return
+        end
+        local arrow = lb.script:GetSelf()
+        self:ClearArrowStabObject(netIb.ib)
+        self:EnchantArrowIB(netIb.ib)
+        self:IgnoreArrowCollision(netIb.ib, true)
+        self:LinkArrow(arrow)
+        self:OnReleaseClientAfterGen(netIb.ib)
+        return
+    end
+    
+    if not self.initNetIds then
+        self.initNetIds = {}
+    end
+    
+    if not self.initNetIds[netId] then
+        self.initNetIds[netId] = true
+    end
+end
+
+function BowCurse:SpawnArrow()
+    local arrowGO = CL.PrefabPool.SpawnPrefab(self.arrowPrefab, CL.InteractTrigger.WeaponPath)
+    local lb = arrowGO:GetComponent(typeof(CL.LuaBehaviour))
+    local putedArrow = lb.script:GetSelf()
+    SetMaterialEmissionWithinTime(self, {self.renderer}, self.skillColor, 0.3)
+    return putedArrow
+end
+
+function BowCurse:NetworkOnSpawnArrow(arrow)
+    SetMaterialEmissionWithinTime(self, {self.renderer}, self.skillColor, 0.3)
+end
+
+function BowCurse:LinkArrow(arrow)
+    if arrow == nil then
+        return
+    end
+    arrow:RemoveAllShareArrow()
+    if not IsNullOrDestroyed(arrow.ib) then
+        arrow.ib.trans.name = arrow.ib.trans.name .. self.count
+    end
+    self.count = self.count + 1
+    if self.lastArrow and not IsNullOrDestroyed(self.lastArrow.host) and not IsNullOrDestroyed(self.lastArrow.ib) then
+        self.lastArrow:AddShareArrow(arrow)
+        arrow:AddShareArrow(self.lastArrow)
+    end
+    if self.isEnhance then
+        arrow:OnEnhance()
+    end        
+    arrow:OnShootArrow()
+    arrow:SetCurseObj(self.curseObj)
+    
+    self.lastArrow = arrow
+end
+
+function BowCurse:OnRelease(attach, shootFactor)
+    self.__base.OnRelease(self, attach, shootFactor)
+    SetMaterialEmissionWithinTime(self, {self.renderer}, self.defaultColor, 0.5)
+end
+function BowCurse:OnReleaseLocal(weapon, arrow)
+    --The client only links when generating the real arrow; otherwise, it will link to the fake arrow.
+    if not CL.Network.VRNetworkManager.ClientOnline then
+        if arrow then
+            self:LinkArrow(arrow)
+        end
+    end
+
+    self.__base.OnReleaseLocal(self, weapon, arrow)
+end
+
+function BowCurse:OnCancel()
+    self.__base.OnCancel(self)
+    
+    SetMaterialEmissionWithinTime(self, {self.renderer}, self.defaultColor, 0)
+end
+
+function BowCurse:ResetArrowState()
+    --time up or distance limit.
+    self.lastArrow = nil
+end
+
+
+function BowCurse:OnEnhance()
+    self.isEnhance = true
+end
+
+return Class(Require("Weapon/BowBaseScript"), nil, BowCurse)

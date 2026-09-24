@@ -1,66 +1,102 @@
-
 local AvatarSoundPlayer = {
 }
 
+local function IsPlayerValid()
+    local player = CL.InteractCharacter.PlayerInstance
+    if player == nil then return nil end
+    if IsNullOrDestroyed(player.trans) then return nil end
+    return player
+end
+
 function AvatarSoundPlayer:Awake()
     self.trans:SetParent(nil)
-    
+
     self.OnFootStepSound = function(velSqrt)
         if IsNullOrDestroyed(self.trans) then
             self:RemoveEvent()
             return
         end
+        local player = IsPlayerValid()
+        if player == nil then
+            self:RemoveEvent()
+            return
+        end
         local vel = UE.Mathf.Sqrt(velSqrt)
-        self.footStepSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+        self.footStepSound.soundInfo:Play(player.trans.position, vel)
     end
+
     self.OnJumpStartSound = function(velSqrt)
         if IsNullOrDestroyed(self.trans) then
             self:RemoveEvent()
             return
         end
+        local player = IsPlayerValid()
+        if player == nil then
+            self:RemoveEvent()
+            return
+        end
         local vel = UE.Mathf.Sqrt(velSqrt)
-        self.jumpStartSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+        self.jumpStartSound.soundInfo:Play(player.trans.position, vel)
     end
+
     self.OnJumpEndSound = function(velSqrt)
         if IsNullOrDestroyed(self.trans) then
             self:RemoveEvent()
             return
         end
+        local player = IsPlayerValid()
+        if player == nil then
+            self:RemoveEvent()
+            return
+        end
         local vel = UE.Mathf.Sqrt(velSqrt)
-        self.jumpEndSound.soundInfo:Play(CL.InteractCharacter.PlayerInstance.trans.position, vel)
+        self.jumpEndSound.soundInfo:Play(player.trans.position, vel)
     end
 end
 
 function AvatarSoundPlayer:Start()
+    local player = IsPlayerValid()
+    if player == nil then return end
+
     if self.footStepSound ~= nil and self.footStepSound.soundInfo.soundNames ~= nil
         and self.footStepSound.soundInfo.soundNames.Length > 0 then
-        CL.InteractCharacter.PlayerInstance:StepSoundEvent("+", self.OnFootStepSound)
+        player:StepSoundEvent("+", self.OnFootStepSound)
     end
     if self.jumpStartSound ~= nil and self.jumpStartSound.soundInfo.soundNames ~= nil
         and self.jumpStartSound.soundInfo.soundNames.Length > 0 then
-        CL.InteractCharacter.PlayerInstance:JumpStartSoundEvent("+", self.OnJumpStartSound)
+        player:JumpStartSoundEvent("+", self.OnJumpStartSound)
     end
     if self.jumpEndSound ~= nil and self.jumpEndSound.soundInfo.soundNames ~= nil
         and self.jumpEndSound.soundInfo.soundNames.Length > 0 then
-        CL.InteractCharacter.PlayerInstance:JumpEndSoundEvent("+", self.OnJumpEndSound)
+        player:JumpEndSoundEvent("+", self.OnJumpEndSound)
     end
-    
-    self.trans:SetParent(CL.InteractCharacter.PlayerInstance.trans)
+
+    self.trans:SetParent(player.trans)
 end
 
 function AvatarSoundPlayer:RemoveEvent()
+    if self._eventRemoved then return end
+    self._eventRemoved = true
+
+    local player = CL.InteractCharacter.PlayerInstance
+    if player == nil then return end
+
     if self.footStepSound ~= nil and self.footStepSound.soundInfo.soundNames ~= nil
         and self.footStepSound.soundInfo.soundNames.Length > 0 then
-        CL.InteractCharacter.PlayerInstance:StepSoundEvent("-", self.OnFootStepSound)
+        player:StepSoundEvent("-", self.OnFootStepSound)
     end
     if self.jumpStartSound ~= nil and self.jumpStartSound.soundInfo.soundNames ~= nil
         and self.jumpStartSound.soundInfo.soundNames.Length > 0 then
-        CL.InteractCharacter.PlayerInstance:JumpStartSoundEvent("-", self.OnJumpStartSound)
+        player:JumpStartSoundEvent("-", self.OnJumpStartSound)
     end
     if self.jumpEndSound ~= nil and self.jumpEndSound.soundInfo.soundNames ~= nil
         and self.jumpEndSound.soundInfo.soundNames.Length > 0 then
-        CL.InteractCharacter.PlayerInstance:JumpEndSoundEvent("-", self.OnJumpEndSound)
+        player:JumpEndSoundEvent("-", self.OnJumpEndSound)
     end
+end
+
+function AvatarSoundPlayer:OnDestroy()
+    self:RemoveEvent()
 end
 
 return Class(nil, nil, AvatarSoundPlayer)

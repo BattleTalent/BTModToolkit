@@ -1,0 +1,92 @@
+
+local FlyWaveTarget = {
+}
+
+function FlyWaveTarget:OnTrigger(pu, other)
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+end
+
+function FlyWaveTarget:OnTriggerWithStaticScene(other)
+    if self.destoryWhenHitEnv ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+    
+    CS.RayFire.RFDemolitionCluster.RayFireDemolishImpact(other.transform.position, 0.3, 10)
+end
+
+function FlyWaveTarget:OnTriggerWithRole(fc, col)
+    if self.HitObjCb then
+        self.HitObjCb(col)
+    end
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+end
+
+function FlyWaveTarget:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+
+function FlyWaveTarget:OnTriggerWithPlayerHand(col, hand)
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        local owner = self.host.ownerHolder.character and self.host.ownerHolder.character or nil
+        if owner == hand.character then
+            return
+        end
+    end
+    
+    if self.HitObjCb then
+        self.HitObjCb(col)
+    end
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+    
+    self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+end
+
+function FlyWaveTarget:OnTriggerWithPlayer(pu, col)
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        local owner = self.host.ownerHolder.character and self.host.ownerHolder.character or nil
+        if owner == pu.character then
+            return
+        end
+    end
+    
+    if self.HitObjCb then
+        self.HitObjCb(col)
+    end
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+    
+    self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+end
+
+
+function FlyWaveTarget:ResetState()
+    self.HitRoleCb = nil
+end
+
+return Class(Require("FlyObj/FlyWaveBaseScript"), nil, FlyWaveTarget)

@@ -1,0 +1,17 @@
+
+local SpellSlowMo = {
+}
+
+function SpellSlowMo:OpenSkill()
+    local hand = self:GetSlotHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    if not CL.InteractCharacter.InSuperMode then
+        self.slowSound:PlaySound()
+    end
+    hand.character:SuperPower()
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellSlowMo)

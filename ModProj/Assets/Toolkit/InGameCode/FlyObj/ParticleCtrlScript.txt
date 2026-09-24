@@ -1,0 +1,38 @@
+--control particle face to velocity's direction.
+local ParticleCtrl = {
+}
+
+function ParticleCtrl:StartEmitParticlesWithRigidbody(count, rb)
+    local emitParams = UE.ParticleSystem.EmitParams()
+    self.emitActTimer = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            emitParams.rotation3D = UE.Quaternion.LookRotation(rb.velocity).eulerAngles
+            emitParams.position = rb.transform.position
+            self.particleSystem:Emit(emitParams, count)
+        end
+    , UE.Time.deltaTime, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function ParticleCtrl:StartEmitParticles(count, trans)
+    local emitParams = UE.ParticleSystem.EmitParams()
+    
+    self.emitActTimer = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            emitParams.rotation3D = trans.rotation.eulerAngles
+            emitParams.position = trans.position
+            self.particleSystem:Emit(emitParams, count)
+        end
+    , UE.Time.deltaTime, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function ParticleCtrl:CloseEmit()
+    RemoveSchedule(self, self.emitActTimer)
+end
+
+function ParticleCtrl:Disable()
+    self:CloseEmit()
+end
+
+return Class(nil, nil, ParticleCtrl)

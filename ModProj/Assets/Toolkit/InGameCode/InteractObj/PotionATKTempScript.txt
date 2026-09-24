@@ -1,0 +1,35 @@
+local PotionATKTemp = {
+}
+
+function PotionATKTemp:DoEffective(character)
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    
+    self:IncreaseATK(character)
+    self:AddEffect(character)
+end
+
+function PotionATKTemp:DoLoseEffective()
+    if not self.affectCharacter then
+        return
+    end
+    
+    self:ResetATK()
+    self:RemoveEffect()
+end
+
+function PotionATKTemp:IncreaseATK(character)    
+    self.buff = CL.BuffMgr.Instance:AddBuff(self.affectCharacter.attr, "Role_Atk_Up_Boost")
+    --self.modifier = CL.StatModifier(30, CL.StatModType.Flat)
+    --self.affectCharacter.attr.atkMlp:AddModifier(self.modifier, true)
+end
+
+function PotionATKTemp:ResetATK()
+    --self.affectCharacter.attr.atkMlp:RemoveModifier(self.modifier, true)
+    
+    CL.BuffMgr.Instance:RemoveBuff(self.affectCharacter.attr, self.buff)
+end
+
+
+return Class(Require("InteractObj/PotionTempScript"), nil, PotionATKTemp)

@@ -1,0 +1,40 @@
+
+local spellShoot = {
+
+}
+
+function spellShoot:OpenSkill()    
+    self:PrepareShoot()
+end
+
+function spellShoot:PrepareShoot()
+    local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)    
+    
+    self:SetHandPose(true)
+    -- you can access base function in this way:
+    -- self.__base.StartVelSample(self)    
+    self:StartVelSample()
+    
+    self:PrepareSpellOnHand()
+    
+    return fo
+end
+
+function spellShoot:CloseSkill()
+    self:TryShoot()
+end
+
+function spellShoot:TryShoot()
+    --throw
+    if self:IsReadyToThrow() then
+        self:TryThrow()
+    else
+        self:ReleaseSpell()
+    end
+    
+    self:SetHandPose(false)
+    self:StopVelSample()
+end
+
+
+return Class(Require("Weapon/SpellBaseScript"), nil, spellShoot)

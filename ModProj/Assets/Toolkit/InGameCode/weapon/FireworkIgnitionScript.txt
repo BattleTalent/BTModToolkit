@@ -1,0 +1,55 @@
+
+local FireworkIgnition = {
+}
+
+function FireworkIgnition:OnColliderEnter(collision)
+    if not self.isActive then
+        return
+    end
+    if not self:IsLegalCol(collision) then
+        return
+    end
+    self:TryIgnite(collision)
+end
+
+function FireworkIgnition:IsLegalCol(collision)
+    local thisCol = collision:GetContactPoint(0)
+    local pass = false
+    
+    local i = 1
+    while self["legalCol"..i] do
+        if self["legalCol"..i] == thisCol then
+            pass = true
+            break
+        end
+        i = i + 1
+    end
+
+    return pass
+end
+
+function FireworkIgnition:ActiveCollisionIgnite(active)
+    self.isActive = active
+end
+
+function FireworkIgnition:TryIgnite(collision)
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(collision.collider)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+    
+    local trigger = pu:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+    local tb = trigger.script:GetSelf()
+    if tb.fuseCol and tb.Ignite then
+        tb:Ignite()
+    end
+end
+
+return Class(Require("Weapon/IgnitionSourceScript"), nil, FireworkIgnition)

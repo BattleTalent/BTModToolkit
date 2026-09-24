@@ -1,0 +1,64 @@
+
+local SpearReturnShadow = {
+    dura = 30,
+}
+
+function SpearReturnShadow:NetworkInject()
+    self.host:InjectVec3State("anchor")
+    self.host:InjectVec3State("connectedAnchor")
+    self.host:InjectIntState("rbNetId")
+    self.host:InjectIntState("rbKey")
+
+    print("ReturnSpear NetworkInject Suc")
+end
+
+function SpearReturnShadow:Start()
+    self:DelayToDestroy()
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self:ClientBuildJoint()
+    end
+end
+
+function SpearReturnShadow:DelayToDestroy()
+    self.schedulerId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self:BreakJoint()
+            self.host.interact:Dead(true)
+        end,
+        0, 0, self.dura).actionId
+end
+
+function SpearReturnShadow:ClientBuildJoint()
+    local rbKey = self.host:GetIntStateValue("rbKey")
+    local rbNetId = self.host:GetIntStateValue("rbNetId")
+    local rb = CL.Network.NetworkRigidbodyMgr.Instance:GetRigidbody(rbNetId, rbKey)
+    if IsNullOrDestroyed(rb) then
+        return
+    end
+    local anchor = self.host:GetVec3StateValue("anchor")
+    local connectedAnchor = self.host:GetVec3StateValue("connectedAnchor")
+    self:BuildJoint(rb, anchor, connectedAnchor)
+end
+
+function SpearReturnShadow:BuildJoint(enemyRb, anchor, connectAnchor)
+    self.joint.connectedBody = enemyRb
+    self.joint.anchor = anchor
+    self.joint.connectedAnchor = connectAnchor
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local rbKey, rbNetId = CL.Network.NetworkRigidbodyMgr.Instance:GetRigidbodyKey(enemyRb)
+        self.host:SetIntStateValue("rbKey", rbKey)
+        self.host:SetIntStateValue("rbNetId", rbNetId)
+        self.host:SetVec3StateValue("anchor", self.joint.anchor)
+        self.host:SetVec3StateValue("connectedAnchor", self.joint.connectedAnchor)
+    end
+end
+
+function SpearReturnShadow:BreakJoint()
+    if not IsNullOrDestroyed(self.joint) then
+        UE.Object.Destroy(self.joint)
+    end
+    self.joint = nil
+end
+
+return Class(nil, nil, SpearReturnShadow)

@@ -1,0 +1,112 @@
+local firework = {
+    flyTime = 1,
+    force = 10,
+    forceDece = 10,
+    }
+
+function firework:Start()
+    local so = self.host.interact:GetStabObject()
+    if not IsNullOrDestroyed(so) then
+        self.onStabEnterHandler = function(si)
+            local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+            if not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.InteractRole then
+                self.stabJoint = si.joint
+                if not self.isGrab then
+                    self:LockStabFc(true)
+                end
+            end
+        end
+        self.onStabExitHandler = function(si)
+            self.stabJoint = nil
+        end
+        so:StabEnterEvent("+", self.onStabEnterHandler)
+        so:StabExitEvent("+", self.onStabExitHandler)
+    end
+end
+
+function firework:OnGrab(a, g)
+    self:LockStabFc(not g)
+    self.isGrab = g
+end
+
+function firework:LockStabFc(isLock)
+    if IsNullOrDestroyed(self.stabJoint) then
+        return
+    end
+    
+    if isLock then
+        self.stabJoint.zMotion = UE.ConfigurableJointMotion.Locked
+        
+        self.stabJoint.rotationDriveMode = UE.RotationDriveMode.Slerp
+        self.stabJoint.projectionAngle = 0
+        self.stabJoint.projectionDistance = 0
+    else
+        self.stabJoint.zMotion = UE.ConfigurableJointMotion.Free
+    end
+end
+
+function firework:Trigger()
+    if self.ignition then
+        local tb = self.ignition.script:GetSelf()
+        tb:ActiveCollisionIgnite(true)
+    end
+    
+    self:StartFly()
+end
+
+function firework:StartFly()
+    local curForce = self.force
+    self.trail = CL.EffectMgr.Instance:PlayEffect(self.trailEffectName, self.pushPoint.position, UE.Quaternion.identity)
+    self.trail.trans:SetParent(self.pushPoint)
+    
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        hand:Grab(nil, true)
+        
+    end
+    
+    local si = self.flySound:PlaySoundInfo()
+    if si and not IsNullOrDestroyed(si.ao) then
+        si.ao.trans:SetParent(self.trans)
+    end
+    
+    local so = self.host.interact:GetStabObject()
+    if not IsNullOrDestroyed(so) and not self.stabJoint then
+        so:BreakAllStab()
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.flyActId)
+    self.flyActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact) then
+                sche:Stop()
+                return
+            end
+
+            curForce = self.force - t * self.forceDece
+            if not CL.Network.VRNetworkManager.IsOnline or SafeLocalTrackPhysics(self.host.interact) then
+                self.host.interact:AddForce(self.host.interact.trans.forward * curForce)
+            end
+            
+            -- Detonation must continue on the server even if the physics owner disconnects.
+            if t >= self.flyTime and not CL.Network.VRNetworkManager.ClientOnline then
+                self:LockStabFc(false)
+                if not IsNullOrDestroyed(so) then
+                    so:BreakAllStab()
+                end
+                
+                self:Explode()
+            end
+        end
+    , 0, self.flyTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.Update).actionId
+end
+
+function firework:GiveBack()
+    if self.trail and not IsNullOrDestroyed(self.trail) then
+        CL.EffectMgr.Instance:GiveBack(self.trail)
+        self.trail = nil
+    end
+end
+
+return Class(Require("Weapon/FirecrackerBaseScript"), nil, firework)

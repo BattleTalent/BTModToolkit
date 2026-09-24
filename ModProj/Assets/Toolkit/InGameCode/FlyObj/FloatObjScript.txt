@@ -1,0 +1,352 @@
+local particleCurve = UE.ParticleSystem.MinMaxCurve(1)
+
+
+local floatObj = {
+    flyDis = 0.04,
+    
+    maxSpeed = 50,
+    sqrHandSpeed = 5,
+    
+    brokenSpeed = 500,
+    brokenEffect = "RockBroken",
+    
+    impactEffect = "RockCollision",
+    effectInteval = 0.2,
+    lastEffectTime = 0,
+    
+    addForceIntensity = 7,
+    
+    
+    radius = 0.4,
+}
+
+function floatObj:FloatBegin()
+    self.host.rb.useGravity = false
+    
+    self:IgnoreCollisionWithObstacles(self.host.trans.position)
+end
+
+function floatObj:NetworkFloatBegin(pos)
+    self.host.rb.useGravity = false
+    self:IgnoreCollisionWithObstacles(pos)
+end
+
+function floatObj:StartFloat(height, func, onCompleted)
+    self.floatHeight = height
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if not self.host.networkFO:LocalTrackPhysics() then
+            return
+        end
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+        self.host.networkFO:CommandFloatBegin(localPlayerId, self.host.trans.position)
+    end
+    
+    self:FloatBegin()
+
+    local spawnY = self.host.trans.position.y
+    local targetY = self.host.trans.position.y + height
+    
+    local dir = UE.Vector3.up
+    local target = nil
+    local dis = nil
+    
+    self:StopFloat()
+    self.floatActId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.rb) then
+                self:StopFloat()
+                return
+            end
+            dis =  height - (self.host.trans.position.y - spawnY)
+            if dis <= height and dis > self.flyDis then
+                target = self.host.trans.position + dir * self.flyDis
+                if func then
+                    func(self.host.trans, target)
+                else
+                    CL.PhysicsFollow.TrackPosition(self.host.rb, target, 0.2)
+                end
+            else
+                self.host.trans.position = self.host.trans.position + dir * dis
+                self:StopFloat()
+                if CL.Network.VRNetworkManager.IsOnline then
+                    local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                    self.host.networkFO:CommandFloatEnd(localPlayerId, self.host.trans.position, self.host.trans.rotation)
+                end
+                
+                self:FloatEnd()
+                
+                if onCompleted then
+                    onCompleted(self.host)
+                end
+            end
+        end
+    , 0, -1).actionId
+end
+
+function floatObj:NetworkFloatEnd(pos, rot)
+    --self.host.trans.position = pos
+    --self.host.trans.rotation = rot
+    self:FloatEnd()
+end
+
+function floatObj:FloatEnd()
+    if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.rb) then
+        return
+    end
+    self.host.rb.velocity = self.host.rb.velocity.normalized * 0.1
+    
+    self:ResetCollisionWithObstacles()
+end
+
+function floatObj:StopFloat()
+    CL.Scheduler.RemoveSchedule(self.floatActId)
+end
+
+
+
+------------------------------------------Collision-------------------------------------------
+function floatObj:NetworkIgnoreCollisionWithObstacles(pos, height)
+    self.floatHeight = height
+    self:ResetCollisionWithObstacles()
+    self:IgnoreCollisionWithObstacles(pos)
+end
+
+
+function floatObj:IgnoreCollisionWithObstacles(startPos)
+    self.cols = self.host:GetCols(true)
+    if not self.cols then
+        return
+    end
+    self.obstaclesCols = {}
+    local checkPos = startPos
+    --CL.DebugDraw.DrawLine(checkPos, checkPos + UE.Vector3.up *
+    --    self.floatHeight, UE.Color.red, 3)
+    
+    --find obstacles
+    local raycastHit  = UE.Physics.SphereCastAll(checkPos + UE.Vector3.up *
+        self.floatHeight, self.radius, UE.Vector3.down, self.floatHeight)
+    
+    local pu = nil
+    local col = nil
+    local pass = true
+    for i = 0, raycastHit.Length - 1 do
+        col = raycastHit[i].collider
+        for j = 0, self.cols.Length - 1 do
+            if self.cols[j] == col then
+                pass = false
+                break
+            end
+        end
+        
+        if pass then
+            if col.gameObject.layer == CL.LayerDefine.EnvLayer.value or 
+                col.gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value then
+                table.insert(self.obstaclesCols, col)
+                --print("insert collision :" .. col.gameObject.name)
+            end
+        end
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, true)
+        --print("ignore collision with:" .. v.gameObject.name)
+    end
+end
+
+function floatObj:ResetCollisionWithObstacles()
+    if not self.obstaclesCols or not self.cols then
+        return
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, false)
+    end
+    
+    self.obstaclesCols = nil
+end
+
+function floatObj:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function floatObj:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+end
+
+function floatObj:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+    if self.addForce then
+        return
+    end
+    
+    if self:AttemptAddForce(hand) then
+        --CL.EffectMgr.Instance:PlayEffect("CircleEffect", self.host.trans.position, 
+        --    UE.Quaternion.LookRotation(self.host.rb.velocity))
+        self.addForce = true
+    end
+end
+
+function floatObj:OnCollisionWithPlayer(collision, player)
+    --print("OnCollisionWithPlayer------------")
+end
+
+
+function floatObj:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    --print("OnCollisionWithRole------------")
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal)
+end
+
+function floatObj:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithSceneHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity)
+end
+
+function floatObj:RpcOnCollisionWithScene(rb, col, point, normal, relaVel)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+end
+
+function floatObj:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+    --print("OnCollisionWithScene------------")
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal)
+end
+
+function floatObj:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, pu)
+end
+
+function floatObj:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+end
+
+function floatObj:OnCollisionWithHitScan(rb, col, point, normal, relaVel)
+    self:CollisionEffect(point, normal)
+
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(col)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    local pass = false
+    if pu.unitType == CL.Tagger.Tag.FlyObject then
+        if pu.flyObjName == "ShotGunRangeHitObj" then
+            pass = true
+        end
+    end
+    if pass then
+        if CL.Network.VRNetworkManager.IsOnline then
+            self.host.networkFO:ServerOnBroken(point, normal)
+        end
+        
+        self:PlayImpact(point, normal)
+        self.host:OnFinish()
+    else
+        self:CheckBroken(point, normal, self.brokenSpeed)
+    end
+end
+
+function floatObj:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal)
+end
+
+function floatObj:AttemptAddForce(hand)
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local vel = hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+    --print("AttemptAddForce vel.sqrMagnitude:" .. vel.sqrMagnitude .. "sqrhandSpeed:" .. self.sqrHandSpeed)
+    if vel.sqrMagnitude < self.sqrHandSpeed then
+        return false
+    end
+    
+    self:BeforeAddForce()
+    
+    self.host:AddForce(vel * self.addForceIntensity, UE.ForceMode.VelocityChange)
+    return true
+end
+
+function floatObj:BeforeAddForce()
+    self.host.rb.useGravity = true
+end
+
+function floatObj:CheckBroken(point, normal, speed)
+    --print("CheckBroken speed:"..self.host.rb.velocity.sqrMagnitude)
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.host.rb.velocity.sqrMagnitude > speed then
+        if CL.Network.VRNetworkManager.IsOnline then
+            self.host.networkFO:ServerOnBroken(point, normal)
+        end
+        
+        self:PlayImpact(point, normal)
+        self.host:OnFinish()
+    end
+end
+
+function floatObj:NetworkOnBroken(pos, normal)
+    self:PlayImpact(pos, normal)
+    self.host:OnFinish()
+end
+
+function floatObj:PlayImpact(point, normal)
+    self.host:PlayImpact(point, normal)
+end
+
+function floatObj:CollisionEffect(point, normal)
+    if UE.Time.time - self.lastEffectTime <= self.effectInteval then
+        return
+    end
+    
+    local speed = self.host.rb.velocity.magnitude
+
+    if speed < self.showEffectSpeed then
+        return
+    end
+    particleCurve.constant = self.maxEffectIntensity * speed/self.maxEffectSpeed
+    
+    local effect = CL.EffectMgr.Instance:PlayEffect(self.impactEffect, point, 
+        UE.Quaternion.LookRotation(normal))
+    
+    if not IsNullOrDestroyed(effect) then
+        for i = 0, effect.particles.Length - 1 do
+            effect.particles[i].main.startSpeed = particleCurve
+            effect.particles[i]:Play()
+        end
+    end
+    
+    self.lastEffectTime = UE.Time.time
+end
+
+function floatObj:OnTimeOut()
+    self:PlayBrokenEffect()
+end
+
+function floatObj:PlayBrokenEffect()
+    CL.EffectMgr.Instance:PlayEffect(self.brokenEffect, self.host.trans.position, self.host.trans.rotation)
+end
+
+function floatObj:ResetState()
+    self:StopFloat()
+    self.addForce = false
+    
+    self:ResetCollisionWithObstacles()
+end
+
+return Class(nil,nil,floatObj)

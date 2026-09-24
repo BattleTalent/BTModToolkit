@@ -27,6 +27,9 @@ namespace CrossLink
         }
         [Tooltip("Fragile is for range weapon, Solid is for shield, Tough is for environment trap")]
         public InteractType interactType;
+
+        public bool isCombinable = false;
+
         [Tooltip("guard points tell enemy where to defend")]
         public Transform[] guardPoints;
         #endregion

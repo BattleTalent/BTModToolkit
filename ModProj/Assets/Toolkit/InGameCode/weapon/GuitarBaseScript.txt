@@ -1,0 +1,170 @@
+--work with GuitarTriggerScript
+local GuitarBase = {
+    baseSpeed = 15,
+    
+    recoilRotate = -3,
+    recoilRandomBias = 3,
+    
+    defaultColor = UE.Color(0.03, 0.03, 0.03, 0), 
+    awakeColor =  UE.Color(1, 1, 1, 0),
+    
+    maxColorValue = 0.8,
+    midColorValue = 0.6,
+    minColorValue = 0.12,
+    
+    renderers = {},
+    
+    --mana
+    manaCost = 1,
+    
+    recoilVector = UE.Vector3(0, 0.1, -0.1),
+    recoilCurve = UE.AnimationCurve(UE.Keyframe(0, 1000), UE.Keyframe(0.1, 0)),
+}
+
+
+
+function GuitarBase:OnGrab(a, g)
+    self.string = self.stringScript.script.self
+    self.trigger = self.triggerScript.script.self
+
+    self.string:SetTriggerActive(g)
+    self.trigger:SetTriggerActive(g)
+    
+    for i = 1, 7 do
+        self.renderers[i] = self["renderer"..i]
+    end
+    
+    if g then
+        self.character = a.attachedHand.character
+        local hand =self.host.interact:GetPrimaryHand()
+        if not IsNullOrDestroyed(hand) then
+            local idx = self.host.interact:GetPrimaryHand():GetHandIndex()
+            self.otherHand = self.character.hands[(idx + 1) % 2]
+            self.fingerTrans = self.otherHand.physicsHand.colliders[1].transform
+            
+            self.string:SetPlayHand(self.otherHand)   
+            self.trigger:SetPlayHand(self.otherHand)
+        
+        
+            SetMaterialEmissionWithinTime(self, self.renderers, self.awakeColor, 0.4)        
+        end
+    else
+        SetMaterialEmissionWithinTime(self, self.renderers, self.defaultColor, 0.4)
+    end
+end
+
+function GuitarBase:RamdomColor()
+    --random r,g,b a max and a min
+    local max = math.floor(UE.Random.Range(0, 2))
+    
+    local step = math.ceil(UE.Random.Range(0, 2))  -- 1 or 2
+    local min = (max + step) % 3
+    
+    local other = (max + (step == 1 and 2 or 1)) % 3
+    
+    local c = {}
+    c[max + 1] = self.maxColorValue
+    c[min + 1] = self.minColorValue
+    c[other + 1] = UE.Random.Range(self.minColorValue, self.maxColorValue)
+    
+    return UE.Color(c[1], c[2], c[3], 0)
+end
+
+
+function GuitarBase:ReleaseSkill(vel)
+    local needMana = self.manaCost * self.host.AppliedManaCostMultiplier
+    if not CostMana(self.host, needMana, self.character) then
+        return
+    end
+    
+    self.character:CostMana(self.host, needMana)
+    self:ShootObj(self.flyObjName, vel, self.baseSpeed)
+end
+
+function GuitarBase:PlayMuzzleEff(color)
+    if color then
+        color.a = 1
+        local struct = self.muzzleEff.main.startColor
+        struct.color = color
+        self.muzzleEff.main.startColor = struct
+    end
+    self.muzzleEff:Play()
+end
+
+function GuitarBase:ShootObj(flyObjName, vel, baseSpeed, color)
+    local ph = self.host.interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = self.createPoint.forward
+    local flyObjScript = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            flyObjScript = self.host:NetworkCreateFlyObj(flyObjName, self.createPoint.position,
+        vel.normalized, baseSpeed + vel.magnitude/5)
+        end
+    else
+        flyObjScript = self.host:CreateFlyObj(flyObjName, self.createPoint.position,
+        vel.normalized, baseSpeed + vel.magnitude/5)
+    end
+    
+    --self:PlayChordSound()
+    --self.string:StopStringSound()
+    
+    
+    self.host.interact:CostDurability()
+    return flyObjScript
+end
+
+function GuitarBase:OnShootObj(fo, baseSpeed, color)
+    self:OnShootEffect(baseSpeed, color)
+    
+    local randomColor = color or self:RamdomColor()
+    fo.script.self:SetStartColor(randomColor)
+end
+
+function GuitarBase:OnShootEffect(baseSpeed, color)
+    for i = 1, 6 do
+        self.string:EnableString()
+        self.string:TickToDisable()
+        self.string:ShockString(i, baseSpeed, self.fingerTrans.position)
+        self.string:PlayStringSound(i, baseSpeed)
+    end
+    
+    --color
+    if not IsNullOrOwnerChanged(self.colorTimer, self) then
+        self.colorTimer:Stop()
+        self.colorTimer = nil
+    end
+    
+    local randomColor = color or self:RamdomColor()
+    
+    SetMaterialEmissionWithinTime(self, self.renderers, randomColor, 0.15, 
+    function ()
+        if not IsNullOrDestroyed(self.host) then
+            self.colorTimer = SetMaterialEmissionWithinTime(self, self.renderers, self.awakeColor, 0.3)
+        end
+    end)
+end
+
+function GuitarBase:Recoil(recoilRotate, recoilRandomBias, recoilVector, recoilCurve)
+    local bias = UE.Random.Range(-recoilRandomBias, recoilRandomBias)
+    self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
+    self.recoilActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            self.host.interact.rb:AddForce(self.createPoint:TransformVector(recoilVector) *
+                recoilCurve:Evaluate(t), UE.ForceMode.Acceleration)
+            
+            self.host.interact.rb:AddRelativeTorque(UE.Vector3(recoilRotate, bias, 0), UE.ForceMode.Impulse)
+        end
+    ,0, self.recoilCurve.keys[recoilCurve.length - 1].time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function GuitarBase:PlayChordSound()
+    self.chordSound:PlaySound()
+end
+
+return Class(nil,nil, GuitarBase)

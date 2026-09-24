@@ -1,0 +1,112 @@
+--luaBehaviour
+local Forestock = {
+    pullFactor = 0,
+    lastShootFactor = 0,
+    shootFactorDeltaAcc = 0,
+    
+    poseValues = {0.1, 0.47, 0.49, 0.46, 0.48},
+    
+    onTrigger = false,
+    cmdCharacter = {},
+
+    delayRemoveScheId = -1,
+    lifeCricleId = -1,
+}
+
+function Forestock:Start()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+        
+    self.trans = self.host.transform
+    self.main = self.interactTrigger.script.self
+    
+    self.defaultPos = self.model.localPosition
+    self.pullMaxDis = UE.Vector3.Distance(self.model.position, self.endPoint.position)
+end
+
+function Forestock:RegisterLifeCircleUpdateSche()
+    CL.Scheduler.RemoveSchedule(self.delayRemoveScheId)
+    CL.Scheduler.RemoveSchedule(self.lifeCricleId)
+    self.lifeCricleId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0, -1).actionId
+end
+
+function Forestock:UnRegisterLifeCircleUpdateSche()
+    self.delayRemoveScheId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            CL.Scheduler.RemoveSchedule(self.lifeCricleId)
+        end
+    , 0, -1, 1).actionId
+end
+
+function Forestock:OnGrab(a, g)
+    self.isGrab = g
+    if g then
+        self:RegisterLifeCircleUpdateSche()
+        self.owner = a.attachedHand.character
+    else
+        self:UnRegisterLifeCircleUpdateSche()
+        self.owner = nil
+        return
+    end
+    self.grabAttach = a
+end
+
+function Forestock:CheckReachPoint(isLoad)
+    if (isLoad and self:IsReachLoadPoint()) or (not isLoad and self:IsReachShootPoint()) then
+        return true
+    end
+    
+    local reachPoint = isLoad and self.endPoint.position or self.startPoint.position
+
+    if UE.Vector3.Distance(self.model.position, reachPoint) < 0.02 then
+        if isLoad then 
+            self:OnReachLoadPoint()
+        else
+            self:OnReachShootPoint()
+        end
+        
+        return true
+    end
+    
+    return false
+end
+
+function Forestock:IsReachLoadPoint()
+    return self.isLoadPoint
+end
+
+function Forestock:IsReachShootPoint()
+    return self.isShootPoint
+end
+
+function Forestock:ResetReachCheck()
+    self.isLoadPoint = false
+    self.isShootPoint = false
+end
+
+function Forestock:OnReachLoadPoint()
+    self:LoadPointAction()
+end
+
+function Forestock:LoadPointAction()
+    self.isLoadPoint = true
+    --reachsound
+    self.loadBSound:PlaySound()
+end
+
+function Forestock:OnReachShootPoint()
+    self.isShootPoint = true
+    
+    --reachsound
+    self.loadESound:PlaySound()
+end
+
+function Forestock:UnLock()
+    self.isLocked = false
+    self:ResetReachCheck()
+end
+-----------------
+return Class(nil, nil, Forestock)

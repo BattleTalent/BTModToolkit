@@ -1,0 +1,111 @@
+
+local SwordAncient = {
+}
+
+function SwordAncient:Awake()
+    self.meshGo:SetActive(true)
+    
+    SetMaterialEmission(self.bladeRenderer, UE.Color(0, 0, 0, 1))
+    SetMaterialEmission(self.handleRenderer, UE.Color(0, 0, 0, 1))
+end
+
+function SwordAncient:PlayGenEffect()
+    self.meshGo:SetActive(false)
+    
+    SetMaterialEmission(self.bladeRenderer, UE.Color(11.984314, 3.137255, 0.5647059, 1))
+    SetMaterialEmission(self.handleRenderer, UE.Color(11.984314, 3.137255, 0.5647059, 1))
+    
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.genEffectName, self.trans.position, self.trans.rotation)
+    eo.trans:SetParent(self.trans)
+    eo.trans.localPosition = UE.Vector3.zero
+    eo.trans.localRotation = UE.Quaternion.identity
+    
+    eo:PlayAnimationClipThenGiveBack("Flyingswords_GenerateEffects", 
+        function()
+            self.meshGo:SetActive(true)
+        end)
+end
+
+function SwordAncient:PlayGlowEffect(flag)
+    if flag then
+        self.glowEffect.gameObject:SetActive(true)
+        self.glowEffect:Play()
+    else
+        self.glowEffect:Stop()
+        self.glowEffect.gameObject:SetActive(false)
+    end
+end
+
+function SwordAncient:PlayTrailEffect(flag)
+    if flag then
+        self.trailEffect:Play()
+    else
+        self.trailEffect:Stop()
+    end
+end
+
+function SwordAncient:PlayStabEffect()
+    local localPos = UE.Vector3(0, 0, 1.42)
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.stabEffectName, self.trans:TransformPoint(localPos), UE.Quaternion.LookRotation(self.trans.forward))
+    eo.trans:SetParent(self.trans)
+    eo.trans.localPosition = localPos
+    eo.trans.localRotation = UE.Quaternion.identity
+end
+
+function SwordAncient:PlayChargingEffect(flag)
+    if flag then
+        self.chargingEo = CL.EffectMgr.Instance:PlayEffect(self.chargeEffectName, self.trans.position, UE.Quaternion.LookRotation(self.trans.forward))
+    else
+        CL.EffectMgr.Instance:GiveBack(self.chargingEo)
+        self.chargingEo = nil
+    end
+end
+
+function SwordAncient:PlayChargingEffectAtPosition(pos, rot)
+    if not self.chargingEo or IsNullOrDestroyed(self.chargingEo) then
+        self:PlayChargingEffect(true)
+    end
+    
+    self.chargingEo.trans.position = pos
+    self.chargingEo.trans.rotation = rot
+end
+
+function SwordAncient:PlayHitEffect(pos)
+    CL.EffectMgr.Instance:PlayEffect(self.hitEffectName, pos, UE.Quaternion.LookRotation(self.trans.forward))
+end
+
+function SwordAncient:CloseEmission()
+    self.emissionActId = SetMaterialEmissionWithinTime(self.trans, {self.bladeRenderer, self.handleRenderer}, UE.Color(0.1, 0.1, 0.1, 1), 0.5).actionId
+end
+
+function SwordAncient:DrivingStop()
+    local curInfoObj = self.host.interact:GetRagdollHitInfoObj()
+    if not IsNullOrDestroyed(curInfoObj) then
+        curInfoObj.hitInfo.additionalHitInfo.velocityMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.velocityMlp
+        curInfoObj.hitInfo.additionalHitInfo.damageMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.damageMlp
+        curInfoObj.hitInfo.additionalHitInfo.damageThrough = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.damageThrough
+        curInfoObj.hitInfo.additionalHitInfo.damageCrit = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.damageCrit
+        curInfoObj.hitInfo.additionalHitInfo.stabMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.stabMlp
+        curInfoObj.hitInfo.additionalHitInfo.hitMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.hitMlp
+        curInfoObj.hitInfo.additionalHitInfo.hitRandom = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.hitRandom
+        curInfoObj.hitInfo.additionalHitInfo.stabDamage = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.stabDamage
+        curInfoObj.hitInfo.additionalHitInfo.breakDefenceMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.breakDefenceMlp
+        curInfoObj.hitInfo.additionalHitInfo.hitBackMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.hitBackMlp
+        curInfoObj.hitInfo.additionalHitInfo.knockoutFactor = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.knockoutFactor
+        curInfoObj.hitInfo.additionalHitInfo.dizzyFactor = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.dizzyFactor
+        curInfoObj.hitInfo.additionalHitInfo.stiffValue = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.stiffValue
+        curInfoObj.hitInfo.additionalHitInfo.hitPlayerMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.hitPlayerMlp
+        curInfoObj.hitInfo.additionalHitInfo.postureDamage = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.postureDamage
+        curInfoObj.hitInfo.additionalHitInfo.shieldPenetration = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.shieldPenetration
+        curInfoObj.hitInfo.additionalHitInfo.shieldDamageMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.shieldDamageMlp
+        curInfoObj.hitInfo.additionalHitInfo.slowMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.slowMlp
+        curInfoObj.hitInfo.additionalHitInfo.slowTimeMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.slowTimeMlp
+        curInfoObj.hitInfo.additionalHitInfo.hitbackForce = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.hitbackForce
+        curInfoObj.hitInfo.additionalHitInfo.castBreakFactor = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.castBreakFactor
+        curInfoObj.hitInfo.additionalHitInfo.parryPostureDmgMlp = self.disactiveHitInfoObj.hitInfo.additionalHitInfo.parryPostureDmgMlp
+        curInfoObj.hitInfo:ResetTemplate()
+    end
+    self.host.interact:RefleshRagdollHitInfos()
+end
+
+return Class(nil, nil, SwordAncient)

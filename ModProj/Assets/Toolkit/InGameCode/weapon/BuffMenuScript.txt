@@ -1,0 +1,217 @@
+
+local BuffMenu = {
+    itemHeight = 0.03,
+    curY = 0,
+    curIdx = 0,
+    lastIdx = 0,
+    
+    prevIdx = 0,
+    nextIdx = 0,
+    
+    maxIdx = 0,
+    
+    targetY = 0,
+}
+buffData = nil
+
+BuffMenu_Guide = "1. The joystick up/down control for turning pages\n2. Press and hold the trigger and point to the object to be buffed\n3. Release the trigger to use buff."
+
+BuffMenu_WrongItem = "This item can't add buff!"
+
+BuffMenu_PlayerStr = "Player_"
+
+BuffMenu_WeaponStr = "Weapon_"
+
+BuffMenu_RoleStr = "Role_"
+
+function BuffMenu:MenuInit(trans, hand)
+    self.hand = hand
+
+    if IsNullOrDestroyed(self.hand) then
+        return
+    end
+    
+    local headset = self.hand.character:GetHeadset()
+    RemoveSchedule(self, self.updateTimer)
+    
+    
+    self.curIdx = 1
+    self.lastIdx = 0
+    if not buffData then
+        local list = CL.GameDataMgr.GetData(typeof(CL.BuffConfig))
+        buffData = {}
+        for i = 0, list.Row.Length - 1 do
+            if string.find(list.Row[i].Name, BuffMenu_WeaponStr) then
+                table.insert(buffData, 1, list.Row[i])
+            else
+                table.insert(buffData, list.Row[i])
+            end
+        end
+    end
+
+    if buffData then
+        self.maxIdx = #buffData
+        self.maxY = #buffData * self.itemHeight
+    end
+    
+    self:RefleshItem()
+    
+    self.updateTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not IsNullOrDestroyed(trans) then
+                self:UpdatePositionFollow(trans.position, headset)
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.Update)
+end
+
+function BuffMenu:Show(isShow)
+    self.trans.gameObject:SetActive(isShow)
+end
+
+function BuffMenu:RefleshMenu(value)
+    self.targetY = self.curY + value
+    self.curY = UE.Mathf.Clamp(self.targetY, self.itemHeight, self.maxY)
+    
+    self.curIdx = UE.Mathf.Ceil(self.curY/self.itemHeight)
+    
+    if self.lastIdx ~= self.curIdx then
+        self:RefleshItem()
+    end
+end
+
+function BuffMenu:RefleshItem()
+    self.prevIdx = self.curIdx - 1
+    if self.prevIdx > 0 then
+        self.prevText.text = buffData[self.prevIdx].Name
+    else
+        self.prevText.text = ""
+    end
+    self.curText.text = buffData[self.curIdx].Name
+    
+    self.nextIdx = self.curIdx + 1
+    if self.nextIdx <= self.maxIdx then
+        self.nextText.text = buffData[self.nextIdx].Name
+    else
+        self.nextText.text = ""
+    end
+end
+
+function BuffMenu:ShowConsole(pu)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    local curBuff = buffData[self.curIdx]
+    
+    if not curBuff then
+        return
+    end
+    
+    local isPlayerStr = string.find(curBuff.Name, BuffMenu_PlayerStr)
+    local isRoleStr = string.find(curBuff.Name, BuffMenu_RoleStr)
+    local isWeaponStr = string.find(curBuff.Name, BuffMenu_WeaponStr)
+    
+    if pu.unitType == CL.Tagger.Tag.PlayerRole then
+        if isWeaponStr then
+            self.consoleText.text = "Can't added: " .. curBuff.Name .. " to Player"
+        else
+            self.consoleText.text = "Add buff: " .. curBuff.Name .. "\nto Player: " .. pu.trans.name .."?"
+        end
+    elseif pu.unitType == CL.Tagger.Tag.InteractRole then
+        if isWeaponStr then
+            self.consoleText.text = "Can't added: " .. curBuff.Name .. " to Role"
+        else
+            self.consoleText.text = "Add buff: " .. curBuff.Name .. "\nto Role: " .. pu.trans.name .."?"
+        end
+    elseif pu.unitType == CL.Tagger.Tag.InteractWeapon then
+        if isPlayerStr or isRoleStr then
+            self.consoleText.text = "Can't added: " .. curBuff.Name .. " to Weapon"
+        else
+            self.consoleText.text = "Add buff: " .. curBuff.Name .. "\nto Weapon: " .. pu.trans.name .."?"
+        end
+    else
+        self.consoleText.text = BuffMenu_WrongItem
+    end
+end
+
+function BuffMenu:ClearConsole()
+    self.consoleText.text = BuffMenu_Guide
+end
+
+function BuffMenu:AddBuff(pu)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    local curBuff = buffData[self.curIdx]
+    
+    if not curBuff then
+        return
+    end
+    
+    local isPlayerStr = string.find(curBuff.Name, BuffMenu_PlayerStr)
+    local isRoleStr = string.find(curBuff.Name, BuffMenu_RoleStr)
+    local isWeaponStr = string.find(curBuff.Name, BuffMenu_WeaponStr)
+    
+    if pu.unitType == CL.Tagger.Tag.PlayerRole then
+        if isWeaponStr then
+            self.consoleText.text = "Can't added: " .. curBuff.Name .. " to Player"
+        else
+            CL.BuffMgr.Instance:AddBuff(pu.character.attr, curBuff.Name)
+            self.consoleText.text = "Successfully added: " .. curBuff.Name .. "\nto Player: " .. pu.trans.name
+        end
+        self:HapticPulse()
+    elseif pu.unitType == CL.Tagger.Tag.InteractRole then
+        if isWeaponStr then
+            self.consoleText.text = "Can't added: " .. curBuff.Name .. " to Role"
+        else
+            CL.BuffMgr.Instance:AddBuff(pu.attr, curBuff.Name)
+            self.consoleText.text = "Successfully added: " .. curBuff.Name .. "\nto Role: " .. pu.trans.name
+        end
+        self:HapticPulse()
+    elseif pu.unitType == CL.Tagger.Tag.InteractWeapon then
+        if isPlayerStr or isRoleStr then
+            self.consoleText.text = "Can't added: " .. curBuff.Name .. " to Weapon"
+        else
+            if curBuff.Name == CL.BuffConfig.WeaponManaCostBuff then
+                local wp = pu:GetInteractTrigger()
+                local config = CL.GameDataMgr.GetData(typeof(CL.BuffConfig)):GetData(curBuff.Name)
+                if wp ~= nil then
+                    wp:MultiplyManaCost(config.ModValue)
+                end             
+            elseif curBuff.Name == CL.BuffConfig.WeaponDuraBuff then
+                local config = CL.GameDataMgr.GetData(typeof(CL.BuffConfig)):GetData(curBuff.Name)
+                pu:MulplyDurabulity(config.ModValue)
+            end
+            CL.WeaponEmpower.ForgeWeaponData(pu:GetRagdollHitInfo(), curBuff.Name)
+            pu:UpgradeForceLevel()
+            --CL.BuffMgr.Instance:AddBuff(pu:GetRagdollHitInfo(), curBuff.Name)
+            self.consoleText.text = "Successfully added: " .. curBuff.Name .. "\nto Weapon: " .. pu.trans.name
+        end
+        self:HapticPulse()
+    end
+end
+
+function BuffMenu:HapticPulse()
+    if self.hand then
+        self.hand:HapticPulse(self.hand.character.skillChargeHapticCurve, 0.2, 0.8)
+    end
+end
+
+function BuffMenu:UpdatePositionFollow(pos, headset)
+    if IsNullOrDestroyed(headset) then
+        return
+    end
+    
+    self.trans.position = pos
+    self.trans.rotation = UE.Quaternion.LookRotation(pos - headset.position)
+end
+
+
+function BuffMenu:ResetState()
+end
+
+
+return Class(nil, nil, BuffMenu)

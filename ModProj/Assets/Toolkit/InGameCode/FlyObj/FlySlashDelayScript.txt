@@ -1,0 +1,250 @@
+
+local FlySlashDelay = {
+    isHit = false,
+    noPushBack = 0,
+    
+    hitInterval = 0.1,
+    hitPlayerInterval = 1,
+    hitRecord = {},
+    
+    isFlying = false,
+}
+
+function FlySlashDelay:OnSpawn(ib, dir, vel)
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu:GetProxyMuscleName(), point)
+        
+        if not fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+            return
+        end
+        
+        if not frag then
+            return
+        end
+        if frag.reactType == CS.BodyFragment.ReactType.Dead then
+            if fc.attr.hp.BaseValue > 5 then
+                return
+            end
+        end
+
+        if frag then
+            CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+        end
+    end
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if self.noPushBack == 1 then
+            CL.FullBodyMuscleState.dmgEffectData.pushbackDir = UE.Vector3.zero
+            
+            CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel = self.relaVel
+                * CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel.normalized
+        end
+    end
+    
+    if self.loopEffect then
+        self.loopEffect:Play()
+    end
+    
+    self.hitInfoObj = self.host:GetRagdollHitInfoObj()
+    if self.hitInfoObj then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    end
+    self:StartLifeTimer()
+end
+
+function FlySlashDelay:StartLifeTimer()
+    local value = 0
+    self.lifeActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if value >= 0 then
+                value = CL.EasingEquations.EaseInQuint(0, 1, 1-t/self.moveTime)
+                if value < 0.05 then
+                    value = -1
+                    self.host.rb.velocity = UE.Vector3.zero
+                else
+                    self.host.rb.velocity = self.host.trans.forward * self.startSpeed * value
+                end
+            end
+            
+            if t >= self.lifeTime then
+                self.host:OnFinish()
+            end
+        end,
+    0, self.lifeTime).actionId
+end
+
+function FlySlashDelay:DelayFlyStart(vel)
+    self.host:FlyStart(vel)
+    CL.Scheduler.RemoveSchedule(self.lifeActId)
+    
+    self.isFlying = true
+    self.hitRecord = {}
+
+    self:FlyEffect()
+end
+
+function FlySlashDelay:FlyEffect()
+    if self.flyStartEffect then
+        self.flyStartEffect:Play()
+    end
+    if self.loopEffect then
+        self.loopEffect:Stop()
+    end
+end
+
+function FlySlashDelay:OnTrigger(pu, other)
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    if IsNullOrDestroyed(other) then
+        return
+    end
+    
+    self.isHit = true
+    
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    if not self.host:IsFlying() then
+        if self.hitRecord[pu.trans] and UE.Time.time < self.hitRecord[pu.trans] then
+            return
+        end
+        self.hitRecord[pu.trans] = UE.Time.time + self.hitInterval
+    end
+
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+    
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashDelay:OnTriggerWithStaticScene(other)
+    -- PvP安全检查：确保other有效
+    if other == nil or other:IsNull() or other.transform == nil then
+        return
+    end
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+
+    CS.RayFire.RFDemolitionCluster.RayFireDemolishImpact(other.transform.position, 0.3, 10)
+
+    self.isHit = true
+    
+    if self.destoryWhenHitEnv ~= 0 or self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashDelay:OnTriggerWithRole(fc, col)
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    self.isHit = true
+    
+    if not self.host:IsFlying() then
+        if self.hitRecord[fc.trans] and UE.Time.time < self.hitRecord[fc.trans] then
+            return
+        end
+        self.hitRecord[fc.trans] = UE.Time.time + self.hitInterval
+    end
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashDelay:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlySlashDelay:OnTriggerWithPlayerHand(col, hand)
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    self.isHit = true
+    
+    if not self.host:IsFlying() then
+        if self.hitRecord[hand.character.trans] and UE.Time.time < self.hitRecord[hand.character.trans] then
+            return
+        end
+        self.hitRecord[hand.character.trans] = UE.Time.time + self.hitPlayerInterval
+    end
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashDelay:OnTriggerWithPlayer(pu, col)
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    self.isHit = true
+    
+    if not self.host:IsFlying() then
+        if self.hitRecord[pu.character.trans] and UE.Time.time < self.hitRecord[pu.character.trans] then
+            return
+        end
+        self.hitRecord[pu.character.trans] = UE.Time.time + self.hitPlayerInterval
+    end
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashDelay:ResetState()
+    self.isHit = false
+    
+    self.isFlying = false
+    
+    self.hitRecord = {}
+    CL.Scheduler.RemoveSchedule(self.lifeActId)
+    
+    if self.flyStartEffect then
+        self.flyStartEffect:Stop()
+    end
+    if self.loopEffect then
+        self.loopEffect:Stop()
+    end
+end
+
+return Class(nil, nil, FlySlashDelay)

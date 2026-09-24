@@ -1,0 +1,341 @@
+--luaBehaviour
+local CurseObj = {
+    stabInfo = {},
+
+    
+    --block curse if on curse logic.
+    cdEndTime = 0,
+
+    checkFc = {},
+
+    arrowLink = {},
+    checkArrow = {},
+    count = 0,
+    
+    riginCurseArrow = false,
+    
+    curseTimeId = -1,
+    
+    
+    curseEffects = {}
+    
+}
+
+function CurseObj:Awake()
+    self.curseHitFunc = function(fc)
+        self:CurseHitHandler(fc)
+    end
+end
+
+--[[stabInfo]]
+function CurseObj:AddToStabInfo(arrow, stabFc)
+    if IsNullOrDestroyed(stabFc) then
+        return
+    end
+    if not arrow then
+        return
+    end
+    
+    if not self.stabInfo[stabFc] then
+        self.stabInfo[stabFc] = {}
+        self.stabInfo[stabFc]["arrow"] = {}
+        self.stabInfo[stabFc]["count"] = 0
+    end
+    self.stabInfo[stabFc]["arrow"][arrow] = arrow
+    
+    if not self.stabInfo[stabFc]["isAlive"] then
+        self.stabInfo[stabFc]["isAlive"] = not stabFc.attr:IsDead()
+    end
+    
+    self.stabInfo[stabFc]["count"] = self.stabInfo[stabFc]["count"] + 1
+end
+
+function CurseObj:RemoveFromStabInfo(arrow, stabFc)
+    if self.stabInfo[stabFc] and self.stabInfo[stabFc]["arrow"][arrow] then
+        self.stabInfo[stabFc]["arrow"][arrow] = nil
+        self.stabInfo[stabFc]["count"] = self.stabInfo[stabFc]["count"] - 1
+    end
+    if self.stabInfo[stabFc] and self.stabInfo[stabFc]["count"] == 0 then
+        self.stabInfo[stabFc] = nil
+    end
+end
+
+
+function CurseObj:CurseHitHandler(fc)
+    --Get those bows which stab into fc
+    if not self.stabInfo[fc] then
+        return
+    end
+    --dead fc do not curse
+    if fc.attr:IsDead() then
+        if not self.stabInfo[fc]["isAlive"] then
+            return
+        else
+            self.stabInfo[fc]["isAlive"] = false
+        end
+    end
+    
+    if UE.Time.time < self.cdEndTime then
+        return
+    end
+    
+    --choose first arrow's col to apply curse hitscan
+    self.riginCurseArrow = false
+    
+    self.checkFc = {}
+    self.arrowLink = {}
+    self.checkArrow = {}
+    for k, v in pairs(self.stabInfo[fc]["arrow"]) do
+        if v and not IsNullOrDestroyed(v.ib) and v.ib.trans.gameObject.activeSelf then
+            if v.stabFc == fc then
+                if not self.riginCurseArrow then
+                    self.riginCurseArrow = v
+                end
+                break
+            end
+        end
+    end
+    
+    if not self.riginCurseArrow or IsNullOrDestroyed(self.riginCurseArrow.ib) then
+        return
+    end
+    
+    self.count = 0
+    self:GetConnectArrow(self.riginCurseArrow)
+    
+    local dmg = CL.FullBodyMuscleState.dmgHitData.dmgFinalResult
+    
+    self.checkFc = {}
+    --local arrowString = ""
+    --local checkFcString = ""
+    --local connectFcString = ""
+    --[[Because the hitHandler is called before the hitEffect, 
+    but the bow and arrow stab function is in the hitEffect, 
+    this would make it impossible to insert after the hitScan,
+    so the call is delayed using the Scheduler.]]
+    self.curseTimeId = CL.Scheduler.Create(self.riginCurseArrow.ib, 
+        function(sche, t, s)
+            for k, v in pairs(self.arrowLink) do
+                
+                if v and not IsNullOrDestroyed(v.ib) and v.stabFc and not self.checkFc[v.stabFc] and v.stabFc ~= fc then
+                    if v:ApplyHitScan(dmg) then
+                        --checkFcString = checkFcString .. v.stabFc.trans.name .. ", "
+                    end
+                    self.checkFc[v.stabFc] = true
+                end
+            end
+            --print("show all connect fc:" .. connectFcString)
+            --print("riginArrow-------------:" .. self.riginCurseArrow.ib.trans.name .. "arrowlink------------------:" .. arrowString)
+            --print("checkFcString------------------:" .. checkFcString)
+        end
+    , 0, 0, 0.02).actionId
+    self.cdEndTime = UE.Time.time + 0.2
+end
+
+function CurseObj:GetConnectArrow(arrow)
+    if self.checkArrow[arrow] then
+        return
+    end
+    
+    if not arrow then
+        return
+    end
+    
+    if IsNullOrDestroyed(arrow.ib) or (not IsNullOrDestroyed(arrow.ib) and not arrow.ib.trans.gameObject.activeSelf) then
+        self.checkArrow[arrow] = true
+        return
+    end
+    
+    if self.arrowLink[arrow] then
+    --    for k, v in ipairs(arrow.shareArrow) do
+    --        if not self.arrowLink[v] then
+    --            GetConnectArrow(v)
+    --        end
+    --    end
+    --    
+        return
+    end
+    
+    if not arrow.stabFc or IsNullOrDestroyed(arrow.stabFc) then
+        self.checkArrow[arrow] = true
+        return
+    end
+    
+    self.arrowLink[arrow] = arrow
+    
+    for k, v in ipairs(arrow.shareArrow) do
+        if not self.arrowLink[v] then
+            self:GetConnectArrow(v)
+        end
+    end
+    
+    if self.stabInfo[arrow.stabFc] and not self.checkFc[arrow.stabFc] then
+        self.checkFc[arrow.stabFc] = true
+        if not self.stabInfo[arrow.stabFc]["arrow"] then
+            self.checkArrow[arrow] = true
+            return
+        end
+        for k, v in pairs(self.stabInfo[arrow.stabFc]["arrow"]) do
+            if v ~= nil and arrow ~= v and not self.arrowLink[v] then
+                self:GetConnectArrow(v)
+            end
+        end
+    end
+    
+    self.checkArrow[arrow] = true
+    
+    return
+end
+function CurseObj:OnArrowStabFc(arrow, fc)
+    self:AddToStabInfo(arrow, fc)
+    
+    fc.muscleState:BeHittedEvent("+", self.curseHitFunc)
+end
+
+function CurseObj:OnArrowExitStabFc(arrow, fc)
+    self:RemoveFromStabInfo(arrow, fc)
+    
+    fc.muscleState:BeHittedEvent("-", self.curseHitFunc)
+end
+
+function CurseObj:OnDestroy()
+    CL.Scheduler.RemoveSchedule(self.curseTimeId)
+    
+    self.stabInfo = {}
+    self.checkFc = {}
+    self.arrowLink = {}
+end
+
+
+
+--[[
+    effect
+]]
+
+function CurseObj:ApplyConnectEffect(arrowA, arrowB)
+    if not arrowA or not arrowA.stabFc or not arrowB or not arrowB.stabFc 
+        or IsNullOrDestroyed(arrowA.stabFc) or IsNullOrDestroyed(arrowB.stabFc) then
+        return
+    end
+    local fcA = arrowA.stabFc
+    local fcB = arrowB.stabFc
+    
+    local info = nil
+    if self.curseEffects[fcA] then
+        if self.curseEffects[fcA].connect[fcB] then
+            self.curseEffects[fcA].connect[fcB].arrows[arrowA] = arrowB
+            
+            info = self.curseEffects[fcA].connect[fcB]
+        end
+    end
+    
+    if not info then
+        if self.curseEffects[fcB] then
+            if self.curseEffects[fcB].connect[fcA] then
+                self.curseEffects[fcB].connect[fcA].arrows[arrowA] = arrowB
+                
+                info = self.curseEffects[fcB].connect[fcA]
+            end
+        end
+    end
+    
+    if not info then
+        info = self:CreateEffect(arrowA, arrowB)
+    end
+    
+    return info
+end
+
+function CurseObj:CreateEffect(arrowA, arrowB)
+    local from = arrowA.stabFc.ra:GetMuscle(CL.RagdollBoneInfo.Spine).rbTrans
+    local to = arrowB.stabFc.ra:GetMuscle(CL.RagdollBoneInfo.Spine).rbTrans
+    if IsNullOrDestroyed(from) or IsNullOrDestroyed(to) then
+        return
+    end
+
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.effectName, from.position, UE.Quaternion.identity)
+    if IsNullOrDestroyed(eo) then
+        return
+    end
+    eo.trans:SetParent(arrowA.stabFc.trans)
+    --eo.gameObject.name = "ConnectLight_" .. arrowA.stabFc.trans.name .. "_with_" .. arrowB.stabFc.trans.name.. "_arrow_" .. arrowA.ib.trans.name .. "_" .. arrowB.ib.trans.name
+    local lightningEffect = eo.trans:GetComponent(typeof(CL.LightningEffect))
+    if lightningEffect then
+        lightningEffect:PlayEffect(from, to)
+    end
+    
+    if not lightningEffect then
+        return
+    end
+    
+    local fcA = arrowA.stabFc
+    local fcB = arrowB.stabFc
+    if not self.curseEffects[fcA] then
+        self.curseEffects[fcA] = {}
+        self.curseEffects[fcA].connect = {}
+    end
+    if not self.curseEffects[fcA].connect[fcB] then
+        self.curseEffects[fcA].connect[fcB] = {}
+        self.curseEffects[fcA].connect[fcB].count = 0
+    end
+    if not self.curseEffects[fcA].connect[fcB].arrows then
+        self.curseEffects[fcA].connect[fcB].arrows = {}
+    end
+    
+    self.curseEffects[fcA].connect[fcB].eo = eo
+    self.curseEffects[fcA].connect[fcB].line = lightningEffect
+    
+    self.curseEffects[fcA].connect[fcB].arrows[arrowA] = arrowB
+    
+    return self.curseEffects[fcA].connect[fcB]
+end
+
+function CurseObj:ApplyStopEffect(arrowA, arrowB)
+    if not arrowA or not arrowB then
+        return
+    end
+    
+    local fcA = arrowA.stabFc
+    local fcB = arrowB.stabFc
+    
+    if not self:RemoveArrow(fcA, fcB, arrowA, arrowB) then
+        self:RemoveArrow(fcB, fcA, arrowA, arrowB)
+    end
+end
+
+function CurseObj:RemoveArrow(fcA, fcB, arrowA, arrowB)
+    if fcA == nil or fcB == nil then
+        return
+    end
+
+    if self.curseEffects[fcA] then
+        if self.curseEffects[fcA].connect[fcB] then
+            if self.curseEffects[fcA].connect[fcB].arrows[arrowA] == arrowB then
+                self.curseEffects[fcA].connect[fcB].arrows[arrowA] = nil
+            elseif self.curseEffects[fcA].connect[fcB].arrows[arrowB] == arrowA then
+                self.curseEffects[fcA].connect[fcB].arrows[arrowB] = nil
+            end
+            
+            local count = 0
+            for k, v in pairs(self.curseEffects[fcA].connect[fcB].arrows) do
+                if k and v then
+                    count = count + 1
+                end
+            end
+            if count <= 0 or IsNullOrDestroyed(fcA) or IsNullOrDestroyed(fcB) then  --no connect between fcA and fcB
+                if self.curseEffects[fcA].connect[fcB].eo then
+                    CL.EffectMgr.Instance:GiveBack(self.curseEffects[fcA].connect[fcB].eo)
+                    self.curseEffects[fcA].connect[fcB].eo = nil
+                    self.curseEffects[fcA].connect[fcB].line = nil
+                end
+                
+                self.curseEffects[fcA].connect[fcB] = nil
+            end
+            
+            return true
+        end
+    end
+    return false
+end
+
+return Class(nil, nil, CurseObj)

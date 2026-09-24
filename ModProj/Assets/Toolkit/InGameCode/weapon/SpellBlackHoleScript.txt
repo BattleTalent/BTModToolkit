@@ -1,0 +1,256 @@
+
+local SpellSummonFo = Require("Weapon/SpellSummonFoScript")
+
+local spellBlackHole = {
+    summonFoVel = 1,
+}
+
+function spellBlackHole:CleanupBlackHoleRuntime()
+    self.localActId = SafeRemoveSchedule(self.localActId)
+    self.onSkill = false
+end
+
+function spellBlackHole:OnDestroy()
+    self:CleanupBlackHoleRuntime()
+    SpellSummonFo.OnDestroy(self)
+end
+
+function spellBlackHole:UnSlotSpell(slot)
+    self:CleanupBlackHoleRuntime()
+    SpellSummonFo.UnSlotSpell(self, slot)
+end
+
+function spellBlackHole:OnAwake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function spellBlackHole:OnChargeBegin()
+    if self.onSkill then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if SafeIsOwnerLocalPlayer(self.host.interact) then
+            if CL.Network.VRNetworkManager.ClientOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandChargeBegin() end
+                self.onSkill = true
+                return
+            end
+        else
+            return
+        end
+    end
+    self:DoChargeBegin()
+end
+
+function spellBlackHole:DoChargeBegin()
+    self:SetHandPose(true)
+    --print("OnChargeBegin")
+    
+    local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)
+    if self.host.interact:IsEnhance() then
+        fo.script.self:EnhanceSpell()
+    end
+    fo.script.self:SetOwner(self)
+    
+    self.onSkill = true
+end
+
+function spellBlackHole:NetworkOnSpawnSpell(fo)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self:InitSpellOnSpawn(fo, self.createPoint)
+    
+    if self.host.interact:IsEnhance() then
+        fo.script.self:EnhanceSpell()
+    end
+    fo.script.self:SetOwner(self)
+end
+
+function spellBlackHole:OnChargeReady()
+    if IsNullOrDestroyed(self.fo) then
+        return
+    end
+    
+    if self.chargeEndSound then
+        self.chargeEndSound:PlaySound()
+    end
+    
+    self:PrepareSpellOnHand()
+
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+        self.localActId = CL.Scheduler.Create(self.trans, 
+            function(sche, t, s)
+                if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                    or not self.slotHand or IsNullOrDestroyed(self.slotHand) then
+                    sche:Stop()
+                    return
+                end
+                if self.slotHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp then
+                    self:OnChargeRelease(true)
+                    sche:Stop()
+                end
+            end,
+        0, -1).actionId
+    end
+end
+
+
+function spellBlackHole:OnChargeCancel()
+    --print("OnChargeCancel")
+    self:ReleaseSpell()
+    
+    self:SetHandPose(false)
+    
+    self.onSkill = false
+    
+    self.fo = nil
+
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+    end
+end
+
+function spellBlackHole:OnChargeRelease(isLocal)
+    self.onSkill = false
+    self:SetHandPose(false)
+    
+    --throw
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+
+    if self.isOnline and not isLocal then
+        return
+    end
+
+    if self.isOnline then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+    end
+
+    if not self:TryThrow() then
+        self:ReleaseSpell()
+    end
+
+    if not self.isOnline then
+        self.fo = nil
+    end
+end
+
+function spellBlackHole:OnFoDestroyed(fo)
+    if self.fo and self.fo.script.self == fo then
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+            end
+        end
+        self.host:CloseSkill()
+    end
+end
+
+
+
+
+-----------------------------------------------------------------------------------------------------
+
+
+--[[
+    summon
+]]
+
+function spellBlackHole:OpenSkill()
+    self:SetHandPose(true)
+
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    self:StartCharge()
+end
+
+function spellBlackHole:CloseChargeEffect(eo)
+    if IsNullOrDestroyed(eo) then
+        return
+    end
+    local time = 0.1
+    local scale = eo.trans.localScale
+    CL.Scheduler.RemoveSchedule(self.effectTimeIds[eo])
+    self.effectTimeIds[eo] = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or eo == nil or IsNullOrDestroyed(eo) then
+                self.effectTimeIds[eo] = nil
+                sche:Stop()
+                return
+            end
+            eo.trans.localScale = scale *(1 - t/time)
+            
+            if t >= time then
+                CL.EffectMgr.Instance:GiveBack(eo)
+                self.effectTimeIds[eo] = nil
+                sche:Stop()
+            end
+        end
+    , 0, time).actionId
+end
+
+
+function spellBlackHole:OnCondition()
+    self.onSkill = true
+    
+    self.__base.OnCondition(self)
+end
+
+function spellBlackHole:SpawnFo()
+    local hand = self:GetSlotHand()
+    if hand == nil then
+        return
+    end
+    
+    local character = self:GetSlotHand().character
+    local headset = character:GetHeadset()
+    local otherHand = hand:GetAnotherHand()
+    
+    local pos = self:GetHangPos(hand, otherHand)
+        
+    --local slashDir = UE.Vector3.Cross(UE.Vector3.up, (hand.trans.position - otherHand.trans.position))
+    local dir = hand:GetIndexDir() + otherHand:GetIndexDir() + headset.forward
+
+    local fo = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = self.host:NetworkCreateFlyObj(self.summonObjName, pos, dir.normalized, self:CalVel(hand, otherHand))
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnSummonFo(fo, dir, pos) end
+        end
+    else
+        fo = self.host:CreateFlyObj(self.summonObjName, pos, dir.normalized, self:CalVel(hand, otherHand))
+    end
+    fo.trans.rotation = UE.Quaternion.LookRotation(dir)
+    CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, pos, UE.Quaternion.identity)
+end
+
+function spellBlackHole:NetworkOnSummonFo(fo, dir, pos)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    fo.trans.rotation = UE.Quaternion.LookRotation(dir)
+    CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, pos, UE.Quaternion.identity)
+    self.host:CloseSkill()
+end
+
+function spellBlackHole:CancelGo()
+    self.__base.CancelGo(self)
+end
+
+function spellBlackHole:IsAllowSkill(slotHand, otherHand)
+    return (not self.onSkill) and self.__base.IsAllowSkill(self, slotHand, otherHand)
+end
+
+
+return Class(Require("Weapon/SpellSummonFoScript"), nil, spellBlackHole)

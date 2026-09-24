@@ -1,0 +1,321 @@
+local DashBladeBlast = {
+    hitPlayerMlp = 50,
+    hitFlyMlp = 50,
+    
+    ignorePUList = {},
+    recordCols = {},
+    recordRoleImpact = {},
+    recordHitScan = {},
+}
+
+local function IsValidObject(obj)
+    return obj ~= nil and not IsNullOrDestroyed(obj)
+end
+
+local function AddIgnorePU(ignorePUList, pu)
+    if IsValidObject(pu) then
+        ignorePUList[pu] = true
+    end
+end
+
+function DashBladeBlast:FlyStart()
+    --self.eo = CL.EffectMgr.Instance:PlayEffect(self.effectName, self.trans.position, UE.Quaternion.LookRotation(UE.Vector3.forward))
+    --self.eo.trans:SetParent(self.host.trans)
+    self:GetIgnorePU()
+    
+    self.bladeTrigger = self:GetBladeTrigger()
+    
+    self.recordCols = {}
+    self.recordRoleImpact = {}
+    self.recordHitScan = {}
+end
+
+function DashBladeBlast:GetIgnorePU()
+    self.ignorePUList = {}
+    local host = self.host
+    if not IsValidObject(host) then
+        return
+    end
+
+    local owner = host.owner
+    if not IsValidObject(owner) then
+        return
+    end
+
+    AddIgnorePU(self.ignorePUList, owner)
+
+    local player = owner:GetPlayerHolder()
+    if not IsValidObject(player) then
+        return
+    end
+
+    local character = player.character
+    if not IsValidObject(character) then
+        return
+    end
+
+    AddIgnorePU(self.ignorePUList, character:GetPlayerUnit())
+
+    local hands = character.hands
+    if hands and hands.Length then
+        for i = 0, hands.Length - 1 do
+            local hand = hands[i]
+            if hand then
+                local attachTo = hand.attachTo
+                if IsValidObject(attachTo) then
+                    AddIgnorePU(self.ignorePUList, attachTo.interact)
+                end
+
+                local triggerSlots = hand.triggerSlots
+                local triggerSlot = triggerSlots and triggerSlots.Length and triggerSlots.Length > 0 and triggerSlots[0] or nil
+                if triggerSlot then
+                    AddIgnorePU(self.ignorePUList, triggerSlot.mountedItem)
+                end
+            end
+        end
+    end
+
+    local bodySlots = character.bodySlots
+    if bodySlots and bodySlots.Length then
+        for i = 0, bodySlots.Length - 1 do
+            local bodySlot = bodySlots[i]
+            if bodySlot then
+                AddIgnorePU(self.ignorePUList, bodySlot.mountedItem)
+            end
+        end
+    end
+end
+
+function DashBladeBlast:GetBladeTrigger()
+    if IsValidObject(self.bladeTrigger) then
+        return self.bladeTrigger
+    end
+
+    local host = self.host
+    if not IsValidObject(host) or not IsValidObject(host.owner) then
+        return nil
+    end
+
+    self.bladeTrigger = host.owner:GetInteractTrigger()
+    return self.bladeTrigger
+end
+
+function DashBladeBlast:GetBlastCenter()
+    local host = self.host
+    local trans = self.trans
+    if not IsValidObject(host) or not IsValidObject(trans) then
+        return nil
+    end
+
+    local center = trans.position
+    if IsValidObject(host.col) then
+        center = trans:TransformPoint(host.col.center)
+    end
+
+    local hostTrans = host.trans
+    if IsValidObject(hostTrans) then
+        center = center - hostTrans.forward
+    else
+        center = center - trans.forward
+    end
+
+    return center
+end
+
+function DashBladeBlast:GetPushDir(targetPos, center)
+    if targetPos == nil or center == nil then
+        return nil
+    end
+
+    local dir = targetPos - center
+    if dir.y < 0 then
+        dir.y = 0
+    end
+    if dir.z < 0 then
+        dir.z = 0
+    end
+
+    return dir.normalized
+end
+
+function DashBladeBlast:IsIgnoredPU(pu)
+    return pu ~= nil and self.ignorePUList ~= nil and self.ignorePUList[pu]
+end
+
+function DashBladeBlast:HasAppliedRoleImpact(pu)
+    return pu ~= nil and self.recordRoleImpact ~= nil and self.recordRoleImpact[pu]
+end
+
+function DashBladeBlast:TryApplyDashHitScan(pu, collider)
+    if not IsValidObject(pu) or not IsValidObject(collider) then
+        return
+    end
+
+    if self.recordCols == nil then
+        self.recordCols = {}
+    end
+    if self.recordHitScan == nil then
+        self.recordHitScan = {}
+    end
+
+    if self.recordCols[collider] then
+        return
+    end
+
+    if self.recordHitScan[pu] then
+        return
+    end
+
+    local bladeTrigger = self:GetBladeTrigger()
+    if not IsValidObject(bladeTrigger) then
+        return
+    end
+
+    bladeTrigger:ApplyDashHitScan(collider)
+    self.recordCols[collider] = true
+    self.recordHitScan[pu] = true
+end
+
+function DashBladeBlast:OnTrigger(pu, collider)
+    if self:IsIgnoredPU(pu) then
+        return
+    end
+    
+    --self:PushAndHitPu(pu, collider)
+end
+
+function DashBladeBlast:OnTriggerWithPlayer(pu, collider)
+    if not IsValidObject(pu) or self:IsIgnoredPU(pu) then
+        return
+    end
+    
+    local character = pu.character
+    local attr = IsValidObject(character) and character.attr or nil
+    local host = self.host
+    if attr and IsValidObject(host) and attr.camp == host.camp then
+        return
+    end
+    
+    self:PushAndHitPu(pu, collider)
+end
+
+function DashBladeBlast:OnTriggerWithRole(fc, collider)
+    if not IsValidObject(fc) or self:IsIgnoredPU(fc) then
+        return
+    end
+    
+    self:PushAndHitPu(fc, collider)
+end
+
+function DashBladeBlast:PushInteractRole(pu, collider, center)
+    local host = self.host
+    local ownerHolder = host and host.ownerHolder or nil
+    if IsValidObject(ownerHolder) and pu.ai == ownerHolder then
+        return
+    end
+
+    if not self:HasAppliedRoleImpact(pu) then
+        -- Role ragdolls may report multiple colliders during one dash; physics should only apply once.
+        self.recordRoleImpact[pu] = true
+
+        local motion = pu.motion
+        local muscleState = pu.muscleState
+        if IsValidObject(motion) and (not IsValidObject(muscleState) or not muscleState:IsPowerfulCharacter()) then
+            motion:Knockout()
+        end
+
+        if IsValidObject(motion) and motion:IsKnockout() then
+            local controller = pu.controller
+            local targetPos = IsValidObject(controller) and controller:GetCentrePos() or nil
+            local dir = self:GetPushDir(targetPos, center)
+            if dir then
+                CL.DebugDraw.DrawLine(center, center + dir, UE.Color.red, 5)
+
+                local ra = pu.ra
+                if IsValidObject(ra) then
+                    local f = (self.hitRoleMlp or 0) * dir
+                    --f.y = f.y + math.random(-5, 5)
+                    ra:AddForce(f, UE.ForceMode.Impulse)
+                    --pu.ra:AddTorque(UE.Random.insideUnitSphere * 50, UE.ForceMode.Impulse)
+                end
+            end
+        end
+    end
+
+    self:TryApplyDashHitScan(pu, collider)
+end
+
+function DashBladeBlast:PushPlayerRole(pu, center)
+    local host = self.host
+    local trans = self.trans
+    local character = pu.character
+    if not IsValidObject(host) or not IsValidObject(trans) or not IsValidObject(character) then
+        return
+    end
+
+    local dir = self:GetPushDir(character:GetCentrePos(), center)
+    if not dir then
+        return
+    end
+
+    --print("hit player:" .. pus[i].trans.name)
+    CL.DebugDraw.DrawLine(center, center + dir, UE.Color.red, 5)
+
+    character:SetDragForAWhile()
+    character:AddForce(dir * (self.hitPlayerMlp or 0), UE.ForceMode.Impulse)
+    character:AddPushbackByForce(dir * (self.pushBackForce or 0))
+
+    local aiProxy = character.aiProxy
+    if IsValidObject(aiProxy) and IsValidObject(host.col) then
+        aiProxy:ApplyDamage(trans.position, host:GetRagdollHitInfo(), 1, dir, host.col)
+    end
+end
+
+function DashBladeBlast:PushOtherPU(pu, center)
+    if pu.unitType == CL.Tagger.Tag.InteractObj and pu:IsBodyPart() then
+        return
+    end
+
+    local puTrans = pu.trans
+    if not IsValidObject(puTrans) then
+        return
+    end
+
+    --print("hit interact obj:" .. pus[i].trans.name)
+    local dir = self:GetPushDir(puTrans.position, center)
+    if not dir then
+        return
+    end
+
+    CL.DebugDraw.DrawLine(center, center + dir, UE.Color.red, 5)
+
+    local f = (self.hitFlyMlp or 0) * dir
+    pu:AddForce(f, UE.ForceMode.Impulse)
+    --pu:AddTorque(UE.Random.insideUnitSphere * 50, UE.ForceMode.Impulse)
+end
+
+function DashBladeBlast:PushAndHitPu(pu, collider)
+    if not IsValidObject(pu) then
+        return
+    end
+
+    local center = self:GetBlastCenter()
+    if center == nil then
+        return
+    end
+
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        self:PushInteractRole(pu, collider, center)
+    elseif pu.unitType == CL.Tagger.Tag.PlayerRole then
+        self:PushPlayerRole(pu, center)
+    else
+        self:PushOtherPU(pu, center)
+    end
+end
+
+function DashBladeBlast:ResetState()
+    --CL.EffectMgr.Instance:GiveBack(self.eo)
+    --self.eo = nil
+end
+
+return Class(nil, nil, DashBladeBlast)

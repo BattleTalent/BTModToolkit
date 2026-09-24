@@ -1,0 +1,1457 @@
+local SpellSummonFo = Require("Weapon/SpellSummonFoScript")
+
+local SpellEarth = {
+    throwTime = 0.2,
+    
+    --skill Type
+    skillType = 1,
+    baseSkill = 1,
+    summmonSkill = 2,
+    
+    maxSpring = 500000,
+    
+    perCentOfHeight = 0.885,
+    
+    jointOffsetMlp = 5,
+    
+    velLimitMlp = 0.3,
+    
+    maxSpawnHeight = 10,
+    
+    flyEarthManaCost = 5,
+    
+    rockHeight = 0.5,
+    
+    spellType = "obstacles",
+    
+    minThrowDis = 0.2,
+    minThrowVel = 0.2,
+}
+local DefaultScaleSize = 0.05
+
+function SpellEarth:Awake()
+    self.__base.Awake(self)
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if not self.initNetIds then
+            return
+        end
+        if self.initNetIds[netId] then
+            self.initNetIds[netId] = nil
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            
+            
+            local script = netIb.ib:GetInteractTrigger().script:GetSelf()
+            self:InitSpike(netIb.ib.gameObject)
+        end
+    end
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function SpellEarth:OnDestroy()
+    if self.isOnline and self.OnSpawnNetworkIB then
+        if CL.Network.NetworkSpawnMgr.Instance ~= nil then
+            CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+        end
+    end
+    self.localActId = SafeRemoveSchedule(self.localActId)
+    SpellSummonFo.OnDestroy(self)
+end
+
+function SpellEarth:SlotSpell(slot)
+    self.isSlot = true
+end
+
+function SpellEarth:UnSlotSpell(slot)
+    self.isSlot = false
+    if self.isOnline then
+        self:StopLocalReleaseUpdate()
+    end
+    SpellSummonFo.UnSlotSpell(self, slot)
+end
+
+function SpellEarth:OpenSkill()
+    self.skillType = 1
+    self.character = self:GetCharacter()
+    
+    if not self.isOnline or CL.Network.VRNetworkManager.ServerOnline then
+        if self.fo and not IsNullOrDestroyed(self.fo) then
+            self:ReleaseFo()
+        end
+        
+        if self.summonGo and not IsNullOrDestroyed(self.summonGo) then
+            self:ReleaseSummonGo()
+        end
+    end
+    
+    if self.isOnline then
+        CL.Scheduler.RemoveSchedule(self.localActId)
+    end
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self:CheckHandCondition(self.hand, self.hand:GetAnotherHand(), 
+            self.checkDis, self.dotValue) and self.character:IsGround() then
+        --otherhand skill
+        local other = self.hand:GetAnotherHand()
+        local ib = other.triggerSlots[0].mountedItem
+        if ib and not IsNullOrDestroyed(ib) then
+            local it = ib:GetInteractTrigger()
+            if it then
+                local tb = it.script:GetSelf()
+                if tb.skillType and tb.skillType == self.spellType then
+                    if not self.isOnline or (self.isOnline 
+                                            and not CL.Network.VRNetworkManager.ServerOnly
+                                            and CS.Mirror.NetworkClient.localPlayer.netId == self.hand.character.networkPlayer.netId) then
+                        CL.TextPanel.ShowTipsByTextIdAndCheckInterval("Spell_Earth_Tips", 3)
+                    end
+                    return
+                end
+            end
+        end
+
+        local needMana = self.shieldManaCost * self.host.AppliedManaCostMultiplier
+        if CostMana(self.host, needMana, self.character) then
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerRefleshSkillType(self.summonSkill) end
+            end
+            self.skillType = self.summmonSkill
+            self:OpenSummonSkill()
+        end
+    else
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerRefleshSkillType(self.baseSkill) end
+        end
+            
+        self.skillType = self.baseSkill
+        self:OpenBaseSkill()
+    end
+end
+
+function SpellEarth:GetCharacter()
+    self.hand = self:GetSpellHand() --hand.character
+    if IsNullOrDestroyed(self.hand) then
+        return nil
+    end
+    return self.hand.character
+end
+
+function SpellEarth:NetworkSkillType(skillType)
+    self.skillType = skillType
+end
+
+function SpellEarth:NetworkOnSpawnedSpike(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if not IsNullOrDestroyed(netIb) then
+        self:InitSpike(netIb.ib.gameObject)
+        return
+    end
+    
+    if not self.initNetIds then
+        self.initNetIds = {}
+    end
+    
+    if not self.initNetIds[netId] then
+        self.initNetIds[netId] = true
+    end
+end
+
+function SpellEarth:CloseSkill()
+    self.localActId = SafeRemoveSchedule(self.localActId)
+    self:SetHandPose(false)
+    if self.skillType == self.baseSkill then
+        if self.isOnline then
+            --    self:ReleaseFo()
+        else
+            self:ReleaseFo()
+        end
+    else
+        self:ReleaseSummonGo()
+    end
+    
+    SpellSummonFo.CloseSkill(self)
+    
+    self.skillType = 0
+end
+
+
+function SpellEarth:OpenBaseSkill()
+    self:SetHandPose(true)
+    
+    local isHit, raycastHit  = self:HitGroundPoint()
+    if not isHit then
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+            end
+        end
+        self.host:CloseSkill()
+        return
+    end
+    
+    local needMana = self.flyEarthManaCost * self.host.AppliedManaCostMultiplier
+    if not CostMana(self.host, needMana, self.character) then
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+            end
+        end
+        self.host:CloseSkill()
+        return
+    end
+
+    self:CallFo(raycastHit.point)
+end
+
+function SpellEarth:LocalReleaseUpdate()
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        CL.Scheduler.RemoveSchedule(self.localActId)
+        self.localActId = CL.Scheduler.Create(self.trans, 
+            function(sche, t, s)
+                if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                    or not self.slotHand or IsNullOrDestroyed(self.slotHand) then
+                    sche:Stop()
+                    return
+                end
+                
+                if not self.fo or IsNullOrDestroyed(self.fo) then
+                    sche:Stop()
+                    return
+                end
+                
+                if not self.slotHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].IsPressed then
+                    self:ReleaseFo()
+                    sche:Stop()
+                end
+            end,
+        0, -1).actionId
+    end
+end
+
+function SpellEarth:StopLocalReleaseUpdate()
+    if self.isOnline then
+        CL.Scheduler.RemoveSchedule(self.localActId)
+        if CL.Network.VRNetworkManager.ServerOnline then
+            self:ReleaseSpell()
+        end
+    end
+    
+end
+
+function SpellEarth:OpenSummonSkill()
+    self:StartCharge()
+    
+    self:SetHandPose(true)
+end
+
+------------------------------------------------BASE SKILL-----------------------------------------------------
+
+function SpellEarth:HitGroundPoint()
+    local height = (self.character and self.character:GetPlayerHeight() or 2) / 2.5
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.character.transform.position 
+        + self.character.transform.forward * height 
+        + UE.Vector3.up * height, 0.3, UE.Vector3.down, self.maxSpawnHeight, CL.LayerDefine.EnvLayerMask.value)
+    
+    return isHit, raycastHit
+end
+
+function SpellEarth:CallFo(pos)
+    if IsNullOrDestroyed(self.character) then
+        return
+    end
+    
+    --print("pos::" .. pos.x .. " " .. pos.y .. "  " .. pos.z)
+    
+    pos = pos + UE.Vector3.down * self.rockHeight
+    local fo = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = self.host:NetworkCreateFlyObj(self.flyObjName, pos, UE.Vector3.forward)
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnCallFo(fo, pos) end
+        end
+    else
+        fo = self.host:CreateFlyObj(self.flyObjName, pos, UE.Vector3.forward)
+    end
+    
+    self:InitFo(fo, pos)
+    return fo
+end
+
+function SpellEarth:InitFo(fo, pos)
+    local character = self:GetCharacter()
+    local tb = fo.script:GetSelf()
+    if tb then
+        tb:InitState(character, pos, self)
+    end
+    
+    self.fo = fo
+    self.foScp = self.fo.script:GetSelf()
+    self.startTime = UE.Time.time
+    if self.isOnline then
+        self:LocalReleaseUpdate()
+    end
+end
+
+function SpellEarth:InitSpellOnSpawn(fo, createTrans)
+    self.__base.InitSpellOnSpawn(self, fo, createTrans)
+    if self.isOnline then
+        fo.networkFO.networkRB.enabled = true
+    end
+    return fo
+end
+
+function SpellEarth:TryThrow()   
+    local hand = self:GetSpellHand()
+    if not self.fo then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CommandTryThrow(-1, self.fo.trans.position, UE.Vector3.zero, hand and hand.character.IsLocalPlayer) end
+        end
+        return false
+    end
+    
+    local tb = self.fo.script:GetSelf()
+    local isReached = tb:IsReachedTargetPos()
+    local curDir = hand.velocityEstimator:GetVelocityEstimateLocal()
+    local mag = isReached and self.minThrowDis or 0.3
+    if curDir.sqrMagnitude < self.minThrowDis * self.minThrowDis then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CommandTryThrow(self.fo.netId, self.fo.trans.position, UE.Vector3.zero, hand and hand.character.IsLocalPlayer) end
+        end
+
+        return false
+    end
+    
+    local dir = hand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.15)
+    local dirSqrt = dir.sqrMagnitude
+    if dirSqrt < self.minThrowVel * self.minThrowVel then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CommandTryThrow(self.fo.netId, self.fo.trans.position, UE.Vector3.zero, hand and hand.character.IsLocalPlayer) end
+        end
+        return false
+    end
+    
+    local pass = false
+    pass = isReached
+    if not pass then
+        if UE.Time.time - self.startTime < self.throwTime then
+            pass = false
+        else
+            local isHit, rayCastHit = self:HitGroundPoint()
+            if isHit then
+                if tb.trans.position.y > rayCastHit.point.y + self.rockHeight then
+                    pass = true
+                end
+            end
+        end
+    end
+    
+    if not pass then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CommandTryThrow(self.fo.netId, self.fo.trans.position, UE.Vector3.zero, hand and hand.character.IsLocalPlayer) end
+        else
+            self:OnReleaseFo(self.fo)
+        end
+        return
+    end
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:CommandTryThrow(self.fo.netId, self.fo.trans.position, dir, hand and hand.character.IsLocalPlayer) end
+        return true
+    else
+        self:DoThrow(dir, self.fo)
+    end
+    return true
+end
+
+function SpellEarth:NetworkOnThrow(netId, pos, dir, clientLocalThrow)
+    local netFo = CL.Network.NetworkSpawnMgr.Instance:GetNetworkFlyObject(netId)
+    if IsNullOrDestroyed(netFo) then
+        return
+    end
+    
+    if not netFo.flyObject or IsNullOrDestroyed(netFo.flyObject) then
+        --if CL.Network.VRNetworkManager.Instance.IsServer then
+        --    self.host.interact.networkIB.networkIBState:ServerThrowFail(nil)
+        --else
+        if clientLocalThrow then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CmdThrowFail(netId) end
+        end
+        self:NetworkThrowFail(nil)
+        return
+    end
+    
+    if dir.sqrMagnitude < 0.2*0.2 then
+        --if CL.Network.VRNetworkManager.Instance.IsServer then
+        --    self.host.interact.networkIB.networkIBState:ServerThrowFail(netFo.flyObject)
+        --else
+        if clientLocalThrow then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CmdThrowFail(netId) end
+        end
+        self:NetworkThrowFail(netFo.flyObject)
+        return
+    end
+    
+    local hand = self:GetSpellHand()
+    if hand == nil then
+        --if CL.Network.VRNetworkManager.Instance.IsServer then
+        --    self.host.interact.networkIB.networkIBState:ServerThrowFail(netFo.flyObject)
+        --else
+        if clientLocalThrow then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CmdThrowFail(netId) end
+        end
+        self:NetworkThrowFail(netFo.flyObject)
+        return
+    end
+
+    self:DoThrow(dir, netFo.flyObject)
+
+    if self.isOnline then
+        --if CL.Network.VRNetworkManager.Instance.IsServer then
+        --    self.host.interact.networkIB.networkIBState:ServerThrowSuc(netFo.flyObject)
+        --else
+        if clientLocalThrow then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CmdThrowSuc(netId) end
+        end
+        self:NetworkThrowSuc(netFo.flyObject)
+    end
+end
+
+function SpellEarth:PrepareThrow(fo)
+    fo.rb.isKinematic = false 
+    fo.trans.parent = nil
+    fo.col.isTrigger = false
+    
+    
+    self.throwSound:PlaySoundInfo()
+    
+    CL.Scheduler.RemoveSchedule(self.setupTriggerActId)
+    self.setupTriggerActId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or IsNullOrDestroyed(fo) or IsNullOrDestroyed(self.slotHand)
+                or IsNullOrDestroyed(self.slotHand.physicsHand) then
+                sche:Stop()
+                return
+            end
+
+            if self.slotHand and not IsNullOrDestroyed(fo) then
+                CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.slotHand.physicsHand.colliders, false)
+            end
+        end,
+    0, 0, 0.05).actionId
+end
+
+function SpellEarth:DoThrow(dir, fo)
+    self:PrepareThrow(fo)
+    self.fo:FlyStart((dir.sqrMagnitude > 1 and dir.normalized or dir) * self.intensity)
+    
+    self:OnThrowFo(fo)
+end
+
+function SpellEarth:NetworkThrowFail(fo)
+    self:OnReleaseFo(fo)
+end
+
+function SpellEarth:NetworkThrowSuc(fo)
+    self:PrepareThrow(fo)
+    self:OnThrowFo(fo)
+end
+
+function SpellEarth:ReleaseFo()
+    if self.fo and not IsNullOrDestroyed(self.fo) then
+        --throw
+        local foNetId = self.fo.netId
+        if self.isSlot and self:TryThrow() then
+            if not self.isOnline then
+                self:OnThrowFo(self.fo)
+            end
+        else
+            if self.isOnline and CL.Network.VRNetworkManager.ClientOnline then
+                local hand = self:GetSpellHand()
+                if hand then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:CommandOnReleaseFo() end
+                end
+            else
+                self:ReleaseSpell()
+            end
+        end
+        
+        if not self.isOnline then
+            self.fo = nil
+        end
+    end
+end
+
+function SpellEarth:ReleaseSpell()
+    local fo = self.fo
+    self:OnReleaseFo(self.fo)
+    
+    if not IsNullOrDestroyed(fo) then
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerOnReleaseFo(fo, fo.trans.position, fo.trans.rotation) end
+            else
+                return
+            end
+        end
+    end
+end
+
+function SpellEarth:OnThrowFo(fo)
+    if IsNullOrDestroyed(fo) then
+        self.fo = nil
+        return
+    end
+    
+    local tb = fo.script:GetSelf()
+    if tb then
+        tb:StopFollow()
+        tb:OnThrow()
+    end
+    self.fo = nil
+end
+
+function SpellEarth:NetworkOnReleaseFo(fo, pos, rot)
+    fo.trans.position = pos
+    fo.trans.rotation = rot
+    self:OnReleaseFo(fo)
+end
+
+function SpellEarth:OnReleaseFo(fo)
+    if IsNullOrDestroyed(fo) then
+        if self.fo == fo then
+            self.fo = nil
+        end
+        return
+    end
+    local tb = fo.script:GetSelf()
+    if tb then
+        tb:ConfirmEndState()
+        tb:Suspension()
+    end
+    
+    if self.fo == fo then
+        self.fo = nil
+    end
+end
+
+-----------------------------------------------SUMMON SKILL----------------------------------------------------
+function SpellEarth:StartCharge()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local slotHand = self:GetSlotHand()
+    local hIdx = slotHand:GetHandIndex()
+    if not slotHand then
+        return
+    end
+
+    local otherHand = slotHand:GetAnotherHand()
+    local curScale = DefaultScaleSize
+    self:CloseCharge()
+    
+    local character = slotHand.character
+    local onCondition = false
+    local value = nil
+    local actualValue = 0
+    local time = self.summonChargeTime
+    local chargeSpeed = 1/time
+    
+    local hangPos = nil
+    
+    self.chargeSoundInfo = nil
+    
+    local isSummon = false
+    local tb = nil
+    local isLocked = false
+    
+    local summonGo = nil
+    local netId = nil
+    local summonPos = nil
+    --local moveSpeedMlp = 1
+    self.chargeTimerId = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or IsNullOrDestroyed(slotHand) or IsNullOrDestroyed(otherHand) then
+                sche:Stop()
+                return
+            end
+            --check hand.
+            if not onCondition then
+                if not self:IsAllowSkill(slotHand, otherHand) then
+                    self:CloseCharge()
+                    return
+                end
+                
+                if self:CheckHandCondition(slotHand, otherHand, self.checkDis, self.dotValue) then
+                    onCondition = true
+                    
+                    --self.eo = self:OnChargeEffect(slotHand, otherHand)
+                    --self.eo.trans.localScale = UE.Vector3.zero
+                    
+                    self.chargeSoundInfo = self.chargeSound:PlaySoundInfo()
+                    if self.chargeSoundInfo then
+                        self.chargeSoundInfo.ao.trans:SetParent(self.host.interact.trans)
+                        self.chargeSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+                    end
+                    self:OnCondition()
+                end
+            else
+                --if not self:IsFaceToFace(slotHand, otherHand, self.dotValue) then
+                --    self.host:CloseSkill()
+                --    return
+                --end
+                
+                
+                value = (slotHand.trans.position - otherHand.trans.position).sqrMagnitude 
+                    / (self.maxDis * self.maxDis)
+                
+                if time > 0 then
+                    time = time - UE.Time.unscaledDeltaTime
+                    --if time <= 0 then
+                    --    if self.summonReadySound then
+                    --        self.summonReadySound:PlaySound()
+                    --    end
+                    --end
+                    
+                    actualValue = value > actualValue and
+                    math.min(actualValue + UE.Time.unscaledDeltaTime * chargeSpeed, value) or
+                    UE.Mathf.Lerp(actualValue, value, 0.3)
+                else
+                    actualValue = value
+                end
+                
+                hangPos = self:GetHangPos(slotHand, otherHand)
+
+                --self:UpdateChargeEffect(self.eo, hIdx, hangPos, actualValue)
+                
+                if not isSummon then
+                    summonPos = self:CheckCondition()
+                    if summonPos then
+                        self:SummonGo(summonPos)
+                        isSummon = true
+                    else
+                        if not self.isOnline or (self.isOnline 
+                                                and not CL.Network.VRNetworkManager.ServerOnly
+                                                and CS.Mirror.NetworkClient.localPlayer.netId == self:GetSlotHand().character.networkPlayer.netId) then
+                            CL.TextPanel.ShowTipsByTextIdAndCheckInterval("Spell_Earth_Tips", 3)
+                        end
+                        if self.isOnline then
+                            local state = GetNetworkIBState(self)
+                            if state ~= nil then state:ServerCloseSkill() end
+                        end
+                        self.host:CloseSkill()
+                    end
+                else
+                    if not summonGo then
+                        if self.summonGo and not IsNullOrDestroyed(self.summonGo) then
+                            summonGo = self.summonGo
+                            tb = summonGo:GetComponent(typeof(CL.InteractTriggerX)).script:GetSelf()
+                            
+                            if self.isOnline and summonGo ~= nil then
+                                local ib = self.summonGo:GetComponent(typeof(CL.InteractBase))
+                                netId = ib.netId
+                                local state = GetNetworkIBState(self)
+                                if state ~= nil then state:ServerInitSummonGo(ib, summonPos, character.capsuleCollider.height) end
+                            end
+                            self:InitSummonGo(self.summonGo, summonPos, character.capsuleCollider.height)
+                        end
+                    end
+                    
+                    if tb then
+                        if IsNullOrDestroyed(tb.trans) then
+                            if self.isOnline then
+                                local state = GetNetworkIBState(self)
+                                if state ~= nil then state:ServerCloseSkill() end
+                            end
+                            self.host:CloseSkill()
+                            return
+                        end
+                        
+                        if not tb:IsReachedTargetPos() then
+                            local isReflesh = self:RefleshSummonJoint(tb)
+                            --if self.isOnline and isReflesh then
+                            --    self.host.interact.networkIB.networkIBState:ServerRefleshSummonJoint(netId, self.lastIntensity)
+                            --end
+                        else
+                            if not isLocked then
+                                --if self.isOnline then
+                                --    self.host.interact.networkIB.networkIBState:ServerLockSummonJoint(netId)
+                                --end
+                                
+                                if self.isOnline then
+                                    local state = GetNetworkIBState(self)
+                                    if state ~= nil then state:ServerFixedSummonGo() end
+                                else
+                                    self:FixedSummonGo()
+                                end
+                                
+                                self:LockSummonJoint(tb)
+                                isLocked = true
+                            end
+                        end
+                        
+                        --if self.character.capsuleRB.velocity.sqrMagnitude > tb.host.interact.rb.velocity.sqrMagnitude then
+                        --    self.character.move:SetSpeedMlp(math.max(moveSpeedMlp - UE.Time.time, 0))
+                        --else
+                        --    self.character.move:SetSpeedMlp(1)
+                        --end
+                    end
+                end
+                
+                --if not character:IsGround() then
+                --    if self.isOnline then
+                --        self.host.interact.networkIB.networkIBState:ServerCloseSkill()
+                --    end
+                --    self.host:CloseSkill()
+                --    return
+                --end
+                
+                --if actualValue >= 1 then
+                if tb and tb:IsReachedTargetPos() and value > 1 then
+                    --if self:IsPushPose(slotHand, otherHand, 0.8) or actualValue >= 1 then
+                        local needMana = self.spikeManaCost * self.host.AppliedManaCostMultiplier
+                        if CostMana(self.host, needMana, self.character) then
+                            if self.isOnline then
+                                local state = GetNetworkIBState(self)
+                                if state ~= nil then state:ServerSummonIBSkill(netId) end
+                            end
+                            tb:SkillOn(self)
+                            if self.isOnline then
+                                local state = GetNetworkIBState(self)
+                                if state ~= nil then state:ServerCloseSkill() end
+                            end
+                            self.host:CloseSkill()
+                        end
+                    --end
+                end
+            end
+            
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpellEarth:NetworkSummonIBSkill(ib)
+    local tb = ib:GetInteractTrigger().script:GetSelf()
+    if tb then
+        tb:SkillOn(self)
+    end
+end
+
+function SpellEarth:CheckHandCondition(slotHand, otherHand, dis, dotValue)
+    if IsNullOrDestroyed(slotHand) or IsNullOrDestroyed(otherHand) then
+        return false
+    end
+    
+    if otherHand:IsGrabbing() then
+        return
+    end
+    
+    local vec = slotHand.trans.position - otherHand.trans.position
+    if dis then
+        --check dis
+        if vec.sqrMagnitude > dis * dis then
+            return false
+        end
+    end
+    
+    if dotValue then
+        return self:IsFaceToGround(slotHand, otherHand, dotValue) or self:IsFaceToFace(slotHand, otherHand, dotValue)
+    end
+    return true
+end
+
+function SpellEarth:IsFaceToGround(slotHand, otherHand, dotValue)
+    if IsNullOrDestroyed(slotHand) or IsNullOrDestroyed(otherHand) then
+        return false
+    end
+    
+    if UE.Vector3.Dot(UE.Vector3.down, slotHand:GetPalmDir().normalized) < dotValue then
+        return false
+    end
+    
+    if UE.Vector3.Dot(UE.Vector3.down, otherHand:GetPalmDir().normalized) < dotValue then
+        return false
+    end
+    
+    return true
+end
+
+function SpellEarth:IsPushPose(slotHand, otherHand, dotValue)
+    if IsNullOrDestroyed(slotHand) or IsNullOrDestroyed(otherHand) then
+        return false
+    end
+    
+    local character = slotHand.character
+    
+    if UE.Vector3.Dot(character.trans.forward, slotHand:GetPalmDir().normalized) < dotValue then
+        return false
+    end
+    
+    if UE.Vector3.Dot(character.trans.forward, otherHand:GetPalmDir().normalized) < dotValue then
+        return false
+    end
+    
+    return true
+end
+
+function SpellEarth:GetBoxWidthByHeight()
+    local height = self.character:GetPlayerHeight()
+    --print("width:: " .. 0.2 * self.perCentOfHeight * height)
+    return 0.2 * self.perCentOfHeight * height
+end
+
+function SpellEarth:GetBoxHeightByHeight()
+    local height = self.character:GetPlayerHeight()
+    --print("height:: " .. self.perCentOfHeight * height)
+    return self.perCentOfHeight * height
+end
+
+function SpellEarth:GetBoxLengthByHeight()
+    local height = self.character:GetPlayerHeight()
+    --print("width:: " .. 1.4 * self.perCentOfHeight * height)
+    return 1.2 * self.perCentOfHeight * height
+end
+
+function SpellEarth:CheckCondition()
+    local pos = nil
+    local width = self:GetBoxWidthByHeight()
+    local length = self:GetBoxLengthByHeight()
+    local height = self:GetBoxHeightByHeight()
+    pos = self.character.transform.position + self.character.transform.forward * 1 + self.character.transform.up
+    --Detect ground position
+    local isHit, raycastHit  = UE.Physics.SphereCast(pos + self.character.transform.right * (length/2 -0.2), 0.1, UE.Vector3.down, 5, CL.LayerDefine.EnvLayerMask.value)
+    --if raycastHit then self.testpos.transform.position = raycastHit.point end
+    if not isHit then
+        return nil
+    else
+        local isHit, lRaycastHit  = UE.Physics.SphereCast(pos - self.character.transform.right * (length/2 -0.2), 0.1, UE.Vector3.down, 2, CL.LayerDefine.EnvLayerMask.value)
+        --if lRaycastHit then self.testpos2.transform.position = lRaycastHit.point end
+        if not isHit then
+            return nil
+        else
+            local y = raycastHit.point.y < lRaycastHit.point.y and raycastHit.point.y or lRaycastHit.point.y
+            raycastHit.point = UE.Vector3(pos.x, y, pos.z)
+        end
+    end
+    local cols = UE.Physics.OverlapBox(UE.Vector3.up * (height/2+0.2) + raycastHit.point, UE.Vector3(length/2, height/2, width/2), self.character.transform.rotation)
+    --CL.DebugDraw.DrawBox(UE.Vector3.up * height/2 + raycastHit.point, self.character.transform.rotation,
+    --            UE.Vector3(length, height, width), UE.Color.red, 5)
+    if cols then
+        --if hit obstacle cannot create
+        local pu = nil
+        local it = nil
+        for i = 0, cols.Length - 1 do
+            pu = CL.PhysicsUnit.GetPhysicsUnit(cols[i])
+            if pu and pu.GetInteractTrigger then
+                it = pu:GetInteractTrigger()
+                if it and it.script then
+                    local other = it.script:GetSelf()
+                    if other.owner then
+                        if self.spellType == other.owner.spellType then
+                            return nil
+                        end
+                    end
+                end
+            end
+            
+            if cols[i].gameObject.layer == CL.LayerDefine.EnvLayer.value or 
+                cols[i].gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value then
+                --print("hit obstacle name:"..cols[i].transform.name.."rot:"..cols[i].transform.root.name)
+                return nil
+            end
+        end
+    end
+    return raycastHit.point
+end
+
+function SpellEarth:SummonGo(pos)
+    --local isEnhance = self.host.interact:IsEnhance()
+    if IsNullOrDestroyed(self.character) then
+        return
+    end
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.summonObjName, pos, 
+            UE.Quaternion.LookRotation(self.character.transform.forward), false, false, 0, true, 
+            function(networkWeapon, weaponGo)
+                if not IsNullOrDestroyed(weaponGo) then
+                    self.summonGo = weaponGo
+                end
+            end)
+        end
+    else
+        local go = CL.PrefabPool.SpawnPrefab(self.summonObjName, CL.InteractTrigger.WeaponPath)
+        go.transform.position = pos - UE.Vector3.up
+        go.transform.forward = self.character.transform.forward
+        self.summonGo = go
+    end
+end
+
+function SpellEarth:InitSummonGo(go, pos, height)
+    local tb = go:GetComponent(typeof(CL.InteractTriggerX)).script:GetSelf()
+    if tb then
+        tb:InitState(self.character, pos, self, height)
+    end
+    self.summonGo = go
+    self.shootSpeed = tb.shootSpeed
+    self.shieldHeight = tb:GetShieldHeight(self.character)
+    
+    if self.isOnline then
+        tb.host.interact.networkIB.networkRB.enabled = true
+        if not CL.Network.VRNetworkManager.Instance.IsServer then
+            return
+        end
+    end
+    self:JointSummonGo(tb)
+end
+
+function SpellEarth:NetworkJointSummonGo(anchor1, connectedAnchor1, anchor2, connectedAnchor2, anchor3, connectedAnchor3, anchor4, connectedAnchor4)
+    local tb = self.summonGo:GetComponent(typeof(CL.InteractTriggerX)).script:GetSelf()
+    
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    
+    local ib = self.summonGo:GetComponent(typeof(CL.InteractBase))
+    if IsNullOrDestroyed(ib) then
+        return
+    end
+    if not self.joint1 or IsNullOrDestroyed(self.joint1) then
+        self.joint1 = self.character.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint1.autoConfigureConnectedAnchor = false
+    end
+    self.joint1.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.angularZMotion = UE.ConfigurableJointMotion.Free
+    
+    if not self.joint2 or IsNullOrDestroyed(self.joint2) then
+        self.joint2 = self.character.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint2.autoConfigureConnectedAnchor = false
+    end
+    self.joint2.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.angularZMotion = UE.ConfigurableJointMotion.Free    
+    
+    if not self.joint3 or IsNullOrDestroyed(self.joint3) then
+        self.joint3 = self.character.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint3.autoConfigureConnectedAnchor = false
+    end
+    
+    self.joint3.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.angularZMotion = UE.ConfigurableJointMotion.Free
+    
+    
+    if not self.joint4 or IsNullOrDestroyed(self.joint4) then
+        self.joint4 = self.character.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint4.autoConfigureConnectedAnchor = false
+    end
+    
+    self.joint4.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.angularZMotion = UE.ConfigurableJointMotion.Free
+    
+    self.attachHand = hand
+    self.attachPu = ib
+    self.shieldHeight = tb:GetShieldHeight(self.character)
+
+    self.joint1.connectedBody = ib.rb
+    self.joint1.anchor = anchor1
+    self.joint1.connectedAnchor = connectedAnchor1
+    
+    self.joint1.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint1.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    
+    ib:OnAttachBuild(hand.physicsHand, self.joint1, ib.rb)
+    
+    self.joint2.connectedBody = ib.rb
+    self.joint2.anchor = anchor2
+    self.joint2.connectedAnchor = connectedAnchor2
+    
+    self.joint2.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint2.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    
+    ib:OnAttachBuild(hand:GetAnotherHand().physicsHand, self.joint2, ib.rb)
+    
+    self.joint3.connectedBody = ib.rb
+    self.joint3.anchor = anchor3
+    self.joint3.connectedAnchor = connectedAnchor3
+    self.joint3.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint3.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    
+    self.joint4.connectedBody = ib.rb
+    self.joint4.anchor = anchor4
+    self.joint4.connectedAnchor = connectedAnchor4
+    self.joint4.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint4.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.lastIntensity = 0
+    
+    ib.networkIB.networkRB.enabled = false
+end
+
+function SpellEarth:FixedSummonGo()
+    if self.summonGo and not IsNullOrDestroyed(self.summonGo) then
+        local tb = self.summonGo:GetComponent(typeof(CL.InteractTriggerX)).script:GetSelf()
+        if tb then
+            tb:ConfirmEndState()
+            tb:Suspension()
+            tb:StopFollow()
+        end
+    end
+    
+    self:BreakSummonJoint()
+end
+
+function SpellEarth:ReleaseSummonGo()
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            if self.summonGo and not IsNullOrDestroyed(self.summonGo) then
+                state:ServerDoReleaseSummonGo(self.summonGo.transform.position, self.summonGo.transform.rotation)
+            else
+                state:ServerDoReleaseSummonGo(UE.Vector3.zero, UE.Quaternion.identity)
+            end
+        end
+    end
+    self:DoReleaseSummonGo()
+end
+
+function SpellEarth:NetworkDoReleaseSummonGo(pos, rot)
+    if self.summonGo and not IsNullOrDestroyed(self.summonGo) then
+        local ib = self.summonGo:GetComponent(typeof(CL.InteractBase))
+        ib.networkIB.networkRB.enabled = false
+        self.summonGo.transform.position = pos
+        self.summonGo.transform.rotation = rot
+    end
+    self:DoReleaseSummonGo()
+end
+
+function SpellEarth:DoReleaseSummonGo()
+    if self.summonGo and not IsNullOrDestroyed(self.summonGo) then
+        local tb = self.summonGo:GetComponent(typeof(CL.InteractTriggerX)).script:GetSelf()
+        if tb then
+            tb:ConfirmEndState()
+            tb:Suspension()
+            tb:AutoDistroy()
+            tb:StopFollow()
+        end
+        self.summonGo = nil
+    end
+    self:BreakSummonJoint()
+end
+
+function SpellEarth:JointSummonGo(tb)
+    if not self.summonGo then
+        return false
+    end
+    
+    local hand = self:GetSlotHand()
+    if not hand then
+        return false
+    end
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local ib = self.summonGo:GetComponent(typeof(CL.InteractBase))
+    if IsNullOrDestroyed(ib) then
+        return
+    end
+
+    if not self.joint1 or IsNullOrDestroyed(self.joint1) then
+        self.joint1 = self.character.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint1.autoConfigureConnectedAnchor = false
+    end
+    self.joint1.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint1.angularZMotion = UE.ConfigurableJointMotion.Free
+    
+    if not self.joint2 or IsNullOrDestroyed(self.joint2) then
+        self.joint2 = self.character.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint2.autoConfigureConnectedAnchor = false
+    end
+    self.joint2.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint2.angularZMotion = UE.ConfigurableJointMotion.Free    
+    
+    if not self.joint3 or IsNullOrDestroyed(self.joint3) then
+        self.joint3 = self.character.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint3.autoConfigureConnectedAnchor = false
+    end
+    
+    self.joint3.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint3.angularZMotion = UE.ConfigurableJointMotion.Free
+    
+    
+    if not self.joint4 or IsNullOrDestroyed(self.joint4) then
+        self.joint4 = self.character.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint4.autoConfigureConnectedAnchor = false
+    end
+    
+    self.joint4.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint4.angularZMotion = UE.ConfigurableJointMotion.Free
+    
+    
+    self.attachHand = hand
+    self.attachPu = ib
+    local targetPos = tb:GetTargetPos(self.character)
+    
+    self.shieldHeight = tb:GetShieldHeight(self.character)
+    
+    --joint 1 Contect
+    local leftPoint = targetPos - self.character.transform.right * self.jointOffsetMlp 
+        - self.character.transform.up * self.shieldHeight/2 * self.jointOffsetMlp
+    self.joint1.connectedBody = ib.rb
+    self.joint1.anchor = self.joint1.transform:InverseTransformPoint(leftPoint)
+    self.joint1.connectedAnchor = -UE.Vector3.right * self.jointOffsetMlp - UE.Vector3.up * self.shieldHeight/2 * self.jointOffsetMlp
+    
+    self.joint1.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint1.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    
+    ib:OnAttachBuild(hand.physicsHand, self.joint1, ib.rb)
+    
+    
+    --joint 2 Contect
+    local rightPoint = targetPos + self.character.transform.right * self.jointOffsetMlp
+        - self.character.transform.up * self.shieldHeight/2 * self.jointOffsetMlp
+    self.joint2.connectedBody = ib.rb
+    self.joint2.anchor = self.joint2.transform:InverseTransformPoint(rightPoint)
+    self.joint2.connectedAnchor = UE.Vector3.right * self.jointOffsetMlp - UE.Vector3.up * self.shieldHeight/2 * self.jointOffsetMlp
+    
+    self.joint2.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint2.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    
+    ib:OnAttachBuild(hand:GetAnotherHand().physicsHand, self.joint2, ib.rb)
+    
+    
+    --joint 3 Contect
+    --local centerPoint = targetPos + self.character.transform.up * self.shieldHeight/2 * self.jointOffsetMlp
+    local upLeftPoint = targetPos - self.character.transform.right * self.jointOffsetMlp 
+        + self.character.transform.up * self.shieldHeight/2 * self.jointOffsetMlp
+    self.joint3.connectedBody = ib.rb
+    self.joint3.anchor = self.joint3.transform:InverseTransformPoint(upLeftPoint)
+    --self.joint3.connectedAnchor = UE.Vector3.up * self.shieldHeight/2 * self.jointOffsetMlp
+    self.joint3.connectedAnchor = -UE.Vector3.right * self.jointOffsetMlp + UE.Vector3.up * self.shieldHeight/2 * self.jointOffsetMlp
+    self.joint3.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint3.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    
+    
+    --joint 4 Contect
+    local upRightPoint = targetPos + self.character.transform.right * self.jointOffsetMlp 
+        + self.character.transform.up * self.shieldHeight/2 * self.jointOffsetMlp
+    self.joint4.connectedBody = ib.rb
+    self.joint4.anchor = self.joint4.transform:InverseTransformPoint(upRightPoint)
+    self.joint4.connectedAnchor = UE.Vector3.right * self.jointOffsetMlp + UE.Vector3.up * self.shieldHeight/2 * self.jointOffsetMlp
+    self.joint4.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint4.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    
+    self.lastIntensity = 0
+    
+    return true
+end
+
+function SpellEarth:LockSummonJoint(tb)
+    --self.joint1.xMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint1.yMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint1.zMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint1.angularXMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint1.angularYMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint1.angularZMotion = UE.ConfigurableJointMotion.Locked
+    
+    --self.joint2.xMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint2.yMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint2.zMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint2.angularXMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint2.angularYMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint2.angularZMotion = UE.ConfigurableJointMotion.Locked
+    
+    --self.joint3.xMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint3.yMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint3.zMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint3.angularXMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint3.angularYMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint3.angularZMotion = UE.ConfigurableJointMotion.Locked
+    
+    --self.joint4.xMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint4.yMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint4.zMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint4.angularXMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint4.angularYMotion = UE.ConfigurableJointMotion.Locked
+    --self.joint4.angularZMotion = UE.ConfigurableJointMotion.Locked
+end
+
+function SpellEarth:NetworkLockSummonJoint(ib)
+    local tb = ib:GetInteractTrigger().script:GetSelf()
+    self:LockSummonJoint(tb)
+end
+
+
+function SpellEarth:NetworkRefleshSummonJoint(ib, intensity)
+    local tb = ib:GetInteractTrigger().script:GetSelf()
+    self:RefleshSummonJoint(tb, intensity)
+end
+
+function SpellEarth:RefleshSummonJoint(tb, intensity)
+    if IsNullOrDestroyed(self.joint1) then
+        return false
+    end
+    
+    local targetPos = tb:GetTargetPos(self.character)
+    
+    --joint Contect
+    --self.joint.anchor = self.joint.transform:InverseTransformPoint(targetPos)
+    
+    intensity = intensity and intensity or math.min(1 - math.abs(targetPos.y - tb.trans.position.y)/self.shieldHeight/2, 1)
+    if intensity < self.lastIntensity then
+        return false
+    end
+    
+    
+    local spring = self.maxSpring * intensity
+    local ld = self.joint1.xDrive    
+    ld.positionSpring = spring
+    ld.positionDamper = spring * self.damperMlp
+    local sd = self.joint1.slerpDrive
+    sd.positionSpring = spring
+    sd.positionDamper = spring * self.damperMlp
+    
+    self.joint1.xDrive = ld
+    self.joint1.yDrive = ld
+    self.joint1.zDrive = ld
+    self.joint1.slerpDrive = sd
+    
+    self.joint2.xDrive = ld
+    self.joint2.yDrive = ld
+    self.joint2.zDrive = ld
+    self.joint2.slerpDrive = sd
+    
+    self.joint3.xDrive = ld
+    self.joint3.yDrive = ld
+    self.joint3.zDrive = ld
+    self.joint3.slerpDrive = sd
+    
+    self.joint4.xDrive = ld
+    self.joint4.yDrive = ld
+    self.joint4.zDrive = ld
+    self.joint4.slerpDrive = sd
+    
+    self.lastIntensity = intensity
+    
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        tb:SlowDown(intensity)
+    end
+    
+    return true
+end
+
+function SpellEarth:BreakSummonJoint()
+    if self.joint1 and not IsNullOrDestroyed(self.joint1) then
+        if self.attachPu then
+            self.attachPu:OnAttachBreak(self.attachHand.physicsHand, self.joint1, self.attachPu.rb)
+        end
+        UE.Object.DestroyImmediate(self.joint1)
+        
+        --self.joint1.xMotion = UE.ConfigurableJointMotion.Free
+        --self.joint1.yMotion = UE.ConfigurableJointMotion.Free
+        --self.joint1.zMotion = UE.ConfigurableJointMotion.Free
+        --self.joint1.angularXMotion = UE.ConfigurableJointMotion.Free
+        --self.joint1.angularYMotion = UE.ConfigurableJointMotion.Free
+        --self.joint1.angularZMotion = UE.ConfigurableJointMotion.Free
+        --
+        --self.joint1.connectedBody = nil
+        --local ld = self.joint1.xDrive
+        --ld.positionSpring = 0
+        --ld.positionDamper = 0
+        --self.joint1.xDrive = ld
+        --self.joint1.yDrive = ld
+        --self.joint1.zDrive = ld
+        --local sd = self.joint1.slerpDrive
+        --sd.positionSpring = 0
+        --sd.positionDamper = 0
+        --self.joint1.slerpDrive = sd
+    end
+    
+    if self.joint2 and not IsNullOrDestroyed(self.joint2) then
+        if self.attachPu then
+            self.attachPu:OnAttachBreak(self.attachHand:GetAnotherHand().physicsHand, self.joint2, self.attachPu.rb)
+        end
+        UE.Object.DestroyImmediate(self.joint2)
+        --self.joint2.xMotion = UE.ConfigurableJointMotion.Free
+        --self.joint2.yMotion = UE.ConfigurableJointMotion.Free
+        --self.joint2.zMotion = UE.ConfigurableJointMotion.Free
+        --self.joint2.angularXMotion = UE.ConfigurableJointMotion.Free
+        --self.joint2.angularYMotion = UE.ConfigurableJointMotion.Free
+        --self.joint2.angularZMotion = UE.ConfigurableJointMotion.Free
+        --
+        --self.joint2.connectedBody = nil
+        --local ld = self.joint2.xDrive
+        --ld.positionSpring = 0
+        --ld.positionDamper = 0
+        --self.joint2.xDrive = ld
+        --self.joint2.yDrive = ld
+        --self.joint2.zDrive = ld
+        --local sd = self.joint2.slerpDrive
+        --sd.positionSpring = 0
+        --sd.positionDamper = 0
+        --self.joint2.slerpDrive = sd
+    end
+    
+    if self.joint3 and not IsNullOrDestroyed(self.joint3) then
+        UE.Object.DestroyImmediate(self.joint3)
+        --self.joint3.xMotion = UE.ConfigurableJointMotion.Free
+        --self.joint3.yMotion = UE.ConfigurableJointMotion.Free
+        --self.joint3.zMotion = UE.ConfigurableJointMotion.Free
+        --self.joint3.angularXMotion = UE.ConfigurableJointMotion.Free
+        --self.joint3.angularYMotion = UE.ConfigurableJointMotion.Free
+        --self.joint3.angularZMotion = UE.ConfigurableJointMotion.Free
+        --
+        --self.joint3.connectedBody = nil
+        --local ld = self.joint3.xDrive
+        --ld.positionSpring = 0
+        --ld.positionDamper = 0
+        --self.joint3.xDrive = ld
+        --self.joint3.yDrive = ld
+        --self.joint3.zDrive = ld
+        --local sd = self.joint3.slerpDrive
+        --sd.positionSpring = 0
+        --sd.positionDamper = 0
+        --self.joint3.slerpDrive = sd
+    end
+    
+    if self.joint4 and not IsNullOrDestroyed(self.joint4) then
+        UE.Object.DestroyImmediate(self.joint4)
+        --self.joint4.xMotion = UE.ConfigurableJointMotion.Free
+        --self.joint4.yMotion = UE.ConfigurableJointMotion.Free
+        --self.joint4.zMotion = UE.ConfigurableJointMotion.Free
+        --self.joint4.angularXMotion = UE.ConfigurableJointMotion.Free
+        --self.joint4.angularYMotion = UE.ConfigurableJointMotion.Free
+        --self.joint4.angularZMotion = UE.ConfigurableJointMotion.Free
+        --
+        --self.joint4.connectedBody = nil
+        --local ld = self.joint4.xDrive
+        --ld.positionSpring = 0
+        --ld.positionDamper = 0
+        --self.joint4.xDrive = ld
+        --self.joint4.yDrive = ld
+        --self.joint4.zDrive = ld
+        --local sd = self.joint4.slerpDrive
+        --sd.positionSpring = 0
+        --sd.positionDamper = 0
+        --self.joint4.slerpDrive = sd
+    end
+end
+
+
+function SpellEarth:ShootSpike(pos, rot, flyObjName)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(flyObjName, pos, 
+            rot, false, false, 0, true, 
+            function(networkWeapon, weaponGo)
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerOnSpawnedSpike(networkWeapon.ib) end
+                self:InitSpike(weaponGo)
+            end)
+        end
+    else
+        local go = CL.PrefabPool.SpawnPrefab(flyObjName, CL.InteractTrigger.WeaponPath)
+        if not go then
+            return
+        end
+        go.transform.position = pos
+        go.transform.transform.rotation = rot
+        self:InitSpike(go)
+    end
+end
+
+function SpellEarth:InitSpike(go)
+    local trig = go:GetComponent(typeof(CL.InteractTriggerX))
+    local script = trig.script:GetSelf()
+    script:OnShoot(self.host.interact)
+    go.transform.localScale = self.shieldHeight * UE.Vector3.one / 2
+    
+    trig.interact:MarkThrowAssist(1)
+    self:SetIBLastHolder(trig.interact)
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    script.host.interact.rb.velocity = self.shootSpeed * go.transform.forward
+end
+
+function SpellEarth:SetIBLastHolder(ib)
+    local holder = self.slotHand and self.slotHand.character.aiProxy or self.host.interact:GetLatestHolder()
+    if not IsNullOrDestroyed(holder) then
+        if not IsNullOrDestroyed(ib) then
+            ib:SetLatestHolder(holder)
+        end
+    end
+end
+
+
+function SpellEarth:OnGoDead(go)
+    if self.fo and go == self.fo.gameObject then
+        self.fo = nil
+    elseif go == self.summonGo then
+        self:BreakSummonJoint()
+        self.summonGo = nil
+    end
+end
+
+return Class(Require("Weapon/SpellSummonFoScript"), nil, SpellEarth)

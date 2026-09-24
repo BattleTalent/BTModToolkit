@@ -1,0 +1,606 @@
+--luaBehaviour
+local ArrowHook = {
+    cacheFwdDis = -1,
+}
+
+local Vector3 = Require("Vector3")
+
+function ArrowHook:OnEnable()
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("+", self.onStabEnterHandler)
+    end
+end
+
+function ArrowHook:OnDisable()
+    self:StopLifeCircle()
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("-", self.onStabEnterHandler)
+    end
+end
+
+
+function ArrowHook:Start()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    if self.isOnline then
+        if not IsNullOrDestroyed(self.ib) then
+            SafeSetNetworkRBEnabled(self.ib, false)
+        end
+    end
+end
+
+function ArrowHook:IsLocalPlayer()
+    if self.isOnline then
+        return SafeIsOwnerLocalPlayer(self.mainPart.host.interact)
+    else
+        return true
+    end
+end
+
+function ArrowHook:OnShot(targetCol, targetPoint)
+    CL.EffectMgr.Instance:PlayEffect(self.shootEffectName, self.ib.trans.position, self.ib.trans.rotation)
+
+    if not IsNullOrDestroyed(targetCol) then
+        local isTrack = true
+        local pu = CL.PhysicsUnit.GetPhysicsUnit(targetCol, true)
+        if not IsNullOrDestroyed(pu) then
+            if not IsNullOrDestroyed(pu.gameObject:GetComponent(typeof(CL.DestructibleObj))) then
+                isTrack = false
+            end
+        end
+        
+        --if targetCol.transform.parent then
+        --        print("start Shot target-----------::" .. targetCol.transform.name .. "  parent-::" .. targetCol.transform.parent.name)
+        --else
+        --    print("start Shot target-----------::" .. targetCol.transform.name)
+        --end
+        if isTrack then
+            self:TrackTarget(targetCol, targetPoint)
+        end
+    end
+    
+    --if targetCol and not IsNullOrDestroyed(targetCol) and
+    --    not IsNullOrDestroyed(targetCol.attachedRigidbody) and targetCol.attachedRigidbody.isKinematic then
+    --    self:StartStabProtect(targetCol, targetPoint)
+    --end
+end
+
+function ArrowHook:StabTargetByTrack(collider, point, normal)
+    if self.isOnline and not self:IsLocalPlayer() then
+        return
+    end
+    
+    if self.isOnline then
+        local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(collider)
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:CmdStabTargetByTrack(localPlayerId, key, cid, point, normal) end
+    end
+    self:DoStabTargetByTrack(collider, point, normal)
+    
+    self:HandleCollision(collider, point)
+end
+
+function ArrowHook:DoStabTargetByTrack(collider, point, normal)
+    self:OnArrowCollision(collider, point, normal)
+    --    print("StabTargetByTrack hit col:" .. collider.transform.name .. "   parent:" .. collider.transform.parent.name)
+    --else
+    --    print("StabTargetByTrack hit col:" .. collider.transform.name)
+    --end
+    
+    self:StopTrackTarget()
+end
+
+
+function ArrowHook:OnArrowCollision(collider, point, normal)
+    if self.mainPart then
+        self.mainPart:OnArrowCollision(collider, point, normal)
+    end
+    
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = false
+    end
+end
+
+function ArrowHook:HandleCollision(otherCollider, point)
+    if self.joint ~= nil then
+        return
+    end
+    
+    --if UE.Vector3.Dot(-ct.normal, self.ib.trans.forward) < 0 then
+    --    return
+    --end
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(otherCollider)
+    local needStab = false
+    local needHitScan = false
+    if IsNullOrDestroyed(otherCollider.attachedRigidbody) and not IsNullOrDestroyed(pu) then
+        self:DelayToRecall(0)
+        return
+    end
+    
+    local rpu = CL.PhysicsUnit.GetPhysicsUnitTopDown(otherCollider)
+    local isPlayer = false
+    if not IsNullOrDestroyed(rpu) then
+        if rpu.unitType == CL.Tagger.Tag.InteractRole then
+            if pu.IsWeapon and pu:IsWeapon() then
+                needStab = false
+            else
+                needStab = true
+                needHitScan = true
+            end
+        elseif rpu.unitType == CL.Tagger.Tag.PlayerRole then
+            needHitScan = true
+            isPlayer = true
+        end
+    end
+    
+    if not isPlayer then
+        if not needStab and not IsNullOrDestroyed(pu) then
+            if pu:GetType() == typeof(CL.StabableObj) then
+                needStab = true
+            elseif   pu.unitType == CL.Tagger.Tag.InteractObj or pu.unitType == CL.Tagger.Tag.InteractWeapon then
+                
+                if not IsNullOrDestroyed(pu.rb) and not pu.rb.isKinematic then
+                    self:StartHookProtect(pu.rb)
+                end
+                needStab = true
+            end
+        end
+        
+        if not needStab and CL.PhysicsUnit.IsScene(otherCollider) then
+            if not IsNullOrDestroyed(otherCollider.attachedRigidbody) then
+                needStab = true
+            end
+        end
+    end
+    
+    local isHookOn = false
+    if needStab then
+        if self.mainPart then
+            isHookOn = self.mainPart:IsAllowHook()
+            if isHookOn then
+                local localPoint = otherCollider.transform:InverseTransformPoint(point)
+                self:DoHookObjOnCollision(otherCollider, point, localPoint)
+                
+                if self.isOnline then
+                    local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                    local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(otherCollider)
+                    local closestPoint = SafeColliderClosestPoint(otherCollider, point)
+                    --print(" CmdHookObjOnCollision------------------: " .. key .. "   " .. cid .. "  " ..tostring(otherCollider.transform.name))
+                    local state = GetIBNetworkState(self.ib)
+                    if state ~= nil then state:CmdHookObjOnCollision(localPlayerId, key, cid, closestPoint, localPoint) end
+                end
+            end
+        end
+    else
+        self:DelayToRecall(0)
+    end
+    
+    if needHitScan then
+        if not self.isOnline then
+            self:DoHitScan(otherCollider)
+        else
+            if CL.Network.VRNetworkManager.ServerOnline then
+                self:DoHitScan(otherCollider)
+            else
+                local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(otherCollider)
+                local state = GetIBNetworkState(self.ib)
+                if state ~= nil then state:CmdDoHitScan(key, cid) end
+            end
+        end
+    end
+    
+    if isHookOn then
+        CL.EffectMgr.Instance:PlayEffect(self.hitEffectName, point, self.ib.trans.rotation)
+    end
+end
+
+function ArrowHook:DoHitScan(otherCollider)
+    if IsNullOrDestroyed(otherCollider) then
+        return
+    end
+    local lastHolder = self.ib:GetLatestHolder()
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(otherCollider, self.ib, 
+        self.ib.rb, self.col, self.trans.forward, CL.AIProxy.CampGood, false, 1, self.ib:GetLatestHolder())
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+end
+
+function ArrowHook:DoHookObjOnCollision(collider, point, localPoint)
+    --print(" do HookObjOnCollision------------------: " ..tostring(collider.transform.name))
+    local realStabPoint = collider.transform:TransformPoint(localPoint)
+    self.mainPart:HookObjOnCollision(collider, realStabPoint)
+    if self.mainPart.character and self.mainPart.character.IsLocalPlayer then
+        self.stabSound.soundInfo:Play(self.mainPart.createPoint.position, false)
+    else
+        self.stabSound:PlaySound()
+    end
+    self:HookLockedOnCollision(collider.attachedRigidbody, realStabPoint)
+    self:BanStab()
+    self.ib:ClearThrowAssist()
+    
+    CL.EffectMgr.Instance:PlayEffect(self.hitEffectName, point, self.ib.trans.rotation)
+end
+
+function ArrowHook:NetworkHandleCollision(col, closestPoint, point, rotation, isHookOn)
+    if isHookOn then
+        if self.mainPart then
+            local pos = col.transform:TransformPoint(closestPoint)
+            self.mainPart:TryHookObjOnCollision(col, pos)
+            self.stabSound:PlaySound()
+            self:HookLockedOnCollision(col.attachedRigidbody, pos)
+            self:BanStab()
+            
+            self.ib:ClearThrowAssist()
+        end
+        CL.EffectMgr.Instance:PlayEffect(self.hitEffectName, point, rotation)
+    end
+end
+
+function ArrowHook:Rebound(normal)
+    if IsNullOrDestroyed(self.ib) or IsNullOrDestroyed(self.ib.rb) then
+        return
+    end
+    self.ib.rb.velocity = normal * self.ib.rb.velocity.magnitude
+end
+
+
+function ArrowHook:DelayToBreakStab(stabObj)
+    self.breakStabId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if not IsNullOrDestroyed(stabObj) then
+                stabObj:BreakAllStab()
+            end
+        end
+    , 0, 0, 0.02)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ArrowHook:BanStab()
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        self.cacheFwdDis = so.geos[0].geoFwdDis
+        so.geos[0].geoFwdDis = 0
+    end
+end
+
+function ArrowHook:HookLockedOnCollision(rb, point)
+    if IsNullOrDestroyed(rb) or IsNullOrDestroyed(self.ib) or IsNullOrDestroyed(self.ib.rb) then
+        return
+    end
+    self.joint = rb.transform.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.joint.autoConfigureConnectedAnchor = false
+
+    self.joint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.zMotion = UE.ConfigurableJointMotion.Locked
+    
+    if not self.isOnline or CL.Network.VRNetworkManager.ServerOnline then
+        self.joint.angularXMotion = UE.ConfigurableJointMotion.Locked
+        self.joint.angularYMotion = UE.ConfigurableJointMotion.Locked
+        self.joint.angularZMotion = UE.ConfigurableJointMotion.Locked
+    end
+    
+    --joint Contect
+    self.joint.connectedBody = self.ib.rb
+    self.joint.anchor = rb.transform:InverseTransformPoint(point)
+    self.joint.connectedAnchor = self.middleTrans.localPosition
+    
+    
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.joint.projectionAngle = 0
+    self.joint.projectionDistance = 0
+end
+
+function ArrowHook:StartHookProtect(rb)
+    if not self:IsLocalPlayer() then
+        return
+    end
+    CL.Scheduler.RemoveSchedule(self.stabProtectId)
+    self.stabProtectId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if not self.joint or IsNullOrDestroyed(self.joint) then
+                sche:Stop()
+                return
+            end
+            
+            if IsNullOrDestroyed(rb) then
+                sche:Stop()
+                return
+            end
+            
+            if rb.isKinematic then
+                sche:Stop()
+                if self.mainPart then
+                    if self.isOnline then
+                        self.mainPart:LocalCloseSkill()
+                    else
+                        self.mainPart.host:CloseSkill()
+                    end
+                end
+                return
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ArrowHook:StopHookProtect()
+    CL.Scheduler.RemoveSchedule(self.stabProtectId)
+end
+
+function ArrowHook:AutoRecall(range, targetCol, shotDir, speed, isLocalOwner)
+    if not self.mainPart then
+        return
+    end
+    
+    local ibPos = self.ib.trans.position
+    local targetPos = ibPos + shotDir * range
+    local sqrRange = range * range
+    local curSqrDis = 0
+    local isStaticEnv = not IsNullOrDestroyed(targetCol) 
+    and not IsNullOrDestroyed(targetCol.attachedRigidbody) 
+    and targetCol.attachedRigidbody.isKinematic
+    and (targetCol.gameObject.layer == CL.LayerDefine.EnvLayer 
+        or targetCol.gameObject.isStatic)
+    --If target is the env, the distance is not detected in order to be able to swing up.
+    
+    local vec = UE.Vector3.zero
+    self.recallActId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if self.joint and not IsNullOrDestroyed(self.joint) then
+                return
+            end
+            
+            if IsNullOrDestroyed(self.ib) then
+                sche:Stop()
+                return
+            end
+            
+            if isStaticEnv then
+                if IsNullOrDestroyed(targetCol) then
+                    if self.isOnline then
+                        if isLocalOwner then
+                            self.mainPart:LocalCloseSkill()
+                        end
+                    else
+                        self.mainPart.host:CloseSkill()
+                    end
+                    sche:Stop()
+                    return
+                end
+                
+                return
+            end
+            
+            ibPos = self.ib.trans.position
+            --print("auto recall--------------------")
+            
+            if IsNullOrDestroyed(self.mainPart.createPoint) then
+                sche:Stop()
+                return
+            end
+            
+            
+            if self.mainPart then
+                if not IsNullOrDestroyed(targetCol) then
+                    local curSqrDis = Vector3.SqrMagnitude(Vector3.OpSub(ibPos, self.mainPart.createPoint.position, vec))
+                    
+                    if curSqrDis > sqrRange then
+                        if self.isOnline then                                     
+                            if isLocalOwner then
+                                self.mainPart:LocalCloseSkill()
+                            else
+                                self.mainPart:LocalRecallArrow()
+                            end
+                        else
+                            self.mainPart.host:CloseSkill()
+                        end
+                        sche:Stop()
+                        return
+                    end
+                else
+                    local curDis = Vector3.Magnitude(Vector3.OpSub(ibPos, targetPos, vec))
+                    
+
+                    if curDis < (speed * UE.Time.deltaTime) then
+                        if self.isOnline then                                     
+                            if isLocalOwner then
+                                self.mainPart:LocalCloseSkill()
+                            else
+                                self.mainPart:LocalRecallArrow()
+                            end
+                        else
+                            self.mainPart.host:CloseSkill()
+                        end
+                        sche:Stop()
+                        return
+                    end
+                end
+            end
+        
+--            local pos = CL.CameraMgr.Instance:GetCameraPos()
+--            if pos.y - ibPos.y > 90 then
+--                if self.isOnline then
+--                    if isLocalOwner then
+--                        self.mainPart:LocalCloseSkill()
+--                    else
+--                        self.ib.rb.velocity = UE.Vector3.zero
+--                        self.ib.rb.angularVelocity = UE.Vector3.zero
+--                    end
+--                else
+--                    self.mainPart.host:CloseSkill()
+--                end
+--                sche:Stop()
+--                return
+--            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ArrowHook:TrackTarget(col, pos)
+    local targetTrans = col.transform
+    local localPos = targetTrans:InverseTransformPoint(pos)
+    
+    local curPos = nil
+    local curTarget = nil
+    local curDir = nil
+    local speed = self.mainPart.shootSpeed
+    local disOfDelta = 0
+    local transPos = nil
+    local vec1 = UE.Vector3.zero
+    local vec2 = UE.Vector3.zero
+    local vec3 = UE.Vector3.zero
+    CL.Scheduler.RemoveSchedule(self.trackActId)
+    self.trackActId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if self.joint ~= nil or not IsNullOrDestroyed(self.joint) then
+                sche:Stop()
+                return
+            end
+            curTarget = targetTrans:TransformPoint(localPos)
+            
+            transPos = self.trans.position
+            curDir = Vector3.OpSub(curTarget, transPos, vec1)
+            disOfDelta = speed * UE.Time.deltaTime
+            if Vector3.SqrMagnitude(curDir) < disOfDelta * disOfDelta then
+                curPos = curTarget
+                if self.isOnline and not self:IsLocalPlayer() then
+                    self.ib.trans.position = curPos
+                    self.ib.rb.velocity = UE.Vector3.zero
+                    self.ib.rb.angularVelocity = UE.Vector3.zero
+                    sche:Stop()
+                    return
+                end
+                self:StabTargetByTrack(col, curTarget, Vector3.OpNormalize(curDir))
+            else
+
+                curPos = Vector3.OpAdd(transPos, Vector3.OpMul(curDir, disOfDelta, vec2), vec3)
+            end
+            CL.PhysicsFollow.TrackPosition(self.ib.rb, curPos, disOfDelta)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ArrowHook:StopTrackTarget()
+    CL.Scheduler.RemoveSchedule(self.trackActId)
+end
+
+function ArrowHook:DelayToRecall(time)
+    if not self.mainPart then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.recallActId)
+    self.recallActId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if self.isOnline then
+                self.mainPart:LocalCloseSkill()
+            else
+                self.mainPart.host:CloseSkill()
+            end
+        end
+    , 0, 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+function ArrowHook:StopStabProtect()
+    CL.Scheduler.RemoveSchedule(self.protectActId)
+end
+
+function ArrowHook:StartStabProtect(collider, point)
+    local startDir = (point - self.ib.trans.position).normalized
+    CL.Scheduler.RemoveSchedule(self.protectActId)
+    local startPos = collider.transform.position
+    local vec = UE.Vector3.zero
+    self.protectActId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if self.joint and not IsNullOrDestroyed(self.joint) then
+                sche:Stop()
+                return
+            end
+            
+            if startPos ~= collider.transform.position then
+                sche:Stop()
+                return
+            end
+            
+            local curDir = Vector3.OpNormalize(Vector3.OpSub(point, self.ib.trans.position, vec))
+            if UE.Vector3.Dot(startDir, curDir) <= 0 then
+                self:HandleCollision(collider, point)
+                sche:Stop()
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+function ArrowHook:HookUnlocked()
+    if not IsNullOrDestroyed(self.joint) then
+        self.joint.xMotion = UE.ConfigurableJointMotion.Free
+        self.joint.yMotion = UE.ConfigurableJointMotion.Free
+        self.joint.zMotion = UE.ConfigurableJointMotion.Free
+
+        UE.Object.DestroyImmediate(self.joint)
+    end
+    self.joint = nil
+    
+    self:StopHookProtect()
+end
+
+function ArrowHook:SetMainPart(main)
+    self.mainPart = main
+end
+
+function ArrowHook:OnCutRope()
+    self.mainPart = nil
+    
+    self:StartLifeCircle()
+end
+
+function ArrowHook:OnRecall()
+    if not IsNullOrDestroyed(self.joint) then
+        CL.EffectMgr.Instance:PlayEffect(self.recallEffectName, self.ib.trans.position, self.ib.trans.rotation)
+    end
+    
+    self:HookUnlocked()
+    self:StopTrackTarget()
+    
+    local so = self.ib:GetStabObject()
+    
+    if so ~= nil and self.cacheFwdDis > 0 then
+        so.geos[0].geoFwdDis = self.cacheFwdDis
+        self.cacheFwdDis = 0
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.recallActId)
+    CL.Scheduler.RemoveSchedule(self.subActId)
+    self:StopStabProtect()
+end
+
+function ArrowHook:OnResetState()
+    self.mainPart = nil
+    self:HookUnlocked()
+    self:StopTrackTarget()
+    self:StopStabProtect()
+
+    CL.Scheduler.RemoveSchedule(self.recallActId)
+    CL.Scheduler.RemoveSchedule(self.subActId)
+    
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so.geos[0].geoFwdDis = self.cacheFwdDis
+        so:StabEnterEvent("-", self.OnStabEnter)
+    end
+end
+
+return Class(Require("Weapon/ArrowBaseScript"), nil, ArrowHook)

@@ -1,0 +1,44 @@
+
+local BaseCollision = {
+    
+}
+
+function BaseCollision:OnColliderStay(collision)
+    if not self:IsCondition(collision) then
+        return
+    end
+    
+    if not self:IsLegalCol(collision) then
+        return
+    end
+    
+    self:ColliderStayHandler(collision)
+end
+
+function BaseCollision:IsLegalCol(collision)
+    local thisCol = collision:GetContactPoint(0)
+    local pass = false
+    
+    local i = 1
+    while self["legalCol"..i] do
+        if self["legalCol"..i] == thisCol then
+            pass = true
+            break
+        end
+        i = i + 1
+    end
+
+    return pass
+end
+
+function BaseCollision:IsCondition(collision)
+    return true
+end
+
+function BaseCollision:ColliderStayHandler(collision)
+    if self.interactTriggerX then
+        self.interactTriggerX.script.self:OnColliderStay(collision)
+    end
+end
+
+return Class(nil, nil, BaseCollision)

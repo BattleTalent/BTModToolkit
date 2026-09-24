@@ -1,0 +1,524 @@
+
+local IronFist = {
+    curColor = UE.Color(0.4, 0.4, 0.4, 0),  
+    endColor = UE.Color(8.433366, 2.353611, 1.551421, 0),
+    readyColor = UE.Color(9.5, 2, 0.8, 0),
+    defaultColor = UE.Color(0.4, 0.4, 0.4, 0),   --coldTime ready
+    coldColor = UE.Color(0, 0, 0, 0),
+    
+    responseTime = 0.1,
+    curRunSpeed = 0,
+    maxRunSpeed = 20,
+    runAcc = 10,
+    
+    pumpLen = 0.18,
+    
+    chargeTime = 2,
+    coldTime = 0,
+    
+    reflashTime = 0,
+    sprintTime = 1.3,
+    decelerateTime = 0.4,
+    maxDis = 0.2,
+    lastSprintTime = 0,
+    
+    maxPumpPitch = 1.2,
+    minPumpPitch = 0.4,
+    maxPumpVolume = 0.4,
+    
+    pushForce = 5,
+    
+    sprintMana = 2,
+    
+    --rotSpeed
+    lastAngle = 0,
+    lastAngleTime = 0,
+    lastSpeed = 0,
+
+    OnCharge = false, -- whether on charge
+    ChargeActive = true,  -- whether can charge
+}
+
+function IronFist:OnAwake()
+    self.pumpValueList = {}
+    
+    for i = 1, 4 do
+        self["startPoint" .. i] = self["pumpTrans" .. i].localPosition
+        self.pumpValueList[i] = 60 * i
+    end
+    self:Pumping(self.curRunSpeed)
+    
+    self.skillChargeEndTime = self.host.skillChargeEndTime
+    self.host.skillChargeEndTime = -1
+end
+
+
+function IronFist:GrabEquipment(a)
+    self.character = a.attachedHand.character
+    self.ph = self.host.interact:GetPrimaryHand()
+    self.lifeCircleId = CL.Scheduler.RemoveSchedule(self.lifeCircleId)
+    self.lifeCircleId = CL.Scheduler.Create(self.host.interact, 
+        function(sche, t, s)
+            self:Update()
+        end
+    ,self.reflashTime, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    self:SetFistTransform(a)
+    
+    self:OpenHandSound()
+    
+    self.host.skillChargeEndTime = self.skillChargeEndTime
+end
+
+function IronFist:UnGrabEquipment()
+    --remove fist sprinteffect which parent was effectNode.
+    if not IsNullOrDestroyed(self.fistEff) then
+        CL.EffectMgr.Instance:GiveBack(self.fistEff)
+        self.fistEff = nil
+    end
+    
+    if self.characterEff then
+        CL.EffectMgr.Instance:GiveBack(self.characterEff)
+        self.characterEff = nil
+    end
+    
+    self:StopSprint()
+    
+    self:ResetFistTransform()
+    
+    self:StopHandSound()
+    
+    self.character = nil
+    self.ph = nil
+    
+    self.host.skillChargeEndTime = -1
+end
+
+function IronFist:SetFistTransform(a)
+    self.fistTrans:SetParent(self.host.interact.trans)
+    if a.attachedHand:GetHandIndex() == 0 then
+        self.fistTrans.localPosition = UE.Vector3(-0.013, 0.015, 0.203)
+        self.fistTrans.localRotation = UE.Quaternion.Euler(UE.Vector3(0, -51.72, 13.19))
+    else
+        self.fistTrans.localPosition = UE.Vector3(0.01, 0.085, 0.19)
+        self.fistTrans.localRotation = UE.Quaternion.Euler(UE.Vector3(0, -51.72, 177.4))
+    end
+end
+
+function IronFist:ResetFistTransform()
+    self.fistTrans.localPosition = UE.Vector3(0,0,0.1755)
+    self.fistTrans.localRotation = UE.Quaternion.identity
+    self.fistTrans:SetParent(self.rotTrans)
+end
+
+function IronFist:OpenSkill()
+    if not self.ChargeActive or self.OnCharge then
+        self.switchSound:PlaySound()
+        return
+    end
+    
+    self.skillTimeStamp = UE.Time.time
+    
+    self.OnCharge = true
+    self.ChargeActive = false
+    self:SkillOnExpression()
+end
+
+function IronFist:Pumping(speed)
+    local prograss = 0
+    local position = nil
+    for i = 1, 4 do
+        self.pumpValueList[i] = (self.pumpValueList[i] + self.curRunSpeed)%360
+        
+        prograss = 1 + UE.Mathf.Sin(self.pumpValueList[i] * UE.Mathf.Deg2Rad)
+        position = UE.Vector3.Lerp(self["startPoint" .. i], self["endPoint".. i].localPosition, prograss/2)
+        self["pumpTrans"..i].localPosition = position
+    end
+end
+
+function IronFist:SkillOnExpression()
+    if not self.OnCharge then
+        return
+    end
+    
+    local lRunSpeed = self.curRunSpeed
+    local lPumpPitch = self.pumpAudioInfo and self.pumpAudioInfo.audio.pitch or self.minPumpPitch
+    local lPumpVolume = self.pumpAudioInfo and self.pumpAudioInfo.audio.volume or 0
+    local lColor = self.curColor
+
+    self.SkillActionId = CL.Scheduler.RemoveSchedule(self.SkillActionId)
+    self.SkillActionId = CL.Scheduler.Create(self.host.interact, 
+        function(sche, t, s)
+            if t < self.responseTime then
+                return
+            end
+            
+            local tt = t-self.responseTime
+            self.curRunSpeed = CL.EasingEquations.EaseOutCirc(lRunSpeed, self.maxRunSpeed, tt/self.chargeTime)
+            self.curColor = UE.Color.Lerp(lColor, self.endColor, (tt-1.5)/2)
+            self:SetMaterialsEmission(self.curColor)
+            
+            if self.pumpAudioInfo then
+                self.pumpAudioInfo.audio.pitch =  math.min(3, math.max(0.01, UE.Mathf.Lerp(lPumpPitch, self.maxPumpPitch, tt/self.chargeTime))) 
+                self.pumpAudioInfo.audio.volume = UE.Mathf.Lerp(lPumpVolume, self.maxPumpVolume, tt/self.chargeTime)
+            end
+        end
+    ,self.reflashTime, self.chargeTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self.pumpAudioInfo = self.pumpSound:PlaySoundInfo()
+    if self.pumpAudioInfo then
+        self.pumpAudioInfo.ao.transform:SetParent(self.fistTrans)
+    end
+end
+
+function IronFist:SkillOffExpression(cb)
+    local totalTime = (self.maxRunSpeed+1)/self.runAcc
+    local lRunSpeed = self.curRunSpeed
+    local lColor = self.curColor
+    
+    local lPumpPitch =  self.pumpAudioInfo and self.pumpAudioInfo.audio.pitch or 0
+    local lPumpVolume = self.pumpAudioInfo and self.pumpAudioInfo.audio.volume or 0
+    
+    local targetColor = self.isReady and self.coldColor or self.defaultColor
+    
+    local sche = CL.Scheduler.GetSchedule(self.SkillActionId)
+    if sche then
+        sche:SetOnStop(nil)
+    end
+    self.SkillActionId = CL.Scheduler.RemoveSchedule(self.SkillActionId)
+    self.SkillActionId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if t < self.sprintTime then
+                return
+            end
+            
+            self.curRunSpeed = UE.Mathf.Lerp(lRunSpeed, 0, t/totalTime)
+            self.curColor = UE.Color.Lerp(lColor, targetColor, t/totalTime)
+            self:SetMaterialsEmission(self.curColor)
+            
+            if self.pumpAudioInfo then
+                self.pumpAudioInfo.audio.pitch = math.min(3, math.max(0.01,UE.Mathf.Lerp(lPumpPitch, self.minPumpPitch, t/totalTime) )) 
+                self.pumpAudioInfo.audio.volume = UE.Mathf.Lerp(lPumpVolume, 0, t/totalTime)
+            end
+        end
+    ,self.reflashTime, totalTime)
+    :SetOnStop(function()
+        if self.isReady then
+            --local onPlay = false
+            --local lColor = self.curColor            
+            --self.coldActionId = CL.Scheduler.RemoveSchedule(self.coldActionId)
+            --self.coldActionId = CL.Scheduler.Create(self.host.interact,
+            --    function(sche, t, s)
+            --        if t >= self.coldTime + 0.2 and not onPlay then
+            --            self.onColdSound:PlaySound()
+            --            
+            --            self.ph:HapticPulse(self.character.skillOpenHapticCurve, 1.5, 2.5)
+            --            onPlay = true
+            --        end
+            --        local x = UE.Mathf.Sin(360 * t * UE.Mathf.Deg2Rad)
+            --        self.curColor = UE.Color.Lerp(self.endColor, self.defaultColor, x + 1)
+            --        self:SetMaterialsEmission(self.curColor)
+            --    end
+            --,self.reflashTime, 1, self.coldTime)
+            --:SetOnStop(function()
+                if cb then cb() end
+            --end)
+        end
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.pumpAudioInfo)
+        --self.pumpAudioInfo.ao.transform:SetParent(CL.AudioMgr.Instance:GetSoundRoot())
+        self.pumpAudioInfo = nil
+    end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function IronFist:Update()
+    self:Pumping(self.curRunSpeed)
+    
+    if self.OnCharge and 
+    UE.Time.time - self.skillTimeStamp >= (self.chargeTime - 0.3) and not self.isReady then
+        self:OnSkillReady()
+        self.isReady = true
+    end
+end
+
+function IronFist:OnSkillReady()
+    if not self.OnCharge then
+        return
+    end
+    
+    
+    local onPlay = false
+    local lColor = self.curColor
+    self.coldActionId = CL.Scheduler.RemoveSchedule(self.coldActionId)
+    self.coldActionId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if t >= 0.2 and not onPlay then
+                local soundInfo = self.onReadySound:PlaySoundInfo()
+                if soundInfo then
+                    soundInfo.ao.transform:SetParent(self.fistTrans)
+                end
+                onPlay = true
+            end
+            local x = UE.Mathf.Sin(360 * t * UE.Mathf.Deg2Rad)
+            self.curColor = UE.Color.Lerp(self.readyColor, self.endColor, x + 1)
+            self:SetMaterialsEmission(self.curColor)
+        end
+    ,self.reflashTime, 1)
+    --CL.EffectMgr.Instance:PlayEffect("Glow", self.effectTrans.position, self.effectTrans.rotation)
+end
+
+function IronFist:SetMaterialsEmission(color)
+    local i = 1
+    while(self["render".. i]) do
+        SetMaterialEmission(self["render"..i], color)
+        i = i + 1
+    end
+end
+
+function IronFist:CloseSkill()
+    if not self.OnCharge then
+        self:ResetSkill()
+        return
+    end
+    self.OnCharge = false
+        
+    --print("closeskill------------")
+
+
+    if not self.isReady then
+        self:SkillOffExpression()
+        return
+    else
+        self:SkillOffExpression()
+    end
+    
+    --mana
+    local needMana = self.sprintMana * self.host.AppliedManaCostMultiplier
+    self.character:CostMana(self.host, needMana)
+    --breakStuck
+    if not IsNullOrDestroyed(self.character) then
+        self.character:BreakAllStuckActions()
+    end
+    
+    --sprint
+    self:Sprint()
+    self.lastSprintTime = UE.Time.time
+    
+    --effect
+    self.fistEff = CL.EffectMgr.Instance:PlayEffect("IronFistSprint", self.effectTrans.position, self.effectTrans.rotation)
+    self.fistEff.trans:SetParent(self.effectTrans)
+    
+    --sound
+    
+    self:ResetSkill()
+end
+
+function IronFist:ResetSkill()
+    self.ChargeActive = true
+    self.isReady = false
+    --print("reset-----")
+end
+
+function IronFist:Sprint()
+    self:StopSprint()
+    local rotation = self.effectTrans.rotation
+    self.characterEff = CL.EffectMgr.Instance:PlayEffect("Sprint", self.character.headSphere.position, rotation)
+    self.characterEff.trans:SetParent(self.character.trans)
+    
+    self.hitRoleTime = -1
+    
+    self:CreateFist()
+
+    --handLerpspeed
+    self.tracker = self.ph.handTracker
+    self.tracker.trackSpeedState = 0.03
+
+    local curDis = 0
+    local pullDis = 5
+    
+    local headset = self.ph.character:GetHeadset()
+    
+    local dot = UE.Vector3.Dot(self.fistTrans.forward, headset.forward)
+    local offsetValue = math.max(0, dot)
+    local vec = (self.fistTrans.forward + headset.forward * dot).normalized
+    
+    vec = self.character.trans:InverseTransformDirection(vec)
+    vec.y = (vec.y < 0.33 and vec.y > 0) and 0 or vec.y
+    vec = self.character.trans:TransformDirection(vec)
+    local lastVec = vec
+    local nextVec = nil
+    
+    self.character:SetFootGliding(true)
+    self.sprintActionId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if t >= self.sprintTime then
+                self:StopSprint()
+                return
+            end
+            
+            if not self.character then
+                self:StopSprint()
+                return
+            end
+            
+            if self.sprintTime - t <= self.decelerateTime then
+                curDis = self.maxDis * (self.sprintTime - t)/self.decelerateTime
+            else
+                curDis = self.maxDis
+            end
+        
+            if self.hitRoleTime > 0 then
+                curDis = curDis - (UE.Time.time - self.hitRoleTime) * 0.2 --Increases deceleration by 0.2 per second
+            end
+            
+            if curDis <= 0 then
+                self:StopSprint()
+                return
+            end
+            
+            --CL.PhysicsFollow.TrackPosition(self.character.capsuleRB, self.character.capsuleRB.position + vec * curDis, pullDis)
+            --[[
+            local oriVecY = vec.y
+            vec.y = oriVecY
+            ]]
+            lastVec = vec
+            dot = UE.Vector3.Dot(self.fistTrans.forward, headset.forward)
+            offsetValue = math.max(0, dot)
+            
+            nextVec = (self.fistTrans.forward + headset.forward * dot).normalized
+            
+            vec = UE.Vector3.Lerp(lastVec, nextVec, 0.5)
+            vec.y = UE.Mathf.Lerp(lastVec.y, nextVec.y, 0.1)
+            self.character:PhysicsTrack(self.character.capsuleRB.position + vec * curDis)
+            
+            --updateEffect
+            self.characterEff.trans.rotation = rotation
+        end
+    , self.reflashTime, self.sprintTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function IronFist:StopSprint()
+    self.sprintActionId = CL.Scheduler.RemoveSchedule(self.sprintActionId)
+    self.character:SetFootGliding(false)
+    self:RemoveFist()
+    
+    if self.characterEff and not IsNullOrDestroyed(self.characterEff) then
+        CL.EffectMgr.Instance:GiveBack(self.characterEff)
+    end
+    if self.fistEff and not IsNullOrDestroyed(self.fistEff) then
+        self.fistEff:Stop()
+    end
+    
+    if self.tracker then
+        self.tracker.trackSpeedState = 1
+        self.tracker = nil
+    end
+end
+
+function IronFist:CreateFist()
+    self.flyFist = self.host:CreateFlyObj(self.flyObjName, self.fistTrans.position,
+        self.fistTrans.forward)
+    local scp = self.flyFist.script:GetSelf()
+    if scp then
+        scp:SetFollow(self)
+    end
+end
+
+function IronFist:RemoveFist()
+    if not self.flyFist then
+        return
+    end
+    self.flyFist:OnFinish()
+    self.flyFist = nil
+end
+
+function IronFist:OnHitRole(fist)
+    if not self.flyFist then
+        return
+    end
+
+    if self.flyFist ~= fist then
+        return
+    end
+
+    if self.hitRoleTime > 0 then
+        return
+    end
+    self:PlayHitEffect()
+    
+    if self.ph then
+        self.ph:HapticPulse(self.ph.character.hitHapticCurve, 0.3, math.random(0.8, 1.25))
+    end
+    
+    self.hitRoleTime = UE.Time.time
+end
+
+function IronFist:PlayHitEffect()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.hitEffectName, self.effectTrans.position, self.effectTrans.rotation)
+    eo.trans:SetParent(self.effectTrans)
+end
+--------------------------------------------------------------handSound------------------------------------------------------------
+
+function IronFist:GetHandJointRelativeSpeed()
+    local angle = UE.Vector3.Angle(self.fistTrans.forward, self.rotTrans.forward)
+    
+    local value = angle > self.lastAngle and angle - self.lastAngle or self.lastAngle - angle
+    
+    local speed = value/(UE.Time.time - self.lastAngleTime)
+    
+    self.lastAngle = angle
+    self.lastAngleTime = UE.Time.time
+    
+    return speed
+end
+
+function IronFist:OpenHandSound()
+    local f = 0
+    local speed = nil
+    local sound = nil
+    
+    self:GetHandJointRelativeSpeed()
+    
+    self.soundActTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            speed = self:GetHandJointRelativeSpeed()
+            if sound and sound.audio.isPlaying then
+                return
+            end
+            
+            if speed < 8 then
+                self.lastSpeed = 0
+                return
+            end
+            if speed < self.lastSpeed then
+                return
+            end
+            
+            self.lastSpeed = speed
+            f = UE.Mathf.Min(100,speed) / 100
+            sound = self.jointSound:PlaySoundInfo()
+            if sound then
+                sound.audio.volume = 0.2 + f * 0.8
+                sound.audio.pitch = math.min(3, math.max(0.01, 0.95 + f * 0.3 ))
+            end
+        end
+    , 0.15, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function IronFist:StopHandSound()
+    RemoveSchedule(self, self.soundActTimer)
+end
+
+-----------------------------------------------------------------------------------------------------------------------------------
+
+function IronFist:Destroy()
+    self.coldActionId = CL.Scheduler.RemoveSchedule(self.coldActionId)
+    self.sprintActionId = CL.Scheduler.RemoveSchedule(self.sprintActionId)
+    self.lifeCircleId = CL.Scheduler.RemoveSchedule(self.lifeCircleId)
+    self.SkillActionId = CL.Scheduler.RemoveSchedule(self.SkillActionId)
+end
+
+return Class(Require("Weapon/ArmEquipmentScript"),nil, IronFist)

@@ -1,0 +1,40 @@
+
+local FlySlash = {
+    isHit = false,
+    noPushBack = 0,
+}
+
+function FlySlash:OnSpawn()
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu:GetProxyMuscleName(), point)
+        
+        if not frag then
+            return
+        end
+        
+        if not fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+            return
+        end
+        
+        if frag.reactType == CS.BodyFragment.ReactType.Dead then
+            if fc.attr.hp.BaseValue > 5 then
+                return
+            end
+        end
+        
+        if not fc.muscleState:IsPowerfulCharacter() and fc:IsDead() then
+            CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag
+        else
+            CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+        end
+    end
+    
+    
+    self.hitInfoObj = self.host:GetRagdollHitInfoObj()
+    if self.hitInfoObj then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    end
+end
+
+
+return Class(nil, nil, FlySlash)

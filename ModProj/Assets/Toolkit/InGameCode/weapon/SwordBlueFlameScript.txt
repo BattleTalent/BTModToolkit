@@ -1,0 +1,427 @@
+
+local SwordBlueFlame = {
+    curIntensity = 0,
+    
+    burningSpeed = 2,
+    
+    --activeColor = UE.Color(2.43, 0.86, 0, 1),
+    --disactiveColor = UE.Color(0.54, 0.19, 0.1, 1),
+    
+    vecList = {},
+    
+    slashActId = -1,
+    sampleTimeId = -1,
+    
+    checkUpwardTime = 0.5,
+    
+    aliveWeight = 0.1,
+    groundWeight = 1,
+    dotWeightMlp = 20,
+    
+    spawnMana = 15,
+}
+
+function SwordBlueFlame:Start()
+    -- don't assign client authority to save server bandwidth
+    -- when spawning GroundWave_FireDemon and FlyFlame_Track 
+    self.spawnStates = CL.Network.FoSpawnStates()
+    self.spawnStates.assignClientAuthority = false
+
+    self.onDrap = function(drap)
+        if drap then
+            --self.host.interact:Dead()
+            if CL.Network.VRNetworkManager.IsOnline then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    CL.Scheduler.Create(self.host.interact,
+                        function(sche, t, s)
+                            local state = GetNetworkIBState(self)
+                            if state ~= nil then state:ServerShowSword(self.replaceSword.netId) end
+                        end
+                    , 0, 0, 1)
+                    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+                end
+            else
+                self:ShowPlayerSword()
+            end
+        end
+    end
+    if self.npcWeapon == 1 then
+        self:SpawnPlayerSword()
+        self.host.interact:FCDropEvent("+", self.onDrap)
+    end
+end
+
+function SwordBlueFlame:ShowPlayerSword()
+    self.trans.gameObject:SetActive(false)
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.scaleEffect, self.trans.position, self.trans.rotation)
+    if self.replaceSword ~= nil and not IsNullOrDestroyed(self.replaceSword) then
+        self.replaceSword.trans:SetParent(nil)
+        self.replaceSword.trans.position = eo.trans.position
+        self.replaceSword.trans.rotation = eo.trans.rotation
+        eo.trans:SetParent(self.replaceSword.trans)
+        self.replaceSword.gameObject:SetActive(true)
+    end
+    self.host.interact:Dead()
+end
+
+function SwordBlueFlame:SpawnPlayerSword()
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.swordName, 
+                self.trans.position, self.trans.rotation,
+                false, false, 0, true, 
+                function(netIb, go)
+                    if IsNullOrDestroyed(go) then
+                        return
+                    end
+                    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), netIb.ib:GetCols(), true)
+                    self.replaceSword = netIb.ib
+                    
+                    --Prevent cleanup at bossroom (NetworkSpawnMgr.Instance.CleanUpNetworkPrefabsByTile())
+                    self.replaceSword.trans:SetParent(self.trans)
+                    self.replaceSword.gameObject:SetActive(false)
+                end)
+        end
+        return
+    else
+        local go = CL.ResourceMgr.Instantiate(CL.StringCache.GetString(self.swordName, CL.InteractTrigger.WeaponPath))
+        local ib = go:GetComponent(typeof(CL.InteractBase))
+        CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), ib:GetCols(), true)
+        ib.trans.position = self.trans.position
+        ib.trans.rotation = self.trans.rotation
+        self.replaceSword = ib
+        self.replaceSword.gameObject:SetActive(false)
+    end
+end
+
+function SwordBlueFlame:NetworkOnShowSword(netId)
+    local networkIB = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if not IsNullOrDestroyed(networkIB) then
+        self.replaceSword = networkIB.ib
+    end
+    
+    self:ShowPlayerSword()
+end
+
+function SwordBlueFlame:OnGrab(a, g)
+    if g then
+        local character = a.attachedHand.character
+        self.camp = character.aiProxy:GetCamp()
+    --    self:StartSampleVelocity()
+    --else
+    --    if not self.host.interact:IsGrabbed() then
+    --        self:StopSampleVelocity()
+    --    end
+    end
+end
+
+function SwordBlueFlame:OpenSkill()
+    local soundInfo = self.lunchSound:PlaySoundInfo()
+    if soundInfo then
+        soundInfo.ao.transform:SetParent(self.host.interact.trans)
+    end
+    self.loopSoundInfo = self.loopSound:PlaySoundInfo()
+    if self.loopSoundInfo then
+        self.loopSoundInfo.ao.transform:SetParent(self.host.interact.trans)
+    end
+    
+    self:StartBurning()
+end
+
+function SwordBlueFlame:UpdateSkill()
+    local vel = self.host.interact:GetPrimaryHand().velocityEstimator:GetVelocityEstimateLocal()
+    local speedMag = self.host.interact.rb.angularVelocity.magnitude
+    if speedMag > self.swingSpeed then
+        --CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + vel.normalized, UE.Color.green, 2)
+        --CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + self.slashDir_right.forward, UE.Color.yellow, 5)
+        if UE.Vector3.Dot(vel.normalized, self.slashDir_right.forward) < self.swingDot and
+             UE.Vector3.Dot(vel.normalized, self.slashDir_left.forward) < self.swingDot then
+            --print("speedMag-------------:" .. speedMag .. "  left dot" .. UE.Vector3.Dot(vel.normalized, self.slashDir_right.forward)  .. " right dot :" .. UE.Vector3.Dot(vel.normalized, self.slashDir_left.forward))
+            return
+        else
+            --print("suc speedMag-------------:" .. speedMag .. "  left dot" .. UE.Vector3.Dot(vel.normalized, self.slashDir_right.forward)  .. " right dot :" .. UE.Vector3.Dot(vel.normalized, self.slashDir_left.forward))
+        end
+        
+        self.lastRecordTime = UE.Time.unscaledTime
+        self.slashPos = self.host.interact.trans.position + self.host.interact.trans.forward
+        self.slashDir = self.host.interact.trans.forward + self.host.interact:GetPrimaryHand().character:GetHeadset().forward
+        self.slashUp = self.host.interact.trans.up
+        
+        if not self.lastSlashPos or (self.lastSlashPos - self.slashPos).sqrMagnitude > self.sqrIntervalDis then
+            local spawnMana = CL.Network.NetworkRoomMgr.IsInPvpMode and self.pvpSpawnMana or self.spawnMana
+            local needMana = spawnMana * self.host.AppliedManaCostMultiplier
+            if not CostMana(self.host, needMana) then
+                return
+            end
+            
+            self.lastSlashPos = self.slashPos
+            self:SpawnSlash()
+        end
+    end
+end
+
+function SwordBlueFlame:SpawnSlash()
+    local slash = nil
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and 
+        not CL.Network.VRNetworkManager.Instance.IsOffline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            slash = self.host:NetworkCreateFlyObj(self.flyObjName, self.slashPos, self.slashDir, self.shootSpeed, nil, self.spawnStates)
+        end
+    else
+        slash = self.host:CreateFlyObj(self.flyObjName, self.slashPos, self.slashDir, self.shootSpeed)
+    end
+    
+    if slash ~= nil then
+        slash.trans.rotation = UE.Quaternion.LookRotation(self.slashDir, self.slashUp)
+    end
+end
+
+function SwordBlueFlame:CloseSkill()
+    self:StopBurning()
+    
+    self:StopCheckUpwardSlash()
+end
+
+
+function SwordBlueFlame:StartBurning()
+    self.isBurning = true
+    
+    --effect
+    if self.fireEo == nil or IsNullOrDestroyed(self.fireEo) then
+        self.fireEo = CL.EffectMgr.Instance:PlayEffect(self.fireEffectName, self.trans.position, self.trans.rotation)
+        self.fireEo.trans:SetParent(self.trans)
+        self.fireEo.trans.localPosition = UE.Vector3.zero
+        self.fireEo.trans.localRotation = UE.Quaternion.identity
+        self.fireEo.trans.localScale = UE.Vector3.one * 0.47
+    end
+    
+    if self.fireEo and not IsNullOrDestroyed(self.fireEo) then
+        self.fireEo.animator:Play("FlameOn")
+    end
+    --local color = nil
+    --local lastColor = self.renderer.material:GetColor("_EmissionColor")
+    
+    self.burningActId = CL.Scheduler.RemoveSchedule(self.burningActId)
+    self.burningActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if self.curIntensity < 1 then
+                self.curIntensity = math.min(self.curIntensity 
+                    + UE.Time.unscaledDeltaTime * self.burningSpeed, 1)
+                
+                --update effect
+                --color = UE.Color.Lerp(lastColor, self.activeColor, self.curIntensity)
+                --SetMaterialEmission(self.renderer, color)
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SwordBlueFlame:StopBurning()
+    self.isBurning = true
+    
+    local endTime = self.curIntensity/self.burningSpeed
+    
+    if self.fireEo and not IsNullOrDestroyed(self.fireEo) then
+        self.fireEo.animator:Play("FlameOff")
+    end
+    
+    --local color = nil
+    --local lastColor = self.renderer.material:GetColor("_EmissionColor")
+    self.burningActId = CL.Scheduler.RemoveSchedule(self.burningActId)
+    self.burningActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            self.curIntensity = self.curIntensity - UE.Time.unscaledDeltaTime * self.burningSpeed
+            if self.curIntensity > 0 then
+                --update effect
+                --color = UE.Color.Lerp(lastColor, self.disactiveColor, 1 - self.curIntensity)
+                --SetMaterialEmission(self.renderer, color)
+            end
+            
+            if t >= endTime or self.curIntensity <= 0 then
+                self.isBurning = false
+                if self.loopSoundInfo then
+                    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.loopSoundInfo)
+                end
+                --SetMaterialEmission(self.renderer, self.disactiveColor)
+                sche:Stop()
+            end
+        end
+    , 0, endTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+-------------------------------------Lavaball------------------------------------------------
+
+function SwordBlueFlame:OnColliderEnter(collision)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    if not self.isBurning then
+        return
+    end
+    if collision.collider.gameObject.layer ~= CL.LayerDefine.EnvLayer.value then
+        return
+    end
+    
+    --self:CheckUpwardSlash()
+end
+
+function SwordBlueFlame:CheckUpwardSlash()
+    self.upwardActEndTime = -1
+    --self.upwardActMaxSpeed = 0
+    if self.slashActId > 0 then
+        return
+    end
+    local curSpeed = 0
+    local vel = nil
+    self.slashActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if not UE.Physics.CheckSphere(self.tipTrans.position, 0.1, CL.LayerDefine.EnvLayer.value) then
+                if self.upwardActEndTime < 0 then
+                    self.lastLeavePos = self.tipTrans.position
+                end
+                
+                --vel = self:GetCurVelocity()
+                --print("tip speed:" ..vel.magnitude )
+                --curSpeed = vel.magnitude
+                --if curSpeed < self.upwardActMaxSpeed then
+                --    self.slashActId = -1
+                --    sche:Stop()
+                --    print("tip speed is decreasing----")
+                --end
+                
+                self.upwardActMaxSpeed = curSpeed
+                if self:MeetCondition() then
+                    self:SpawnLavaBall()
+                    self.host:CloseSkill()
+                    --print("SpawnLavaBall-----------------------")
+                    self.slashActId = -1
+                    sche:Stop()
+                end
+                
+                if self.upwardActEndTime < 0 then
+                    self.upwardActEndTime = t + self.checkUpwardTime
+                elseif t > self.upwardActEndTime then
+                    self.slashActId = -1
+                    sche:Stop()
+                end
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SwordBlueFlame:StopCheckUpwardSlash()
+    self.slashActId = CL.Scheduler.RemoveSchedule(self.slashActId)
+end
+
+function SwordBlueFlame:MeetCondition()
+    --print("TrySpawnLavaBall-----------------------")
+    --local dot = UE.Vector3.Dot(self.trans.forward, UE.Vector3.down)
+    --print("verticle dot:" .. dot)
+    --CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + self.trans.forward, UE.Color.yellow, 5)
+    --if dot < 0.7 then
+    --    return false
+    --end
+    
+    local avgVel = self:GetSampleVelocity()
+    local vel = self:GetCurVelocity()
+    if avgVel.magnitude < self.upwardSlashSpeed and vel.magnitude < self.upwardSlashSpeed then
+        --print("MeetCondition-----------------------upwardSlashSpeed:" .. avgVel.magnitude .. "  vel:" .. vel.magnitude)
+        return false
+    end
+    
+    local hand = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(hand) then
+        return false
+    end
+    
+    local dot = UE.Vector3.Dot(vel.normalized, hand.character.trans.forward)
+    if dot < self.slashForwardDot then
+        CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + vel.normalized, UE.Color.red, 5)
+        return false
+    end
+    
+    CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + vel.normalized, UE.Color.yellow, 5)
+    return true
+end
+
+function SwordBlueFlame:SpawnLavaBall()
+    local tipVel = self:GetCurVelocity()
+    local dir = tipVel.normalized
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self.host:NetworkCreateFlyObj(self.lavaBallName, self.lastLeavePos, dir, -1, nil, self.spawnStates)
+        end
+    else
+        local fo = self.host:CreateFlyObj(self.lavaBallName, self.lastLeavePos, dir, -1)
+        self:IgnoreWithOwnerForAWhile(fo)
+    end
+end
+
+function SwordBlueFlame:IgnoreWithOwnerForAWhile(pu)
+    CL.PhysicsHelper.IgnoreCollisions(pu:GetCols(), self.host.interact:GetCols(), true)
+    local playerCols = self.host.interact:GetPrimaryHand().character:GetPlayerUnit():GetCols()
+    CL.PhysicsHelper.IgnoreCollisions(pu:GetCols(), playerCols, true)
+    
+    CL.Scheduler.Create(self.trans, 
+    function(sche, t, s)
+        if not IsNullOrDestroyed(pu) then
+            if not IsNullOrDestroyed(self.host.interact) then
+                CL.PhysicsHelper.IgnoreCollisions(pu:GetCols(), self.host.interact:GetCols(), false)
+            end
+            
+            CL.PhysicsHelper.IgnoreCollisions(pu:GetCols(), playerCols, false)
+        end
+    end
+    ,0, 0, 0.5)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+--------------------------------------------SampleVelocity---------------------------------------------
+function SwordBlueFlame:StartSampleVelocity()
+    if self.sampleTimeId > 0 then
+        return
+    end
+    self.vecList = {}
+    local lastPos = self.tipTrans.position
+    local curVec = UE.Vector3.zero
+    local curPos = nil
+    CL.Scheduler.RemoveSchedule(self.sampleTimeId)
+    self.sampleTimeId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if #self.vecList > 10 then
+                table.remove(self.vecList, 1)
+            end
+            curPos = self.tipTrans.position
+            curVec = (curPos - lastPos) / UE.Time.deltaTime
+            lastPos = curPos
+            table.insert(self.vecList, #self.vecList + 1, curVec)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SwordBlueFlame:StopSampleVelocity()
+    self.sampleTimeId = CL.Scheduler.RemoveSchedule(self.sampleTimeId)
+    self.vecList = {}
+end
+
+function SwordBlueFlame:GetSampleVelocity()
+    local value = UE.Vector3.zero
+    if #self.vecList > 0 then
+        for k, v in ipairs(self.vecList) do
+            value = v + value
+        end
+        value = value / #self.vecList
+    end
+    return value
+end
+
+function SwordBlueFlame:GetCurVelocity()
+    return self.vecList[#self.vecList]
+end
+
+return Class(nil, nil, SwordBlueFlame)

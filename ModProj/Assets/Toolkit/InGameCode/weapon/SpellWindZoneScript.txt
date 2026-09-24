@@ -1,0 +1,96 @@
+local spellWindZone = {
+    settingInterval = 0.1,
+    --zoneLineInfos = {},
+    zoneRadius = 0.5,
+}
+
+
+function spellWindZone:OnChargeBegin()
+    --self.windLoopEffect:Play()
+end
+
+function spellWindZone:OnChargeReady()
+    self:StartZonePlacement()
+    print("start zone place--------------------------")
+end
+
+
+
+
+function spellWindZone:OnChargeCancel()
+    --self.windLoopEffect:Stop()
+end
+
+
+function spellWindZone:OnChargeRelease()
+    self:StopZonePlacement()
+    --self:ActiveZones()
+end
+
+
+------------------------------------------------------------Zone setting---------------------------------------------------------
+
+function spellWindZone:StartZonePlacement()
+    --self.zoneLineInfos = {}
+    local lastInfo = nil
+    local raycastHit = nil
+    local minDistance = self.zoneRadius * 2/3
+    local sqrMinDistance = minDistance * minDistance
+    CL.Scheduler.RemoveSchedule(self.settingActId)
+    self.settingActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            raycastHit = self:GetEnvHitInfo()
+            if not raycastHit then
+                return
+            end
+            
+            if lastInfo then
+                if (raycastHit.point - lastInfo.point).sqrMagnitude < sqrMinDistance then
+                    return
+                end
+            else
+                lastInfo = {}
+            end
+            
+            lastInfo["point"] = raycastHit.point
+            lastInfo["normal"] = raycastHit.normal
+            --table.insert(self.zoneLineInfos, info)
+            
+            self:CreateZone(raycastHit.point, raycastHit.normal)
+        end,
+    self.settingInterval, -1).actionId
+end
+
+function spellWindZone:GetEnvHitInfo()
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.createPoint.position, 0.1, self.createPoint.forward, 5, CL.LayerDefine.EnvLayerMask.value)
+    if not isHit then
+        return nil
+    else
+        return raycastHit
+    end
+end
+
+function spellWindZone:StopZonePlacement()
+    CL.Scheduler.RemoveSchedule(self.settingActId)
+end
+
+function spellWindZone:ActiveZones()
+    print("active zones--------------------------")
+    for k, v in ipairs(self.zoneLineInfos) do
+        self:CreateZone(v.point, v.normal)
+    end
+end
+
+function spellWindZone:CreateZone(pos, dir)
+    CL.DebugDraw.DrawLine(pos, pos + dir, UE.Color.green, 1)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.zoneObjName, self.host.interact.owner, pos, dir, -1)
+        end
+    else
+        CL.FlyObject.CreateFlyObj(self.zoneObjName, self.host.interact.owner, pos, dir)
+    end
+end
+
+
+return Class(Require("Weapon/SpellBaseScript"), nil, spellWindZone)

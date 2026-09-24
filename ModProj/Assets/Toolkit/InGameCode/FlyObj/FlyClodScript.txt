@@ -1,0 +1,126 @@
+
+local FlyClod = {
+    flyDis = 0.06,
+    maxSpeed = 50,
+    
+    sqrHandSpeed = 5,
+    brokenSpeed = 10000,
+    
+    addForceIntensity = 4,
+}
+
+function FlyClod:OnSpawn()
+    if not CL.Network.VRNetworkManager.IsOnline or CL.Network.VRNetworkManager.ServerOnline then
+        self.actNode:SetActive(true)
+    end
+    
+    self:RandomMesh()
+    
+    self.host:PlayTailEffect()
+    self:ShowFloatEffect(true)
+    
+    self:AddGrabListener()
+end
+
+function FlyClod:AddGrabListener()
+    self.AttachBuildHandler = function(pu, joint, part)
+        self.host.rb.useGravity = true
+    end
+    self.host.OnAttachBuildEvent = self.AttachBuildHandler
+end
+
+function FlyClod:RemoveGrabListener()
+    if self.host.OnAttachBuildEvent == self.AttachBuildHandler then
+        self.host.OnAttachBuildEvent = nil
+    end
+end
+
+function FlyClod:RandomMesh()
+    if self.curIdx then
+        self["rock"..self.curIdx]:SetActive(false)
+    end
+    local count = 0
+    while self["rock"..count + 1] do
+        count = count + 1
+    end
+    
+    self.curIdx = math.random(count)
+    self.host.col = self["rock"..self.curIdx]:GetComponent("MeshCollider")
+    self.host:GetCols(true)
+    self["rock"..self.curIdx]:SetActive(true)
+end
+
+function FlyClod:FloatBegin()
+    self.host.rb.useGravity = false
+    
+    self.raiseSound:PlaySound()
+    
+    self:IgnoreCollisionWithObstacles(self.host.trans.position)
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self.actNode:SetActive(true)
+    end
+end
+
+function FlyClod:NetworkFloatBegin(pos)
+    self.host.rb.useGravity = false
+    
+    self.raiseSound:PlaySound()
+    
+    self:IgnoreCollisionWithObstacles(pos)
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self.actNode:SetActive(true)
+    end
+end
+
+function FlyClod:FloatEnd()
+    self.host.rb.velocity = UE.Vector3.zero
+    self:ResetCollisionWithObstacles()
+end
+
+function FlyClod:ShowFloatEffect(isShow)
+    if not self.floatEffect then
+        return
+    end
+    if isShow then
+        self.floatEffect:Play()
+        self:PlayFloatLoopSound(true)
+    else
+        self.floatEffect:Stop()
+        self:PlayFloatLoopSound(false)
+    end
+end
+
+function FlyClod:OnTimeOut()
+    CL.EffectMgr.Instance:PlayEffect(self.brokenEffect, self.host.trans.position, self.host.trans.rotation)
+    
+    self:RemoveGrabListener()
+end
+
+function FlyClod:ResetState()
+    self:StopFloat()
+    self.addForce = false
+    
+    if CL.Network.VRNetworkManager.IsOnline and self.actNode then
+        self.actNode:SetActive(false)
+    end
+    
+    self:ResetCollisionWithObstacles()
+end
+
+function FlyClod:PlayFloatLoopSound(isShow)
+    if IsNullOrDestroyed(self.floatLoopSound) then
+        return
+    end
+    if isShow then
+        if not self.loopSoundInfo then
+            self.loopSoundInfo = self.floatLoopSound:PlaySoundInfo()
+        end
+    else
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.loopSoundInfo)
+        self.loopSoundInfo = nil
+    end
+end
+
+return Class(Require("FlyObj/FloatObjScript"), nil, FlyClod)

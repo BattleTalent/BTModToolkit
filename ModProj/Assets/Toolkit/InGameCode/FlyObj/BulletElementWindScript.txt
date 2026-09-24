@@ -1,0 +1,166 @@
+
+local BulletElementWind = {
+    isUsed = false,
+    --pushTime = 0.5,
+    rotTime = 0.5,
+    
+    pushback = 4,
+    midAirIntensity = 0.3,
+    onDragIntensity = 0.25,
+    axisYValue = 3,
+}
+
+function BulletElementWind:FlyStart()
+    self.lastVelocity = self.host.rb.velocity
+    CL.Scheduler.RemoveSchedule(self.flyActId)
+    self.flyActId = CL.Scheduler.Create(self.host.trans, 
+        function(sche, t, s)
+            self.lastVelocity = self.host.rb.velocity
+        end,
+    0.02, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function BulletElementWind:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    self.host:CollisionCountUpdate()
+    self.host:PlayImpact(point, normal)
+    if self.lastVelocity == nil then
+        self.lastVelocity = relaVel
+    end
+    rb:AddForceAtPosition(rb.velocity, point, UE.ForceMode.Force)
+    --self:PushBackCharacter(fc)
+    if not string.find(fc.gameObject.name, "FireDemon") then
+        if fc.ra:HasBeenRipped() == false or (fc.ra:HasBeenRipped() and not fc:IsDead()) then
+            self:RotateCharacter(fc, point)
+        --else
+        --    GetRootOfRippedMuscleChain
+        end
+    end
+
+    CL.EffectMgr.Instance:PlayEffect(self.hitEffect, point, self.host.trans.rotation)
+end
+
+function BulletElementWind:PushBackCharacter(fc)
+    self.pushActId = CL.Scheduler.Create(fc.trans, 
+        function(sche, t, s)
+            if fc.muscleState:IsPowerfulCharacter() then
+                fc.controller:AddPushbackByForce(self.pushRoleForce/10 * self.lastVelocity.normalized)
+            else
+                fc.controller:AddPushbackByForce(self.pushRoleForce * self.lastVelocity.normalized)
+            end
+        end,
+    0, self.pushTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function BulletElementWind:RotateCharacter(fc, point)
+    local value = 0
+    local lastValue = 0
+    
+    local root = fc.ra:GetRoot().rbTrans
+    CL.DebugDraw.DrawLine(root.position, root.position + fc.ra:GetRootRight(), UE.Color.green, 1)
+    local turnDir = UE.Vector3.Dot(-self.lastVelocity, fc.ra:GetRootForward()) > 0 and fc.ra:GetRootRight() or -fc.ra:GetRootRight()
+    local isRight = UE.Vector3.Dot(turnDir, point - root.position) > 0
+    CL.Scheduler.Create(fc.trans, 
+        function(sche, t, s)
+            value = CL.EasingEquations.EaseOutCirc(0, 180, t/self.rotTime)
+            fc.controller.transform:Rotate(0, (isRight and 1 or -1) * (value - lastValue), 0)
+            
+            lastValue = value
+        end,
+    0, self.rotTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function BulletElementWind:HolderPushBack(character, dir, intensity)
+    if not character.IsLocalPlayer then
+        return
+    end
+    --holder:GetControllerBase():AddPushbackByForce(-self.host.interact.trans.forward * intensity)
+    
+    if character.dragPower ~= character:GetOriginalDragPower() then
+        intensity = intensity * self.onDragIntensity
+    end
+    
+    if character:IsMidAir() then
+        intensity = intensity*self.midAirIntensity
+    end
+    dir.y = dir.y/self.axisYValue
+    dir:Normalize()
+    
+    character:AddForce(dir * intensity)
+    character:SetDragForAWhile(0.3)
+    character:SetMovementForAWhile(false, 0.3)
+end
+
+function BulletElementWind:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function BulletElementWind:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+end
+
+function BulletElementWind:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    self:HolderPushBack(hand.character, relaVel.normalized, 5)
+
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+function BulletElementWind:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function BulletElementWind:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function BulletElementWind:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    self:HolderPushBack(player, relaVel.normalized, 5)
+end
+
+
+--[[
+function BulletElementWind:OnCollision(collision, pu)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self.host:OnCollisionUpdate(collision)
+    
+    if not IsNullOrDestroyed(pu.rb) then
+        pu:AddForce(self.pushPuSpeed * self.lastVelocity.normalized, UE.ForceMode.VelocityChange)
+    end
+end
+]]
+
+function BulletElementWind:ResetState()
+    self.isUsed = false
+    CL.Scheduler.RemoveSchedule(self.flyActId)
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, BulletElementWind)

@@ -1,0 +1,17 @@
+local PotionHP = {
+}
+
+
+function PotionHP:AddCharacterAttr(character, value)
+    if IsNullOrDestroyed(character) then
+        return
+    end
+
+    local potionAddHpMlp = 1.0
+    if CL.DynamicModifierConfig.IsEnabledAndPullValue(character.attr, "Player_HpPotion_Mlp") then
+        potionAddHpMlp = potionAddHpMlp + CL.DynamicModifierConfig.PulledValue
+    end
+    character.attr:AddHp(value * potionAddHpMlp)
+end
+
+return Class(Require("InteractObj/PotionBaseScript"), nil, PotionHP)

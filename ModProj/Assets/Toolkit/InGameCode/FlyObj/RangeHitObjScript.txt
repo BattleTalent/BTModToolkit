@@ -1,0 +1,83 @@
+
+local rangeHitObj = {
+    radius = 0.8,
+    distance = 2,
+    angle = 20,
+    
+    maxHitCount = 20,
+}
+
+
+function rangeHitObj:IsOnRange(raycastHit)
+    if raycastHit.distance == 0 and raycastHit.point == UE.Vector3.zero then
+        return true
+    end
+    
+    local dir = raycastHit.point - self.host.trans.position
+    local angle = UE.Vector3.Angle(dir, self.host.trans.forward)
+    return angle < self.angle
+end
+
+
+function rangeHitObj:FlyStart(vel)
+    
+    CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, self.host.trans.position, self.host.trans.rotation)
+    
+    local point1 = self.host.trans.position + self.radius * self.host.trans.forward
+    
+    CL.InteractTrigger.ApplyExplode(point1, self.radius, self.host, self.host.rb, self.col, CL.AIProxy.CampNone)
+    
+    local raycastHit  = UE.Physics.SphereCastAll(point1, self.radius, 
+        self.host.trans.forward, self.distance, UE.LayerMask.GetMask( 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)))
+    local rbList = {}
+    local pu = nil
+    local rb = nil
+    local dir = nil
+    local count = 0
+    for i = 0, raycastHit.Length - 1 do
+        if count > self.maxHitCount then
+            break
+        end
+        
+        pu = CL.PhysicsUnit.GetPhysicsUnit(raycastHit[i].collider)
+        
+        rb = raycastHit[i].collider.attachedRigidbody
+        if not IsNullOrDestroyed(rb) then
+            if not IsNullOrDestroyed(pu) and not rbList[pu] and pu ~= self.host then
+                --print("pu name" .. raycastHit[i].collider.transform.name .. " root:" .. pu.trans.root.name .. "hitPoint---:" .. raycastHit[i].point.x .." " .. raycastHit[i].point.y.. " ".. raycastHit[i].point.z)
+                rbList[rb] = true
+                if self:TryHit(raycastHit[i], pu, raycastHit[i].collider, self.host, self.host.rb, self.col, self.host.trans.forward) then
+                    count = count + 1
+                end
+            end
+        end
+    end
+end
+
+
+function rangeHitObj:TryHit(raycastHit, beHitPu, beHitCol, selfPu, rb, col, hitDir) 
+    if not self:IsOnRange(raycastHit) then
+        return false
+    end
+    
+    self:OnHit(raycastHit.point, beHitPu, beHitCol, selfPu, rb, col, hitDir)
+    return true
+end
+
+function rangeHitObj:OnHit(hitPoint, beHitPu, beHitCol, selfPu, rb, col, hitDir)
+    self:DoHitScan(beHitCol, selfPu, rb, col, hitDir)
+end
+
+function rangeHitObj:DoHitScan(beHitCol, selfPu, rb, col, hitDir)
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = false
+    CL.InteractTrigger.ApplyHitScanDamage(beHitCol, selfPu, rb, col, hitDir, self.host.camp)
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+end
+
+return Class(nil, nil, rangeHitObj)

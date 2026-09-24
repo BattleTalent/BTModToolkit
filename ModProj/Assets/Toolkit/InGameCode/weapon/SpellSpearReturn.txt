@@ -1,0 +1,93 @@
+local SpellSpearReturn = {
+    spearReturnPool = nil,
+    currentSpear = nil,
+    summonManaCost = 10,
+}
+
+function SpellSpearReturn:OnAwake()
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+end
+
+function SpellSpearReturn:OpenSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        self.host:CloseSkill()
+        return
+    end
+    
+    if CL.DynamicModifierConfig.IsEnabled("Player_Magic_Dis") then
+        return
+    end
+    
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    
+    local character = hand.character
+    local manaCost = self.summonManaCost * self.host.AppliedManaCostMultiplier * self.host.ManaCostPVPMlp
+    local needMana = manaCost
+    if not character:HasEnoughMana(needMana) then
+        if not self.isOnline or character.IsLocalPlayer then
+            NoManaTips()
+        else
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:TargetRpcRemindNoMana(character.networkPlayer.connectionToClient) end
+        end
+        self.host:CloseSkill()
+        return
+    end
+    
+    character:CostMana(self.host, manaCost)
+    
+    if not IsNullOrDestroyed(self.currentSpear) then
+        self.currentSpear:TurnOnShadow()
+        if self.isOnline then
+            local state = GetIBNetworkState(self.currentSpear.interact)
+            if state ~= nil then state:ServerTurnOnShadow() end
+        end
+    end
+    
+    local spearReturn = self.spearReturnPool:SpawnPooledSpearReturn(hand.transform.position, hand.transform.rotation)
+    
+    self:InitSpear(spearReturn)
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerInitSpear(spearReturn.interact.netId) end
+    end
+    
+    self.currentSpear = spearReturn
+    
+    self.host:CloseSkill()
+end
+
+function SpellSpearReturn:InitSpear(spearReturn)
+    local hand = self:GetSlotHand()
+    spearReturn:SpawnInitSpear(hand.transform.position, hand.transform.rotation)
+    hand:Grab(spearReturn.PrimaryAttachLine, true)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        spearReturn.interact.networkIB:SetLocalHandWeapon(true)
+        spearReturn.interact.networkIB.networkIBProperties:AddGrabber(hand.character.networkPlayer)
+    end
+end
+
+function SpellSpearReturn:SetCurrentSpear(spearReturn)
+    self.currentSpear = spearReturn
+end
+
+function SpellSpearReturn:GetManaGazeInfo()
+    local manaCost = self.summonManaCost * self.host.AppliedManaCostMultiplier * self.host.ManaCostPVPMlp
+    return CL.LanguageMgr.FormatString(CL.LanguageMgr.GetText("UI_Weapon_ManaCost_Instant"), manaCost)
+end
+
+function SpellSpearReturn:NetworkInitSpear(netId)
+    local networkIB = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    local spearReturn = networkIB.ib:GetComponent(typeof(CL.SpearReturn))
+    self:InitSpear(spearReturn)
+end
+
+function SpellSpearReturn:NetworkRemindNoMana()
+    NoManaTips()
+end
+
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellSpearReturn)

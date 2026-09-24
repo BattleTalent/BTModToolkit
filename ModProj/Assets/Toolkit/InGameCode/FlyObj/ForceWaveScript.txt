@@ -1,0 +1,27 @@
+
+local ForceWave = {
+    protectTime = 0.3,
+}
+
+
+function ForceWave:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function ForceWave:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function ForceWave:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.host.ownerHolder and self.host.ownerHolder.character == player then
+        if UE.Time.time < self.protectEndTime then
+            return
+        end
+    end
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+return Class(Require("FlyObj/FlySpellBaseScript"),nil,ForceWave)

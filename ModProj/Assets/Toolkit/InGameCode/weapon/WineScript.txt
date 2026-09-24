@@ -1,0 +1,17 @@
+local Wine = { 
+    alcoholFireZone = "Zone_Fire_NoKnockout",
+    lastIgniteTime = 0,
+}
+
+function Wine:Ignite()
+    if not self.host.CanIgniteBottleneck then
+        return
+    end
+
+    if UE.Time.time - self.lastIgniteTime > 2.5 then
+        self.lastIgniteTime = UE.Time.time
+        CL.WineFireUtility.SpawnFireZone(self.alcoholFireZone, self.host.interact, self.fuseCol.transform.position, self.fuseCol)
+    end
+end
+
+return Class(nil, nil, Wine)

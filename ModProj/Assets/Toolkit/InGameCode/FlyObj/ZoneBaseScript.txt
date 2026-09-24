@@ -1,0 +1,476 @@
+local ZoneBase = {
+    hitInterval = 0.3,
+    hitPlayerInterval = 1,
+    --don't want to draw every time it do damage.
+    decalCount = 0,
+    
+    relaVel = 1,
+    
+    parentType = -1,
+    
+    pushForce = 6,
+}
+
+Zone_Hit_Info = {}
+
+function ZoneBase:OnSpawn(ow, dir)
+    self.onTargetDead = function(pu)
+        self.host:OnFinish()
+    end
+    
+    self.follower = self.trans:GetComponent(typeof(CL.FlyObjectFollower))
+end
+
+function ZoneBase:Init()
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if self.decalCount < 3 then
+            CL.FullBodyMuscleState.dmgEffectData.hasDecal = true
+            self.decalCount = self.decalCount + 1
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if self.noPushBack == 1 then
+            CL.FullBodyMuscleState.dmgEffectData.pushbackDir = UE.Vector3.zero
+            CL.FullBodyMuscleState.dmgEffectData.stiffSec = 0
+            
+            CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel = self.relaVel
+                * CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel.normalized
+
+            CL.FullBodyMuscleState.dmgEffectData.hitAway = false
+            CL.FullBodyMuscleState.dmgEffectData.floating = false
+        end
+        CL.FullBodyMuscleState.dmgEffectData.dmgElementType = 
+            self.isIgnite == 1 and CL.DamageElementType.Fire or CL.DamageElementType.None
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    
+    self.hitSize = self.col.bounds.size
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function ZoneBase:GetNetworkFO()
+    if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.networkFO) then
+        return nil
+    end
+
+    return self.host.networkFO
+end
+
+function ZoneBase:SetNetworkRBEnabled(enabled)
+    local networkFO = self:GetNetworkFO()
+    if not networkFO or IsNullOrDestroyed(networkFO.networkRB) then
+        return false
+    end
+
+    networkFO.networkRB.enabled = enabled
+    return true
+end
+
+function ZoneBase:FlyStart(vel)
+    self:Init()
+    
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.NetworkRoomMgr.IsInPvpMode then
+        self.host.ownerHolder = nil --need do hitscan with self character
+    end
+    
+    local networkFO = self:GetNetworkFO()
+    if CL.Network.VRNetworkManager.ClientOnline and networkFO then
+        networkFO:CmdReqParentData(CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+    end
+    
+    self:OpenZoneCheck()
+    
+    
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        self:PlayFireEffect()
+    end
+end
+
+function ZoneBase:OnClientReqParent(netId)
+    self:SendParentToTarget(netId)
+end
+
+function ZoneBase:PlayFireEffect()
+    if not IsNullOrDestroyed(self.eo) then
+        return
+    end
+    self.eo = CL.EffectMgr.Instance:PlayEffect(self.zoneEffect, self.host.trans.position, self.host.trans.rotation)
+    self.eo.trans:SetParent(self.host.trans)
+    self.eo.trans.localPosition = UE.Vector3.zero
+end
+
+--function ZoneBase:StopDelaySetParent()
+--    CL.Scheduler.RemoveSchedule(self.delayTimeId)
+--end
+
+function ZoneBase:NetworkSetParent()
+    local networkFO = self:GetNetworkFO()
+    if not networkFO then
+        return
+    end
+
+    --CL.Scheduler.RemoveSchedule(self.delayTimeId)
+    --self.delayTimeId = CL.Scheduler.Create(self.host.trans,
+    --    function(sche, t, s)
+    if IsNullOrDestroyed(self.host.trans.parent) then
+        networkFO:ServerInitZone(self.host.trans.position)
+        return
+    end
+    
+    local col = self.host.trans.parent:GetComponent(typeof(UE.Collider))
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(self.follower.target)
+    local mu = nil
+    if IsNullOrDestroyed(col) and pu.unitType == CL.Tagger.Tag.InteractRole then
+        mu = pu.ra:GetMuscle(self.follower.target)
+        if mu and IsNullOrDestroyed(mu.col) then
+            --self.host.trans:SetParent(mu.rb.transform)
+            self.follower:SetData(mu.rb.transform, mu.rb.transform:InverseTransformPoint(self.host.trans.position))
+        end
+    end
+    
+    if not IsNullOrDestroyed(col) then
+        networkFO:ServerInitZoneByCol(col, self.follower.localAnchor)
+    else
+        if mu then
+            if not IsNullOrDestroyed(mu.col) then
+                networkFO:ServerInitZoneByCol(mu.col, self.follower.localAnchor)
+            else
+                networkFO:ServerInitZoneByRb(mu.rb, self.follower.localAnchor)
+            end
+        end
+    end
+    --    end
+    --, 0, -1, 0.02):SetUpdateChannel(CL.Scheduler.UpdateChannel.LateUpdate).actionId
+end
+
+function ZoneBase:SendParentToTarget(targetId)
+    local networkFO = self:GetNetworkFO()
+    if not networkFO then
+        return
+    end
+    
+    if self.parentType > 0 then
+        if self.parentType == 1 then
+            networkFO:ServerInitTargetZone(targetId, self.host.trans.position)
+        end
+        
+        if self.parentType == 2 then
+            networkFO:ServerInitTargetZoneByCol(targetId, self.cacheCol, self.follower.localAnchor)
+        end
+        
+        if self.parentType == 3 then
+            networkFO:ServerInitTargetZoneByRb(targetId, self.cacheRb, self.follower.localAnchor)
+        end
+    else
+        if IsNullOrDestroyed(self.follower.target) then
+            self.parentType = 1
+            networkFO:ServerInitZone(targetId, self.host.trans.position)
+            return
+        end
+        
+        local col = self.follower.target:GetComponent(typeof(UE.Collider))
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(self.follower.target)
+        local mu = nil
+        if IsNullOrDestroyed(col) and pu.unitType == CL.Tagger.Tag.InteractRole then
+            mu = pu.ra:GetMuscle(self.follower.target)
+            if mu and IsNullOrDestroyed(mu.col) then
+                --self.host.trans:SetParent(mu.rb.transform)
+                self.follower:SetData(mu.rb.transform, mu.rb.transform:InverseTransformPoint(self.host.trans.position))
+            end
+        end
+        
+        if not IsNullOrDestroyed(col) then
+            self.parentType = 2
+            networkFO:ServerInitTargetZoneByCol(targetId, col, self.follower.localAnchor)
+            self.cacheCol = col
+        else
+            if mu then
+                if not IsNullOrDestroyed(mu.col) then
+                    self.parentType = 2
+                    networkFO:ServerInitTargetZoneByCol(targetId, mu.col, self.follower.localAnchor)
+                    self.cacheCol = mu.col
+                else
+                    self.parentType = 3
+                    networkFO:ServerInitTargetZoneByRb(targetId, mu.rb, self.follower.localAnchor)
+                    self.cacheRb = mu.rb
+                end
+            end
+        end
+    end
+end
+
+function ZoneBase:SetTargetPu(pu)
+    self.targetPu = pu
+    if self.targetPu and not IsNullOrDestroyed(self.targetPu) then
+        if self.targetPu.unitType == CL.Tagger.Tag.PlayerRole then
+            self.targetPu.character.attr:DeadEvent("+", self.onTargetDead)
+        end
+    end
+end
+
+function ZoneBase:NetworkInitZone(pos)
+    self:SetNetworkRBEnabled(true)
+    
+    self.host.trans.position = pos
+    self:PlayFireEffect()
+end
+
+function ZoneBase:NetworkInitZoneByCol(col, pos)
+    local networkFO = self:GetNetworkFO()
+    if networkFO then
+        self:SetNetworkRBEnabled(networkFO:LocalTrackPhysics())
+    end
+    if IsNullOrDestroyed(col) or IsNullOrDestroyed(self.follower) then
+        return
+    end
+    
+    self.follower:SetData(col.transform, pos)
+    --self.host.trans:SetParent(col.transform)
+    --self.host.trans.localPosition = pos
+    self:PlayFireEffect()
+end
+
+function ZoneBase:NetworkInitZoneByRb(rb, pos)
+    local networkFO = self:GetNetworkFO()
+    if networkFO then
+        self:SetNetworkRBEnabled(networkFO:LocalTrackPhysics())
+    end
+    if IsNullOrDestroyed(rb) or IsNullOrDestroyed(self.follower) then
+        return
+    end
+    
+    --self.host.trans:SetParent(rb.transform)
+    self.follower:SetData(rb.transform, pos)
+    --self.host.trans.localPosition = pos
+    self:PlayFireEffect()
+end
+
+function ZoneBase:OpenZoneCheck()    
+    CL.Scheduler.RemoveSchedule(self.checkTimeId)
+    self.checkTimeId = CL.Scheduler.Create(self.host.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host.trans) then
+                sche:Stop()
+                return
+            end
+            self:DoCheck()
+        end
+    , self.hitInterval, self.host.maxFlyTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function ZoneBase:DoCheck()
+    local raycastHit = UE.Physics.OverlapBox(self.host.trans.position, self.hitSize/2,
+        self.host.trans.rotation, CL.LayerDefine.BodyMask.value)
+    CL.DebugDraw.DrawBox(self.trans.position, self.trans.rotation, self.hitSize, UE.Color.red, 5)
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.SetHitScanIgnore(self.host.ignoreDamageList)
+    
+    local pu = nil
+    local needHit = true
+    local mu = nil
+    local rootMu = nil
+    local needForce = false
+    local hitPuInTick = {}
+    for i = 0, raycastHit.Length - 1 do
+        needHit = true
+        mu = nil
+        rootMu = nil
+        pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(raycastHit[i].transform)
+        if not IsNullOrDestroyed(pu) then
+            if self.isIgnite == 1 and pu.unitType ~= CL.Tagger.Tag.InteractRole then
+                self:TryIgnite(pu, raycastHit[i])
+            end
+
+            if raycastHit[i].transform.root == self.host.trans.root then
+                if pu.unitType ~= CL.Tagger.Tag.InteractRole and pu.unitType ~= CL.Tagger.Tag.PlayerRole then
+                    needHit = false
+                end
+            end
+            
+            if needHit then
+                if self.onlyHitRole then
+                    needHit = (pu.unitType == CL.Tagger.Tag.InteractRole or pu.unitType == CL.Tagger.Tag.PlayerRole)
+                end
+                if pu.unitType == CL.Tagger.Tag.InteractRole then
+                    mu = pu.ra:GetMuscleByCol(raycastHit[i])
+                    if mu then
+                        --print("mu name---------:" .. mu.muscleName .. tostring(needHit))
+                        rootMu = self:GetRootMu(mu)
+                    else
+                        needHit = false
+                        --pu.muscleState:IsArmor(pu.muscleState, raycastHit[i])
+                    end
+                    needForce = not pu:IsDead()
+                elseif pu.unitType == CL.Tagger.Tag.PlayerRole then
+                    mu = pu.character.aiProxy.ra:GetMuscleByCol(raycastHit[i])
+                    if mu then
+                        --print("mu name---------:" .. mu.muscleName .. tostring(needHit))
+                        rootMu = self:GetRootMu(mu)
+                    else
+                        needHit = false
+                        --pu.muscleState:IsArmor(pu.muscleState, raycastHit[i])
+                    end
+                end
+            end
+        end
+        if needHit and pu and hitPuInTick[pu] then
+            needHit = false
+        end
+        if rootMu ~= nil and needHit then
+            needHit = self:IsHitable(pu, rootMu)
+            --print("need hit--------:" .. tostring(needHit).. " rootMu:".. tostring(rootMu)  .. "  time:" .. UE.Time.time)
+        end
+        
+        if needHit then
+            if self.isIgnite == 1 and pu and pu.unitType == CL.Tagger.Tag.InteractRole then
+                self:TryIgnite(pu, raycastHit[i])
+            end
+
+            local dir = (raycastHit[i].transform.position - self.trans.position).normalized
+            CL.InteractTrigger.ApplyHitScanDamage(raycastHit[i], 
+            self.host, self.host.rb, self.col, dir, self.host.camp,  needForce, 1, nil, dir * self.pushForce)
+            if pu and (pu.unitType == CL.Tagger.Tag.InteractRole or pu.unitType == CL.Tagger.Tag.PlayerRole) then
+                hitPuInTick[pu] = true
+            end
+            if rootMu ~= nil then
+                --print("recordhitscan -------- zone name:" .. self.trans.name .. " rootMu:".. tostring(rootMu) ..  " " .. UE.Time.time)
+                self:RecordHitScan(pu, rootMu)
+            else
+                --print("not record -------- zone name:" .. self.trans.name .. " hit col ".. raycastHit[i].transform.name ..  " " .. UE.Time.time)
+            end
+        end
+    end
+    CL.InteractTrigger.EndHitScan()
+end
+
+function ZoneBase:IsHitable(pu, rootMu)
+    if not rootMu then
+        return false
+    end
+    
+    if Zone_Hit_Info[pu] == nil then
+        return true
+    end
+    
+    if Zone_Hit_Info[pu][rootMu] == nil then
+        return true
+    end
+    
+    return UE.Time.time >= Zone_Hit_Info[pu][rootMu]
+end
+
+function ZoneBase:GetRootMu(mu)
+    if mu.muscleName == CL.RagdollBoneInfo.Pelvis or mu.muscleName == CL.RagdollBoneInfo.Chest or mu.muscleName == CL.RagdollBoneInfo.Spine then
+        return CL.RagdollBoneInfo.Pelvis
+    end
+    if mu.muscleName == CL.RagdollBoneInfo.Head or mu.muscleName == "RightEar" or mu.muscleName == "LeftEar" then
+        return CL.RagdollBoneInfo.Head
+    end
+    
+    local isWeapon = CL.RagdollBoneInfo.WeaponPart:ContainsKey(mu.muscleName)
+    if isWeapon then
+        return nil
+    end
+    
+    local isHand = CL.RagdollBoneInfo.HandPart:ContainsKey(mu.muscleName)
+    if isHand then
+        return string.find(mu.muscleName, "Right") and CL.RagdollBoneInfo.RUpArm or CL.RagdollBoneInfo.LUpArm
+    end
+    
+    local isLeg = CL.RagdollBoneInfo.LegPart:ContainsKey(mu.muscleName)
+    if isLeg then
+        return string.find(mu.muscleName,"Right") and CL.RagdollBoneInfo.RThigh or CL.RagdollBoneInfo.LThigh
+    end
+    
+    return nil
+end
+
+function ZoneBase:RecordHitScan(pu, rootMu)
+    if not Zone_Hit_Info[pu] then
+        Zone_Hit_Info[pu] = {}
+    end
+    
+    if not Zone_Hit_Info[pu][rootMu] then
+        Zone_Hit_Info[pu][rootMu] = {}
+    end
+    
+    if pu.unitType == CL.Tagger.Tag.PlayerRole then
+        Zone_Hit_Info[pu][rootMu] = UE.Time.time + self.hitPlayerInterval
+    else
+        Zone_Hit_Info[pu][rootMu] = UE.Time.time + self.hitInterval
+    end
+end
+
+function ZoneBase:TryIgnite(pu, col)
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        if pu.attr:IsImmune("Fire") or pu:IsDead() then
+            return
+        end
+
+        if not pu:CanIgnite(col) then
+            return
+        end
+
+        local burnMgr = pu.muscleState and pu.muscleState.BurnManager or nil
+        if IsNullOrDestroyed(burnMgr) then
+            return
+        end
+
+        local igniteValue = self.igniteValue or 0.2
+        local sourceFc = nil
+        if self.spreadFire then
+            igniteValue = self.spreadFire.intensity
+            sourceFc = self.spreadFire.sourceFc
+        end
+        burnMgr:Ignite(self.spreadMlp == nil and igniteValue or self.spreadMlp * igniteValue, sourceFc)
+        return
+    end
+
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+        
+    local trigger = pu:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+        
+    local tb = trigger.script:GetSelf()
+    if tb.fuseCol and tb.Ignite then
+        tb:Ignite()
+    end
+end
+
+function ZoneBase:ResetState()
+    self.parentType = -1
+    self.cacheRb = nil
+    self.cacheCol = nil
+    
+    
+    if not IsNullOrDestroyed(self.eo) then
+        self.eo.trans:SetParent(nil)
+        self.eo.trans.localScale = UE.Vector3.one
+        CL.EffectMgr.Instance:GiveBack(self.eo)
+    end
+    self.eo = nil
+    CL.Scheduler.RemoveSchedule(self.checkTimeId)
+    --CL.Scheduler.RemoveSchedule(self.delayTimeId)
+    
+    
+    if self.targetPu and not IsNullOrDestroyed(self.targetPu) then
+        if self.targetPu.unitType == CL.Tagger.Tag.PlayerRole then
+            self.targetPu:DeadEvent("-", self.onTargetDead)
+        end
+    end
+    self.targetPu = nil
+    
+    self.decalCount = 0
+end
+
+return Class(nil, nil, ZoneBase)

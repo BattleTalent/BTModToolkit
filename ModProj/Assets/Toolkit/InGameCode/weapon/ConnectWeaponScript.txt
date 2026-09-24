@@ -1,0 +1,627 @@
+
+local ConnectWeapon = {
+    --ConnectBase connectbase,
+    isUnsole = false,
+    
+    disconnectVecSqrt = 0.35 * 0.35,
+    }
+
+function ConnectWeapon:Start()
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    
+    self.OnTrigger = function(ao, t)
+        if not self:IsHolder() then
+            return
+        end
+        
+        if not t then
+            if self.isOnline and not ao.attachedHand.character.IsLocalPlayer then
+                return
+            end
+            
+            if self:IsHolderAttachObj(ao) then
+                self:DoCloseSkill()
+                
+                if self.isOnline then
+                    local netId = ao.attachedHand.character.networkPlayer.netId
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:CmdDoCloseSkill(netId) end
+                end
+            else
+                local attached = self:GetAttached()
+                attached:DoCloseSkill()
+                
+                if self.isOnline then
+                    local netId = ao.attachedHand.character.networkPlayer.netId
+                    local state = GetNetworkIBState(attached)
+                    if state ~= nil then state:CmdDoCloseSkill(netId) end
+                end
+            end    
+        end
+    end
+    self.host.interact:TriggerEvent("+", self.OnTrigger)
+    
+    self.attachData = {}
+    self.OnGrabTrigger = function(ao, g)
+        --print("OnGrabTrigger----:" .. self.trans.name.. "isConnect: "..tostring(self:IsConnected()) .. "  attached exist:" .. tostring(self.attached ~= nil) .. " isHolder:" .. tostring(self:IsHolder()))
+        
+        if not self:IsHolder() then
+            return
+        end
+        
+        self:OnGrabAlwaysTrigger(ao, g)
+        
+        self:UpdateAuthorityOnGrab(ao, g)
+        
+        if self:IsConnected() then
+            self:GetAttached():OnGrabAlwaysTrigger(ao, g)
+        end
+        
+        --print("OnGrabTrigger ---------- :" .. self.trans.name.. tostring(g))
+
+        if g then
+            if self:IsHolderAttachObj(ao) then
+                self:RecordGrabData(ao, g, true)
+                
+                self:OnGrabThisPart(ao)
+            else
+                self:RecordGrabData(ao, g, false)
+                
+                --print("ConnectWeapon ---------- :" .. self.trans.name)
+                local attached = self:GetAttached()
+                attached:OnGrabThisPart(ao)
+            end
+        else
+            if self:IsHolderAttachObj(ao) then
+                self:RecordGrabData(ao, g, true)
+                
+                if not self:IsHolderGrabed() then
+                    self:OnUngrabThisPart(ao)
+                end
+            else
+                self:RecordGrabData(ao, g, false)
+                
+                if not self:IsAttachedGrabed() then
+                    self:GetAttached():OnUngrabThisPart(ao)
+                end
+            end
+        end
+    end
+    self.host.interact:GrabAlwaysTriggerEvent("+", self.OnGrabTrigger)
+    
+    self.OnDead = function(value)
+        if self:IsConnected() then
+            if self:IsHolder() then
+                local att = self:GetAttached()
+                if att and not IsNullOrDestroyed(att.host) and not IsNullOrDestroyed(att.host.interact) then
+                    att.host.interact:Dead()
+                end
+            else
+                local hd = self:GetHolder()
+                if hd and not IsNullOrDestroyed(hd.host) and not IsNullOrDestroyed(hd.host.interact) then
+                    hd.host.interact:Dead()
+                end
+            end
+        end
+    end
+    self.host.interact:DeadEvent("+", self.OnDead)
+    
+    self.OnSlotFunc = function(slot, mount)
+        if self:IsConnected() then
+            if self:IsHolder() then
+                self:OnSlot(slot, mount, true, true)
+                
+                local att = self:GetAttached()
+                if att then
+                    att:OnSlot(slot, mount, true, false)
+                end
+            end
+        else
+            self:OnSlot(slot, mount, false, true)
+        end
+    end
+    self.host.interact:SlotEvent("+", self.OnSlotFunc)
+    
+        
+    self.OnStrongEffect = function(st)
+        if self:IsConnected() then
+            if self:IsHolder() then
+                local att = self:GetAttached()
+                if att and not IsNullOrDestroyed(att.host) and not IsNullOrDestroyed(att.host.interact) then
+                    att.host:SetStrongEffect(st)
+                    att.host.interact:ActivateTrail(st, CL.InteractTrigger.DangerColor, true)
+                end
+            end
+        end
+    end
+    self.host:StrongEffectEvent("+", self.OnStrongEffect)
+    
+    self.OnStrongAtkHit = function()
+        if self:IsConnected() then
+            if self:IsHolder() then
+                local att = self:GetAttached()
+                if att and not IsNullOrDestroyed(att.host) and not IsNullOrDestroyed(att.host.interact) then
+                    att.host:PlayStrongAtkHint()
+                    
+                    local selfState = GetNetworkIBState(self)
+                    local attState = GetNetworkIBState(att)
+                    if CL.Network.VRNetworkManager.IsOnline and selfState ~= nil and attState ~= nil and SafeLocalTrackPhysics(self:GetInteract()) then
+                        local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                        attState:CmdStrongAtkEffect(localPlayerId, true)
+                    end
+                end
+            end
+        end
+    end
+    self.host:StrongAtkHintEvent("+", self.OnStrongAtkHit)
+    
+end
+
+function ConnectWeapon:UpdateAuthorityOnGrab(ao, g)
+    if g then
+        if CL.Network.VRNetworkManager.IsOnline then
+            local state = GetNetworkIBState(self)
+            local character = ao.attachedHand.character
+            if character.IsLocalPlayer then
+                if state ~= nil and not state.isServerOnly then
+                    local selfNetId = GetIBNetworkId(self.host.interact)
+                    if selfNetId == nil then
+                        return
+                    end
+                    character.networkPlayer:CmdRequestAuthority(selfNetId)
+                    --print("CmdRequestAuthority ---------- :" .. self:GetInteract().networkIB.netId)
+                    if self:IsConnected() then
+                        local attached = self.attached
+                        local attachedState = GetNetworkIBState(attached)
+                        local attachedNetId = attached and not IsNullOrDestroyed(attached.host) and not IsNullOrDestroyed(attached.host.interact) and GetIBNetworkId(attached.host.interact) or nil
+                        if attachedState ~= nil and attachedNetId ~= nil then
+                            character.networkPlayer:CmdRequestAuthority(attachedNetId)
+                        end
+                    end
+                end
+            end
+        end
+    else
+        if CL.Network.VRNetworkManager.IsOnline then
+            local state = GetNetworkIBState(self)
+            if not self:GetInteract():IsGrabbed() then
+                if ao.attachedHand.character.IsLocalPlayer then
+                    if state ~= nil and not state.isServerOnly then
+                        local interactNetId = GetIBNetworkId(self:GetInteract())
+                        if interactNetId == nil then
+                            return
+                        end
+                        ao.attachedHand.character.networkPlayer:CmdAssignAuthorityToHostPlayer(interactNetId)
+                        --CL.Network.NetworkPlayer.hostPlayer:ServerRequestAuthority(self:GetInteract().networkIB)
+                        --print("CmdRequestAuthority ---------- :" .. self:GetInteract().networkIB.netId)
+                    end
+                end
+            else
+                local ph = self:GetInteract():GetPrimaryHand()
+                if not IsNullOrDestroyed(ph) and ph.character.IsLocalPlayer then
+                    if state ~= nil and not state.isServerOnly then
+                        local selfNetId = GetIBNetworkId(self.host.interact)
+                        if selfNetId == nil then
+                            return
+                        end
+                        ph.character.networkPlayer:CmdRequestAuthority(selfNetId)
+                        --print("CmdRequestAuthority ---------- :" .. self:GetInteract().networkIB.netId)
+                        if self:IsConnected() then
+                            local attached = self.attached
+                            local attachedState = GetNetworkIBState(attached)
+                            local attachedNetId = attached and not IsNullOrDestroyed(attached.host) and not IsNullOrDestroyed(attached.host.interact) and GetIBNetworkId(attached.host.interact) or nil
+                            if attachedState ~= nil and attachedNetId ~= nil then
+                                ph.character.networkPlayer:CmdRequestAuthority(attachedNetId)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+function ConnectWeapon:OnGrabAlwaysTrigger(ao, g)
+    if not self:IsHolder() then
+        return
+    end
+    local attached = self:GetAttached()
+    if g then
+        if self:IsHolderAttachObj(ao) then
+            self:OnGrabThisPartAttachObj(ao)
+            if attached then
+                attached:OnUngrabThisPartAttachObj(ao)
+            end
+        else
+            self:OnUngrabThisPartAttachObj(ao)
+            if attached then
+                attached:OnGrabThisPartAttachObj(ao)
+            end
+        end
+    else
+        if self:IsHolderAttachObj(ao) then
+            self:OnUngrabThisPartAttachObj(ao)
+        else
+            if attached then
+                attached:OnUngrabThisPartAttachObj(ao)
+            end
+        end
+    end
+end
+
+function ConnectWeapon:OnGrabThisPartAttachObj(ao)
+    
+end
+
+function ConnectWeapon:OnUngrabThisPartAttachObj(ao)
+    
+end
+
+function ConnectWeapon:RefleshGrabThisPartAttachObj()
+    local list = self.host.interact.attachList
+    for i = 0, list.Length - 1 do
+        if list[i].attachedHand then
+            self:OnGrabThisPartAttachObj(list[i])
+        end
+    end
+end
+
+function ConnectWeapon:OnGrabThisPart(ao)
+    
+end
+
+function ConnectWeapon:OnUngrabThisPart(ao)
+    
+end
+
+function ConnectWeapon:OnSlot(slot, mount, isConnect, holder)
+end
+
+function ConnectWeapon:OnGrab(a, g)
+    local ph = self.host.interact:GetPrimaryHand()
+    if not self.unitTb then
+        self.unitTb = self.connectUnit.script:GetSelf()
+    end
+    if self.isOnline == nil then
+        self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+    end
+    self.unitTb:OnGrab(a, g)
+    if self.unitTb.isConnect then
+        if g then
+            if not self.isUnsole then
+                self:DetectingDisconnect()
+            end
+        else
+            CL.Scheduler.RemoveSchedule(self.detectActId)
+        end
+    end
+end
+
+function ConnectWeapon:IsHolderAttachObj(ao)
+    if self:IsSharedAttachObj(ao) then
+        return ao:IsThumbForward()
+    else
+        return self:IsLocalAttachObj(ao)
+    end
+end
+
+function ConnectWeapon:IsHolderGrabed()
+    if not self.attachData then
+        return false
+    end
+
+    for k, v in pairs(self.attachData) do
+        if v == true then
+            return true
+        end
+    end
+    return false
+end
+
+function ConnectWeapon:IsAttachedGrabed()
+    if not self.attachData then
+        return false
+    end
+
+    for k, v in pairs(self.attachData) do
+        if v == false then
+            return true
+        end
+    end
+    return false
+end
+
+function ConnectWeapon:IsGrabed()
+    if not self.attachData then
+        return false
+    end
+    
+    for k, v in pairs(self.attachData) do
+        if v ~= nil then
+            return true
+        end
+    end
+    
+    return false
+end
+
+function ConnectWeapon:RecordGrabData(ao, g, isHolder)
+    if g then
+        self.attachData[ao] = isHolder
+    else
+        self.attachData[ao] = nil
+    end
+end
+
+function ConnectWeapon:TwoHandGrabedOnConnected()
+    if not self.attachData then
+        return false
+    end
+    
+    local count = 0
+    for k, v in pairs(self.attachData) do
+        if v ~= nil then
+            count = count + 1
+        end
+    end
+    
+    return count >= 2
+end
+
+function ConnectWeapon:OpenSkill(ao)
+    if self.isOnline and not ao.attachedHand.character.IsLocalPlayer then
+        return
+    end
+    
+    if self:IsHolderAttachObj(ao) then
+        self:DoOpenSkill()
+        
+        if self.isOnline then
+            local netId = ao.attachedHand.character.networkPlayer.netId
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CmdDoOpenSkill(netId) end
+        end
+    else
+        local attached = self:GetAttached()
+        if attached ~= nil then
+            attached:DoOpenSkill()
+        end
+        
+        if self.isOnline then
+            local netId = ao.attachedHand.character.networkPlayer.netId
+            local state = GetNetworkIBState(attached)
+            if state ~= nil then state:CmdDoOpenSkill(netId) end
+        end
+    end
+end
+
+function ConnectWeapon:OnChargeReady()
+    self:Disconnect()
+end
+
+function ConnectWeapon:OnSale()
+    self.isUnsole = true
+end
+
+function ConnectWeapon:OnBuy()
+    self.isUnsole = false
+    
+    local ph = self.host.interact:GetPrimaryHand()
+    if ph and not IsNullOrDestroyed(ph) then
+        self:DetectingDisconnect()
+    end
+end
+
+function ConnectWeapon:DetectingDisconnect()
+    local ph = self.host.interact:GetPrimaryHand()
+    local oh = nil
+    
+    CL.Scheduler.RemoveSchedule(self.detectActId)
+    self.detectActId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if not self.host.interact:IsUsable() then
+                return
+            end
+            
+            ph = self.host.interact:GetPrimaryHand()
+            oh = self.host.interact:GetSecondaryHand()
+            
+            if IsNullOrDestroyed(oh) or IsNullOrDestroyed(ph) then
+                return
+            end
+            
+            if IsNullOrDestroyed(ph.attachTo) or IsNullOrDestroyed(oh.attachTo) then
+                return
+            end
+            
+            if not self:IsSharedAttachObj(ph.attachTo) or not self:IsSharedAttachObj(oh.attachTo) then
+                return
+            end
+            
+            if ph:GetTearVec().sqrMagnitude > self.disconnectVecSqrt and 
+                oh:GetTearVec().sqrMagnitude > self.disconnectVecSqrt then
+                self:Disconnect()
+            end
+        end
+    , 0.1, -1, 0.5)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ConnectWeapon:GetInteract()
+    local holder = self:GetHolder()
+    return holder and holder.host.interact or self.host.interact
+end
+
+function ConnectWeapon:BeforeConnect()
+    if self.host.BeforeConnect then
+        local success, err = pcall(function()
+            self.host:BeforeConnect()
+        end)
+    end
+end
+
+function ConnectWeapon:BeforeDisconnect()
+    if self.host.BeforeDisconnect then
+        local success, err = pcall(function()
+            self.host:BeforeDisconnect()
+        end)
+    end
+end
+
+function ConnectWeapon:OnConnect(other, isHolder)
+    local script = other.interactTrigger.script:GetSelf()
+    if isHolder then
+        self:SetConnectAttached(script)
+        
+        if self.host.interact:IsGrabbed() then
+            self:DetectingDisconnect()
+        end
+        
+        if self.attachData then
+            local attached = self:GetAttached()
+            for k, v in pairs(self.attachData) do
+                if v then
+                    if self:IsHolderAttachObj(k) then
+                        self:OnGrabThisPartAttachObj(k)
+                        if attached then
+                            attached:OnUngrabThisPartAttachObj(k)
+                        end
+                    end
+                else
+                    if not self:IsHolderAttachObj(k) then
+                        self:OnUngrabThisPartAttachObj(k)
+                        if attached then
+                            attached:OnGrabThisPartAttachObj(k)
+                        end
+                    end
+                end
+            end
+        end
+    else
+        self:SetConnectHolder(script)
+    end
+    
+    self.isConnect = true
+end
+
+function ConnectWeapon:OnDisconnect(other, isHolder)
+    self:RefleshGrabThisPartAttachObj()
+    
+    if isHolder then
+        self:SetConnectAttached(nil)
+        
+        local att = self:GetAttached()
+        if att then
+            att.host:SetStrongEffect(false)
+            att.host.interact:ActivateTrail(false, CL.InteractTrigger.DangerColor, true)
+        end
+        
+        CL.Scheduler.RemoveSchedule(self.detectActId)
+    else
+        self:SetConnectHolder(nil)
+    end
+    
+    self.isConnect = false
+end
+
+function ConnectWeapon:IsConnected()
+    return self.isConnect
+end
+
+function ConnectWeapon:Disconnect()
+    if CL.Network.VRNetworkManager.IsOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                state:ServerDisconnect()
+            else
+                state:CommandDisconnect()
+            end
+        end
+    else
+        self.connectUnit.script:GetSelf():Disconnect()
+    end
+end
+
+function ConnectWeapon:IsConnectTheSameType()
+    if self:IsHolder() then
+        return self.connectUnit.script:GetSelf().name == self.attached.connectUnit.script:GetSelf().name
+    else
+        return self.connectUnit.script:GetSelf().name == self.holder.connectUnit.script:GetSelf().name
+    end
+end
+
+function ConnectWeapon:SetConnectHolder(holder)
+    self.holder = holder
+end
+
+function ConnectWeapon:SetConnectAttached(attached)
+    self.attached = attached
+end
+
+function ConnectWeapon:IsHolder()
+    if self:IsConnected() then
+        return self.attached ~= nil
+    else
+        return true
+    end
+end
+
+function ConnectWeapon:GetHolder()
+    return self.holder
+end
+
+function ConnectWeapon:GetAttached()
+    return self.attached
+end
+
+function ConnectWeapon:IsLocalAttachObj(ao)
+    if not self.unitTb then
+        self.unitTb = self.connectUnit.script:GetSelf()
+    end
+    
+    return self.unitTb:IsLocalAttachObj(ao)
+end
+
+function ConnectWeapon:IsSharedAttachObj(ao)
+    if not self.unitTb then
+        self.unitTb = self.connectUnit.script:GetSelf()
+    end
+    
+    return self.unitTb:IsSharedAttachObj(ao)
+end
+
+function ConnectWeapon:IsConnectWithSameType()
+    if not self:IsConnected() then
+        return false
+    end
+    
+    if self:IsHolder() then
+        local attached = self:GetAttached()
+        return attached and self.connectUnit.script:GetSelf().name == attached.connectUnit.script:GetSelf().name
+    else
+        local holder = self:GetHolder()
+        return holder and self.connectUnit.script:GetSelf().name == holder.connectUnit.script:GetSelf().name
+    end
+end
+
+function ConnectWeapon:Destroy()
+    if IsNullOrDestroyed(self.host) then
+        return
+    end
+    
+    self.host:StrongEffectEvent("-", self.OnStrongEffect)
+    self.host:StrongAtkHintEvent("-", self.OnStrongAtkHit)
+        
+    if IsNullOrDestroyed(self.host.interact) then
+        return
+    end
+    
+    self.host.interact:TriggerEvent("-", self.OnTrigger)
+    self.host.interact:GrabAlwaysTriggerEvent("-", self.OnGrabTrigger)
+    self.host.interact:DeadEvent("-", self.OnDead)
+    self.host.interact:SlotEvent("-", self.OnSlotFunc)
+end
+
+return Class(nil ,nil, ConnectWeapon)

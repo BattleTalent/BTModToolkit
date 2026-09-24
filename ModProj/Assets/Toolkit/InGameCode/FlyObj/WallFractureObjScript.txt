@@ -1,0 +1,85 @@
+
+local wallFractureRootObj = {
+    forceIntansity = 350,
+    maxDistance = 3,
+    throwOnAwake = 0,
+    
+    sinkingCols = {},
+}
+
+
+function wallFractureRootObj:Awake()
+    local transList = self.feactureRoot:GetComponentsInChildren(typeof(UE.Transform))
+    
+    local rb = nil
+    local col = nil
+    for i = 0, transList.Length - 1 do
+        if transList[i] ~= self.feactureRoot and transList[i].gameObject.activeSelf then
+            rb = transList[i]:GetComponent(typeof(UE.Rigidbody))
+            col = transList[i]:GetComponent(typeof(UE.Collider))
+            if not IsNullOrDestroyed(col) and col.enabled then
+                self.sinkingCols[col] = rb
+            end
+            
+            if not IsNullOrDestroyed(rb) then
+                table.insert(self.list, {
+                    ["trans"] = transList[i],
+                    ["position"] = transList[i].localPosition,
+                    ["rotation"] = transList[i].localRotation,
+                    ["rb"] = rb
+                })
+            end
+        end
+    end
+end
+
+
+function wallFractureRootObj:OnEnable()
+    if self.throwOnAwake == 1 then
+        self:ExplodeRock()
+    end
+    
+    if self.sinkingTime then
+        self:SetSinking(false)
+        self:StartSinkingOnDisable()
+    end
+end
+
+function wallFractureRootObj:ExplodeRock()
+    local dis = 0
+    for i = 1, #self.list do
+        dis = UE.Vector3.Distance(self.list[i]["trans"].position, self.brokenPoint.position)
+
+        dis = math.min(dis, self.maxDistance)
+        self.list[i]["rb"]:AddForce(self.brokenPoint.forward * self.forceIntansity * (1-dis/self.maxDistance), UE.ForceMode.Impulse)
+    end
+end
+
+function wallFractureRootObj:SetSinking(isOn)
+    for k, v in pairs(self.sinkingCols) do
+        if not IsNullOrDestroyed(k) then
+            k.enabled = not isOn
+            
+            if isOn then
+                if not IsNullOrDestroyed(v) then
+                    v:AddForce(-UE.Vector3.up * 0.01)
+                end
+            end
+        end
+    end
+end
+
+function wallFractureRootObj:StartSinkingOnDisable()
+    CL.Scheduler.RemoveSchedule(self.sinkingActId)
+    self.sinkingActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.trans) then
+                return
+            end
+            
+            self:SetSinking(true)
+        end,
+    0, 0, self.sinkingTime).actionId
+end
+
+return Class(Require("Tools/fractureRootObj"), nil, wallFractureRootObj)

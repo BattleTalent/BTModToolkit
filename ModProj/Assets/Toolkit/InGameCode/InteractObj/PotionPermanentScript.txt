@@ -1,0 +1,38 @@
+local PotionPermananent = {
+    
+}
+
+function PotionPermananent:AddCharacterAttr(character, value)
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            self.effectiveNetId = character.networkPlayer.netId
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerEffective(character)
+            end
+        end
+    else
+        self:Effective(character)
+        self:SetEmpty()
+    end    
+end
+
+function PotionPermananent:NetworkEffective(character)
+    self:Effective(character)
+    self:SetEmpty()
+end
+
+
+function PotionPermananent:Effective(character)
+    self.affectCharacter = character
+    self:DoEffective(character)
+end
+
+function PotionPermananent:DoEffective(character)
+end
+
+return Class(Require("InteractObj/PotionBaseScript"), nil, PotionPermananent)

@@ -1,0 +1,68 @@
+
+local table = {}
+function table:Awake()
+    self.flyObjName = "FlyOriFire"
+    self.cd = 1
+end
+
+function table:OnGrab(a, g)
+    if (g) then
+        self.renders = a.attachedHand:GetHandIndex() == 0 and CL.InteractTrigger.GetHandRRenderer() or CL.InteractTrigger.GetHandLRenderer()
+        local player = CL.InteractCharacter.PlayerInstance
+        if player == nil then
+            return
+        end
+        self.handPoseControl = player.hands[a.attachedHand:GetHandIndex()].handPoseControl
+    else
+        self:Reset()
+    end
+end
+
+function table:CreateArcaneBall()
+    local pos = self.createPoint.position
+    local dir = self.createPoint.forward
+    local arcaneball = self.host:CreateFlyObj(self.flyObjName, pos, dir)
+    arcaneball.trans.rotation = UE.Quaternion.LookRotation(dir, -self.host.interact.trans.right)
+    self.host.interact:CostDurability()
+end
+
+function table:OnChargeBegin()
+    self:SetExpression(true)
+    self:SetChargeEffect(true)
+end
+
+function table:OnChargeReady()
+    self:CreateArcaneBall()
+    self:Reset()
+end
+
+function table:OnChargeCancel()
+    self:Reset()
+end
+
+function table:SetChargeEffect(isPlay)
+    self.soundEffect.enabled = isPlay
+end
+
+function table:SetExpression(isOnCharge)
+    local tarValue = isOnCharge and 0.2 or 0.5
+    if self.expTimeId > 0 then
+        CL.Scheduler.RemoveSchedule(self.expTimeId)
+        self.expTimeId = nil
+    end
+    self.expTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            for i = 0, 4 do
+                local weight = UE.Mathf.Lerp(self.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
+                self.handPoseControl.fingers[i]:SetPose(weight)
+            end
+        end
+    , UE.Time.unscaledDeltaTime, 0.2)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function table:Reset()
+    self:SetExpression(false)
+    self:SetChargeEffect(false)
+end
+return Class(nil,nil,table)

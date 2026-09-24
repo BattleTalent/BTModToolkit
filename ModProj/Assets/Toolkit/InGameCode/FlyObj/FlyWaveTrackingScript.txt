@@ -1,0 +1,120 @@
+
+local FlyWaveTracking = {
+    searchRange = 5,
+}
+
+function FlyWaveTracking:OnSpawn()
+    local ownerCamp = self.host.ownerHolder:GetCamp()
+    local lastTime = 0
+    
+    self.circleTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not self.target or IsNullOrDestroyed(self.target) then
+                if UE.Time.time - lastTime > 0.05 then
+                    self.target = self:SearchTarget(self.host.trans.position, self.searchRange, ownerCamp)
+                    lastTime = UE.Time.time
+                end
+            else
+                self:Tracking(self.target)
+            end
+        end
+    , 0.01, -1, 0.3)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function FlyWaveTracking:SearchTarget(pos, range, camp)
+    local targetList = CL.AIProxy.GetEnemyTargetInRange(pos, range, camp)
+    local weightList = {}
+    local totalWeight = 0
+    local total = range * range
+    for i = 0, targetList.Count - 1 do
+        weightList[i] = total - (targetList[i]:GetTransform().position - pos).sqrMagnitude
+        totalWeight = weightList[i] + totalWeight
+
+    end
+    local count = 0
+    local random = UE.Random.Range(0, totalWeight)
+    for i = 0, targetList.Count - 1 do
+        count = count + weightList[i]
+        if random <= count then
+            return targetList[i]
+        end
+    end
+    
+    return nil
+end
+
+
+function FlyWaveTracking:Tracking(target)
+    local targetTrans = target:GetMuscle(CL.RagdollBoneInfo.Spine).rbTrans
+    CL.PhysicsFollow.TrackPosition(self.host.rb, targetTrans.position, 0.7)
+end
+
+
+
+
+function FlyWaveTracking:OnTrigger(pu, other)
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+    self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+    self.host:OnFinish()
+end
+
+function FlyWaveTracking:OnTriggerWithStaticScene(other)
+    if self.destoryWhenHitEnv ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlyWaveTracking:OnTriggerWithRole(fc, col)
+    if self.HitRoleCb then
+        self.HitRoleCb()
+    end
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+    self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+    self.host:OnFinish()
+end
+
+function FlyWaveTracking:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlyWaveTracking:OnTriggerWithPlayerHand(col, hand)
+
+end
+
+function FlyWaveTracking:OnTriggerWithPlayer(collision, player)
+
+end
+
+function FlyWaveTracking:StopLifeCircleTimer()
+    if IsNullOrOwnerChanged(self.circleTimer, self) == false then
+        self.circleTimer:Stop()
+        self.circleTimer = nil
+    end
+end
+
+function FlyWaveTracking:ResetState()
+    self.HitRoleCb = nil
+    
+    
+    self:StopLifeCircleTimer()
+    self.target = nil
+end
+
+return Class(Require("FlyObj/FlyWaveBaseScript"), nil, FlyWaveTracking)

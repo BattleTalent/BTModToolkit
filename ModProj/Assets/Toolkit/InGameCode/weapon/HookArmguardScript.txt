@@ -1,0 +1,2193 @@
+local HookArmguard = {
+    isSlot = false,
+    
+    maxRange = 10,
+    designCallDis = 10,
+    callSpeed = 28,
+    pullValue = 0.3,
+    isOnCall = false,
+    
+    pullDis = 9,
+    
+    assistRadius = 1.5,
+    
+    onArrowCollisionList = {},
+    
+    pullSpeed = 5,
+    maxPullSpeed = 10,
+    
+    arrowPushForce = 6,
+    
+    --for fix network
+    isOpenSkill = false,
+    
+    manaOnShot = 10,
+}
+
+local Vector3 = Require("Vector3")
+
+function HookArmguard:Awake()
+    self.designCallDis = self.maxRange
+    self.aimWidget.limitLength = self.maxRange - 0.02
+    
+    self.stuckAction = function()
+        
+    end
+    
+    self.lineColorStart = UE.Color(1, 0.4510653, 0.09019607, 1)
+    self.lineColorEnd = UE.Color(1, 0.4510653, 0.09019607, 1)
+    
+    
+    self.ropeColorStart = UE.Color(1, 0.1158686, 0.09019607, 1)
+    self.ropeColorEnd = UE.Color(1, 0.4510653, 0.09019607, 1)
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if self.arrowNetId == netId then
+            self.arrowNetId = -1
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            self.arrow = netIb.ib.gameObject:GetComponent(typeof(CL.LuaBehaviour)).script.self
+            self:BindSpawnArrow(self.arrow)
+        end
+    end
+    
+    self.OnGround = function()
+        if self.banUntilGround then
+            self.banUntilGround = false
+            
+            if CL.Network.VRNetworkManager.ServerOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerBanUntilGround(self.banUntilGround) end
+            end
+        end
+        if self.breakHand and not IsNullOrDestroyed(self.breakHand)
+            and not IsNullOrDestroyed(self.breakHand.character) then
+            self.breakHand.character:GroundEvent("-", self.OnGround)
+        end
+    end
+    
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+        
+        self.OnLocalSlotTrigger = function(t, isLeft)
+            if not self.host.interact:IsUsable() then
+                return
+            end
+            
+            --print("on local trigger-------------------:" .. tostring(t))
+            local hand = self:GetSlotHand()
+            if hand then
+                if hand:IsRightHand() and isLeft then
+                    return
+                end
+                
+                if not hand:IsRightHand() and not isLeft then
+                    return
+                end
+            end
+            
+            if SafeIsOwnerLocalPlayer(self.host.interact) then
+                if t then
+                    self:LocalOpenSkill()
+                else
+                    self:LocalCloseSkill()
+                end
+            end
+        end
+    end
+    
+    local renderers = self.host.interact:GetAllRenderers()
+    for i = 0, renderers.Count - 1 do
+        if renderers[i] == self.gemRenderers then
+            renderers:Remove(self.gemRenderers)
+            break
+        end
+    end
+    
+    self.__base.Awake(self)
+end
+
+function HookArmguard:Start()
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        local netId = state ~= nil and state:GetArrowNetId() or 0
+        if netId > 0 and not self.arrow then
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            self.arrow = netIb.ib.gameObject:GetComponent(typeof(CL.LuaBehaviour)).script.self
+            self:BindSpawnArrow(self.arrow)
+            if self.arrowNetId == netId then
+                self.arrowNetId = -1
+            end
+        end
+    end
+end
+
+function HookArmguard:GetLocalNetworkPlayer()
+    local player = CL.InteractCharacter.PlayerInstance
+    if IsNullOrDestroyed(player) then
+        return nil
+    end
+
+    local networkPlayer = player.networkPlayer
+    if networkPlayer == nil or IsNullOrDestroyed(networkPlayer) then
+        return nil
+    end
+
+    return networkPlayer
+end
+
+function HookArmguard:GetLocalPlayerNetId()
+    local networkPlayer = self:GetLocalNetworkPlayer()
+    return networkPlayer ~= nil and networkPlayer.netId or nil
+end
+
+function HookArmguard:GetArrowNetworkRB()
+    if not self.arrow or IsNullOrDestroyed(self.arrow.ib) then
+        return nil
+    end
+
+    local networkIB = self.arrow.ib.networkIB
+    if networkIB == nil or IsNullOrDestroyed(networkIB) then
+        return nil
+    end
+
+    local networkRB = networkIB.networkRB
+    if networkRB == nil or IsNullOrDestroyed(networkRB) then
+        return nil
+    end
+
+    return networkRB
+end
+
+function HookArmguard:SlotSpell(slot)
+    self.__base.SlotSpell(self, slot)
+
+    self.aimWidget.gameObject:SetActive(true)
+    --if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+        self.aimWidget.enabled = true
+    --end
+    
+    self.isSlot = true
+    self:UpdateRope()
+    self.character = self:GetSlotHand().character
+    
+    if not self.arrow then
+        if not self.isOnline or (CL.Network.VRNetworkManager.ServerOnline) then
+            self:ReLoadArrow()
+        end
+    else
+        self:IgnoreCollisionWithPlayer(self.arrow, true)
+        if self:IsGemSlot(slot) then
+            self.arrow.ib:PlayAppearEffect()
+            self:ShowRope(true)
+        end
+        local hand = self:GetSlotHand()
+        if not IsNullOrDestroyed(hand) then
+            self.arrow.ib:SetLatestHolder(self.character.aiProxy)
+        end
+    end
+        
+    if self.isOnline then
+        local networkPlayer = self:GetLocalNetworkPlayer()
+        if networkPlayer ~= nil and networkPlayer.networkInteractHand ~= nil then
+            networkPlayer.networkInteractHand:OnLocalSlotTrigger("+", self.OnLocalSlotTrigger)
+        end
+    end
+end
+
+function HookArmguard:UnSlotSpell(slot)
+    self.__base.UnSlotSpell(self, slot)
+    
+    self.aimWidget.gameObject:SetActive(false)
+    self.aimWidget.enabled = false
+    
+    self:RemoveStuckAction()
+    
+    if self.arrow then
+        self.arrow.ib:StopDissolveEffect()
+        self:IgnoreCollisionWithPlayer(self.arrow, false)
+    end
+    
+    if self.isOnline then
+        self:DoDisconnect()
+        self:LockedArrow()
+        self.isShot = false
+    end
+    
+    self.isSlot = false
+    
+    if self.isOnline then
+        local networkPlayer = self:GetLocalNetworkPlayer()
+        if networkPlayer ~= nil and networkPlayer.networkInteractHand ~= nil then
+            networkPlayer.networkInteractHand:OnLocalSlotTrigger("-", self.OnLocalSlotTrigger)
+        end
+    end
+end
+
+function HookArmguard:ClientTryShot(shotPos, shotDir)
+    --print("Try shot hook--------------------:" .. tostring(self.isShot) .. " " .. tostring(self.isOnCall))
+    if not self.isOpenSkill then
+        return
+    end
+    
+    if self.isShot or self.isOnCall then
+        return
+    end
+    
+    if not IsNullOrDestroyed(self.joint) then
+        return
+    end
+    
+    local hand = self:GetSlotHand()
+    
+    local state = GetNetworkIBState(self)
+    self.banUntilGround = state ~= nil and state:GetBanUntilGround() or false
+    if self.banUntilGround then
+        if not hand.character:IsGround() then
+            return
+        end
+    end
+    
+    local targetCol, point = self:AimLegalTarget(0.1, shotPos, shotDir)
+    if not point then
+        targetCol, point = self:AimAssisted(self.assistRadius, shotPos, shotDir)
+        --    shotPos + shotDir * (0.1 + self.maxRange), UE.Color.yellow, 30)
+    end
+    
+    if self.isOnline then
+        local localPlayerId = self:GetLocalPlayerNetId()
+        local state = GetNetworkIBState(self)
+        if localPlayerId ~= nil then
+            if not IsNullOrDestroyed(targetCol) then
+                --print("hook aim --------------------:" .. targetCol.transform.name .. " root:" .. targetCol.transform.root.name)
+                local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(targetCol)
+                
+                if key < 0 then
+                    --collider not reg, can not stab
+                    targetCol = nil
+                end
+                if state ~= nil then state:CommandShotHook(localPlayerId, key, cid, point, shotPos, shotDir) end
+            else
+                if state ~= nil then state:CommandShotHook(localPlayerId, -1, 0, point, shotPos, shotDir) end
+            end
+        end
+    end
+    self:DoShotHook(targetCol, point, shotPos, shotDir)
+end
+
+function HookArmguard:DoShotHook(targetCol, point, shotPos, shotDir)
+    self.isShot = true
+    
+    self:ShotHook(targetCol, point, shotPos, shotDir)
+end
+
+function HookArmguard:TryShotHook(shotPos, shotDir)
+    --print("Try shot hook--------------------:" .. tostring(self.isShot) .. " " .. tostring(self.isOnCall))
+    if not self.isOpenSkill then
+        return
+    end
+    
+    if self.isShot or self.isOnCall then
+        return
+    end
+    
+    if not IsNullOrDestroyed(self.joint) then
+        self:Disconnect()
+    end
+    
+    local hand = self:GetSlotHand()
+    
+    if self.banUntilGround then
+        self.banUntilGround = not hand.character:IsGround()
+        if self.banUntilGround then
+            return
+        end
+    end
+    
+    local targetCol, point = self:AimLegalTarget(0.1, shotPos, shotDir)
+    if not point then
+        targetCol, point = self:AimAssisted(self.assistRadius, shotPos, shotDir)
+        --CL.DebugDraw.DrawLine(shotPos + shotDir * (0.1 + 0.1), 
+        --    shotPos + shotDir * (0.1 + self.maxRange), UE.Color.red, 30)
+    --else
+        --CL.DebugDraw.DrawLine(shotPos + shotDir * (0.1 + self.assistRadius), 
+        --    shotPos + shotDir * (0.1 + self.maxRange), UE.Color.yellow, 30)
+    end
+    
+    --if point then
+    --    CL.DebugDraw.DrawSphere(point, 0.1, UE.Color.red, 5)
+    --    CL.DebugDraw.DrawLine(self.createPoint.position, point, UE.Color.yellow, 5)
+    --end
+    
+    --CL.DebugDraw.DrawLine(self.createPoint.position, self.createPoint.position + self.createPoint.forward * self.maxRange, UE.Color.red, 5)
+    
+    if self:ShotHook(targetCol, point, shotPos, shotDir) then
+        self.isShot = true
+    end
+end
+
+function HookArmguard:LocalOpenSkill()
+    if self.manaOnShot > 0 and not CL.InteractCharacter.PlayerInstance:HasEnoughMana(self.manaOnShot) then
+        return
+    end
+    
+    self.isOpenSkill = true
+    self:ClientTryShot(self.createPoint.position, self.createPoint.forward)
+end
+
+function HookArmguard:OpenSkill()
+    if self.isOnline then
+        return
+    else
+        if not CostMana(self.host, self.manaOnShot) then
+            self.host:CloseSkill()
+            return
+        end
+        
+        self.isOpenSkill = true
+        self:TryShotHook(self.createPoint.position, self.createPoint.forward)
+    end
+end
+
+function HookArmguard:LocalCloseSkill()
+    self.isOpenSkill = false
+    if self.isShot then
+        if not IsNullOrDestroyed(self.joint) then
+            if not self:TryThrow() then
+                self:Disconnect()
+            end
+        end
+        self.isShot = false
+        if not self.isOnCall then
+            self:RecallArrow()
+        end
+    end
+end
+
+--Non-localPlayer can recall arrow locally when no rb is connected.
+function HookArmguard:LocalRecallArrow()
+    if not IsNullOrDestroyed(self.joint) then
+        return
+    end
+    
+    
+    if not self.isOnCall then
+        self:DoRecallArrow()
+    end
+end
+
+function HookArmguard:CloseSkill()
+    if self.isOnline then
+        return
+    end
+    self.isOpenSkill = false
+    if self.isShot then
+        if not IsNullOrDestroyed(self.joint) then
+            if not self:TryThrow() then
+                self:Disconnect()
+            end
+        end
+        self.isShot = false
+        if not self.isOnCall then
+            self:RecallArrow()
+        end
+    end
+end
+
+function HookArmguard:NetworkOnClose()
+    self.isShot = false
+end
+
+function HookArmguard:ReLoadArrow()
+    if self.arrow and not IsNullOrDestroyed(self.arrow.ib) then
+        return
+    end
+    
+    local onDestroyed = function(pu)
+        self.arrow = nil
+    end
+    
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.arrowPrefab, 
+            self.createPoint.position, self.createPoint.rotation,
+            false, false, self.host.interact.netId, true, 
+            function(netIb, go)
+                if IsNullOrDestroyed(go) then
+                    return
+                end
+                self.arrow = go:GetComponent(typeof(CL.LuaBehaviour)).script.self
+                self.arrow.ib:DeadEvent("+", onDestroyed)
+                self:BindSpawnArrow(self.arrow)
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerSpawnedArrow(netIb.netId) end
+            end)
+    else
+        self.arrow = self:SpawnArrow()
+        self.arrow.ib:DeadEvent("+", onDestroyed)
+        self:BindSpawnArrow(self.arrow)
+    end
+end
+
+function HookArmguard:NetworkSpawnedArrow(netId)
+    self.arrowNetId = netId
+    
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    else
+        self.arrow = netIb.ib.gameObject:GetComponent(typeof(CL.LuaBehaviour)).script.self
+        self:BindSpawnArrow(self.arrow)
+    end
+end
+
+function HookArmguard:BindSpawnArrow(arrow)
+    self:UpdateRope()
+    self:ShowRope(true)
+    self:LockedArrow()
+    arrow:SetMainPart(self)
+    --self:EnableCols(false, arrow.ib)
+    arrow.ib:PlayAppearEffect()
+    
+    local hand = self:GetSlotHand()
+    if not IsNullOrDestroyed(hand) then
+        arrow.ib:SetLatestHolder(self.character.aiProxy)
+    end
+    self:IgnoreCollisionWithPlayer(arrow, true)
+end
+
+function HookArmguard:IgnoreCollisionWithPlayer(arrow, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(arrow.ib:GetCols(), self.host.interact:GetCols(), ignore)
+    
+    local hand = self:GetSlotHand()
+    if not IsNullOrDestroyed(hand) then
+        CL.PhysicsHelper.IgnoreCollisions(arrow.ib:GetCols(), hand.physicsHand.colliders, ignore)
+        CL.PhysicsHelper.IgnoreCollisions(arrow.ib:GetCols(), hand:GetAnotherHand().physicsHand.colliders, ignore)
+        local playerCols = hand.character:GetPlayerUnit():GetCols()
+        CL.PhysicsHelper.IgnoreCollisions(arrow.ib:GetCols(), playerCols, ignore)
+    end
+end
+
+function HookArmguard:LockedArrow()
+    if not self.arrow or IsNullOrDestroyed(self.arrow.ib) then
+        return
+    end
+    
+    if self.isOnline then
+        local networkRB = self:GetArrowNetworkRB()
+        if networkRB ~= nil then
+            networkRB.enabled = false
+        end
+    end
+    
+    self.arrow.trans:SetParent(self.createPoint)
+    self.arrow.trans.localPosition = UE.Vector3.zero
+    self.arrow.trans.localRotation = UE.Quaternion.identity
+    self.arrow.trans.localScale = UE.Vector3.one
+
+    self.arrow.ib.rb.isKinematic = true
+    --self:EnableCols(false, self.arrow.ib)
+    self.arrow.trail.enabled = false
+    self.arrow.ib:ActivateTrail(false, CL.InteractTrigger.WhiteColor)
+    self.isOnCall = false
+    
+    self.arrowCollision = false
+    
+    self.arrow.needRecenter = false
+    --print("LockedArrow--------------")
+end
+
+
+function HookArmguard:EnableCols(enable, ib)
+    local cols = ib:GetCols()
+    for i = 0, cols.Length - 1 do
+        cols[i].enabled = enable
+    end
+end
+
+function HookArmguard:SpawnArrow()
+    local arrowGO = CL.PrefabPool.SpawnPrefab(self.arrowPrefab, CL.InteractTrigger.WeaponPath)
+    local arrow = arrowGO:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    return arrow
+end
+
+function HookArmguard:NetworkShotHook(col, point, shotPos, shotDir)
+    self:ShotHook(col, point, shotPos, shotDir)
+    
+    if self.arrow then
+        self.isShot = true
+    end
+end
+
+function HookArmguard:ShotHook(col, point, shotPos, shotDir)
+    if not self.arrow then
+        return false
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.recallActId)
+    local dir = not IsNullOrDestroyed(col) and (point - shotPos).normalized or shotDir
+    --CL.DebugDraw.DrawLine(shotPos, shotPos + dir * 1
+    --        , UE.Color.green, 4)
+    
+    local force = dir * self.shootSpeed
+    local stab = self.arrow.ib:GetStabObject()
+    if not IsNullOrDestroyed(stab) then
+        stab:AddStabTargetForce(force)
+    end
+    self.arrow.ib:MarkThrowAssist(1)
+    
+    --self:EnableCols(true, self.arrow.ib)
+    self.arrow.trans:SetParent(nil)
+    UE.SceneManagement.SceneManager.MoveGameObjectToScene(self.arrow.ib.gameObject, UE.SceneManagement.SceneManager.GetActiveScene())
+    
+    self.arrow.ib.rb.isKinematic = false
+    self.arrow.ib.rb.velocity = force
+    self.arrow.trail.enabled = true
+    
+    self.arrow:OnShot(col, point)
+    local isOwnerLocalPlayer = true
+    if self.isOnline then
+        isOwnerLocalPlayer = SafeIsOwnerLocalPlayer(self.host.interact)
+    end
+    self.arrow:AutoRecall(self.maxRange, col, dir, self.shootSpeed, isOwnerLocalPlayer)
+    self.arrowCollision = false
+    
+    self.arrow.needRecenter = true
+    return true
+end
+
+function HookArmguard:ShowRope(isShow)
+
+    self.ropeRenderer.enabled = isShow
+    self.lineRenderer.enabled = isShow
+
+    
+    if not isShow then
+        return
+    end
+    
+    self.ropeRenderer.startColor = UE.Color.clear
+    self.ropeRenderer.endColor = UE.Color.clear
+    
+    self.lineRenderer.startColor = UE.Color.clear
+    self.lineRenderer.endColor = UE.Color.clear
+        
+    local time = 0.5
+    local delay = 0.2
+    local value = 0
+    CL.Scheduler.RemoveSchedule(self.showRopeId)
+    self.showRopeId = CL.Scheduler.Create(self.host.gameObject,
+    function(sche, t, s)
+        if not self.arrow or IsNullOrDestroyed(self.arrow.trans) then
+            sche:Stop()
+            return
+        end
+        
+        if t > delay then
+            value = (t-delay)/(time - delay)
+            self.ropeRenderer.startColor = UE.Color.Lerp(UE.Color.clear, self.ropeColorStart, value)
+            self.ropeRenderer.endColor = UE.Color.Lerp(UE.Color.clear, self.ropeColorEnd, value)
+            
+            self.lineRenderer.startColor = UE.Color.Lerp(UE.Color.clear, self.lineColorStart, value)
+            self.lineRenderer.endColor = UE.Color.Lerp(UE.Color.clear, self.lineColorEnd, value)
+        end
+    end
+    , 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+end
+
+function HookArmguard:UpdateRope()
+    CL.Scheduler.RemoveSchedule(self.ropeActId)
+    local hand = self:GetSlotHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end    
+    local curve = hand.character.weaponFlyBackCurve
+    local isReset = false
+    local calcCount = false
+    local shotTime = 0
+    local springTime = 0.4
+    
+    local count = 2
+    self.lineRenderer.positionCount = 2
+    local waveHeight = 0.1
+    local waveCount = math.random(1, 2) * 2
+    local springValue = 0
+    local offset = nil
+    local floatIntensity = 3
+    local stopFloatIntensity = 5
+    local sqrDis = 0
+    local midVec1 = UE.Vector3.zero
+    local midVec2 = UE.Vector3.zero
+    local midVec3 = UE.Vector3.zero
+    local midVec4 = UE.Vector3.zero
+    self.ropeActId = CL.Scheduler.Create(self.host.gameObject,
+    function(sche, t, s)
+        if not self.arrow or IsNullOrDestroyed(self.arrow.ib) or not self.isSlot then
+            sche:Stop()
+            self:ShowRope(false)
+            return
+        end
+        
+        if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+            count = 2
+            self.lineRenderer.positionCount = count
+        else
+            if not self.isShot and not self.isOnCall and not calcCount then
+                count = 2
+                self.lineRenderer.positionCount = count
+                calcCount = true
+            end
+            
+            if self.isShot and not calcCount then
+                if self.isHookStab then
+                    count = 2
+                    self.lineRenderer.positionCount = count
+                end
+            end
+            
+            if self.isShot and calcCount then
+                count = 50
+                self.lineRenderer.positionCount = count
+                calcCount = false
+            end
+        end
+        
+        if self.isShot and not isReset then
+            springValue = 1
+            isReset = true
+            shotTime = t
+            waveCount = math.random(1, 2) * 2
+        end
+        
+        if self.isOnCall and isReset then
+            isReset = false
+        end
+        
+        local ropeFixedPos = self:GetRopeFixedPosition()
+
+        if count == 2 then
+            self.lineRenderer:SetPosition(0, ropeFixedPos)
+            self.lineRenderer:SetPosition(1, self.arrow.ib.trans.position)
+        else
+            if springValue > 0 then
+                if self.arrowCollision or self.isOnCall then
+                    sqrDis = Vector3.SqrMagnitude(Vector3.OpSub(self.arrow.ib.trans.position, ropeFixedPos, midVec1))
+                    stopFloatIntensity = math.max(1, (1 - math.min(1, sqrDis/4)) * 50)
+                else
+                    stopFloatIntensity = 1
+                end
+                springValue = 1 - CL.EasingEquations.EaseInQuad(0, 1, math.min((t - shotTime) * stopFloatIntensity/springTime, 1))
+                if springValue < 0 then
+                    springValue = 0
+                end
+            end
+            if self.arrow then
+                --self.lineRenderer:SetPosition(0, self.fixedPos.position)
+                Vector3.OpSub(self.arrow.ib.trans.position, ropeFixedPos, midVec1)
+                local up = Vector3.OpMulQuat(UE.Vector3.up, UE.Quaternion.LookRotation(Vector3.OpNormalize(midVec1)), midVec2)
+                
+                for i = 0, count - 1 do
+                    local delta = i / (count - 1)
+                    offset =  Vector3.OpMul(up, waveHeight * math.sin((1 - ((t - shotTime) * floatIntensity + delta) % 1) * waveCount * math.pi) * springValue * curve:Evaluate(delta), midVec1)
+                    self.lineRenderer:SetPosition(i, Vector3.OpAdd(Vector3.OpLerp(ropeFixedPos, self.arrow.ib.trans.position, delta, midVec3), offset, midVec4))
+                end
+            end
+        end
+    end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.LateUpdate).actionId
+end
+
+function HookArmguard:GetRopeFixedPosition()
+    if self:IsAvatarModEnabled() and not IsNullOrDestroyed(self.handFixedPos) then
+        return self.handFixedPos.position
+    end
+
+    return self.fixedPos.position
+end
+
+function HookArmguard:NetworkRecallArrow()
+    if not self.arrow then
+        return
+    end
+    self.isOnCall = true
+    
+    --self:EnableCols(false, self.arrow.ib)
+    self.arrow:OnRecall()
+    self.arrow.ib:ActivateTrail(true, CL.InteractTrigger.WhiteColor)
+end
+
+function HookArmguard:RecallArrow()
+    if self.isOnline  then
+        if SafeIsOwnerLocalPlayer(self.host.interact) then
+            local localPlayerId = self:GetLocalPlayerNetId()
+            local state = GetNetworkIBState(self)
+            if state ~= nil and localPlayerId ~= nil then state:CmdRecallArrow(localPlayerId) end
+        else
+            return
+        end
+    end
+    
+    self:DoRecallArrow()
+end
+
+function HookArmguard:DoRecallArrow()
+    --print("RecallArrow--------------------")
+    if not self.arrow then
+        return
+    end
+    
+    self.isOnCall = true
+    
+    CL.Scheduler.RemoveSchedule(self.recallActId)
+    
+    ------------gc------------
+    local midVec1 = UE.Vector3.zero
+    local midVec2 = UE.Vector3.zero
+    local midVec3 = UE.Vector3.zero
+    local midVec4 = UE.Vector3.zero
+    local midVec5 = UE.Vector3.zero
+    --------------------------
+    
+    --self:EnableCols(false, self.arrow.ib)
+    self.arrow:OnRecall()
+    self.arrow.ib:ActivateTrail(true, CL.InteractTrigger.WhiteColor)
+    local startCallPos = self.arrow.ib.trans.position
+    local dis = Vector3.Magnitude(Vector3.OpSub(self.arrow.ib.trans.position, self.createPoint.position, midVec1))
+    local sec = dis / self.callSpeed
+    sec = sec == 0 and 0.01 or sec
+    local flyDisFactor = dis > self.designCallDis and 1 or dis / self.designCallDis
+    self.arrow.ib.rb.velocity = UE.Vector3.zero
+    self.arrow.ib.rb.angularVelocity = self.arrow.ib.rb.angularVelocity * 0.5
+    local flyCurveDir = UE.Vector3(0, 2.5, 0)
+    local maxFlyCurve = 0.1
+    local flybackMaxVel = 5
+    local startCallRot = UE.Quaternion.LookRotation(Vector3:OpDiv(Vector3.OpAdd(self.createPoint.forward, self.arrow.ib.rb.transform.forward, midVec1), 2, midVec2))
+    if dis < 8 then
+        startCallRot = self.arrow.ib.rb.transform.rotation
+    end
+    local percent = 0
+    local hand = self:GetSlotHand()
+    local targetSpeed = self.callSpeed
+    local sqrTargetDis = targetSpeed * UE.Time.deltaTime
+    sqrTargetDis = sqrTargetDis * sqrTargetDis
+    
+    local printTime = 1
+    --print("start recall timer--------------------:" .. sec .. " sqrTargetDis:" .. sqrTargetDis)
+    self.recallActId = CL.Scheduler.Create(self.host.gameObject,
+    function(sche, t, s)
+        if IsNullOrDestroyed(hand) then
+            sche:Stop()
+            return
+        end
+        if not self.arrow then
+            sche:Stop()
+            return
+        end
+        
+        percent = CL.EasingEquations.EaseInQuad(0, 1, t/sec)
+        
+        if percent < 0.035 and maxFlyCurve > 0 and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_ThrowControl") then
+            if not IsNullOrDestroyed(hand) then
+                local v = hand.velocityEstimator:GetVelocityEstimateLocal()
+                local vsqr = Vector3.SqrMagnitude(v)
+                if vsqr > maxFlyCurve then
+                    maxFlyCurve = vsqr
+                    if vsqr > flybackMaxVel *flybackMaxVel then
+                        v = Vector3.OpMul(Vector3.OpNormalize(v), flybackMaxVel, midVec1)
+                    end
+                    flyCurveDir = Vector3.OpMul(v, 3, midVec2)
+                    startCallRot = self.createPoint.rotation
+                end
+            end
+        end
+
+        local lerpPos = Vector3.OpAdd(Vector3.OpLerp(startCallPos, self.createPoint.position, percent, midVec4), Vector3.OpMul(flyCurveDir, (hand.character.weaponFlyBackCurve:Evaluate(percent) * flyDisFactor), midVec3), midVec5)
+        if t > printTime then
+            printTime = t + 1
+            --print("lerp pos--------:" .. lerpPos.x .. "  " .. lerpPos.y .. "  " .. lerpPos.z  .. " targetSpeed:" .. targetSpeed)
+        end
+        
+        local rbPos = self.arrow.ib.trans.position
+        local finalPos = UE.Vector3.MoveTowards(rbPos, lerpPos, 1)
+        
+        local sqrDis = Vector3.SqrMagnitude((Vector3.OpSub(self.arrow.ib.trans.position, self.createPoint.position, midVec3)))
+        CL.PhysicsFollow.TrackPosition(self.arrow.ib.rb, finalPos, 10)
+        sqrTargetDis = targetSpeed * UE.Time.deltaTime
+        sqrTargetDis = sqrTargetDis * sqrTargetDis
+        if sqrDis < sqrTargetDis * 2 then
+            CL.PhysicsFollow.TrackRotation(self.arrow.ib.rb, UE.Quaternion.Slerp(self.createPoint.rotation, startCallRot, 0.1))
+        else
+            Vector3.OpSub(self.arrow.ib.trans.position, self.createPoint.position, midVec4)
+            CL.PhysicsFollow.TrackRotation(self.arrow.ib.rb, UE.Quaternion.LookRotation(midVec4))
+        end
+        
+        
+        if sqrDis <= sqrTargetDis then
+            CL.EffectMgr.Instance:PlayEffect(self.lockedEffectName, self.createPoint.position, self.arrow.ib.trans.rotation)
+            self:LockedArrow()
+            sche:Stop()
+        end
+    end
+    , 0, -1).actionId
+    
+    self:StopHandJointUpdate()
+end
+
+function HookArmguard:NetworkRecallOnLockPos(pos, rot)
+    CL.EffectMgr.Instance:PlayEffect(self.lockedEffectName, self.createPoint.position, self.createPoint.rotation)
+    self:LockedArrow()
+end
+
+function HookArmguard:CutRope()
+    if self.arrow then
+        self.arrow:OnCutRope()
+        self.arrow = nil
+    end
+    
+    self:ShowRope(false)
+    
+    self:StopHandJointUpdate()
+    self:Disconnect()
+end
+
+function HookArmguard:NetworkOnHookObj(rb, anchor)
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(rb.transform)
+    self:ConnectTarget(pu, rb, rb.transform, anchor)
+    self.isHookStab = true
+end
+
+function HookArmguard:OnArrowCollision(collider, point, normal)
+    self.arrowCollision = true
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    for k, v in ipairs(self.onArrowCollisionList) do
+        if v ~= nil then
+            v:OnArrowCollision(self.host.interact, collider, point, normal)
+        end
+    end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collider)
+    if not IsNullOrDestroyed(pu) then
+        if pu.unitType == CL.Tagger.Tag.PlayerRole then
+            if self.isOnline and CL.Network.NetworkRoomMgr.curNetworkMapType ~= CL.Network.NetworkMapType.Gauntlet then
+                self:TryDisarm(pu.character)
+            end
+            
+            local dir = (self.arrow.ib.trans.position - self.trans.position).normalized * 0.3
+            self:PushCharacterForAWhile(pu.character, self.isOnCall and -dir or dir)
+        end
+    end
+end
+
+function HookArmguard:PushCharacterForAWhile(character, dir)
+    character:AddForce(dir * self.arrowPushForce)
+    character:SetDragForAWhile(0.2)
+    character:SetMovementForAWhile(false, 0.2)
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerPushCharacterForAWhile(character, dir) end
+    end
+end
+
+function HookArmguard:TryDisarm(character)
+    local ph = self:GetSlotHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+    
+    if ph.character == character then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.Instance.IsServer and not character.IsLocalPlayer then
+        local networkPlayer = character.networkPlayer
+        if networkPlayer ~= nil and not IsNullOrDestroyed(networkPlayer)
+            and networkPlayer.networkInteractHand ~= nil then
+            local conn = networkPlayer.connectionToClient
+            networkPlayer.networkInteractHand:TargetForceGrabNull(conn, true)
+            networkPlayer.networkInteractHand:TargetForceGrabNull(conn, false)
+        end
+    else
+        for i = 0, character.hands.Length - 1 do
+            character.hands[i]:Grab(nil)
+        end
+        
+        CL.SoundTable.PlaySound("WeaponBroken", character.trans.position)
+    end
+end
+
+function HookArmguard:IsAllowHook()
+    if not IsNullOrDestroyed(self.joint) or self.isOnCall then
+        return false
+    end
+    local hand = self:GetSlotHand()
+    if not hand or IsNullOrDestroyed(hand) then
+        return false
+    end
+    
+    return true
+end
+
+function HookArmguard:HookObjOnCollision(otherCollider, point)
+    local col = otherCollider
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(col)
+    self:ConnectTarget(pu, col.attachedRigidbody, col.transform, col.attachedRigidbody.transform:InverseTransformPoint(point))
+    
+    self.isHookStab = true
+end
+
+function HookArmguard:IsClientLocalPlayer()
+    return self.isOnline
+        and SafeIsOwnerLocalPlayer(self.host.interact)
+        and (not CL.Network.VRNetworkManager.ServerOnline)
+end
+
+function HookArmguard:ConnectTarget(pu, rb, stabTrans, localAnchor)
+    local hand = self:GetSlotHand()
+    local targetPos = rb.transform:TransformPoint(localAnchor)
+    local isPowerfulCharacter = false
+    local rootPu = not IsNullOrDestroyed(pu) and CL.PhysicsUnit.GetPhysicsUnitTopDown(pu.trans) or nil
+
+    -- Face-hug launch and attachment both mark the creature as powerful. End the
+    -- face hug before classifying the target so the hook pulls the skull, not the player.
+    if not IsNullOrDestroyed(rootPu) then
+        local skullCrawling = rootPu.gameObject:GetComponent(typeof(CL.SkullCrawling))
+        if not IsNullOrDestroyed(skullCrawling) and skullCrawling.IsFaceHugging then
+            skullCrawling:StopFaceHug(true, false)
+        end
+    end
+
+    self.isGrabJoint = not rb.isKinematic
+    if not IsNullOrDestroyed(rootPu) then
+        if rootPu.unitType == CL.Tagger.Tag.InteractRole then
+            if rootPu.muscleState:IsPowerfulCharacter() and not rootPu.attr:IsDead() then
+                self.isGrabJoint = false
+                isPowerfulCharacter = true
+            end
+        elseif rootPu.unitType == CL.Tagger.Tag.SceneObject then
+            if rb.mass > hand.character.capsuleRB.mass * 3 then
+                self.isGrabJoint = false
+            end
+        end
+    else
+        if rb.mass > hand.character.capsuleRB.mass * 3 then
+            self.isGrabJoint = false
+        end
+    end
+    --print("ConnectTarget------------addjoint")
+    self.connectRb = rb
+    if self.isGrabJoint then
+        self.joint = hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint.connectedBody = rb
+        self.joint.autoConfigureConnectedAnchor = false
+        self.joint.connectedAnchor = localAnchor
+        
+        if self:IsClientLocalPlayer() then
+            self.joint.xMotion = UE.ConfigurableJointMotion.Free
+            self.joint.yMotion = UE.ConfigurableJointMotion.Free
+            self.joint.zMotion = UE.ConfigurableJointMotion.Free
+        else
+            self.joint.xMotion = UE.ConfigurableJointMotion.Limited
+            self.joint.yMotion = UE.ConfigurableJointMotion.Limited
+            self.joint.zMotion = UE.ConfigurableJointMotion.Limited
+        end
+        
+        local mass = 0
+        local rootPu = not IsNullOrDestroyed(pu) and CL.PhysicsUnit.GetPhysicsUnitTopDown(pu.trans) 
+            or CL.PhysicsUnit.GetPhysicsUnitTopDown(rb.transform)
+        if rootPu then
+            rootPu:OnAttachBuild(hand.physicsHand, self.joint, rb)
+            self.attachHand = hand.physicsHand
+            self.attachPu = rootPu
+            mass = rootPu:GetTotalMass()
+        else
+            mass = rb.mass
+        end
+        
+        if not (self:IsClientLocalPlayer()) then
+            local lls = self.joint.linearLimitSpring
+            local spring = mass * self.massToLimitSpringMlp
+            lls.spring = spring
+            lls.damper = spring / self.springDamperMlp
+            self.joint.linearLimitSpring = lls
+        end
+        --local drive = self.joint.xDrive
+        --spring = rootPu:GetTotalMass() * self.massToDriveSpringMlp
+        --drive.positionSpring = spring
+        --drive.positionDamper = spring/10
+        --self.joint.xDrive = drive
+        --self.joint.yDrive = drive
+        --self.joint.zDrive = drive
+        
+        self.connectPu = pu
+        
+        if rootPu and rootPu.unitType == CL.Tagger.Tag.InteractRole then
+            local ll = self.joint.linearLimit
+            ll.limit = UE.Vector3.Distance(targetPos, self.createPoint.position) + 0.2
+            self.joint.linearLimit = ll
+            
+            if not (self:IsClientLocalPlayer()) then
+                local mu = rootPu.ra:GetMuscle(rb.transform)
+                if mu then
+                    self:PullCharacter(hand.character, rootPu, mu)
+                else
+                    self:PullRigidbody(hand.character, rootPu, rb)
+                end
+            end
+            
+        else
+            local ll = self.joint.linearLimit
+            local distance = UE.Vector3.Distance(targetPos, self.createPoint.position)
+            ll.limit = distance  + 0.2
+            self.joint.linearLimit = ll
+            
+            local drive = self.joint.xDrive
+            local spring = 0
+            drive.positionSpring = 0
+            drive.positionDamper = 0
+            self.joint.xDrive = drive
+            self.joint.yDrive = drive
+            self.joint.zDrive = drive
+            
+            if not (self:IsClientLocalPlayer()) then
+                self:PullRigidbody(hand.character, rootPu, rb)
+            end
+        end
+        
+        if hand.character:IsMidAir() then
+            if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_AirStay") then
+                hand.character:StartAerialStay(hand, self.target)
+            end
+        end
+    
+        self:FixedArrowAnchor()
+    else
+        self.joint = hand.character.capsuleRB.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint.connectedBody = rb
+        
+        self.joint.autoConfigureConnectedAnchor = false
+        self.joint.connectedAnchor = localAnchor
+        
+        if not self.isOnline or (self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact)) then
+            local lls = self.joint.linearLimitSpring
+            lls.spring = 3000
+            lls.damper = 1000
+            self.joint.linearLimitSpring = lls
+            
+            self.joint.xMotion = UE.ConfigurableJointMotion.Limited
+            self.joint.yMotion = UE.ConfigurableJointMotion.Limited
+            self.joint.zMotion = UE.ConfigurableJointMotion.Limited
+            
+            local ll = self.joint.linearLimit
+            ll.limit = UE.Vector3.Distance(targetPos, hand.trans.position)
+            self.joint.linearLimit = ll
+            
+            self:UpdateHandJoint(hand)
+            self:StartDragHandler(hand.character)
+            
+            self:PullPlayer(hand.character, isPowerfulCharacter)
+        else
+            self.joint.xMotion = UE.ConfigurableJointMotion.Free
+            self.joint.yMotion = UE.ConfigurableJointMotion.Free
+            self.joint.zMotion = UE.ConfigurableJointMotion.Free
+        end
+    end
+    
+    self:StartListenButton()
+    
+    self.joint.enableCollision = true
+    
+    
+    self:AutoTightening()
+end
+
+function HookArmguard:StopHandJointUpdate()
+    CL.Scheduler.RemoveSchedule(self.handJointId)
+end
+
+function HookArmguard:FixedArrowAnchor()
+    CL.Scheduler.RemoveSchedule(self.arrowAnchorId)
+    self.arrowAnchorId = CL.Scheduler.Create(self.createPoint,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.joint) then
+                sche:Stop()
+                return
+            end
+            
+            if IsNullOrDestroyed(self.connectRb) then
+                sche:Stop()
+                return
+            end
+
+            if not self.arrow or IsNullOrDestroyed(self.arrow.ib) or IsNullOrDestroyed(self.arrow.ib.trans) then
+                sche:Stop()
+                return
+            end
+            
+            self.joint.connectedAnchor = self.connectRb.transform:InverseTransformPoint(self.arrow.ib.trans.position)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function HookArmguard:UpdateHandJoint(hand)
+    local moveHand = nil
+    local inputDir = nil
+    local moveDir = nil
+    CL.Scheduler.RemoveSchedule(self.handJointId)
+    self.handJointId = CL.Scheduler.Create(self.createPoint,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.joint) or IsNullOrDestroyed(hand) then
+                sche:Stop()
+                return
+            end
+            
+            self.joint.anchor = hand.character.trans:InverseTransformPoint(self.createPoint.position)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function HookArmguard:AutoTightening()
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.autoTighteningId)
+    local ll = self.joint.linearLimit
+    local dis = 0
+    local value = 0
+    local isMaxDis = false
+    self.autoTighteningId = CL.Scheduler.Create(self.createPoint,
+        function(sche, t, s)
+            if not self.arrow or IsNullOrDestroyed(self.arrow.ib) then sche:Stop(); return end
+            if self.arrow and not self.isHookStab and IsNullOrDestroyed(self.joint) then
+                self.ropeRenderer.startColor = self.ropeColorStart
+                self.ropeRenderer.endColor = self.ropeColorEnd
+                self.lineRenderer.startColor = self.lineColorStart
+                self.lineRenderer.endColor = self.lineColorEnd
+                if self.isOnline then
+                    local localPlayerId = self:GetLocalPlayerNetId()
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil and localPlayerId ~= nil then state:CmdUpdateTightening(localPlayerId, -1, -1) end
+                end
+                sche:Stop()
+                return
+            end
+            
+            dis = UE.Vector3.Distance(self.arrow.ib.trans.position, self.createPoint.position)
+            if dis - ll.limit > self.maxExceedLimit then
+                --print("auto disconnect----dis:" .. dis .. "  jointlimit:" .. ll.limit)
+                if self.isOnline then
+                    self:LocalCloseSkill()
+                else
+                    self.host:CloseSkill()
+                end
+                sche:Stop()
+                return
+            end
+            
+            if not self.isPress then
+                ll = self.joint.linearLimit
+                if ll.limit - dis >= self.autoTightenLen then
+                    ll.limit = dis
+                    self.joint.linearLimit = ll
+                end
+                
+                value = math.min(ll.limit - dis)/ll.limit
+                
+                self.ropeRenderer.startColor = UE.Color.Lerp(self.ropeColorStart, UE.Color.white, value)
+                self.ropeRenderer.endColor = UE.Color.Lerp(self.ropeColorEnd, UE.Color.white, value)
+                
+                self.lineRenderer.startColor = UE.Color.Lerp(self.lineColorStart, UE.Color.white, value)
+                self.lineRenderer.endColor = UE.Color.Lerp(self.lineColorEnd, UE.Color.white, value)
+                
+                if self.isOnline then
+                    local localPlayerId = self:GetLocalPlayerNetId()
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil and localPlayerId ~= nil then state:CmdUpdateTightening(localPlayerId, value, ll.limit) end
+                end
+            else
+                self.ropeRenderer.startColor = self.ropeColorStart
+                self.ropeRenderer.endColor = self.ropeColorEnd
+                self.lineRenderer.startColor = self.lineColorStart
+                self.lineRenderer.endColor = self.lineColorEnd
+                if self.isOnline then
+                    local localPlayerId = self:GetLocalPlayerNetId()
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil and localPlayerId ~= nil then state:CmdUpdateTightening(localPlayerId, -1, -1) end
+                end
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function HookArmguard:NetworkUpdateTightening(value, limit)
+    if not self.joint or IsNullOrDestroyed(self.joint) then
+        return
+    end
+    if limit > 0 and not self.isPress then
+        local ll = self.joint.linearLimit
+        ll.limit = limit
+        self.joint.linearLimit = ll
+    end
+    
+    self.ropeRenderer.startColor = UE.Color.Lerp(self.ropeColorStart, UE.Color.white, value)
+    self.ropeRenderer.endColor = UE.Color.Lerp(self.ropeColorEnd, UE.Color.white, value)
+    
+    self.lineRenderer.startColor = UE.Color.Lerp(self.lineColorStart, UE.Color.white, value)
+    self.lineRenderer.endColor = UE.Color.Lerp(self.lineColorEnd, UE.Color.white, value)
+end
+
+function HookArmguard:NetworkUpdateJoint(anchor, spring, damper, limit)
+    if not self.joint or IsNullOrDestroyed(self.joint) then
+        return
+    end
+    self.joint.anchor = anchor
+    local pos = self.joint.transform:TransformPoint(anchor)
+    
+    if self.isPress then
+        local ll = self.joint.linearLimit
+        ll.limit = limit
+        self.joint.linearLimit = ll
+    end
+    
+    local drive = self.joint.xDrive
+    drive.positionSpring = spring
+    drive.positionDamper = damper
+    self.joint.xDrive = drive
+    self.joint.yDrive = drive
+    self.joint.zDrive = drive
+end
+
+function HookArmguard:PullCharacter(character, fc, mu)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local targetPos = self.createPoint.position
+    local dir = nil
+    local mucs = fc.bone:GetTemporaryListMuscleChain(mu.muscleName)
+    local cmu = nil
+    
+    local curRollSpeed = 0
+    local curIntansity = 0
+    local hand = self:GetSlotHand()
+    local handVel = nil
+    local curScalingVel = nil
+    
+    local drive = self.joint.xDrive
+    local totalMass = fc:GetTotalMass()
+    local minSpring = totalMass * self.massToDriveSpringMlp
+    local curSpring = minSpring
+    local dirIntensity = 0
+    local ll = self.joint.linearLimit
+    
+    local velNormal = UE.Vector3.zero
+    local midVec1 = UE.Vector3.zero
+    local midVec2 = UE.Vector3.zero
+    local midVec3 = UE.Vector3.zero
+    local midVec4 = UE.Vector3.zero
+    CL.Scheduler.RemoveSchedule(self.pullActId)
+    self.pullActId = CL.Scheduler.Create(self.createPoint,
+        function(sche, t, s)
+            if IsNullOrDestroyed(fc) or IsNullOrDestroyed(hand) then
+                if not IsNullOrDestroyed(self.host) then self.host:CloseSkill() end
+                sche:Stop()
+                return
+            else
+                fc:UpdateAttentionTime(UE.Time.time)
+            end
+            
+            if not self.arrow or IsNullOrDestroyed(self.arrow.trans) 
+                or self.isOnCall or IsNullOrDestroyed(self.joint) then
+                sche:Stop()
+                return
+            end
+            
+            if not self.isPress then
+                drive.positionSpring = 0
+                drive.positionDamper = 0
+                self.joint.xDrive = drive
+                self.joint.yDrive = drive
+                self.joint.zDrive = drive
+                
+                self.joint.anchor = UE.Vector3.zero
+                return
+            end
+            
+            --if not fc.motion:IsKnockout() then
+            --    fc.motion:Knockout()
+            --end
+            
+            handVel = hand.velocityEstimator:GetAvgVelocityLocal(0.07)
+            --CL.PhysicsFollow.TrackPosition(mu.rb, UE.Vector3.MoveTowards(mu.rbTrans.position, targetPos, 0.3))
+            Vector3.CloneTo(handVel, velNormal)
+            Vector3.OpNormalize(velNormal)
+            
+            curRollSpeed = math.min(Vector3.Magnitude(handVel), self.maxHandSpeed)
+            curIntansity = (curRollSpeed / self.maxHandSpeed)
+            curScalingVel = Vector3.OpMul(velNormal, curRollSpeed * (curIntansity * self.handSpeedScaling), midVec1)
+            
+            dirIntensity = Vector3.Dot(Vector3.OpNormalize(Vector3.OpSub(self.createPoint.position, self.arrow.trans.position, midVec2))
+                , velNormal)
+            dirIntensity = dirIntensity > 0 and 1 or (1 - math.abs(dirIntensity))
+                
+            targetPos = UE.Vector3.Lerp(targetPos, Vector3.OpAdd(self.createPoint.position, Vector3.OpMul(curScalingVel, dirIntensity, midVec3), midVec4), 0.5)
+            --self.anchorPos.position = targetPos
+            self.joint.anchor = hand.grabJoint.transform:InverseTransformPoint(targetPos)
+            
+            if curIntansity * self.maxRange > ll.limit then
+                ll.limit = curIntansity * self.maxRange
+                self.joint.linearLimit = ll
+            end
+            
+            curSpring = minSpring + curIntansity * self.maxDriveSpringMlp * totalMass
+            drive.positionSpring = curSpring
+            drive.positionDamper = curSpring/self.rbDamperMlp
+            self.joint.xDrive = drive
+            self.joint.yDrive = drive
+            self.joint.zDrive = drive
+            
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerUpdateJoint(self.joint.anchor, curSpring, drive.positionDamper, ll.limit) end
+            end
+            
+            if fc and not fc.ra:HasBeenRipped() then
+                dir = mu.rb.velocity
+                for i = 0, mucs.Count - 1 do
+                    cmu = fc.bone.ragdoll:GetMuscle(mucs[i])
+                    if cmu and cmu.muscleName ~= mu.muscleName then
+                        if not IsNullOrDestroyed(cmu.rb) then
+                            cmu.rb.velocity = Vector3.OpLerp(cmu.rb.velocity, dir, self.muscleLerpSpeed, midVec1)
+                        end
+                    end
+                end
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function HookArmguard:PullRigidbody(character, pu, rb)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local targetPos = self.createPoint.position
+    local maxDis = Vector3.Distance(rb.position, self.createPoint.position)
+    
+    local curRollSpeed = 0
+    local curIntansity = 0
+    local hand = self:GetSlotHand()
+    local handVel = nil
+    local curScalingVel = nil
+    
+    local drive = self.joint.xDrive
+    local totalMass = not IsNullOrDestroyed(pu) and pu:GetTotalMass() or rb.mass
+    local minSpring = totalMass * self.massToDriveSpringMlp
+    local curSpring = minSpring
+    
+    local cacheDrag = rb.drag
+    rb.drag = 0
+    
+    local dirIntensity = 0
+    
+    local ll = self.joint.linearLimit
+    local velNormal = UE.Vector3.zero
+    local midVec1 = UE.Vector3.zero
+    local midVec2 = UE.Vector3.zero
+    local midVec3 = UE.Vector3.zero
+    local midVec4 = UE.Vector3.zero
+    CL.Scheduler.RemoveSchedule(self.pullActId)
+    self.pullActId = CL.Scheduler.Create(self.createPoint,
+        function(sche, t, s)
+            if IsNullOrDestroyed(rb) or IsNullOrDestroyed(hand) then
+                if not IsNullOrDestroyed(self.host) then self.host:CloseSkill() end
+                sche:Stop()
+                if not IsNullOrDestroyed(rb) then rb.drag = cacheDrag end
+                return
+            end
+            
+            if not self.arrow or IsNullOrDestroyed(self.arrow.trans) 
+                or self.isOnCall or IsNullOrDestroyed(self.joint) then
+                sche:Stop()
+                rb.drag = cacheDrag
+                return
+            end
+            
+            if not self.isPress then
+                drive.positionSpring = 0
+                drive.positionDamper = 0
+                self.joint.xDrive = drive
+                self.joint.yDrive = drive
+                self.joint.zDrive = drive
+                
+                self.joint.anchor = UE.Vector3.zero
+                return
+            end
+            
+            handVel = hand.velocityEstimator:GetAvgVelocityLocal(0.07)
+            Vector3.CloneTo(handVel, velNormal)
+            Vector3.OpNormalize(velNormal)
+            
+            curRollSpeed = math.min(Vector3.Magnitude(handVel), self.maxHandSpeed)
+            curIntansity = (curRollSpeed / self.maxHandSpeed)
+            
+            curScalingVel = Vector3.OpMul(velNormal, curRollSpeed * (curIntansity * self.handSpeedScaling), midVec1)
+            dirIntensity = Vector3.Dot(Vector3.OpNormalize(Vector3.OpSub(self.createPoint.position, self.arrow.trans.position, midVec2))
+                , velNormal)
+            dirIntensity = dirIntensity > 0 and 1 or (1 - math.abs(dirIntensity))
+            targetPos = UE.Vector3.Lerp(targetPos, Vector3.OpAdd(self.createPoint.position, Vector3.OpMul(curScalingVel, dirIntensity, midVec3), midVec4), 0.5)
+            --self.anchorPos.position = targetPos
+            self.joint.anchor = hand.grabJoint.transform:InverseTransformPoint(targetPos)
+            
+            if curIntansity * self.maxRange > ll.limit then
+                ll.limit = curIntansity * self.maxRange
+                self.joint.linearLimit = ll
+            end
+            
+            curSpring = minSpring + curIntansity * self.maxDriveSpringMlp * totalMass
+            drive.positionSpring = curSpring
+            drive.positionDamper = curSpring/self.rbDamperMlp
+            self.joint.xDrive = drive
+            self.joint.yDrive = drive
+            self.joint.zDrive = drive
+            
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerUpdateJoint(self.joint.anchor, curSpring, drive.positionDamper, ll.limit) end
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function HookArmguard:PullPlayer(character, isPowerfulCharacter)
+    local drive = self.joint.xDrive
+    local totalMass = character:GetPlayerUnit():GetTotalMass()
+    local spring = totalMass * self.massToDrivePlayerSpringMlp
+    local intensity = 0
+    
+    local isPressing = false
+    local curSpeed = 0
+    local pullTime = 0
+    --self:PullPlayerOnHook(character)
+    CL.Scheduler.RemoveSchedule(self.pullActId)
+    self.pullActId = CL.Scheduler.Create(self.createPoint,
+        function(sche, t, s)
+            if not self.arrow or IsNullOrDestroyed(self.arrow.trans) or self.isOnCall then
+                sche:Stop()
+                return
+            end
+            
+            if not self.joint or IsNullOrDestroyed(self.joint) then
+                return
+            end
+            
+            if isPressing and not self.isPress then
+                drive.positionSpring = 0
+                drive.positionDamper = 0
+                self.joint.xDrive = drive
+                self.joint.yDrive = drive
+                self.joint.zDrive = drive
+                isPressing = false
+            end
+            
+            if not isPressing and self.isPress then
+                drive.positionSpring = spring
+                drive.positionDamper = spring/self.damperMlp
+                self.joint.xDrive = drive
+                self.joint.yDrive = drive
+                self.joint.zDrive = drive
+                isPressing = true
+                
+                pullTime = UE.Time.time + 0.3
+            end
+            
+            if isPressing then
+                --print("player speed----------:" .. character.capsuleRB.velocity.magnitude)
+                curSpeed = character.capsuleRB.velocity.magnitude
+                if curSpeed > self.maxPlayerSpeed then
+                    local mlp = 1 - math.min(1, (curSpeed - self.maxPlayerSpeed) / self.stopDriveSpeed)
+                    mlp = mlp < 0.2 and 0.2 or mlp
+                    spring = totalMass * self.massToDrivePlayerSpringMlp * mlp
+                    --print("mlp ----------real:" .. mlp .. "speed:" .. spring)
+                    drive.positionSpring = spring
+                    drive.positionDamper = spring/self.damperMlp
+                    self.joint.xDrive = drive
+                    self.joint.yDrive = drive
+                    self.joint.zDrive = drive
+                else
+                    spring = totalMass * self.massToDrivePlayerSpringMlp
+                    if drive.positionSpring ~= spring then
+                        drive.positionSpring = spring
+                        drive.positionDamper = spring/self.damperMlp
+                        self.joint.xDrive = drive
+                        self.joint.yDrive = drive
+                        self.joint.zDrive = drive
+                    end
+                end
+                
+                if pullTime > UE.Time.time then
+                    self:PullPlayerOnHook(character)
+                end
+            end
+            
+            --dece
+            --self.pullTrans.forward = character.capsuleRB.transform.forward
+            --local localVel = self.pullTrans:InverseTransformPoint(character.capsuleRB.velocity + self.pullTrans.position)
+            --if math.abs(localVel.x) > 1 then
+            --    localVel.x = UE.Mathf.Lerp(localVel.x, 0, 0.3)
+            --    character.capsuleRB.velocity = self.pullTrans:TransformPoint(localVel) - self.pullTrans.position
+            --end
+            --
+            --if isPressing and isPowerfulCharacter then
+            --    self:PullPlayerWithForce(character)
+            --end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function HookArmguard:PullPlayerOnHook(character)
+    if not self.arrow then
+        return
+    end
+    
+    if not self.joint or IsNullOrDestroyed(self.joint) then
+        return
+    end
+    
+    
+    local ll = self.joint.linearLimit
+    
+    self.pullPlayerVec1 = UE.Vector3.zero
+    self.pullPlayerVec2 = UE.Vector3.zero
+
+    local targetPos = self.arrow.ib.trans.position
+    local dirToTarget = Vector3.OpNormalize(Vector3.OpSub(targetPos, self.createPoint.position, self.pullPlayerVec1))
+    local dirFaceTo = character.capsuleRB.transform.forward
+    
+    local dot = Vector3.Dot(dirToTarget, dirFaceTo)
+    local targetVel = nil
+    local velocity = character.capsuleRB.velocity
+    if dot > 0 then
+        
+        --local verticalPos = self:GetVerticalPerpendicularPoint(targetPos)
+        --local horizontalDir = Vector3.OpNormalize(Vector3.OpSub(verticalPos, self.createPoint.position, self.pullPlayerVec2))
+        
+        --local speedDir = Vector3.OpNormalize(velocity)
+        
+        local dir = dirFaceTo
+        self.pullTrans.forward = dir
+        local curVel = velocity
+        local localVel = self.pullTrans:InverseTransformPoint(Vector3.OpAdd(curVel, self.pullTrans.position, self.pullPlayerVec2))
+        if localVel.z > self.maxPullSpeed then
+            return
+        end
+        --character.capsuleRB.velocity = targetVel
+        local dotOfVertical = UE.Vector3.Dot(-dirToTarget, UE.Vector3.down)
+        if dotOfVertical < 0 then
+            return
+        end
+        
+        character:AddForce( Vector3.OpMul(dir, self.characterForwardForce * dotOfVertical, self.pullPlayerVec2))
+        --print("pull character-----------------:" .. (ll.limit / self.maxRange) .. " dotOfVertical :" .. 
+        --    (dotOfVertical) .. "   force  :" .. self.characterForwardForce * (dotOfVertical))
+
+        --CL.DebugDraw.DrawLine(self.createPoint.transform.position, self.createPoint.transform.position + dir, UE.Color.red, 0.1)
+    end
+end
+
+function HookArmguard:PullPlayerWithForce(character)
+    local vec = self.arrow.ib.trans.position - self.createPoint.position
+    local dis = vec.magnitude
+    if character:IsMidAir() then
+        character:AddForce(vec.normalized * self.characterAirPullForce * (dis/self.pullDis))
+    else
+        character:PanPushForAWhile(vec.normalized * self.characterGroundPullForce * (dis/self.pullDis), 0.2)
+    end
+end
+
+ 
+function HookArmguard:StartDragHandler(character)
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    CL.Scheduler.RemoveSchedule(self.dragTimerId)
+    
+    self.isOpenDrag = false
+    
+    local delay = 0
+    --if self.isGrabJoint then
+    --    character:SetDisableMoveCommand(true)
+    --    character:SetRootMotion(true)
+    --    character:SetDragPower(0)
+    --    isOpenDrag = true
+    --    
+    --    delay = 0.3
+    --end
+    
+    --character:BreakAllStuckActions()
+    character:StartStuckAction(self.stuckAction)
+    local vec = UE.Vector3.zero
+    local addJumpCount = 1
+    self.dragTimerId = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if IsNullOrDestroyed(character) then sche:Stop(); return end
+            if not IsNullOrDestroyed(self.connectRb) then
+                if t < delay then
+                    return
+                end
+                
+                if addJumpCount > 0 and character:JumpCountLeft() <= 0 then
+                    character:CountAsJump(character:JumpCountLeft() - 1)
+                    addJumpCount = addJumpCount - 1
+                end
+                
+                if not self.isOpenDrag then
+                    if character:IsMidAir() then
+                        character:SetDisableMoveCommand(true)
+                        character:SetRootMotion(true)
+                        character:SetDragPower(self.airDrag)
+                        self.isOpenDrag = true
+                    end
+                else
+                    if not character:IsMidAir() then
+                        if not self:IsOtherHandOpenDrag() then
+                            character:SetDisableMoveCommand(false)
+                            character:SetRootMotion(false)
+                            character:SetDragPower(character:GetOriginalDragPower())
+                            character:PanPushForAWhile(Vector3.OpMul(character.capsuleRB.velocity, 0.6, vec), 0.5)
+                        end
+                        self.isOpenDrag = false
+                    end
+                end
+            else
+                if character:IsMidAir() then
+                    character:SetDragForAWhile(self.airDrag, 0.5)
+                    return
+                end
+                if self.isOpenDrag then
+                    if not self:IsOtherHandOpenDrag() then
+                        character:SetDisableMoveCommand(false)
+                        character:SetRootMotion(false)
+                        character:SetDragPower(character:GetOriginalDragPower())
+                        character:PanPushForAWhile(Vector3.OpMul(character.capsuleRB.velocity, 0.6, vec), 0.5)
+                    end
+                    self.isOpenDrag = false
+                end
+                
+                self:RemoveStuckAction()
+                
+                sche:Stop()
+            end
+            
+            --self:LimitPlayerSpeed()
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.LateUpdate).actionId
+end
+
+function HookArmguard:IsOtherHandOpenDrag()
+    local hand = self:GetSlotHand()
+    if IsNullOrDestroyed(hand) then
+        return false
+    end
+    
+    local anotherHand = hand:GetAnotherHand()
+    if not anotherHand:IsTriggerSlotEquiped() then
+        return false
+    end
+    
+    local ib = anotherHand.triggerSlots[0].mountedItem
+    if IsNullOrDestroyed(ib) then
+        return false
+    end
+    
+    local trigger = ib:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return false
+    end
+    
+    local tb = trigger.script:GetSelf()
+    --print("isOpen drag--------:" .. tostring(tb.isOpenDrag))
+    return tb.isOpenDrag
+end
+
+
+function HookArmguard:LimitPlayerSpeed()
+    local hand = self:GetSlotHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local velocity = hand.character.capsuleRB.velocity
+    if velocity.magnitude > self.maxSwingSpeed * self.maxSwingSpeed then
+        hand.character.capsuleRB.velocity = hand.character.capsuleRB.velocity.normalized * self.maxSwingSpeed
+    end
+end
+
+--local player cmd to other player
+function HookArmguard:Disconnect()
+    if self.isOnline then
+        local localPlayerId = self:GetLocalPlayerNetId()
+        local state = GetNetworkIBState(self)
+        if state ~= nil and localPlayerId ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerDisconnect(localPlayerId)
+            else
+                state:CmdDisconnect(localPlayerId)
+            end
+        end
+    end
+    self:DoDisconnect()
+end
+
+function HookArmguard:DoDisconnect()
+    if self.attachHand and not IsNullOrDestroyed(self.attachPu) then
+        self.attachPu:OnAttachBreak(self.attachHand, self.joint, self.connectRb)
+        if self.attachPu.unitType == CL.Tagger.Tag.InteractObj or self.attachPu.unitType == CL.Tagger.Tag.InteractWeapon then
+            local ph = self.attachPu:GetPrimaryHand()
+            if not IsNullOrDestroyed(ph) then
+                self.attachPu:ShowShadow(ph)
+            end
+        end
+        self.attachHand = nil
+    end
+    
+    
+    if not IsNullOrDestroyed(self.joint) then
+        self.joint.xMotion = UE.ConfigurableJointMotion.Free
+        self.joint.yMotion = UE.ConfigurableJointMotion.Free
+        self.joint.zMotion = UE.ConfigurableJointMotion.Free
+        
+        local drive = self.joint.xDrive
+        drive.positionSpring = 0
+        drive.positionDamper = 0
+        self.joint.xDrive = drive
+        self.joint.yDrive = drive
+        self.joint.zDrive = drive
+        
+        --print("DoDisconnect------------destroyjoint")
+        
+        UE.Object.Destroy(self.joint)
+    end
+    
+    self:StopListenButton()
+    
+    if not self.isGrabJoint then
+        local hand = self:GetSlotHand()
+        if not IsNullOrDestroyed(hand) then
+            --hand.character:BreakAllStuckActions()
+            hand.character:StartStuckAction(self.stuckAction)
+            if hand.character:JumpCountLeft() <= 0 then
+                hand.character:CountAsJump(hand.character:JumpCountLeft() - 1)
+            end
+            
+            self.stuckCharacter = hand.character
+            
+            hand.character:SetDisableMoveCommand(false)
+        end
+    end
+    
+    self.attachPu = nil
+    self.connectRb = nil
+    self.connectPu = nil
+    self.joint = nil
+    self.isHookStab = false
+end
+
+function HookArmguard:TryThrow()
+    if not self.isGrabJoint then
+        return false
+    end
+    
+    if not self.isPress then
+        return false
+    end
+    
+    if not self.connectRb or IsNullOrDestroyed(self.connectRb) 
+        or not self.connectPu or IsNullOrDestroyed(self.connectPu) then
+        return false
+    end
+    
+    local curVel = self.connectRb.velocity
+    if curVel.sqrMagnitude < 0.8 * 0.8 then
+        return false
+    end
+    
+    local hand = self:GetSlotHand()
+    if not hand then
+        return false
+    end
+    
+    local vel = hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+    if vel.sqrMagnitude < 0.8*0.8 then
+        return false
+    end
+    
+    local pu = self.connectPu
+    --print("max vel ----------:".. vel.magnitude)
+    local rootPu = CL.PhysicsUnit.GetPhysicsUnitTopDown(pu.trans.root)
+    
+    
+    self:Disconnect()
+    local speed = curVel.magnitude
+    if speed + self.throwSpeedAdd < self.throwSpeed then
+        curVel = curVel.normalized * (speed + self.throwSpeedAdd)
+    else
+        curVel = curVel.normalized * self.throwSpeed
+    end
+    if rootPu and rootPu.unitType == CL.Tagger.Tag.InteractRole then
+        if not rootPu.ra:HasBeenRipped() then
+            rootPu.muscleState:DoThrowing()
+            rootPu:AddForceOnPart(self.connectRb, curVel, UE.ForceMode.VelocityChange)
+        else
+            if self.connectRb then
+                self.connectRb:AddForce(curVel, UE.ForceMode.VelocityChange)
+            end
+        end
+        --rootPu:AddForce(curVel, UE.ForceMode.VelocityChange)
+    else
+        pu:AddForce(curVel, UE.ForceMode.VelocityChange)
+    end
+    return true
+end
+
+
+function HookArmguard:BreakUntilGround()
+    local hand = self:GetSlotHand()
+    if not hand or IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    self.banUntilGround = true
+    if CL.Network.VRNetworkManager.IsOnline then
+        self:LocalCloseSkill()
+    else
+        self:CloseSkill()
+    end
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local localPlayerId = CL.Network.VRNetworkManager.ServerOnly and 0 or self:GetLocalPlayerNetId()
+        local state = GetNetworkIBState(self)
+        if state ~= nil and localPlayerId ~= nil then
+            state:ServerBreakUntilGround(localPlayerId)
+            state:ServerBanUntilGround(self.banUntilGround)
+        end
+    end
+    self.breakHand = hand
+    self.breakHand.character:GroundEvent("+", self.OnGround)
+end
+
+function HookArmguard:DoBreakUntilGround()
+    self:LocalCloseSkill()
+end
+
+-----------------------------------button click--------------------------------
+
+function HookArmguard:StartListenButton()
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.buttonActId)
+    self.buttonActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if self.isOnline and not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance)
+                and not CL.Network.VRNetworkManager.Instance.IsServer then
+                self:ButtonCmd()
+            end
+            self:ButtonClick()
+        end
+    , 0, -1).actionId
+end
+
+function HookArmguard:ButtonCmd()
+    if not self.slotHand then
+        return
+    end
+    local state = GetNetworkIBState(self)
+    if state ~= nil then
+        if self.slotHand.inputs[CL.VRTKInputButton.ButtonType.ButtonOne].PressUp then
+            state:CommandButtonOnePressUp()
+        elseif self.slotHand.inputs[CL.VRTKInputButton.ButtonType.ButtonOne].PressDown then
+            state:CommandButtonOnePressDown()
+        end
+    end
+end
+
+function HookArmguard:StopListenButton()
+    if self.isOnline then
+        self.isPress = false
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.buttonActId)
+end
+
+function HookArmguard:ButtonClick()
+    if not self.slotHand then
+        return
+    end
+    local p = self.slotHand.inputs[CL.VRTKInputButton.ButtonType.ButtonOne].IsPressed
+    if self.isPress and not p then
+        self:OnPressUp()
+    end
+    if not self.isPress and p then
+        self:OnPressDown()
+        self:CostMana(self.slotHand)
+    end
+end
+
+function HookArmguard:OnButtonOnePressUp()
+    --print("OnButtonPress up---------------------")
+    if self.isPress then
+        self:OnPressUp()
+    end
+end
+
+function HookArmguard:OnButtonOnePressDown()
+    --print("OnButtonPress down---------------------")
+    if not self.isPress then
+        self:OnPressDown()
+        self:CostMana(self.slotHand)
+    end
+end
+
+function HookArmguard:OnPressUp()
+    self.isPress = false
+end
+
+function HookArmguard:OnPressDown()
+    self.isPress = true
+end
+
+function HookArmguard:CostMana(hand)
+    if not hand then
+        return
+    end
+    
+    if IsNullOrDestroyed(self.joint) then
+        return
+    end
+    
+    local manaCost = self.manaCostOnCharge * UE.Time.unscaledDeltaTime * self.host.AppliedManaCostMultiplier
+    hand.character:CostMana(self.host, manaCost)
+end
+
+---------------------------------------AimAssisted--------------------------------------
+function HookArmguard:AimLegalTarget(radius, shotPos, shotDir)
+    local isHit, raycastHit  = UE.Physics.SphereCast(shotPos + shotDir * (0.1 + radius), radius, shotDir, self.maxRange - (radius * 2) - 0.1,
+        UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)))
+    
+    if not isHit then
+        return nil, nil
+    end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(raycastHit.collider, true)
+    if self:IsLegalCol(raycastHit.collider) then
+        return raycastHit.collider, raycastHit.point
+    else
+        return nil, nil
+    end
+end
+
+function HookArmguard:IsLegalCol(col)
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(col, true)
+    local isLegal = false
+    local rpu = CL.PhysicsUnit.GetPhysicsUnitTopDown(col)
+    
+    if not IsNullOrDestroyed(rpu) then
+        if rpu.unitType == CL.Tagger.Tag.PlayerRole then
+            if self.character and rpu == self.character:GetPlayerUnit() then
+                return false
+            else
+                isLegal = true
+            end
+        end
+        
+        if rpu.unitType == CL.Tagger.Tag.InteractRole then
+            --if pu.IsWeapon and pu:IsWeapon() then
+            --    isLegal = false
+            --else
+                isLegal = true
+            --end
+        end
+    end
+    
+    
+    if not isLegal and not IsNullOrDestroyed(pu) then
+        if pu.unitType == CL.Tagger.Tag.InteractObj or pu.unitType == CL.Tagger.Tag.InteractWeapon then
+            isLegal = true
+        elseif not IsNullOrDestroyed(pu.gameObject:GetComponent(typeof(CL.StabableObj))) then
+            isLegal = true
+        elseif not IsNullOrDestroyed(pu.gameObject:GetComponent(typeof(CL.DestructibleObj))) then
+            isLegal = true
+        end
+    end
+    
+    if not isLegal and CL.PhysicsUnit.IsScene(col) then
+        isLegal = true
+    end
+    
+    return isLegal
+end
+
+function HookArmguard:AimAssisted(radius, shotPos, shotDir)
+    if not self.aimVec1 then
+        self.aimVec1 = UE.Vector3.zero
+    end
+    if not self.aimVec2 then
+        self.aimVec2 = UE.Vector3.zero
+    end
+    
+    local raycastHit  = UE.Physics.SphereCastAll(Vector3.OpAdd(shotPos, Vector3.OpMul(shotDir, (0.1 + radius), self.aimVec2), self.aimVec1), radius, shotDir, self.maxRange - radius * 2 - 0.1,
+        UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)
+                ))
+    local curDot = 0
+    local maxDot = 0
+    local idx = -1
+    local targetPoint = nil
+    local targetCol = nil
+    local perpendicularPoint = nil
+    local closetPoint = nil
+    for i = 0, raycastHit.Length - 1 do
+        if self:IsLegalCol(raycastHit[i].collider) then
+            if raycastHit[i].collider.sharedMesh and not raycastHit[i].collider.convex then
+                closetPoint = raycastHit[i].point
+            else
+                perpendicularPoint = self:GetPerpendicularPoint(raycastHit[i].point)
+                closetPoint = raycastHit[i].collider:ClosestPoint(perpendicularPoint)
+            end
+            --if (raycastHit[i].collider.transform.position - closetPoint).sqrMagnitude > 0.01 then
+            --    closetPoint = closetPoint + (raycastHit[i].collider.transform.position - closetPoint) * 0.1    
+            --end
+            --self.ppPoint.position = perpendicularPoint
+            --self.ttPoint.position = closetPoint
+            curDot = Vector3.Dot(Vector3.OpNormalize(Vector3.OpSub(closetPoint, shotPos, self.aimVec2)), shotDir)
+            if curDot > maxDot then
+                targetPoint = closetPoint
+                targetCol = raycastHit[i].collider
+                maxDot = curDot
+                idx = i
+            end
+        end
+    end
+    if idx == -1 then
+        return nil, nil
+    end
+    
+    local mlp = CL.EasingEquations.EaseInSine(1, 0, math.min(1, raycastHit[idx].distance/self.maxRange))
+    local limitDot = 0.7 + 0.25 * mlp
+    --print("mlp----------:" .. mlp .. "  maxDot:" .. maxDot .. " range:" .. raycastHit[idx].distance/self.maxRange .. " cur minDot:" .. limitDot)
+    if maxDot < limitDot then
+        return nil, nil
+    else
+        return targetCol, targetPoint
+    end
+end
+
+function HookArmguard:GetPerpendicularPoint(target)
+    if not self.ppVec1 then
+        self.ppVec1 = UE.Vector3.zero
+    end
+    if not self.ppVec2 then
+        self.ppVec2 = UE.Vector3.zero
+    end
+    
+    local createPoint = self.createPoint.position
+    
+    local ba = Vector3.OpSub(target, createPoint, self.ppVec1)
+    local nbc = self.createPoint.forward
+    local dbp = UE.Vector3.Dot(ba, nbc)
+    return Vector3.OpAdd(createPoint, Vector3.OpMul(nbc, dbp, self.ppVec2), self.ppVec1)
+end
+
+function HookArmguard:GetVerticalPerpendicularPoint(target)
+    if not self.ppVec1 then
+        self.ppVec1 = UE.Vector3.zero
+    end
+    if not self.ppVec2 then
+        self.ppVec2 = UE.Vector3.zero
+    end
+    
+    local ba =  Vector3.OpSub(self.createPoint.position, target, self.ppVec1)
+    local nbc = UE.Vector3.down
+    local dbp = Vector3.Dot(ba, nbc)
+    return Vector3.OpAdd(target, Vector3.OpMul(nbc, dbp, self.ppVec2), self.ppVec1)
+end
+
+function HookArmguard:RemoveStuckAction()
+    if self.stuckCharacter and not IsNullOrDestroyed(self.stuckCharacter) then
+        self.stuckCharacter:StopStuckAction(self.stuckAction)
+    end
+    
+    self.stuckCharacter = nil
+end
+
+function HookArmguard:OnDead()
+    if self.breakHand then
+        if not IsNullOrDestroyed(self.breakHand) and not IsNullOrDestroyed(self.breakHand.character) then
+            self.breakHand.character:GroundEvent("-", self.OnGround)
+        end
+    end
+    if self.isOnline then
+        if CL.Network.NetworkSpawnMgr.Instance ~= nil then
+            CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+        end
+        if not IsNullOrDestroyed(CL.InteractCharacter.PlayerInstance) then
+            local networkPlayer = self:GetLocalNetworkPlayer()
+            if networkPlayer ~= nil and networkPlayer.networkInteractHand ~= nil then
+                networkPlayer.networkInteractHand:OnLocalSlotTrigger("-", self.OnLocalSlotTrigger)
+            end
+        end
+    end
+end
+
+function HookArmguard:OnDestroy()
+    self:RemoveStuckAction()
+    CL.Scheduler.RemoveSchedule(self.arrowAnchorId)
+    CL.Scheduler.RemoveSchedule(self.handJointId)
+    CL.Scheduler.RemoveSchedule(self.autoTighteningId)
+    CL.Scheduler.RemoveSchedule(self.pullActId)
+    CL.Scheduler.RemoveSchedule(self.recallActId)
+    CL.Scheduler.RemoveSchedule(self.buttonActId)
+    CL.Scheduler.RemoveSchedule(self.ropeActId)
+    CL.Scheduler.RemoveSchedule(self.showRopeId)
+    CL.Scheduler.RemoveSchedule(self.dragTimerId)
+    
+    if self.arrow and not IsNullOrDestroyed(self.arrow.ib) then
+        self.arrow.ib:Dead()
+    end
+    if not IsNullOrDestroyed(self.character) then
+        self.character:SetDisableMoveCommand(false)
+        self.character:SetRootMotion(false)
+        self.character:SetDragPower(self.character:GetOriginalDragPower())
+    end
+end
+
+return Class(Require("Weapon/SpellArmguardScript"), nil, HookArmguard)

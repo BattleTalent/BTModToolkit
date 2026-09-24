@@ -1,0 +1,364 @@
+
+local RangeForce = {
+    force = 15,
+    characterVel = 30,
+    duration = 0,
+    
+    isHitScan = 0,
+    
+    colNum = 0,
+	validRbs = {},
+    checkInterval = 0.5,
+    
+    maxCount = 40,
+    maxFcCount = 1,
+    
+    maxSqrSpeed = 4,
+    
+    fcList = {},
+}
+
+RangePushFoList = {}
+RangePullFoList = {}
+
+function RangeForce:FlyStart(vel)
+    if self.explodeRange < 0 then
+        return
+    end
+    
+    self.sqrRange = self.explodeRange * self.explodeRange
+    
+    local eff = CL.EffectMgr.Instance:PlayEffect(self.explodeEffect, self.trans.position, self.trans.rotation)
+    eff.trans:SetParent(self.host.trans)
+    
+    --cache list
+    self.characterList = {}
+    self.rbList = {}
+    self.sortList = {}
+    self.sortFcList = {}
+    
+    local isGetValid = false
+    local lastTime = -1
+    self.forceTimeId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if t - lastTime > self.checkInterval then
+                self:CheckOverlap()
+                isGetValid = false
+                --self:GetValidRBAndImpact(self.host.trans.position, t/self.duration * self.force)
+                lastTime = t
+            else
+                if isGetValid then
+                    self:ImpactPu(self.host.trans.position, t/self.duration * self.force)
+                else
+                    self:GetValidRBAndImpact(self.host.trans.position, t/self.duration * self.force)
+                    isGetValid = true
+                end
+            end
+        end,
+    0, self.duration)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self:AddToRangeForceList()
+end
+
+function RangeForce:CheckOverlap()
+    --self.cols = UE.Physics.OverlapSphere (self.host.trans.position, self.explodeRange)
+    self.colNum = UE.Physics.OverlapSphereNonAlloc(self.host.trans.position, self.explodeRange, 
+                CL.PhysicsHelper.shareOverlapColArray)
+end
+
+function RangeForce:GetValidRBAndImpact(target, force)
+    if self.colNum <= 0 then
+        return
+    end
+
+    self.validRbs = {}
+    self.fcList = {}
+    
+    self.rbList = {}
+    self.characterList = {}
+    local rb = nil
+    
+    local pu = nil
+    local point = nil
+    local vel = nil
+    local mu = nil
+    local count = 0
+    local pass = false
+    local isDismember = false
+    local sqrDis = 0
+    
+    self.sortList = {}    
+    self.sortFcList = {}
+    
+    local character = nil
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        character = self.host.ownerHolder.character
+    end
+    
+    for i = 0, self.colNum - 1 do
+        rb = CL.PhysicsHelper.shareOverlapColArray[i].attachedRigidbody
+        if not IsNullOrDestroyed(rb) and not self.rbList[rb] and rb ~= self.host.rb then
+            self.rbList[rb] = true
+            if rb.isKinematic == false then
+                --Range detection
+                sqrDis = (CL.PhysicsHelper.shareOverlapColArray[i].transform.position - self.trans.position).sqrMagnitude
+                if sqrDis < self.sqrRange then
+                    pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(CL.PhysicsHelper.shareOverlapColArray[i])
+                    if not IsNullOrDestroyed(pu) then
+                        if pu.unitType == CL.Tagger.Tag.PlayerRole and not self.characterList[pu] then
+                            --point = pu.character.capsuleRB.transform.position + 
+                            --    pu.character:GetPlayerHeight()/2 * pu.character.capsuleRB.transform.up
+                            --vel = UE.Vector3.Lerp(pu.character.capsuleRB.velocity, self:GetForce(point, target, force), 0.5)
+                            --vel.y = vel.y/10
+                            --pu:AddForce(vel)
+                            self.characterList[pu] = true
+                            
+                            self.validRbs[rb] = pu
+                            
+                            table.insert(self.sortList, {["rb"] = rb, ["sqrDis"] = sqrDis})
+                            
+                            count = count + 1
+                        elseif pu.unitType == CL.Tagger.Tag.InteractRole then
+                            pass = false
+                            if pu.reactAnim:IsDismember() or pu.reactAnim:IsTear() then
+                                pass = true
+                                isDismember = true
+                            else
+                                isDismember = false
+                                mu = pu.ra:GetMuscleByCol(CL.PhysicsHelper.shareOverlapColArray[i])
+                                if mu then
+                                    if mu.muscleName == CL.RagdollBoneInfo.Pelvis or
+                                    mu.muscleName == CL.RagdollBoneInfo.Head or
+                                    mu.muscleName == CL.RagdollBoneInfo.RForeArm or
+                                    mu.muscleName == CL.RagdollBoneInfo.LForeArm or
+                                    mu.muscleName == CL.RagdollBoneInfo.RCalf or
+                                    mu.muscleName == CL.RagdollBoneInfo.LCalf then
+                                        pass = true
+                                    end
+                                end
+                            end
+                            
+                            if pu.muscleState:IsPowerfulCharacter() and not pu.attr:IsDead() then
+                                pass = false
+                            end
+                            
+                            if pass then
+                                --point = rb.transform:TransformPoint(rb.centerOfMass)
+                                --if pu.motion:IsKnockout() or isDismember then
+                                --    pu:AddForceOnPart(rb, self:GetForce(point, target, self.roleForce/4))
+                                --else
+                                --    pu:AddForceOnPart(rb, self:GetForce(point, target, self.roleForce * 2))
+                                --end
+                                
+                                self.validRbs[rb] = pu
+                                table.insert(self.sortList, {["rb"] = rb, ["sqrDis"] = sqrDis})
+                                
+                                if not self.fcList[pu] then
+                                    local fcSqrDis = (pu:GetPositionTransform().position - self.trans.position).sqrMagnitude
+                                    table.insert(self.sortFcList, {["fc"] = pu, ["sqrDis"] = fcSqrDis} )
+                                    
+                                    self.fcList[pu] = pu
+                                end
+                                count = count + 1
+                            end
+                        elseif pu.unitType == CL.Tagger.Tag.FlyObject and not self:IsSameRangeForce() then
+                            
+                            --self:AddForceToPoint(rb, target, force)
+                            
+                            self.validRbs[rb] = pu
+                            table.insert(self.sortList, {["rb"] = rb, ["sqrDis"] = sqrDis})
+                            count = count + 1
+                        elseif pu.unitType == CL.Tagger.Tag.InteractObj then
+                            --self:AddForceToPoint(rb, target, force)
+                            
+                            self.validRbs[rb] = pu
+                            table.insert(self.sortList, {["rb"] = rb, ["sqrDis"] = sqrDis})
+                            count = count + 1
+                        elseif pu.unitType == CL.Tagger.Tag.InteractWeapon then
+                            --self:AddForceToPoint(rb, target, force)
+                            
+                            if CL.Network.VRNetworkManager.IsOnline and character.IsLocalPlayer then
+                                pu:SetLatestHolder(character.aiProxy)
+                            end
+                            
+                            self.validRbs[rb] = pu
+                            table.insert(self.sortList, {["rb"] = rb, ["sqrDis"] = sqrDis})
+                            count = count + 1
+                        elseif pu.unitType == CL.Tagger.Tag.SceneObject then
+                            --self:AddForceToPoint(rb, target, force)
+                            
+                            if CL.Network.VRNetworkManager.ClientOnline and character.IsLocalPlayer and pu.SetLatestHolder then
+                                pu:SetLatestHolder(character.aiProxy)
+                            end
+                            
+                            self.validRbs[rb] = pu
+                            table.insert(self.sortList, {["rb"] = rb, ["sqrDis"] = sqrDis})
+                            count = count + 1
+                        end
+                    else
+                        --self:AddForceToPoint(rb, target, force)
+                        
+                        self.validRbs[rb] = false
+                        table.insert(self.sortList, {["rb"] = rb, ["sqrDis"] = sqrDis})
+                        count = count + 1
+                    end
+                
+                end
+            end
+        end
+    end
+
+    if count > self.maxCount then
+        table.sort(self.sortList, 
+        function(a, b)
+            return a.sqrDis > b.sqrDis
+        end)
+        for i = 1, count - self.maxCount do
+            self.validRbs[self.sortList[i].rb] = nil
+        end
+        
+        count = self.maxCount
+    end
+    
+    if #self.sortFcList > self.maxFcCount then
+        table.sort(self.sortFcList, 
+        function(a, b)
+            return a.sqrDis > b.sqrDis
+        end)
+    
+        for i = 1, #self.sortFcList - self.maxFcCount do
+            self.fcList[self.sortFcList[i].fc] = nil
+        end
+    end
+    
+    return count
+end
+
+function RangeForce:ImpactPu(target, force)
+    if not self.validRbs then
+        return
+    end
+    
+    self.characterList = {}
+    local point = nil
+    local vel = nil
+    local maxSqrSpeed = 0
+    for k, v in pairs(self.validRbs) do
+        if v and not IsNullOrDestroyed(k) and k ~= self.host.rb then
+            if k.isKinematic == false then
+                --Range detection
+                if (k.transform.position - self.trans.position).sqrMagnitude < self.sqrRange then
+                    maxSqrSpeed = self.maxSqrSpeed
+                    if v and not IsNullOrDestroyed(v) then
+                        if v.unitType == CL.Tagger.Tag.PlayerRole and not self.characterList[v] then
+                            point = v.character.capsuleRB.transform.position + 
+                                v.character:GetPlayerHeight()/2 * v.character.capsuleRB.transform.up
+                            vel = UE.Vector3.Lerp(v.character.capsuleRB.velocity, self:GetForce(point, target, force), 0.5)
+                            vel.y = vel.y/10
+                            v:AddForce(vel)
+                            self.characterList[v] = true
+                        elseif v.unitType == CL.Tagger.Tag.InteractRole then
+                            if self.fcList[v] then
+                                point = k.transform:TransformPoint(k.centerOfMass)
+                                if v.motion:IsKnockout() or v.reactAnim:IsDismember() or v.reactAnim:IsTear() then
+                                    v:AddForceOnPart(k, self:GetForce(point, target, self.roleForce/3))
+                                else
+                                    v:AddForceOnPart(k, self:GetForce(point, target, self.roleForce))
+                                end
+                            end
+                            maxSqrSpeed = maxSqrSpeed/2
+                        elseif v.unitType == CL.Tagger.Tag.FlyObject and not self:IsSameRangeForce() then
+                            
+                            self:AddForceToPoint(k, target, force)
+                        elseif v.unitType == CL.Tagger.Tag.InteractObj then
+                            self:AddForceToPoint(k, target, force)
+                        elseif v.unitType == CL.Tagger.Tag.InteractWeapon then
+                            self:AddForceToPoint(k, target, force)
+                        elseif v.unitType == CL.Tagger.Tag.SceneObject then
+                            self:AddForceToPoint(k, target, force)
+                        end
+                    else
+                        self:AddForceToPoint(k, target, force)
+                    end
+                    if k.velocity.sqrMagnitude > maxSqrSpeed then
+                        k.velocity = k.velocity.normalized * maxSqrSpeed
+                    end
+                end
+            end
+        end
+    end
+	return
+end
+
+function RangeForce:AddForceToPoint(rb, forcePos, force)
+    local point = rb.transform:TransformPoint(rb.centerOfMass)
+    rb:AddForce(self:GetForce(point, forcePos, force) , UE.ForceMode.Impulse)
+end
+
+function RangeForce:GetForce(point, forcePos, force)
+    local dir = nil
+    local dis = (forcePos - point).magnitude
+    if dis == 0 then
+        return UE.Vector3.zero
+    end
+    
+    if self.isPull == 1 then
+        dir = (forcePos - point)/dis
+    else
+        dir = (point - forcePos)/dis
+    end
+    
+    return dir * (1-(self.explodeRange - dis)/self.explodeRange) * force
+end
+
+function RangeForce:OnTriggerWithRole(fc, col)
+    if self.isHitScan ~= 0 then
+        return
+    end
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+end
+
+function RangeForce:OnTriggerWithStaticScene(col)
+    self.host.rb.velocity = UE.Vector.zero
+end
+
+function RangeForce:StopForceTimer()
+    CL.Scheduler.RemoveSchedule(self.forceTimeId)
+    self.forceTimeId = nil
+end
+
+function RangeForce:AddToRangeForceList()
+    if self.isPull == 1 then
+        RangePullFoList[self] = true
+    else
+        RangePushFoList[self] = true
+    end
+end
+
+function RangeForce:RemoveFromRangeForceList()
+    if self.isPull == 1 then
+        RangePullFoList[self] = nil
+    else
+        RangePushFoList[self] = nil
+    end
+end
+
+function RangeForce:IsSameRangeForce()
+    if self.isPull == 1 then
+        return RangePullFoList[self]
+    else
+        return RangePushFoList[self]
+    end
+end
+
+function RangeForce:ResetState()
+    self:RemoveFromRangeForceList()
+    
+    self:StopForceTimer()
+end
+
+return Class(nil, nil, RangeForce)

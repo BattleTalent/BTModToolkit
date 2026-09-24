@@ -1,0 +1,844 @@
+--luaBehaviour
+local crossBowPuller = {
+    pullFactor = 0,
+    lastShootFactor = 0,
+    shootFactorDeltaAcc = 0,
+    
+    poseValues = {0.1, 0.47, 0.49, 0.46, 0.48},
+    isLoaded = false,
+    
+    PullerState = {
+        UNGRAB = "UNGRAB",
+        IDLE = "IDLE",
+        READY = "READY",
+        PULLING = "PULLING",
+        LOADED = "LOADED",
+        RELEASED = "RELEASED",
+        CANCEL = "CANCEL",
+    },
+    stateId = 0,    
+    stackBannedHand = {},
+    networkStateDic = {},
+
+    pullingArrow = false,
+}
+
+function crossBowPuller:OnTriggerEnter(other)
+    if self.isOnline then
+        if self.isGrab then
+            if not SafeIsOwnerLocalPlayer(self.ib) then
+                return
+            end
+        else
+            if not CL.Network.VRNetworkManager.Instance.IsServer then
+                return
+            end
+        end
+    end
+    self.__base.OnTriggerEnter(self, other)
+end
+
+
+function crossBowPuller:Awake()
+    self:RegisterStateHandlers()
+    self.currentState = self.PullerState.UNGRAB 
+end
+
+function crossBowPuller:RegisterStateHandlers()
+    self.stateHandlers = {
+        [self.PullerState.UNGRAB] = {
+            enter = function() self:OnUngrabEnter() end,
+            update = function() self:OnUngrabUpdate() end,
+            exit = function() self:OnUngrabExit() end,
+            blockedState = nil,
+        },
+        [self.PullerState.IDLE] = {
+            enter = function() self:OnIdleEnter() end,
+            update = function() self:OnIdleUpdate() end,
+            exit = function() self:OnIdleExit() end,
+            blockedState = {self.PullerState.RELEASED},
+        },
+        [self.PullerState.READY] = {
+            enter = function() self:OnReadyEnter() end,
+            update = function() self:OnReadyUpdate() end,
+            exit = function() self:OnReadyExit() end,
+            blockedState = nil,
+        },
+        [self.PullerState.PULLING] = {
+            enter = function() self:OnPullingEnter() end,
+            update = function() self:OnPullingUpdate() end,
+            exit = function() self:OnPullingExit() end,
+            blockedState = nil,
+        },
+        [self.PullerState.LOADED] = {
+            enter = function() self:OnLoadedEnter() end,
+            update = function() self:OnLoadedUpdate() end,
+            exit = function() self:OnLoadedExit() end,
+            blockedState = nil,
+        }
+        ,
+        [self.PullerState.RELEASED] = {
+            enter = function() self:OnReleasedEnter() end,
+            update = function() self:OnReleasedUpdate() end,
+            exit = function() self:OnReleasedExit() end,
+            blockedState = nil,
+        }
+        ,
+        [self.PullerState.CANCEL] = {
+            enter = function() self:OnCancelEnter() end,
+            update = function() self:OnCancelUpdate() end,
+            exit = function() self:OnCancelExit() end,
+            blockedState = nil,
+        }
+    }
+end
+function crossBowPuller:LocalChangeState(newState)
+    -- print(self.currentState .. "  try change to " .. newState)
+
+    if self.stateHandlers == nil then
+        -- print("stateHandlers nil")
+        return
+    end
+    if self.currentState == newState then return end
+
+    if self.stateHandlers[self.currentState] and self.stateHandlers[self.currentState].blockedState then
+        for i = 1,#self.stateHandlers[self.currentState].blockedState do
+            if self.stateHandlers[self.currentState].blockedState[i] == newState then
+                -- print("currentState:".. self.currentState .. " Blocked " .. newState)
+                return
+            end
+        end
+    end
+    -- print(self.currentState .. " exit start")
+    if self.stateHandlers[self.currentState] and self.stateHandlers[self.currentState].exit then
+        self.stateHandlers[self.currentState].exit()
+    end
+    -- print(self.currentState .. " exit success")
+
+    local oldState = self.currentState
+    self.currentState = newState
+    self.stateId = self.stateId + 1
+
+    -- print(self.currentState .. " enter start")
+    if self.stateHandlers[newState] and self.stateHandlers[newState].enter then
+        self.stateHandlers[newState].enter()
+    end
+    -- print(self.currentState .. " enter success")
+end
+
+function crossBowPuller:ChangeState(newState,toServer)
+    self:LocalChangeState(newState)
+    toServer = toServer or false 
+    self:SyncState(self.stateId,newState,toServer)
+end
+
+function crossBowPuller:SyncState(stateId,state,toServer)
+    if not self.isOnline then return end
+
+    if CL.Network.VRNetworkManager.Instance.IsServer and not toServer then
+        --todo
+        self.main:ServerSyncPullerState(stateId,state)
+    end
+
+    if toServer then
+        --todo
+        self.main:CmdSyncPullerState(stateId,state)
+    end
+end
+
+function crossBowPuller:NetworkSyncState(netStateID,state)
+    -- print("NetworkSyncState netStateID:".. netStateID .. " state:" .. state)
+    if self.networkStateDic == nil then
+        self.networkStateDic = {}
+    end
+    self.networkStateDic[netStateID] = state
+end
+
+function crossBowPuller:ApplyNetworkState(netStateID,state)
+    -- print("NetworkSyncState ".. state .. " start")
+    if self.stateId >= netStateID then
+        -- print("NetworkSyncState ".. state .. " return")
+        return
+    end
+    self:LocalChangeState(state)
+    -- print("NetworkSyncState ".. state .. " end")
+    self.stateId = netStateID
+end
+
+function crossBowPuller:UpdateNetworkSyncState()
+    if self.networkStateDic == nil then
+        return
+    end
+    -- do update
+    local sortedKeys = {}
+    for key, _ in pairs(self.networkStateDic) do
+        table.insert(sortedKeys, key)
+    end
+    table.sort(sortedKeys)
+    for _, key in ipairs(sortedKeys) do
+        self:ApplyNetworkState(key,self.networkStateDic[key])
+    end
+    -- clear
+    self.networkStateDic = nil
+end
+
+function crossBowPuller:NetworkShoot(netStateID)
+    self:NetworkSyncState(netStateID,self.PullerState.RELEASED)
+end
+
+function crossBowPuller:NetworkStartHandPull(netStateID,hand)
+    self.triggerhand = hand
+    self:NetworkSyncState(netStateID,self.PullerState.PULLING)
+end
+
+---stateHandlers : NO OWNER
+function crossBowPuller:OnUngrabEnter()
+    self.grabAttach = nil
+end
+
+function crossBowPuller:OnUngrabUpdate()
+    if self.owner then
+        self:ChangeState(self.PullerState.IDLE)
+    end
+end
+
+function crossBowPuller:OnUngrabExit()
+end
+
+---stateHandlers : IDLE
+function crossBowPuller:OnIdleEnter()
+    self.pullFactor = 0
+    self:ClearUsingHand()
+    self.usingHand = nil
+    self.onTrigger = false
+    self.triggerhand = nil
+    
+    self:TryGetHandOnTrigger()
+end
+
+function crossBowPuller:OnIdleUpdate()
+    if not self.isGrab then
+        self:ChangeState(self.PullerState.UNGRAB)
+        return
+    end
+    if self.isLoaded then
+        self:ChangeState(self.PullerState.LOADED)
+        return
+    end
+    if self.onTrigger then
+        self:ChangeState(self.PullerState.READY)
+        return
+    end
+end
+
+function crossBowPuller:OnIdleExit()
+end
+
+---stateHandlers : READY
+function crossBowPuller:BanHand(hand)
+    hand:Ban(true)
+    self.stackBannedHand[#self.stackBannedHand+1] = hand
+end
+
+function crossBowPuller:RestoreHand()
+    for i = 1, #self.stackBannedHand, 1 do
+        self.stackBannedHand[i]:Ban(false)
+    end
+    self.stackBannedHand = {}
+end
+
+function crossBowPuller:OnReadyEnter()
+    if self.isOnline then
+        if not IsNullOrDestroyed(self.triggerhand) then
+            if self.triggerhand.character.IsLocalPlayer then
+                if IsNullOrDestroyed(self.hintPoint) then
+                    self.hintPoint = self.ib:CreateHint(self.model, UE.Vector3.zero)
+                end
+                self.ib:ShowHint(self.hintPoint)
+            end
+        end
+    else
+        if IsNullOrDestroyed(self.hintPoint) then
+            self.hintPoint = self.ib:CreateHint(self.model, UE.Vector3.zero)
+        end
+        self.ib:ShowHint(self.hintPoint)
+    end
+
+    if not IsNullOrDestroyed(self.triggerhand) then
+        self:BanHand(self.triggerhand)
+        self.triggerhand:HapticPulse(self.triggerhand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
+    end
+end
+
+function crossBowPuller:OnReadyUpdate()
+   
+    if not self.isGrab then
+        self:ChangeState(self.PullerState.UNGRAB)
+        return
+    end
+    -- need pass
+
+    if self.onTrigger then
+        local isPressDown = self.triggerhand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressDown or
+            self.triggerhand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressDown
+        if isPressDown and self:CanPull(self.triggerhand) then 
+            if self.isOnline and self.triggerhand.character.IsLocalPlayer then
+                self:LocalChangeState(self.PullerState.PULLING)
+            end
+            if not self.isOnline then
+                self:ChangeState(self.PullerState.PULLING)
+            end
+        end
+    else
+        local ph = self.ib:GetPrimaryHand();
+        if self.isOnline and ph.character.IsLocalPlayer then
+            self:ChangeState(self.PullerState.IDLE,true)
+        end
+        if not self.isOnline then
+            self:ChangeState(self.PullerState.IDLE)
+        end
+    end
+end
+
+function crossBowPuller:OnReadyExit()
+    if not IsNullOrDestroyed(self.hintPoint) then
+        self.ib:HideHint(self.hintPoint)
+    end
+    self:RestoreHand()
+end
+
+---stateHandlers : PULLING
+
+function crossBowPuller:OnPullingEnter()
+    if self.triggerhand and not IsNullOrDestroyed(self.triggerhand) then
+        self:StartPull(self.triggerhand)
+    end
+    
+    if self.isOnline then
+        if self.usingHand.character.IsLocalPlayer then
+            self.main:CmdStartHandPull(self.stateId,self.usingHand)
+        end
+    end
+end
+
+function crossBowPuller:OnPullingUpdate()
+    if not self.isGrab then
+        self:ChangeState(self.PullerState.CANCEL)
+        self:ChangeState(self.PullerState.IDLE)
+        self:ChangeState(self.PullerState.UNGRAB)
+        return
+    end
+    self:UpdatePull()
+
+    if self:CheckReachPoint(true) then
+        if self.isOnline and self.usingHand.character.IsLocalPlayer then
+            self:ChangeState(self.PullerState.LOADED,true)
+        end
+        
+        if not self.isOnline then
+            self:ChangeState(self.PullerState.LOADED)
+        end
+    else
+        local isPressUp = self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressUp or
+            self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp
+        if isPressUp then
+            if self.isOnline and self.usingHand.character.IsLocalPlayer then
+                self:ChangeState(self.PullerState.CANCEL,true)
+            end
+            
+            if not self.isOnline then
+                self:ChangeState(self.PullerState.CANCEL)
+            end
+        end
+    end
+end
+
+function crossBowPuller:ClearUsingHand()
+    if not IsNullOrDestroyed(self.usingHand) then
+        self.usingHand:Ban(false)
+        self.usingHand = nil
+    end
+end
+
+function crossBowPuller:OnPullingExit()
+    self:ResetReachCheck()
+    self:EndPull()
+    self:ClearUsingHand()
+    self:RestoreHand()
+end
+
+---stateHandlers : Loaded
+function crossBowPuller:ClearFireSignal()
+    self.fireSignal = false
+end
+
+function crossBowPuller:SetFireSignal()
+    self.fireSignal = true
+end
+
+function crossBowPuller:OnLoadedEnter()
+    self.main:OnLoadCompeleted()
+    self:RecordModelPosition()
+    self:ClearFireSignal()
+    self.isLoaded = true
+    
+    if self.isOnline then
+        self.main:ClearNetworkShootData()
+    end
+end
+
+function crossBowPuller:OnLoadedUpdate()
+    if not self.isGrab then
+        self:ChangeState(self.PullerState.UNGRAB)
+        return
+    end
+    if self.fireSignal == true then
+        local ph = self.ib:GetPrimaryHand();
+        if self.isOnline and ph.character.IsLocalPlayer then
+            self:LocalChangeState(self.PullerState.RELEASED)
+        end
+        if not self.isOnline then
+            self:ChangeState(self.PullerState.RELEASED)
+        end
+    end
+end
+
+function crossBowPuller:OnLoadedExit()
+    self:ClearFireSignal()
+end
+
+---stateHandlers : Released
+function crossBowPuller:OnReleasedEnter()
+    self.pullingArrow = false
+    if self.main == nil then
+        return
+    end
+    self.main:PlayShootAction()
+    if self.isOnline then
+        local ph = self.ib:GetPrimaryHand();
+        if ph.character.IsLocalPlayer then
+            self.main:SyncLastReleaseWeaponShootData(self.stateId)
+        end
+    end
+    self.shootArrowSound.soundInfo:Play(self.model.position)
+    self.isLoaded = false
+end
+
+function crossBowPuller:OnReleasedUpdate()
+    if self.isOnline then
+        
+        if CL.Network.NetworkRoomMgr.IsInPvpMode then
+            local ph = self.ib:GetPrimaryHand()
+            if self.isOnline then
+                if not IsNullOrDestroyed(ph) and ph.character.IsLocalPlayer then
+                    self:ChangeState(self.PullerState.IDLE)
+                end
+            end
+        else
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                -- client need to wait next state sync
+                self:ChangeState(self.PullerState.IDLE)
+            end
+        end
+    end
+    if not self.isOnline then
+        self:ChangeState(self.PullerState.IDLE)
+    end
+end
+
+function crossBowPuller:OnReleasedExit()
+    if self.main ~= nil then
+        self.main:OnReleaseEnd()
+    end
+end
+
+---stateHandlers : Cancel
+function crossBowPuller:OnCancelEnter()
+    self.pullingArrow = false
+    if self.cancelArrowSound and not IsNullOrDestroyed(self.usingHand) then
+        self.cancelArrowSound.soundInfo:Play(self.usingHand.trans.position)
+    end
+    if self.main ~= nil then
+        self.main:OnCancel()
+    end
+end
+
+function crossBowPuller:OnCancelUpdate()
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        self:ChangeState(self.PullerState.IDLE)
+    end
+    if not self.isOnline then
+        self:ChangeState(self.PullerState.IDLE)
+    end
+end
+
+function crossBowPuller:OnCancelExit()
+end
+
+function crossBowPuller:Update(networkPressUp, networkPressDown)
+    self:UpdateNetworkSyncState()
+    if self.stateHandlers[self.currentState] and self.stateHandlers[self.currentState].update then
+        self.stateHandlers[self.currentState].update()
+    end
+end
+
+function crossBowPuller:UpdateUntilState(state)
+    local tryTimes = 0
+    while self.currentState ~= state and tryTimes < 10 do
+        if self.stateHandlers[self.currentState] and self.stateHandlers[self.currentState].update then
+            self.stateHandlers[self.currentState].update()
+        end
+        tryTimes = tryTimes + 1
+    end
+end
+
+function crossBowPuller:RecordModelPosition()
+    --loaded sound
+    self.model.localPosition = self.endPoint.localPosition
+end
+
+function crossBowPuller:OnDisable()
+    self.isGrab = false
+    self:Update()
+end
+
+function crossBowPuller:CanPull(usingHand)
+    if IsNullOrDestroyed(usingHand) then
+        return false
+    end
+    if not IsNullOrDestroyed(usingHand.attachTo) then
+        local ib = usingHand.attachTo.interact
+        if not IsNullOrDestroyed(ib) and ib:IsUnsold() then
+            return false
+        end
+    end
+    return true
+end
+
+function crossBowPuller:LoadArrow()
+    -- TODO: apply in PVE mode?
+    if false then 
+    --if CL.Network.NetworkRoomMgr.IsInPvpMode then
+        local hand = self.ib:GetPrimaryHand()
+        if IsNullOrDestroyed(hand) or (not hand.character.IsLocalPlayer) then
+            return
+        end
+
+        self.pullingArrow = true
+
+        CL.Network.NetworkSpawnMgr.Instance:CmdNetSpawnIBWithCallback(
+            self.main.flyObjName, pos, rot, self.ib.netId, true, 
+            function(netIb)
+                if IsNullOrDestroyed(netIb) then
+                    return
+                end
+                if IsNullOrDestroyed(netIb.ib) then
+                    return
+                end
+
+                netIb.ib:SetLatestHolder(self.ib:GetLatestHolder())
+
+                local arrow = netIb.ib:GetComponent(typeof(CL.ArrowBase))
+                local arrowLua = nil
+                if IsNullOrDestroyed(arrow) then
+                    arrowLua = netIb.ib:GetComponent(typeof(CL.LuaBehaviour)).script.self
+                end
+
+                if not self.pullingArrow then
+                    if not IsNullOrDestroyed(arrow) then
+                        arrow:DoGiveBack()
+                    end
+                    if arrowLua ~= nil then
+                        arrowLua:DoGiveBack()
+                    end
+                    CL.Network.NetworkSpawnMgr.Instance:CmdRemoveNetworkIB(netIb.netId)
+                    return
+                end
+                
+                self.main:OnPutedArrow(netIb.ib)
+            end
+        )
+
+        return
+    end
+
+    local arrowib = self.main:CreateArrow()
+    self.main:OnPutedArrow(arrowib)
+end
+
+function crossBowPuller:StartPull(usingHand)
+    self.usingHand = usingHand
+    self.usingHand.PullingString = true
+    if IsNullOrDestroyed(self.usingHand) then
+        return false
+    end
+    
+    SetHandPose(self.usingHand, self.poseValues)
+    
+    if not IsNullOrDestroyed(self.usingHand.attachTo) then
+        local ib = self.usingHand.attachTo.interact
+        
+        if not IsNullOrDestroyed(ib) and ib:IsUnsold() then
+            return false
+        end
+        
+        if ib.unitType == CL.Tagger.Tag.InteractWeapon then
+            if ib:GetPrefabNameForSpawn() == "ChainHammer" then
+                self.usingHand:Grab(nil)
+                ib:OnDrop(false)
+                
+                self:LoadArrow()
+            else
+                local s = ib:GetComponent(typeof(CL.Scabbard))
+                local su = ib:GetComponent(typeof(CL.ScabbardUser))
+                if not IsNullOrDestroyed(s) and s:IsConnect() then
+                    s:LocalDisconnectWithOther()
+                end
+                if not IsNullOrDestroyed(su) and su:IsConnect() then
+                    su:LocalDisconnectWithOther()
+                    if not su.IsScabbardUserGrabbed then
+                        ib = su.Scabbard.ib
+                    end
+                end
+                self.main:OnPutedWeapon(ib)
+            end
+        else
+            self:LoadArrow()
+        end
+        self.usingHand:Grab(nil, true)
+        
+        ib:OnDrop(false)
+    else
+        self:LoadArrow()
+    end
+    
+    self:BanHand(self.usingHand)
+    
+    self.startTime = UE.Time.time
+    self.attach:SetupHandPose(self.usingHand)
+    self.spawnArrowSound.soundInfo:Play(self.ib.trans.position)
+    return true
+end
+
+function crossBowPuller:UpdatePull()
+    if IsNullOrDestroyed(self.usingHand) or IsNullOrDestroyed(self.attach) or IsNullOrDestroyed(self.ib) then
+        return
+    end
+    local hp = self.attach:GetHandPoseRef(self.usingHand)
+    if IsNullOrDestroyed(hp) or IsNullOrDestroyed(hp.tracker) then
+        return
+    end
+    hp.tracker:UpdateTrack()
+    
+    local handRelativePos = self.trans:InverseTransformPoint(self.usingHand.trans.position)
+    local diffZ = UE.Mathf.Clamp(handRelativePos.z, -self.pullMaxDis, 0)
+    self.pullFactor = - diffZ/self.pullMaxDis
+    local handPos = self.trans.position + self.trans.forward * diffZ
+    self.attach.trans.position = handPos
+    self.model.position = handPos
+    
+    if UE.Time.time - self.startTime > 0.2 then
+        self.shootFactorDeltaAcc = self.shootFactorDeltaAcc + UE.Mathf.Abs(self.pullFactor - self.lastShootFactor)
+        if self.shootFactorDeltaAcc > 0.2 then
+            self.usingHand:HapticPulse(self.usingHand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
+            self:OnPulling()
+            self.shootFactorDeltaAcc = 0
+        end
+    end
+    
+    self.lastShootFactor = self.pullFactor
+    
+    --local ph = self.ib:GetPrimaryHand()
+    --local handDir = self.usingHand.grabJoint.transform.position - ph.transform.position
+    --local mainUp = ph.trans.up
+    --local localRot = UE.Quaternion.LookRotation(handDir, mainUp)
+    --local worldRot = localRot * self.mainSpace
+    --CL.PhysicsFollow.TrackRotation(self.ib.rb, worldRot)
+    --self.lastLocalRot = localRot
+end
+
+function crossBowPuller:EndPull()
+    if self.usingHand and not IsNullOrDestroyed(self.usingHand) then
+        self.attach:ClearHandPose(self.usingHand)
+        if not IsNullOrDestroyed(self.usingHand.grabJoint) then
+            local ld = self.usingHand.grabJoint.xDrive
+            ld.positionSpring = 0
+            self.usingHand.grabJoint.xDrive = ld
+            self.usingHand.grabJoint.yDrive = ld
+            self.usingHand.grabJoint.zDrive = ld
+            self.usingHand.grabJoint.connectedBody = nil
+        end
+    end
+    self.attach.transform.position = self.trans.position
+
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:SetTwoHandEnable(false)
+    end
+    
+    RemoveSchedule(self, self.trackTimer)
+end
+
+function crossBowPuller:OnPulling()
+    self.pullArrowSound.soundInfo:Play(self.model.position)
+end
+
+function crossBowPuller:OnTriggerEnter(other)
+    local ph = self.ib:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+    local hand = CL.InteractHand.GetHandByCollider(other)
+    if IsNullOrDestroyed(hand) or hand:IsCalling() then
+        return
+    end
+    
+    if ph == hand then
+        return
+    end
+    
+    if self.isOnline then
+        if ph.character.IsLocalPlayer then
+            if hand.character.IsLocalPlayer then
+                self:OnHandEnter(hand)
+            else
+                self.main:CmdOnHandAction(true, hand, ph.character.networkPlayer.netId)
+            end
+        end
+    else
+        self:OnHandEnter(hand)
+    end
+end
+
+function crossBowPuller:OnHandEnter(hand)    
+    self.onTrigger = true
+    self.triggerhand = hand
+    
+end
+
+function crossBowPuller:OnTriggerExit(other)
+    local ph = self.ib:GetPrimaryHand()
+    if IsNullOrDestroyed(self.ib:GetPrimaryHand()) then
+       return
+    end
+    
+    local hand = CL.InteractHand.GetHandByCollider(other)
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    if ph == hand then
+        return
+    end
+    
+    if self.isOnline then
+        if ph.character.IsLocalPlayer then
+            if hand.character.IsLocalPlayer then
+                self:OnHandExit(hand)
+            else
+                self.main:CmdOnHandAction(false, hand, ph.character.networkPlayer.netId)
+            end
+        end
+    else
+        self:OnHandExit(hand)
+    end
+end
+
+function crossBowPuller:TryGetHandOnTrigger()
+    local ph = self.ib:GetPrimaryHand()
+    if IsNullOrDestroyed(self.ib:GetPrimaryHand()) then
+       return
+    end
+    
+    local bounds = self.triggerCol.bounds
+    local center = bounds.center
+    local halfExtents = bounds.extents
+    local rotation = self.triggerCol.transform.rotation
+    
+    local overlapCount = UE.Physics.OverlapBoxNonAlloc(
+        center,
+        halfExtents,
+        CL.PhysicsHelper.shareOverlapColArray,
+        rotation,
+        UE.LayerMask.GetMask(
+        UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+        UE.LayerMask.LayerToName(CL.LayerDefine.CharacterLayer.value))
+    )
+    
+    if overlapCount <= 0 then
+        return
+    end
+    
+    for i = 0, overlapCount - 1 do
+        local collider = CL.PhysicsHelper.shareOverlapColArray[i]
+        
+        if not IsNullOrDestroyed(collider) then
+            local hand = CL.InteractHand.GetHandByCollider(collider)
+            if hand ~= nil and not IsNullOrDestroyed(hand) then
+                if self.isOnline then
+                    if ph.character.IsLocalPlayer then
+                        if hand.character.IsLocalPlayer then
+                            self:OnHandEnter(hand)
+                        else
+                            self.main:CmdOnHandAction(true, hand, ph.character.networkPlayer.netId)
+                        end
+                    end
+                else
+                    self:OnHandEnter(hand)
+                end
+                return
+            end
+        end
+    end
+end
+
+function crossBowPuller:NetworkOnHandAction(isEnter, hand, isHolder)
+    if hand.character.IsLocalPlayer and isHolder then
+        return
+    end
+    
+    if isEnter then
+        if IsNullOrDestroyed(hand) or hand:IsCalling() or self.primaryHand == hand then
+            return
+        end
+        if self.isPulling then
+            return
+        end
+        
+        if self.onTrigger then
+            return
+        end
+        
+        
+        self:OnHandEnter(hand)
+    else
+        if not self.onTrigger then
+            return
+        end
+        
+        if IsNullOrDestroyed(hand) then
+            return
+        end
+        
+        -- not pulling
+        if self.usingHand == nil or IsNullOrDestroyed(self.usingHand) then
+            self:OnHandExit(hand)
+            return
+        end
+        
+        -- on pulling
+        if hand == self.usingHand then
+            --print("network on hand exit hand  " .. hand.gameObject.name .. " usingHand:" ..self.usingHand.gameObject.name)
+            self:OnHandExit(hand)
+            return
+        else
+            --print("network on hand exit hand  " .. hand.gameObject.name .. " usingHand:" ..self.usingHand.gameObject.name)
+        end
+    end
+end
+
+function crossBowPuller:OnHandExit(hand)
+    self.onTrigger = false
+    self.triggerhand = nil
+end
+
+return Class(Require("Weapon/ForestockScript_bak"), nil, crossBowPuller)

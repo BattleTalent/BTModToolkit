@@ -1,0 +1,28 @@
+
+local BulletRevolver = {
+    intensity = 1.2,
+    
+    dmgAdd = 0,
+    isInit = false,
+}
+
+function BulletRevolver:OnSpawn()
+    if self.isInit then
+        return
+    end
+    self.isInit = true
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd = CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd + self.dmgAdd
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+end
+
+function BulletRevolver:Enhance()
+    self.dmgAdd = self.hitInfoObj.hitInfo.damageMlp * self.intensity
+end
+
+function BulletRevolver:ResetState()
+    self.dmgAdd = 0
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, BulletRevolver)

@@ -1,0 +1,116 @@
+--luaBehaviour
+local crossBowConnectPuller = {
+
+}
+
+function crossBowConnectPuller:Start()
+    self.__base.Start(self)
+    
+    self.secLocalPos = self.secModel.localPosition
+end
+
+function crossBowConnectPuller:RecordModelPosition()
+    if self.main ~= nil and self.main:ArrowIbActive() and not IsNullOrDestroyed(self.model) and not IsNullOrDestroyed(self.endPoint) then
+        self.model.localPosition = self.endPoint.localPosition
+    end
+    if self.isLoadArrow and not IsNullOrDestroyed(self.secModel) and not IsNullOrDestroyed(self.secEndPoint) then
+        self.secModel.localPosition = self.secEndPoint.localPosition
+    end
+end
+
+function crossBowConnectPuller:StartPull(usingHand)
+    if self.main == nil then
+        return false
+    end
+    if self.__base.StartPull(self, usingHand) then
+        self.isLoadArrow = self.main:IsLoadArrow()
+        return true
+    else
+        return false
+    end
+end
+
+function crossBowConnectPuller:UpdatePull()
+    if self.attach == nil or IsNullOrDestroyed(self.attach) or IsNullOrDestroyed(self.usingHand)
+    or IsNullOrDestroyed(self.trans) or IsNullOrDestroyed(self.model) then
+        self:ChangeState(self.PullerState.CANCEL)
+        return
+    end
+
+    local hp = self.attach:GetHandPoseRef(self.usingHand)
+    if hp == nil or IsNullOrDestroyed(hp.tracker) then
+        self:ChangeState(self.PullerState.CANCEL)
+        return
+    end
+    hp.tracker:UpdateTrack()
+    
+    local handRelativePos = self.trans:InverseTransformPoint(self.usingHand.trans.position)
+    local diffZ = UE.Mathf.Clamp(handRelativePos.z, -self.pullMaxDis, 0)
+    self.pullFactor = - diffZ/self.pullMaxDis
+    local handPos = self.trans.position + self.trans.forward * diffZ
+    self.attach.trans.position = handPos
+    self.model.position = handPos
+    
+    if self.isLoadArrow and not IsNullOrDestroyed(self.secModel) and not IsNullOrDestroyed(self.secEndPoint) then
+        self.secModel.localPosition = UE.Vector3.Lerp(self.secLocalPos, self.secEndPoint.localPosition, diffZ/self.pullMaxDis)
+    end
+    
+    if UE.Time.time - self.startTime > 0.2 then
+        self.shootFactorDeltaAcc = self.shootFactorDeltaAcc + UE.Mathf.Abs(self.pullFactor - self.lastShootFactor)
+        if self.shootFactorDeltaAcc > 0.2 then
+            self.usingHand:HapticPulse(self.usingHand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
+            self:OnPulling()
+            self.shootFactorDeltaAcc = 0
+        end
+    end
+    
+    self.lastShootFactor = self.pullFactor
+end
+
+function crossBowConnectPuller:LoadArrow()
+    if self.main ~= nil then
+        self.main:LoadArrow()
+    end
+end
+
+
+function crossBowConnectPuller:ClearLoaded()
+    self.isLoaded = false
+end
+
+---stateHandlers : Released
+function crossBowConnectPuller:OnReleasedEnter()
+    if self.main ~= nil then
+        self.main:PlayShootAction()
+    end
+    if self.isOnline and not IsNullOrDestroyed(self.ib) then
+        local ph = self.ib:GetPrimaryHand()
+        if not IsNullOrDestroyed(ph) and ph.character ~= nil and ph.character.IsLocalPlayer then
+            self.main:SyncLastReleaseWeaponShootData(self.stateId)
+        end
+    end
+    if self.shootArrowSound ~= nil and self.shootArrowSound.soundInfo ~= nil and not IsNullOrDestroyed(self.model) then
+        self.shootArrowSound.soundInfo:Play(self.model.position)
+    end
+end
+
+function crossBowConnectPuller:OnReleasedUpdate()
+    if self.isLoaded then
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            -- client need to wait next state sync
+            self:ChangeState(self.PullerState.LOADED)
+        end
+        if not self.isOnline then
+            self:ChangeState(self.PullerState.LOADED)
+        end
+    else
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            -- client need to wait next state sync
+            self:ChangeState(self.PullerState.IDLE)
+        end
+        if not self.isOnline then
+            self:ChangeState(self.PullerState.IDLE)
+        end
+    end
+end
+return Class(Require("Weapon/CrossBowPullerScript"), nil, crossBowConnectPuller)

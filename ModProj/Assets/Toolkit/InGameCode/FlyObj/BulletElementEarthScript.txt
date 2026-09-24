@@ -1,0 +1,200 @@
+
+local BulletElementEarth = {
+    isUsed = false,
+    zoneRadius = 0.2,
+}
+
+function BulletElementEarth:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+    
+    self.isUsed = true
+    self.host:CollisionCountUpdate()
+    self.host:PlayImpact(point, normal)
+    rb:AddForceAtPosition(rb.velocity, point, UE.ForceMode.Force)
+    --self:PushBackCharacter(fc)
+    
+    if typeof(CL.Wraith) == fc.cb:GetType() then
+        return
+    end
+    
+    fc.controller:CheckGround()
+    local pos = nil
+    if fc.attr:IsDead() then
+        local checkPos = nil
+        if fc.ra:HasBeenRipped() then
+            local root = fc.bone:GetRootOfRippedMuscleChain(mu.muscleName)
+            if root == CL.RagdollBoneInfo.Pelvis then
+                checkPos = mu.rbTrans.transform.position
+            end
+        else
+            local hips = fc.ra:GetMuscle(CL.RagdollBoneInfo.Pelvis)
+            checkPos = hips and hips.rbTrans.position or nil
+        end
+        if checkPos then
+            pos = self:GetGroundPoint(checkPos, 0.5)
+        end
+    else
+        if fc.controller:IsGround() then
+            local height = fc.controller:GetBodyHeight()
+            pos = self:GetGroundPoint(fc.controller.capsuleRB.transform.position + UE.Vector3.up * height/2, height)
+        end
+    end
+    if pos then
+        self:SpawnRock(pos)        
+    end
+end
+
+
+
+function BulletElementEarth:GetClosetPoint(col, point)
+    if IsNullOrDestroyed(col) or (col.sharedMesh and not col.convex) then
+        return point
+    else
+        return col:ClosestPoint(point)
+    end
+end
+
+
+
+function BulletElementEarth:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function BulletElementEarth:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+end
+
+function BulletElementEarth:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    self:TrySpawnRockUnderPlayer(hand.character)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+function BulletElementEarth:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function BulletElementEarth:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function BulletElementEarth:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    self:TrySpawnRockUnderPlayer(player)
+end
+
+function BulletElementEarth:TrySpawnRockUnderPlayer(character)
+    character:CheckGround()
+    local pos = nil
+    if character:IsGround() then
+        local height = character:GetBodyHeight()
+        pos = self:GetGroundPoint(character.capsuleRB.transform.position + UE.Vector3.up * height/2, height)
+    end
+    if pos then
+        self:SpawnRock(pos)        
+    end
+end
+
+
+function BulletElementEarth:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithSceneHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity)
+end
+
+function BulletElementEarth:RpcOnCollisionWithScene(rb, col, point, normal, relaVel)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+end
+
+function BulletElementEarth:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self.host:OnCollisionUpdate(rb, col, point, normal, relaVel)
+
+    local pos = nil
+
+    if UE.Vector3.Dot(normal, UE.Vector3.up) > 0.95 then
+        local center = self:GetClosetPoint(col, point)
+        --forward
+        local checkPos = center + UE.Vector3.forward * self.zoneRadius
+        local f = self:GetGroundPoint(checkPos + UE.Vector3.up * 0.1, 0.3)
+        if f then
+            checkPos = center - UE.Vector3.forward * self.zoneRadius / 2 + UE.Vector3.right * 0.866 * self.zoneRadius
+            local r = self:GetGroundPoint(checkPos + UE.Vector3.up * 0.1, 0.3)
+            if r then
+                checkPos = center - UE.Vector3.forward * self.zoneRadius / 2 - UE.Vector3.right * 0.866 * self.zoneRadius
+                local l = self:GetGroundPoint(checkPos + UE.Vector3.up * 0.1, 0.3)
+                if l then
+                    pos = (f + r + l)/3
+                end
+            end
+        end
+        
+        if pos then
+            self:SpawnRock(pos)        
+        end
+    end
+
+    self.host:PlayImpact(point, normal)
+    self.host:PlaySceneImpactEffect(point, normal)
+end
+
+function BulletElementEarth:GetGroundPoint(pos, len)
+    local hit, hitInfo = UE.Physics.SphereCast(pos, 
+                0.01,
+                UE.Vector3.down, len, UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value)))
+    CL.DebugDraw.DrawLine(pos, pos + UE.Vector3.down * len, UE.Color.red, 5)
+    if not hit then
+        return nil
+    end
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(hitInfo.collider)
+    if not IsNullOrDestroyed(pu) and pu.unitType ~= CL.Tagger.Tag.SceneObject then
+        return nil
+    end
+    return hitInfo.point
+end
+
+function BulletElementEarth:SpawnRock(pos)
+    local fo = nil
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo =  CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.flyObjName, self.host.owner, pos, UE.Vector3.up)
+            fo.trans:Rotate(0, 0, math.random(0, 360))
+        else
+            return
+        end
+    else
+        fo = CL.FlyObject.CreateFlyObj(self.flyObjName, self.host.owner, pos, UE.Vector3.up)
+        fo.trans:Rotate(0, 0, math.random(0, 360))
+    end
+end
+
+
+function BulletElementEarth:ResetState()
+    self.isUsed = false
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, BulletElementEarth)

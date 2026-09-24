@@ -1,0 +1,99 @@
+local WindZone = {
+    knockoutTime = 0.3,
+}
+
+function WindZone:FlyStart(vel)
+    self:OpenZoneCheck()
+    self.startFlyTime = UE.Time.time
+    
+end
+
+function WindZone:PlayEffect()
+    if not IsNullOrDestroyed(self.eo) then
+        return
+    end
+    self.eo = CL.EffectMgr.Instance:PlayEffect(self.zoneEffect, self.host.trans.position, self.host.trans.rotation)
+    self.eo.trans:SetParent(self.host.trans)
+    self.eo.trans.localPosition = UE.Vector3.zero
+end
+
+function WindZone:StopEffect()
+    CL.EffectMgr.Instance:GiveBack(self.eo)
+    self.eo = nil
+end
+
+function WindZone:OpenZoneCheck()
+    CL.Scheduler.RemoveSchedule(self.checkTimeId)
+    self.checkTimeId = CL.Scheduler.Create(self.host.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host.trans) then
+                sche:Stop()
+                return
+            end
+            self:DoCheck()
+        end
+    , 0, self.host.maxFlyTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function WindZone:CloseZoneCheck()
+    CL.Scheduler.RemoveSchedule(self.checkTimeId)
+end
+
+function WindZone:DoCheck()
+    local height = self.height + math.abs(1 - UE.Vector3.Dot(self.trans.forward, UE.Vector3.up)) * self.maxVerticalLength
+    local point1 = self.trans.position + self.trans.forward * self.radius
+    local point2 = point1 + self.trans.forward * height
+    local colNum = UE.Physics.OverlapCapsuleNonAlloc(point1, point2, self.radius, 
+                CL.PhysicsHelper.shareOverlapColArray)
+
+    if colNum <= 0 then
+        return
+    end
+    
+    local rbs = {}
+    local collider = nil
+    local rb = nil
+    
+    local pus = {}
+    local pu = nil
+    for i = 0, colNum - 1 do
+        collider = CL.PhysicsHelper.shareOverlapColArray[i]
+        rb = collider.attachedRigidbody
+        if not IsNullOrDestroyed(rb) and not rbs[rb] then
+            if not rb.isKinematic then
+                self:PushRigidbody(rb)
+                rbs[rb] = true
+            end
+        end
+        
+        pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collider)
+        if not IsNullOrDestroyed(pu) and not pus[pu] then
+            if pu.unitType == CL.Tagger.Tag.InteractRole then
+                self:HandleRole(pu)
+            end
+            pus[pu] = true
+        end
+    end
+end
+
+function WindZone:PushRigidbody(rb)
+    local force = self.trans.forward * rb.mass * (self.forceMlp + math.abs(1 - UE.Vector3.Dot(self.trans.forward, UE.Vector3.up)) * self.maxVerticalForceMlp)
+    rb:AddForce(force, UE.ForceMode.Force)
+end
+
+function WindZone:HandleRole(fc)
+    if fc.muscleState:IsPowerfulCharacter() then
+        return
+    end
+    
+    if UE.Time.time - self.startFlyTime < self.knockoutTime then
+        fc.motion:Knockout()
+    end
+end
+
+function WindZone:ResetState()
+    self:CloseZoneCheck()
+end
+
+return Class(nil, nil, WindZone)
