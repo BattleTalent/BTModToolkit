@@ -110,6 +110,7 @@ namespace CrossLink
         public int numOfFinger = 5;
 
         [Header("——————Saved can be undo——————")]
+        [Tooltip("Finger data follows the hierarchy order of Humanoid finger roots, ignoring non-finger nodes. Use Restore Finger Hierarchy Order to reorder saved data without rebuilding poses.")]
         public HandFinger[] fingers;
     
         public void SetHandPose(float weight)
@@ -132,17 +133,112 @@ namespace CrossLink
         [EasyButtons.Button]
         void AutoConfigFingers(int fingerNodeDepth = 3)
         {
-            if (handTrans == null)
+            if (fingerNodeDepth <= 0)
             {
-                Debug.LogError("Please assign the transform of the model's hand to \"handTrans\" first.");
+                Debug.LogError("AutoConfigFingers failed: fingerNodeDepth must be greater than zero.", this);
                 return;
             }
 
-            Animator animator = handTrans.GetComponentInParent<Animator>();
-            if (animator == null || !animator.isHuman)
+            if (!TryGetFingerRootsInHierarchyOrder("AutoConfigFingers", out Transform[] fingerRoots))
             {
-                Debug.LogError("AutoConfigFingers requires handTrans to belong to a Humanoid Animator.");
                 return;
+            }
+
+            HandFinger[] generatedFingers = new HandFinger[fingerRoots.Length];
+            for (int i = 0; i < fingerRoots.Length; i++)
+            {
+                generatedFingers[i] = ConvertToFingerRunTime(fingerRoots[i], fingerNodeDepth);
+            }
+
+            UnityEditor.Undo.RegisterCompleteObjectUndo(this, "Auto Config Fingers");
+            fingers = generatedFingers;
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+        }
+
+        [EasyButtons.Button("Restore Finger Hierarchy Order")]
+        void RestoreFingerHierarchyOrder()
+        {
+            if (!TryGetFingerRootsInHierarchyOrder("RestoreFingerHierarchyOrder", out Transform[] fingerRoots))
+            {
+                return;
+            }
+
+            if (fingers == null || fingers.Length != numOfFinger)
+            {
+                Debug.LogError("RestoreFingerHierarchyOrder failed: Fingers must contain exactly Num Of Finger entries. Existing data was preserved.", this);
+                return;
+            }
+
+            Dictionary<Transform, HandFinger> fingersByRoot = new Dictionary<Transform, HandFinger>();
+            for (int i = 0; i < fingers.Length; i++)
+            {
+                HandFinger finger = fingers[i];
+                if (finger == null || finger.fingerNodes == null
+                    || finger.fingerNodes.Length == 0 || finger.fingerNodes[0] == null)
+                {
+                    Debug.LogError($"RestoreFingerHierarchyOrder failed: Fingers[{i}] has no finger root. Existing data was preserved.", this);
+                    return;
+                }
+
+                Transform fingerRoot = finger.fingerNodes[0];
+                if (fingersByRoot.ContainsKey(fingerRoot))
+                {
+                    Debug.LogError($"RestoreFingerHierarchyOrder failed: duplicate finger root {fingerRoot.name}. Existing data was preserved.", this);
+                    return;
+                }
+
+                fingersByRoot.Add(fingerRoot, finger);
+            }
+
+            HandFinger[] reorderedFingers = new HandFinger[fingerRoots.Length];
+            bool orderChanged = false;
+            for (int i = 0; i < fingerRoots.Length; i++)
+            {
+                if (!fingersByRoot.TryGetValue(fingerRoots[i], out HandFinger finger))
+                {
+                    Debug.LogError($"RestoreFingerHierarchyOrder failed: finger root {fingerRoots[i].name} has no matching saved finger. Check the saved finger roots. Existing data was preserved.", this);
+                    return;
+                }
+
+                // Keep the complete saved finger, including poses, tips, and bone references.
+                reorderedFingers[i] = finger;
+                orderChanged |= finger != fingers[i];
+            }
+
+            if (!orderChanged)
+            {
+                Debug.Log("RestoreFingerHierarchyOrder skipped: Fingers already follow the hand's child order.", this);
+                return;
+            }
+
+            UnityEditor.Undo.RegisterCompleteObjectUndo(this, "Restore Finger Hierarchy Order");
+            fingers = reorderedFingers;
+            UnityEditor.EditorUtility.SetDirty(this);
+            UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+            Debug.Log("RestoreFingerHierarchyOrder succeeded: restored finger hierarchy order and preserved all saved finger data. Save the prefab to keep the change.", this);
+        }
+
+        private bool TryGetFingerRootsInHierarchyOrder(string operationName, out Transform[] fingerRoots)
+        {
+            fingerRoots = null;
+            if (handTrans == null)
+            {
+                Debug.LogError($"{operationName} failed: assign Hand Trans first.", this);
+                return false;
+            }
+
+            if (numOfFinger <= 0)
+            {
+                Debug.LogError($"{operationName} failed: Num Of Finger must be greater than zero.", this);
+                return false;
+            }
+
+            Animator animator = handTrans.GetComponentInParent<Animator>();
+            if (animator == null || animator.avatar == null || !animator.avatar.isValid || !animator.isHuman)
+            {
+                Debug.LogError($"{operationName} failed: Hand Trans must belong to a valid Humanoid Animator.", this);
+                return false;
             }
 
             HumanBodyBones[] fingerRootBones;
@@ -170,22 +266,33 @@ namespace CrossLink
             }
             else
             {
-                Debug.LogError("handTrans is not this Animator's LeftHand or RightHand bone.");
-                return;
+                Debug.LogError($"{operationName} failed: Hand Trans is not this Animator's LeftHand or RightHand bone.", this);
+                return false;
             }
 
-            List<HandFinger> fingerList = new List<HandFinger>(fingerRootBones.Length);
+            HashSet<Transform> mappedFingerRoots = new HashSet<Transform>();
             foreach (HumanBodyBones fingerRootBone in fingerRootBones)
             {
                 Transform fingerRoot = animator.GetBoneTransform(fingerRootBone);
-                if (fingerRoot == null)
-                    continue;
-
-                fingerList.Add(ConvertToFingerRunTime(fingerRoot, fingerNodeDepth));
+                if (fingerRoot != null)
+                    mappedFingerRoots.Add(fingerRoot);
             }
 
-            fingers = fingerList.ToArray();
-            UnityEditor.EditorUtility.SetDirty(this);
+            List<Transform> orderedRoots = new List<Transform>();
+            foreach (Transform child in handTrans)
+            {
+                if (mappedFingerRoots.Contains(child))
+                    orderedRoots.Add(child);
+            }
+
+            if (orderedRoots.Count != numOfFinger)
+            {
+                Debug.LogError($"{operationName} failed: found {orderedRoots.Count} mapped finger roots directly under Hand Trans, expected {numOfFinger}. Check Humanoid mapping and Num Of Finger. Existing data was preserved.", this);
+                return false;
+            }
+
+            fingerRoots = orderedRoots.ToArray();
+            return true;
         }
 
         HandFinger ConvertToFingerRunTime(Transform fingerRoot, int fingerNodeDepth = 3)

@@ -1,0 +1,91 @@
+local SpellArmguard = {
+}
+
+function SpellArmguard:SlotSpell(slot)
+    if self:IsAvatarModEnabled() then
+        self:SetArmPartVisible(false)
+    end
+
+    self:ArmGuardShow()
+    self:BindArmguard(self:GetSlotHand())
+end
+
+function SpellArmguard:UnSlotSpell(slot)
+    self:RemoveArmguard()
+    self:ArmGuardHide()
+end
+
+
+function SpellArmguard:ArmGuardShow()
+    self.host.interact:PlayAppearEffect()
+end
+
+function SpellArmguard:ArmGuardHide()
+    self.host.interact:StopDissolveEffect()
+    
+end
+
+function SpellArmguard:BindArmguard(hand)
+    if not hand then
+        return
+    end
+    local player = hand.character
+    if player == nil then
+        return
+    end
+
+    local isAvatarMod = self:IsAvatarModEnabled()
+    self.handPart.localScale = UE.Vector3.one
+
+    if isAvatarMod then
+        self:SetArmPartVisible(false)
+        CL.Scheduler.RemoveSchedule(self.bindActId)
+        return
+    end
+
+    local isRight = hand:GetHandIndex() == 0
+    local ikRef = player.ik.references
+    local armBone = isRight and ikRef.rightForearm or ikRef.leftForearm        
+    local handBone = isRight and ikRef.rightHand or ikRef.leftHand
+    
+    self.armTrans.localRotation = isRight and UE.Quaternion.Euler(-40.041, 176.447, -98.712) or UE.Quaternion.Euler(40.393, -3.609, -82.863)
+    self.armTrans.localPosition = isRight and UE.Vector3(0.069, 0.0166, -0.0172) or UE.Vector3(-0.0632, -0.0136, 0.0138)
+
+    self:SetArmPartVisible(true)
+    
+    --self.armPart:SetParent(armBone)
+    --self.armPart.localRotation = UE.Quaternion.identity
+    
+    CL.Scheduler.RemoveSchedule(self.bindActId)
+    self.bindActId = CL.Scheduler.Create(self.host.gameObject,
+    function(sche, t, s)
+        --rotation
+        self.armPart.rotation = armBone.rotation
+        self.armPart.position = (armBone.position + handBone.position) / 2
+    end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpellArmguard:RemoveArmguard()
+    CL.Scheduler.RemoveSchedule(self.bindActId)
+    --self.armPart:SetParent(self.host.trans)
+    self.armPart.localRotation = UE.Quaternion.identity
+    self.armPart.localPosition = UE.Vector3.zero
+    self.handPart.localScale = UE.Vector3.one * 0.001
+    self:SetArmPartVisible(false)
+end
+
+function SpellArmguard:IsAvatarModEnabled()
+    return CL.DebugPanel ~= nil and CL.DebugPanel.IsAvatarModEnabled()
+end
+
+function SpellArmguard:SetArmPartVisible(isVisible)
+    if self.armPart == nil or IsNullOrDestroyed(self.armPart) then
+        return
+    end
+
+    self.armPart.localScale = isVisible and UE.Vector3.one or UE.Vector3.one * 0.001
+end
+
+return Class(Require("Weapon/SpellBaseScript"),nil,SpellArmguard)

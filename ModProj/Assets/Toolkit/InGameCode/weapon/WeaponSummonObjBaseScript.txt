@@ -1,0 +1,228 @@
+
+local WeaponSummonObjBase = {
+    spawnedObj = nil,
+}
+
+function WeaponSummonObjBase:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.manaCostSpawn = self.host.manaCost
+    
+    self.onGrabHandler = function(a, g)
+        self:OnGrabSpawnWeapon(a, g)
+    end
+    
+    self.onWeaponDeadHandler = function(pu)
+        self:OnWeaponDead(pu)
+    end
+end
+
+function WeaponSummonObjBase:OnDestroy()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.spawnedObj ~= nil and not IsNullOrDestroyed(self.spawnedObj) then
+        self.spawnedObj:GrabEvent("-", self.onGrabHandler)
+        self.spawnedObj:DeadEvent("-", self.onWeaponDeadHandler)
+    end
+    self.spawnedObj = nil
+    
+    if self.delay ~= nil and not IsNullOrDestroyed(self.delay) then
+        UE.Object.Destroy(self.delay.gameObject)
+    end
+end
+
+function WeaponSummonObjBase:UpdateSkill()
+    
+    if self.spawnedObj == nil or IsNullOrDestroyed(self.spawnedObj) then
+        if CL.Scheduler.GetSchedule(self.spawnActId) ~= nil then
+            return
+        end
+        
+        if self.pf == nil or IsNullOrDestroyed(self.pf) then
+            local go = UE.GameObject("WandDelay")
+            self.delay = go:AddComponent(typeof(CL.TransformDelay))
+            local delayPoint = self.delay.trans
+            self.delay.target = self.spawnPoint
+            self.delay.rotLerp = 0.6
+            self.delay.vecLerp = 0.4
+            self.delay:Reset()
+            
+            self.pf = self.host.gameObject:AddComponent(typeof(CL.PhysicsFollow))
+            self.pf.target = self.spawnPoint
+            self.pf.rotationTarget = delayPoint
+            self.pf.maxDistanceDelta = 4
+            self.pf.maxRotateDelta = 10
+        end
+        
+        if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+            return
+        end
+
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerPlaySpawnEffect() end
+        else
+            self:PlaySpawnEffect()
+        end
+        
+        self.host.manaCost = 0
+        
+        self.host.interact:GetCollisionEffect().enabled = false
+        self.spawnActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            self:Spawn()
+        end
+        , 0, 0, self.delayToSpawn).actionId
+    else
+        if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+            return
+        end
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnShoot(self.spawnedObj.netId) end
+        else
+            self.spawnedObj.rb:AddForce(self.spawnedObj.trans.forward * self.shootForce, UE.ForceMode.Impulse)
+        
+            if self.shootSound then
+                self.shootSound.soundInfo:Play(self.spawnedObj.trans.position)
+            end
+            self.spawnedObj:MarkThrowAssist()
+            self:BreakConnection()
+        end
+    end
+end
+
+function WeaponSummonObjBase:OnShoot(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    end
+    netIb.networkRB.enabled = true
+    
+    netIb.ib.rb:AddForce(netIb.ib.trans.forward * self.shootForce, UE.ForceMode.Impulse)
+        
+    if self.shootSound then
+        self.shootSound.soundInfo:Play(self.spawnPoint.position)
+    end
+    netIb.ib:MarkThrowAssist()
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        self:BreakConnection()
+    end
+end
+
+function WeaponSummonObjBase:PlaySpawnEffect()
+    CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, self.spawnPoint.position, self.spawnPoint.rotation)
+    if self.spawnSound then
+        self.spawnSound.soundInfo:Play(self.spawnPoint.position)
+    end
+end
+
+function WeaponSummonObjBase:Spawn()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.flyObjName, self.spawnPoint.position, 
+                self.spawnPoint.rotation, false, false, 0, true, 
+                function(networkWeapon, weaponGo)
+                    if not IsNullOrDestroyed(weaponGo) then
+                        self:InitSpawnIB(weaponGo)
+                        local ib = CL.PhysicsUnit.GetPhysicsUnit(weaponGo.transform)
+                        if not IsNullOrDestroyed(ib) then
+                            self:OnSpawn(ib)
+                        end
+                    end
+                    
+                    self.newNetSpawnIb = networkWeapon
+                end)
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerSpwawnIB(self.newNetSpawnIb.netId) end
+        else
+            return
+        end
+    else
+        local go = CL.ResourceMgr.Instantiate("flyObj/" .. self.flyObjName)
+        self:InitSpawnIB(go)
+        self:OnSpawn(self.spawnedObj)
+    end
+end
+
+function WeaponSummonObjBase:RpcSpwawnIB(netib)
+    netib.networkRB.enabled = false
+    self:InitSpawnIB(netib.ib.gameObject)
+end
+
+function WeaponSummonObjBase:InitSpawnIB(go)
+    self.spawnedObj = CL.PhysicsUnit.GetPhysicsUnit(go.transform)
+    self.spawnedObj.trans.position = self.spawnPoint.position
+    self.spawnedObj.trans.rotation = self.spawnPoint.rotation
+    
+    if self.pf and not IsNullOrDestroyed(self.pf) then
+        self.pf.follower = self.spawnedObj.rb
+        self.pf.enabled = true
+    end
+    
+    self.delay.gameObject:SetActive(true)
+    self.delay:Reset()
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        self.spawnedObj:GrabEvent("+", self.onGrabHandler)
+        self.spawnedObj:DeadEvent("+", self.onWeaponDeadHandler)
+    end
+    
+    self.host.interact:CostDurability()
+end
+
+function WeaponSummonObjBase:OnSpawn(ib)
+
+end
+
+function WeaponSummonObjBase:BreakConnection()
+    if self.pf and not IsNullOrDestroyed(self.pf) then
+        self.pf.enabled = false
+    end
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        if not IsNullOrDestroyed(self.spawnedObj) then
+            self.spawnedObj:GrabEvent("-", self.onGrabHandler)
+            self.spawnedObj:DeadEvent("-", self.onWeaponDeadHandler)
+            
+            self.spawnedObj:OnDrop(true)
+        end
+    end
+    
+    self:OnBreakConnection()
+    
+    self.spawnedObj = nil
+    self.delay.gameObject:SetActive(false)
+    
+    self.host.interact:GetCollisionEffect().enabled = true
+    
+    self.host.manaCost = self.manaCostSpawn
+end
+
+function WeaponSummonObjBase:OnBreakConnection()
+    
+end
+
+function WeaponSummonObjBase:OnWeaponDead(pu)
+    if self.spawnedObj ~= nil and not IsNullOrDestroyed(self.spawnedObj) then
+        self:BreakConnection()
+    end
+end
+
+function WeaponSummonObjBase:OnGrabSpawnWeapon(a, g)
+    if self.spawnedObj ~= nil and not IsNullOrDestroyed(self.spawnedObj) then
+        self:BreakConnection()
+    end
+end
+
+function WeaponSummonObjBase:OnEnhance()
+    self.isEnhance = true
+end
+
+return Class(nil, nil, WeaponSummonObjBase)

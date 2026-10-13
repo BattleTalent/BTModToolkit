@@ -1,0 +1,46 @@
+local flyFreezeEx = {
+    -- explodeRange
+    -- explodeEffect
+    freezeSec = 3,
+}
+
+
+
+
+function flyFreezeEx:FlyStart(vel)
+    if self.explodeRange > 0 then
+        --CL.EffectMgr.Instance:PlayEffect(self.explodeEffect, self.trans.position, self.trans.rotation)
+                
+        self:RangeFreeze(self.trans.position - vel.normalized * 0.25, self.explodeRange)
+    end
+end
+
+function flyFreezeEx:RangeFreeze(pos, range)
+    local array = UE.Physics.OverlapSphere(pos, range, CL.LayerDefine.BodyMask.value)
+    
+    local puList = {}
+    local pu = nil
+    for i = 0, array.Length - 1 do
+        pu = CL.PhysicsUnit.GetPhysicsUnit(array[i])
+        
+        if pu and puList[pu] == nil then
+            self:Freeze(pu)
+            puList[pu] = true
+        end
+    end
+end
+
+function flyFreezeEx:Freeze(pu)
+    if (pu.unitType == CL.Tagger.Tag.PlayerRole) then
+--[[                
+    elseif (beHitPu.unitType == CL.Tagger.Tag.PlayerHand) then
+        player = beHitPu.logicHand.character
+]]
+    elseif (pu.unitType == CL.Tagger.Tag.InteractRole) then
+        pu.muscleState:EnableFreeze(true, nil, false)
+        pu.muscleState:UnFreezeAgain(self.freezeSec)
+    end
+end
+
+
+return Class(nil, nil, flyFreezeEx)

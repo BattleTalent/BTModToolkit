@@ -1,0 +1,59 @@
+
+local ScytheDoom = {
+    activeColor = UE.Color(1.424, 1.348, 1.944, 1),
+    disactiveColor = UE.Color(0.2, 0.2, 0.2, 1)
+}
+
+
+function ScytheDoom:Start()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    SetMaterialEmission(self.renderer, self.disactiveColor)
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.FullBodyMuscleState.dmgEffectData.stab then
+            return
+        end
+        
+        if CL.FullBodyMuscleState.dmgBasicData.relaVel.sqrMagnitude < 20 then
+            return
+        end
+        
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu:GetProxyMuscleName(), point)
+        if not fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+            return
+        end  
+        
+        if frag then
+            CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+end
+
+function ScytheDoom:OpenSkill()
+    self:ActiveEffectOn()
+end
+
+function ScytheDoom:CloseSkill()
+    self:ActiveEffectOff()
+    
+    self.__base.CloseSkill(self)
+end
+
+function ScytheDoom:ActiveEffectOn()
+    RemoveSchedule(self.host.interact.gameObject, self.emissionTimer)
+    self.emissionTimer = SetMaterialEmissionWithinTime(self.host.interact.gameObject, {self.renderer}, self.activeColor, 0.2)
+end
+
+function ScytheDoom:ActiveEffectOff()
+    RemoveSchedule(self.host.interact.gameObject, self.emissionTimer)
+    self.emissionTimer = SetMaterialEmissionWithinTime(self.host.interact.gameObject, {self.renderer}, self.disactiveColor, 0.5)
+
+end
+
+
+return Class(Require("Weapon/SwordSlashScript"), nil, ScytheDoom)

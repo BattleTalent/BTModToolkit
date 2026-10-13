@@ -1,0 +1,197 @@
+
+local WandIceSpike = {
+    lastRecordTime = 0,
+}
+
+function WandIceSpike:Awake()
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    self.OnHit = function(fc)
+        if CL.FullBodyMuscleState.dmgBasicData.hitInfo == self.host.interact:GetRagdollHitInfo() then
+            return
+        end
+        if not fc.muscleState:IsFreezeRecently() then
+            fc.muscleState:BeHittedEvent("-", self.OnHit)
+            self.host.interact:GetStabObject():BreakAllStab()
+        end
+    end
+    
+    self.OnStabEnterHandler = function(si)
+        local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+        if IsNullOrDestroyed(fc) then
+            return
+        end
+        fc.muscleState:BeHittedEvent("+", self.OnHit)
+        fc.muscleState:EnableFreeze(true)
+        fc.muscleState:AddFreezeSource(true)
+        self:AutoBreak(fc)
+    end
+    self.OnStabExitHandler = function(si)
+        local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+        if IsNullOrDestroyed(fc) then
+            return
+        end
+
+        fc.muscleState:AddFreezeSource(false)
+        if fc.muscleState:IsNoFreezeSource() then
+            fc.muscleState:BeHittedEvent("-", self.OnHit)
+            fc.muscleState:EnableFreeze(false)
+            fc.motion:Knockout()
+        end
+        self:RemoveAutoBreak(fc)
+    end
+    self.host.interact:GetStabObject():StabEnterEvent("+", self.OnStabEnterHandler)
+    self.host.interact:GetStabObject():StabExitEvent("+", self.OnStabExitHandler)
+end
+
+function WandIceSpike:AutoBreak(fc)
+    self.breakActId = CL.Scheduler.RemoveSchedule(self.breakActId)
+    self.breakActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self.host.interact:GetStabObject():BreakAllStab()
+        end
+    , 0, 0, 40).actionId
+end
+
+function WandIceSpike:RemoveAutoBreak(fc)
+    self.breakActId = CL.Scheduler.RemoveSchedule(self.breakActId)
+end
+
+function WandIceSpike:OnGrab(a, g)
+    if g then
+        self.character = a.attachedHand.character
+    else
+        self.character = nil
+    end
+end
+
+function WandIceSpike:OpenSkill()
+    self.isActive = true
+    
+    if not IsNullOrDestroyed(self.activeEffect) then
+        self.activeEffect:Play()
+    end
+    
+    self.activateSound:PlaySoundInfo()
+
+    if not self.activeSoundInfo then
+        self.activeSoundInfo = self.activeSound:PlaySoundInfo()
+        if self.activeSoundInfo then
+            self.activeSoundInfo.ao.trans:SetParent(self.host.interact.trans)
+        end
+    end
+    
+    --self:ClearVelocity()
+end
+
+function WandIceSpike:UpdateSkill()
+    --self:CacheVelocity()
+    
+end
+
+function WandIceSpike:ClearVelocity()
+    self.velList = {}
+end
+
+function WandIceSpike:CacheVelocity()
+    if UE.Time.time - self.lastRecordTime < 0.02 then
+        return
+    end
+    self.lastRecordTime = UE.Time.time
+    
+    table.insert(self.velList, 1, self.host.interact.rb.velocity)
+
+    if #self.velList > 10 then
+        table.remove(self.velList, #self.velList)
+    end
+end
+
+function WandIceSpike:GetSpeed()
+    local vel = UE.Vector3.zero
+    for k, v in ipairs(self.velList) do
+        vel = vel + v 
+    end
+    
+    return vel/#self.velList
+end
+
+function WandIceSpike:CloseSkill()
+    self.isActive = false
+    
+    if not IsNullOrDestroyed(self.activeEffect) then
+        self.activeEffect:Stop()
+    end
+    
+    if self.activeSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.activeSoundInfo)
+        self.activeSoundInfo = nil
+    end
+end
+
+function WandIceSpike:OnColliderEnter(collision)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self.isActive then
+        return
+    end
+    local col = collision.collider
+    if col.gameObject.layer ~= CL.LayerDefine.EnvLayer.value then
+        return
+    end
+    if not self.character or IsNullOrDestroyed(self.character) then
+        return
+    end
+    local vel = self.host.interact:GetPrimaryHand().velocityEstimator:GetVelocityEstimateLocal()
+    --print("speed:" ..vel.magnitude )
+
+    if vel.magnitude < self.activeSpeed then
+        return
+    end
+    --local dot = UE.Vector3.Dot(-self.host.interact.trans.forward, UE.Vector3.down) 
+    --print("verticle dot:" .. dot)
+    if UE.Vector3.Dot(-self.host.interact.trans.forward, UE.Vector3.down) < 0.7 then
+        return
+    end
+    
+    local dot = UE.Vector3.Dot(vel.normalized, UE.Vector3.down)
+    --print("speed dot:" .. dot)
+    if dot < 0.2 then
+        return
+    end
+
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:SpawnIceSpike(point, self.character.trans.forward)
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerShowIceEffect(point, normal) end
+    end
+    
+    self:ShowIceEffect(point, normal)
+    
+    self.host.interact:CostDurability()
+    
+    self.host:CloseSkill()
+end
+
+function WandIceSpike:SpawnIceSpike(pos, dir)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self.host:NetworkCreateFlyObj(self.flyObjName, pos, dir)
+        end
+    else
+        self.host:CreateFlyObj(self.flyObjName, pos, dir)
+    end
+end
+
+function WandIceSpike:ShowIceEffect(pos, normal)
+    CL.EffectMgr.Instance:PlayEffect(self.collisionEffect, pos, UE.Quaternion.LookRotation(normal))
+end
+
+return Class(nil, nil, WandIceSpike)

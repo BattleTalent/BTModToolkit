@@ -1,0 +1,203 @@
+
+local BrandingIronStabable = {
+    hitScanInterval = 1,
+    hitEndTime = 0,
+    effectInterval = 0.5,
+    nextEffectTime = 0,
+    
+    brandSoundTime = 0,
+    
+    hitInfos = {},
+}
+
+function BrandingIronStabable:Start()
+    self.onStabEnterHandler = function(si)
+        local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+        if not IsNullOrDestroyed(fc) then
+            self.stabFc = fc
+            self.stabMu = self.stabFc.ra:GetMuscle(si.stabTarget)
+            self:StartStabDamage(fc)
+            
+            self.stabInfo = si
+        end
+    end
+    
+    self.OnStabExitHandler = function(si)
+        self.stabFc = nil
+        self.stabInfo = nil
+        self.stabMu = nil
+        self:StopStabDamage()
+    end
+    self.stabObj:StabEnterEvent("+", self.onStabEnterHandler)
+    self.stabObj:StabExitEvent("+", self.OnStabExitHandler)
+    
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        CL.FullBodyMuscleState.dmgEffectData.pushbackDir = UE.Vector3.zero
+        CL.FullBodyMuscleState.dmgEffectData.stiffSec = 0
+        CL.FullBodyMuscleState.dmgEffectData.decalRadius = 0.05
+        CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel = 0.0001 * CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel.normalized
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    
+    self.tickActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if UE.Time.time > self.brandSoundTime and not self.stabInfo then
+                if self.brandSoundInfo then
+                    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.brandSoundInfo)
+                    self.brandSoundInfo = nil
+                end
+            end
+        end
+    , 0.2, -1).actionId
+end
+
+function BrandingIronStabable:OnGrab(a, g)
+    if g then
+        self.hand = a.attachedHand
+    else
+        self.hand = nil
+    end
+end
+
+function BrandingIronStabable:CheckStabDamage()
+    if not self.stabFc or IsNullOrDestroyed(self.stabFc) or not self.stabMu then
+        
+        return
+    end
+    
+    if self.hitInfos[self.stabFc] and UE.Time.time < self.hitInfos[self.stabFc] then
+        return
+    end
+    
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(self.stabMu.col, self.host.interact, self.host.interact.rb, self.flameCol, self.trans.forward, "None", false)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+    
+    self.hitInfos[self.stabFc] = UE.Time.time + self.hitScanInterval
+end
+
+function BrandingIronStabable:StartStabDamage()
+    self.loopSmokeEffect:Play()
+    
+    if not self.brandSoundInfo then
+        self.brandSoundInfo = self.brandSound:PlaySoundInfo()
+        if self.brandSoundInfo then
+            self.brandSoundInfo.ao.transform:SetParent(self.host.interact.trans)
+        end
+    end
+    
+    self.burningActId = CL.Scheduler.RemoveSchedule(self.burningActId)
+    self.burningActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            self:CheckStabDamage()
+        end
+    , 0.2, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function BrandingIronStabable:StopStabDamage()
+    if self.loopSmokeEffect and not IsNullOrDestroyed(self.loopSmokeEffect) then
+        self.loopSmokeEffect:Stop()
+    end
+    
+    if self.brandSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.brandSoundInfo)
+        self.brandSoundInfo = nil
+    end
+    self.burningActId = CL.Scheduler.RemoveSchedule(self.burningActId)
+end
+
+function BrandingIronStabable:OnColliderStay(collision)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collision.transform)
+    if pu and not IsNullOrDestroyed(pu) then
+        local unitType = pu.unitType
+        
+        if unitType == CL.Tagger.Tag.InteractRole then
+            if pu.attr:IsImmune("Fire") then
+                return
+            end
+        end
+        
+        self:TryIgnite(pu, collision.collider)
+        --print("On collision with ----------- " .. collision.transform.name)
+        if self.hand and not IsNullOrDestroyed(self.hand) and self.hand.trans.root == pu.trans.root then
+            return
+        end
+        
+        if unitType == CL.Tagger.Tag.InteractRole
+            or unitType == CL.Tagger.Tag.PlayerRole then
+            if unitType == CL.Tagger.Tag.PlayerRole and self.host.interact.handCalling then
+                return
+            end
+            
+            local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+
+            if UE.Time.time > self.nextEffectTime then
+                self:PlayBrandingEffect(point, normal)
+            end
+            
+            if not self.brandSoundInfo then
+                self.brandSoundInfo = self.brandSound:PlaySoundInfo()
+                if self.brandSoundInfo then
+                    self.brandSoundInfo.ao.transform:SetParent(self.host.interact.trans)
+                end
+            end
+            
+            self.brandSoundTime = UE.Time.time + 0.3
+            
+            if self.hitInfos[pu] and self.hitInfos[pu] > UE.Time.time then
+                return
+            end
+            
+            if unitType == CL.Tagger.Tag.PlayerRole then
+                if self.hand and self.hand.character == pu.character then
+                    return
+                end
+            end
+            --self:BurningTarget(point, normal)
+            self.hitInfos[pu] = UE.Time.time + self.hitScanInterval
+            CL.FullBodyMuscleState.StayDmg = true
+            CL.InteractTrigger.BeginScanDmg()
+            CL.InteractTrigger.ApplyHitScanDamage(otherCol, self.host.interact, self.host.interact.rb, self.flameCol, -normal, "None", false)
+            CL.InteractTrigger.EndHitScan()
+            CL.FullBodyMuscleState.StayDmg = false
+        end
+    end
+    
+end
+
+function BrandingIronStabable:PlayBrandingEffect(point, normal)
+    local targetPos = self.hitCol:ClosestPoint(point)
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.effectName, targetPos, UE.Quaternion.LookRotation(normal))
+    eo.trans:SetParent(self.host.interact.trans)
+    eo.trans.position = targetPos
+    
+    self.nextEffectTime = UE.Time.time + self.effectInterval
+end
+
+function BrandingIronStabable:TryIgnite(pu, col)
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+        
+    local trigger = pu:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+        
+    local tb = trigger.script:GetSelf()
+    if tb and tb.fuseCol and tb.Ignite then
+        tb:Ignite()
+    end
+end
+
+function BrandingIronStabable:OnDead()
+    self.stabObj:StabEnterEvent("+", self.onStabEnterHandler)
+    self.stabObj:StabExitEvent("+", self.OnStabExitHandler)
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+end
+
+return Class(nil, nil, BrandingIronStabable)

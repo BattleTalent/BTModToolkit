@@ -1,0 +1,29 @@
+local IgnitionSource = {
+}
+
+function IgnitionSource:OnTriggerEnter(other)
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(other)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+
+    local trigger = pu:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+    
+    local tb = trigger.script:GetSelf()
+    if IsNullOrDestroyed(tb) then
+        return
+    end
+
+    if tb.fuseCol and other == tb.fuseCol and tb.Ignite then
+        tb:Ignite()
+    end
+end
+
+return Class(nil, nil, IgnitionSource)

@@ -1,0 +1,266 @@
+local ManualShotGun = {
+        holdPoseValues = {0.3, 0.05, 0.7, 0.75, 0.72},
+        
+        activeColor = UE.Color(4.464, 0.775, 0, 1),
+        loadColor = UE.Color(2.1, 1, 0.7, 1),
+        disactiveColor = UE.Color(0.01, 0.01, 0.01, 1),
+        
+        pushback = 4,
+        midAirIntensity = 0.3,
+        onDragIntensity = 0.25,
+        axisYValue = 3,
+    }
+
+function ManualShotGun:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function ManualShotGun:OnGrab(a, g)
+    self.aimWidget.gameObject:SetActive(g)
+    if g then
+        if not IsNullOrDestroyed(a.attachedHand) then
+            SetHandPose(a.attachedHand, self.holdPoseValues)
+        end
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self.aimWidget.enabled = true
+        end
+    else
+        self.aimWidget.enabled = false
+    end
+end
+
+function ManualShotGun:UpdateSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerTryShot(self.isEmpty) end
+    end
+    if self.isEmpty then
+        self.triggerSound:PlaySound()
+        self.host:CloseSkill()
+        
+        --The mana will also be subtracted when the trigger is not loaded, so the mana is added back here
+        local hand = self.host.interact:GetPrimaryHand()
+        if not IsNullOrDestroyed(hand) then
+            hand.character.attr:AddMp(self.host.manaCost)
+        end
+        return
+    end
+    --if not CostMana(self.host, self.host.manaCost) then
+    --    self.host:CloseSkill()
+    --    return
+    --end
+    
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        self:PlayShootAction()
+        self:HolderPushBack(self.pushback)
+        
+        local state = GetNetworkIBState(self)
+        if self.isOnline then
+            if state ~= nil then state:ServerUnLockForestock() end
+        else
+            self.foreststock.script.self:UnLock()
+        end
+        self.isEmpty = true
+    end
+    self:OnUpdateSkill()
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerCloseSkill() end
+    end
+    self.host:CloseSkill()
+    
+    RemoveSchedule(self.host.interact.gameObject, self.emissionTimer)
+    self.emissionTimer = SetMaterialEmissionWithinTime(self.host.interact.gameObject, {self.renderer}, self.disactiveColor, 0.2)
+end
+
+function ManualShotGun:NetworkTryShot(isEmpty)
+    if self.isEmpty then
+        self.triggerSound:PlaySound()
+        self.host:CloseSkill()
+    else
+        RemoveSchedule(self.host.interact.gameObject, self.emissionTimer)
+        self.emissionTimer = SetMaterialEmissionWithinTime(self.host.interact.gameObject, {self.renderer}, self.disactiveColor, 0.2)
+    end
+end
+
+function ManualShotGun:OnUpdateSkill()
+
+end
+
+function ManualShotGun:OnReachLoadPoint()
+    SetMaterialEmission(self.renderer, self.loadColor)
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerOnReachLoadPoint() end
+    end
+end
+
+function ManualShotGun:OnLoadCompeleted()
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerLoadCompeleted() end
+    end
+
+    self.isEmpty = false
+    
+    SetMaterialEmission(self.renderer, self.activeColor)
+end
+
+
+function ManualShotGun:HolderPushBack(intensity)
+    local holder = self.host.interact:GetHolder()
+    if holder then
+        --holder:GetControllerBase():AddPushbackByForce(-self.host.interact.trans.forward * intensity)
+        local dir = -self.host.interact.trans.forward
+        
+        if holder.character.dragPower ~= holder.character:GetOriginalDragPower() then
+            intensity = intensity * self.onDragIntensity
+        end
+        
+        if holder.character:IsMidAir() then
+            intensity = intensity*self.midAirIntensity
+        end
+        dir.y = dir.y/self.axisYValue
+        dir:Normalize()
+        
+        holder.character:AddForce(dir * intensity)
+        holder.character:SetDragForAWhile(0.2)
+        holder.character:SetMovementForAWhile(false, 0.2)
+    end
+end
+
+
+-------------------------------Network-------------------------------------
+
+function ManualShotGun:ServerStartHandPull(hand)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:StartHandPull(hand) end
+end
+
+function ManualShotGun:RpcStartHandPull(hand)
+    self.foreststock.script.self:StartPull(hand)
+end
+
+function ManualShotGun:ServerPlayerEndHandPull()
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:EndHandPull() end
+end
+
+function ManualShotGun:RpcEndHandPull()
+    self.foreststock.script.self:EndPull()
+end
+
+function ManualShotGun:RpcUnLockForestock()
+    if not self.isOnline then
+        return
+    end
+    
+    self.foreststock.script.self:UnLock()
+end
+
+function ManualShotGun:NetworkOnReachLoadPoint()
+    SetMaterialEmission(self.renderer, self.loadColor)
+    
+    self.foreststock.script.self:LoadPointAction()
+end
+
+function ManualShotGun:RpcLoadCompeleted()
+    if not self.isOnline then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self.foreststock.script.self:LoadCompleted()
+    end
+    
+    self.isEmpty = false
+    SetMaterialEmission(self.renderer, self.activeColor)
+end
+
+function ManualShotGun:ServerRebound(isLoad)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:ReboundForestock(isLoad) end
+end
+
+function ManualShotGun:RpcReboundForestock(isLoad)
+    self.foreststock.script.self:Rebound(isLoad)
+end
+
+function ManualShotGun:ServerShowHint(id, show)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:ServerShowHint(id, show) end
+end
+
+function ManualShotGun:RpcShowHint(id, show)
+    self.foreststock.script.self:NetworkShowHint(id, show)
+end
+
+function ManualShotGun:RefleshUsingHand(hand)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:ServerRefleshUsingHand(hand) end
+end
+
+function ManualShotGun:RpcRefleshUsingHand(hand)
+    self.foreststock.script.self:NetworkRefleshUsingHand(hand)
+end
+
+function ManualShotGun:ServerOnHandLeave()
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:ServerOnHandLeave() end
+end
+
+function ManualShotGun:NetworkOnHandLeave()
+    self.foreststock.script.self:OnHandLeave()
+end
+
+function ManualShotGun:ServerOnHandEnter(hand)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:ServerOnHandEnter(hand) end
+end
+
+function ManualShotGun:NetworkOnHandEnter(hand)
+    self.foreststock:OnHandEnter(hand)
+end
+
+function ManualShotGun:ServerOnHandExit(hand)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:ServerOnHandExit(hand) end
+end
+
+function ManualShotGun:NetworkOnHandExit(hand)
+    self.foreststock:OnHandExit(hand)
+end
+
+function ManualShotGun:CommandHandTrigger(isEnter, netId, handIdx)
+    --print("CommandHandTrigger----:" .. tostring(isEnter) .. "  netId:" .. netId .. " handIdx:" .. handIdx)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:CommandHandTrigger(isEnter, netId, handIdx) end
+end
+
+function ManualShotGun:NetworkHandTrigger(isEnter, netId, handIdx)
+    --print("NetworkHandTrigger----:" .. tostring(isEnter) .. "  netId:" .. netId .. " handIdx:" .. handIdx)
+    self.foreststock.script.self:NetworkHandTrigger(isEnter, netId, handIdx)
+end
+
+function ManualShotGun:CommandButtonPress(flag)
+    --print("CommandButtonPress----------:" .. tostring(flag))
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:CommandButtonPress(flag) end
+end
+
+function ManualShotGun:OnPressButton(flag)
+    --print("OnPressButton----------:" .. tostring(flag))
+    if flag then
+        self.foreststock.script.self:OnPressDown()
+    else
+        self.foreststock.script.self:OnPressUp()
+    end
+end
+
+return Class(Require("Weapon/WeaponFlyObjBaseScript"), nil, ManualShotGun)

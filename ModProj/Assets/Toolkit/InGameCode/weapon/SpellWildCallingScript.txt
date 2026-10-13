@@ -1,0 +1,551 @@
+local SpellSummonFo = Require("Weapon/SpellSummonFoScript")
+
+local WildCallingCastMode = {
+    None = 0,
+    BearEnter = 1,
+    BearExit = 2,
+    MountExit = 3,
+}
+
+local SpellWildCalling = {
+    defaultSummonEffect = "WindSummonEffect",
+
+    castFinishTime = -10000,
+    cooldownTime = 2,
+}
+
+function SpellWildCalling:OnAwake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    self.castMode = WildCallingCastMode.None
+
+    self:EnsureChargeDefaults()
+end
+
+function SpellWildCalling:OnDestroy()
+    self:StopSingleHandCharge(true)
+    self.__base.OnDestroy(self)
+end
+
+function SpellWildCalling:UnSlotSpell(slot)
+    local slotHand = slot ~= nil and slot.body ~= nil
+        and slot.body.hands[slot.attachedHandIndex] or nil
+    self:RequestCloseSummonEffect(slotHand)
+    self:StopSingleHandCharge(true)
+
+    local character = slotHand ~= nil and slotHand.character or nil
+    self:RequestExitBearMount(character)
+    self:ExitBeastForm()
+    self.host:OnUnSlotSpell()
+    self.__base.UnSlotSpell(self, slot)
+end
+
+function SpellWildCalling:EnsureChargeDefaults()
+    if (self.summonEffect == nil or self.summonEffect == "") and self.defaultSummonEffect ~= nil then
+        self.summonEffect = self.defaultSummonEffect
+    end
+
+    if self.chargeSound == nil and self.host ~= nil and not IsNullOrDestroyed(self.host) then
+        self.chargeSound = self.host.chargeSound
+    end
+end
+
+function SpellWildCalling:OpenSkill()
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+
+    if not IsNullOrDestroyed(CL.MixedRealityMgr.Instance) then
+        CL.SoundTable.PlaySound("Error")
+        CL.TextPanel.ShowTips("Not available in MR mode.", 5)
+
+        self.host:CloseSkill()
+        return
+    end
+
+    if self:IsOnCooldown() then
+        CL.SoundTable.PlaySound("Error")
+        CL.TextPanel.ShowTipsByTextIdAndCheckInterval("Spell_Cooldown_Tips", 3)
+        
+        self.host:CloseSkill()
+        return
+    end
+
+    self:StopSingleHandCharge(true)
+
+    local character = self:GetCastingCharacter()
+    if character ~= nil and not IsNullOrDestroyed(character) then
+        if character:IsInRideState() then
+            self:StartSingleHandCharge(WildCallingCastMode.MountExit)
+            return
+        end
+        if character:IsInBeastFormState() then
+            --if self.isOnline then
+            --    local state = GetNetworkIBState(self)
+            --    if state ~= nil then
+            --        state:CommandBeastFormSpecialSkill(character.networkPlayer.netId)
+            --    end
+            --end
+            --self.host:BeastFormSpecialSkill()
+            self:StartSingleHandCharge(WildCallingCastMode.BearExit)
+            return
+        end
+    end
+
+    self:EnsureChargeDefaults()
+    local slotHand = self:GetSlotHand()
+    local otherHand = slotHand ~= nil and slotHand:GetAnotherHand() or nil
+    if self:CanStartMountSummon(slotHand, otherHand) then
+        self.castMode = WildCallingCastMode.None
+        self.__base.OpenSkill(self)
+        return
+    end
+
+    self:StartSingleHandCharge(WildCallingCastMode.BearEnter)
+end
+
+function SpellWildCalling:CloseSkill()
+    if self.castMode == WildCallingCastMode.None then
+        self:RequestCloseSummonEffect()
+        self.__base.CloseSkill(self)
+        self.host:StopMountTeleportEffect()
+        return
+    end
+
+    self:StopSingleHandCharge(true)
+end
+
+function SpellWildCalling:CancelSkill()
+    self:RequestCloseSummonEffect()
+    self:StopSingleHandCharge(true)
+    self.__base.CancelSkill(self)
+    self.host:StopMountTeleportEffect()
+end
+
+function SpellWildCalling:RequestCloseSummonEffect(slotHand)
+    if not self.isOnline or not CL.Network.VRNetworkManager.IsOnline then
+        return
+    end
+
+    slotHand = slotHand or self:GetSlotHand()
+    if slotHand == nil or IsNullOrDestroyed(slotHand) then
+        return
+    end
+
+    local character = slotHand.character
+    if character == nil or IsNullOrDestroyed(character) or not character.IsLocalPlayer then
+        return
+    end
+
+    local networkPlayer = character.networkPlayer
+    if networkPlayer == nil or IsNullOrDestroyed(networkPlayer) then
+        return
+    end
+
+    local state = GetNetworkIBState(self)
+    if state == nil then
+        return
+    end
+
+    if CL.Network.VRNetworkManager.ServerOnline then
+        state:ServerCloseChargeEffect(networkPlayer.netId)
+    else
+        state:CommandCloseChargeEffect(networkPlayer.netId)
+    end
+end
+
+function SpellWildCalling:CanStartMountSummon(slotHand, otherHand)
+    if slotHand == nil or IsNullOrDestroyed(slotHand)
+        or otherHand == nil or IsNullOrDestroyed(otherHand) then
+        return false
+    end
+
+    return self:IsAllowSkill(slotHand, otherHand)
+        and self:CheckHandCondition(slotHand, otherHand, self.checkDis, self.dotValue)
+end
+
+function SpellWildCalling:StartSingleHandCharge(castMode)
+    self:StopSingleHandCharge(true)
+    self.castMode = castMode
+    self:SetHandPose(true)
+
+    if castMode == WildCallingCastMode.BearEnter then
+        self:RequestPlayBearEnterChargeEffect()
+    elseif castMode == WildCallingCastMode.BearExit
+        or castMode == WildCallingCastMode.MountExit then
+        self.host:PlayBearRestoreChargeEffect()
+
+        if castMode == WildCallingCastMode.MountExit
+            and self.host.HasMountTeleportEffect then
+            self.host:PlayMountTeleportEffect()
+        end
+    end
+
+    local triggeringHand = self.host:GetTriggeringHand()
+    
+    local chargeTime = castMode == WildCallingCastMode.BearEnter
+        and self.host.BearEnterChargeDuration or 1
+    self.chargeTimerId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            local character = self:GetCastingCharacter()
+            if character == nil or IsNullOrDestroyed(character)
+                or character:IsDeadRagdollState()
+                or (character.attr ~= nil and character.attr:IsDead()) then
+                self:StopSingleHandCharge(true)
+                sche:Stop()
+                return
+            end
+
+            if triggeringHand ~= nil and not IsNullOrDestroyed(triggeringHand) then
+                triggeringHand:HapticPulse(0.5)
+            end
+            
+            if castMode == WildCallingCastMode.BearEnter then
+                local slotHand = self:GetSlotHand()
+                local otherHand = slotHand ~= nil and slotHand:GetAnotherHand() or nil
+                if self:CanStartMountSummon(slotHand, otherHand) then
+                    self.chargeTimerId = nil
+                    self:StopSingleHandCharge(false)
+                    self.castMode = WildCallingCastMode.None
+                    self.__base.OpenSkill(self)
+                    sche:Stop()
+                    return
+                end
+            end
+
+            if not self:IsSingleHandChargeStateValid(castMode) then
+                self:StopSingleHandCharge(true)
+                sche:Stop()
+                return
+            end
+
+            if t < chargeTime then
+                return
+            end
+
+            self.chargeTimerId = nil
+            self:CompleteSingleHandCharge(castMode)
+            sche:Stop()
+        end
+    , 0, chargeTime).actionId
+end
+
+function SpellWildCalling:IsSingleHandChargeStateValid(castMode)
+    local character = self:GetCastingCharacter()
+    if character == nil or IsNullOrDestroyed(character) then
+        return false
+    end
+
+    if castMode == WildCallingCastMode.BearEnter then
+        return not character:IsInRideState() and not character:IsInBeastFormState()
+    end
+
+    if castMode == WildCallingCastMode.BearExit then
+        return character:IsInBeastFormState()
+    end
+
+    if castMode == WildCallingCastMode.MountExit then
+        return character:IsInRideState()
+    end
+
+    return false
+end
+
+
+function SpellWildCalling:CompleteSingleHandCharge(castMode)
+    local character = self:GetCastingCharacter()
+    self:StopSingleHandCharge(false)
+
+    if character == nil or IsNullOrDestroyed(character) then
+        self.castMode = WildCallingCastMode.None
+        return
+    end
+
+    local castSucceeded = false
+    if castMode == WildCallingCastMode.BearEnter then
+        castSucceeded = self:RequestTransformToBear(character)
+    elseif castMode == WildCallingCastMode.BearExit then
+        castSucceeded = self:RequestExitBeastForm(character)
+    elseif castMode == WildCallingCastMode.MountExit then
+        castSucceeded = self:RequestExitBearMount(character)
+    end
+
+    if castSucceeded then
+        self:StartCooldown()
+    end
+
+    self.castMode = WildCallingCastMode.None
+end
+
+function SpellWildCalling:IsOnCooldown()
+    return self.cooldownTime ~= nil
+        and self.cooldownTime > 0
+        and UE.Time.time < self.castFinishTime + self.cooldownTime
+end
+
+function SpellWildCalling:StartCooldown()
+    self.castFinishTime = UE.Time.time
+end
+
+function SpellWildCalling:StopSingleHandCharge(resetCastMode)
+    local stopBearEnterChargeEffect = self.castMode == WildCallingCastMode.BearEnter
+    local stopMountExitChargeEffect = self.castMode == WildCallingCastMode.MountExit
+    self.chargeTimerId = SafeRemoveSchedule(self.chargeTimerId)
+    self:SetHandPose(false)
+    self.host:StopBearRestoreChargeEffect()
+
+    if stopMountExitChargeEffect then
+        self.host:StopMountTeleportEffect()
+    end
+
+    if stopBearEnterChargeEffect then
+        self:RequestStopBearEnterChargeEffect()
+    end
+
+    if resetCastMode then
+        self.castMode = WildCallingCastMode.None
+    end
+end
+
+function SpellWildCalling:RequestPlayBearEnterChargeEffect()
+    local character = self:GetCastingCharacter()
+    if character == nil or IsNullOrDestroyed(character) then
+        return
+    end
+
+    self.host:PlayBearEnterChargeEffect()
+    if not self.isOnline then
+        return
+    end
+
+    local networkPlayer = character.networkPlayer
+    local state = GetNetworkIBState(self)
+    if state == nil or networkPlayer == nil or IsNullOrDestroyed(networkPlayer) then
+        return
+    end
+
+    self.bearEnterChargePlayerNetId = networkPlayer.netId
+    if CL.Network.VRNetworkManager.ServerOnline then
+        state:ServerSetBearEnterChargeEffect(networkPlayer.netId, true)
+    else
+        state:CommandSetBearEnterChargeEffect(networkPlayer.netId, true)
+    end
+end
+
+function SpellWildCalling:RequestStopBearEnterChargeEffect()
+    self.host:StopBearEnterChargeEffect()
+    if not self.isOnline then
+        return
+    end
+
+    local playerNetId = self.bearEnterChargePlayerNetId
+    self.bearEnterChargePlayerNetId = nil
+    if playerNetId == nil then
+        return
+    end
+
+    local state = GetNetworkIBState(self)
+    if state == nil then
+        return
+    end
+
+    if CL.Network.VRNetworkManager.ServerOnline then
+        state:ServerSetBearEnterChargeEffect(playerNetId, false)
+    else
+        state:CommandSetBearEnterChargeEffect(playerNetId, false)
+    end
+end
+
+function SpellWildCalling:RequestTransformToBear(character)
+    if not self.isOnline then
+        return self:TransformToBear()
+    end
+
+    if character.networkPlayer == nil or IsNullOrDestroyed(character.networkPlayer) then
+        return false
+    end
+
+    local state = GetNetworkIBState(self)
+    if state == nil then
+        return false
+    end
+
+    if CL.Network.VRNetworkManager.ServerOnline then
+        state:ServerTransformToBear(character.networkPlayer.netId)
+    else
+        state:CommandTransformToBear(character.networkPlayer.netId)
+    end
+
+    return true
+end
+
+function SpellWildCalling:RequestExitBeastForm(character)
+    if not self.isOnline then
+        return self:ExitBeastForm()
+    end
+
+    if character.networkPlayer == nil or IsNullOrDestroyed(character.networkPlayer) then
+        return false
+    end
+
+    local state = GetNetworkIBState(self)
+    if state == nil then
+        return false
+    end
+
+    if CL.Network.VRNetworkManager.ServerOnline then
+        state:ServerExitBeastForm(character.networkPlayer.netId)
+    else
+        state:CommandExitBeastForm(character.networkPlayer.netId)
+    end
+
+    return true
+end
+
+function SpellWildCalling:NetworkPlayChargeEffect(netId)
+    if not self:IsNetworkEffectObserver(netId) then
+        return
+    end
+
+    self:CleanupSummonRuntime(false)
+    self.host:StopMountTeleportEffect()
+
+    local slotHand = self:GetSlotHand()
+    if slotHand == nil or IsNullOrDestroyed(slotHand) then
+        return
+    end
+
+    local otherHand = slotHand:GetAnotherHand()
+    if otherHand == nil or IsNullOrDestroyed(otherHand) then
+        return
+    end
+
+    self:EnsureChargeDefaults()
+    self.__base.NetworkPlayChargeEffect(self, netId)
+
+    if self.eo ~= nil and not IsNullOrDestroyed(self.eo)
+        and self.host.HasMountTeleportEffect then
+        self.host:PlayMountTeleportEffect(netId)
+    end
+end
+
+function SpellWildCalling:NetworkCloseChargeEffect(netId)
+    if not self:IsNetworkEffectObserver(netId) then
+        return
+    end
+
+    self:CleanupSummonRuntime(true)
+    self.host:StopMountTeleportEffect()
+end
+
+function SpellWildCalling:IsNetworkEffectObserver(netId)
+    if CL.Network.VRNetworkManager.ServerOnly
+        or IsNullOrDestroyed(CL.InteractCharacter.PlayerInstance)
+        or CL.InteractCharacter.PlayerInstance.networkPlayer == nil then
+        return false
+    end
+
+    return CL.InteractCharacter.PlayerInstance.networkPlayer.netId ~= netId
+end
+
+function SpellWildCalling:OnChargeEffect(slotHand, otherHand)
+    if self.host.HasMountTeleportEffect then
+        self.host:PlayMountTeleportEffect()
+    end
+
+    return self.__base.OnChargeEffect(self, slotHand, otherHand)
+end
+
+function SpellWildCalling:SpawnFo()
+    local slotHand = self:GetSlotHand()
+    if slotHand == nil or IsNullOrDestroyed(slotHand) then
+        return
+    end
+
+    local otherHand = slotHand:GetAnotherHand()
+    if otherHand == nil or IsNullOrDestroyed(otherHand) then
+        return
+    end
+
+    local hangPos = self:GetHangPos(slotHand, otherHand)
+    CL.EffectMgr.Instance:PlayEffect(self.summonFinishEffect, hangPos, self.trans.rotation)
+
+    local castSucceeded = false
+    if CL.Network.VRNetworkManager.IsOnline then
+        local state = GetNetworkIBState(self)
+        local networkPlayer = slotHand.character ~= nil and slotHand.character.networkPlayer or nil
+        if state == nil or networkPlayer == nil or IsNullOrDestroyed(networkPlayer) then
+            print("[BearMount] Failed to request network summon: network spell or player is not ready.")
+            return
+        end
+
+        if CL.Network.VRNetworkManager.ServerOnline then
+            state:ServerSummonBearMount(networkPlayer.netId)
+        else
+            state:CommandSummonBearMount(networkPlayer.netId)
+        end
+        castSucceeded = true
+    else
+        castSucceeded = self:SummonBearMount()
+    end
+
+    if castSucceeded then
+        self:StartCooldown()
+    end
+end
+
+function SpellWildCalling:GetCastingCharacter()
+    local slotHand = self:GetSlotHand()
+    if slotHand ~= nil and not IsNullOrDestroyed(slotHand)
+        and slotHand.character ~= nil and not IsNullOrDestroyed(slotHand.character) then
+        return slotHand.character
+    end
+
+    return nil
+end
+
+function SpellWildCalling:TransformToBear()
+    return self.host:TransformToBear()
+end
+
+function SpellWildCalling:TransformToWolf()
+    self.host:TransformToWolf()
+end
+
+function SpellWildCalling:SummonBearMount()
+    return self.host:SummonBearMount()
+end
+
+function SpellWildCalling:ExitBearMount()
+    return self.host:ExitBearMount()
+end
+
+function SpellWildCalling:RequestExitBearMount(character)
+    if not self.isOnline then
+        return self:ExitBearMount()
+    end
+
+    if character == nil or IsNullOrDestroyed(character)
+        or not SafeIsOwnerLocalPlayer(self.host.interact)
+        or character.networkPlayer == nil or IsNullOrDestroyed(character.networkPlayer) then
+        return false
+    end
+
+    local state = GetNetworkIBState(self)
+    if state == nil then
+        return false
+    end
+
+    if CL.Network.VRNetworkManager.ServerOnline then
+        state:ServerExitBearMount(character.networkPlayer.netId)
+    else
+        state:CommandExitBearMount(character.networkPlayer.netId)
+    end
+
+    return true
+end
+
+function SpellWildCalling:ExitBeastForm()
+    return self.host:ExitBeastForm()
+end
+
+return Class(SpellSummonFo, nil, SpellWildCalling)

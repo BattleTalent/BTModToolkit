@@ -1,0 +1,2710 @@
+
+local ChainHammer = {
+    isExtraLen = false,
+    chainsRB = {},
+    chainsScript = {},
+
+    curChainIdx = 0,
+    
+    --chainCollision = {},
+    
+    --wrapJoints = {},
+    
+    attachMuscles1 = {},
+    attachMuscles2 = {},
+    
+    linkActId = -1,
+    
+    lastHapticTime = -1,
+    lastTautSound = 1,
+    
+    nextHitEffectTime = -1,
+    hitEffectInterval = 0.2,
+    
+    ignoreCollision = {},
+    
+    nextSwitchAttachChain = -1,
+    
+    nextPushTime = -1,
+    collisionRB = nil,
+    
+    snapMuscles = {},
+    processedMuscles = {},
+    snapMusclesCount = 0,
+    
+    curTime = 0,
+    nextForceUpdateTime = 0,
+    nextEffectTime = 0,
+    
+    localPlayerOnly = true,
+}
+
+function ChainHammer:Awake()
+    self:GetChain()
+end
+
+function ChainHammer:Start()
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    self.strengthenForce = 230000
+    self.strengthenAngularForce = 100000
+    self.overstretchedForce = 15000
+    self.baseLinearForceMlp = 0.2
+    self.overstretchedSpeed = 100
+    
+    -- install paintable at start
+    self.host.interact:InitPaint()
+
+    self.host.interact.soundMassFactor = 0.1
+    --self:GetChain()
+    
+    self:UpdateChainSound()
+    
+    self.host.interact:GetCols(true)
+    
+    self:ActiveExtraChains(false)
+    
+    self:StartChainClippingDetection()
+    
+    self.defaultHandSpeed = self.host.interact.singleHandSpeed
+    self.isSlowMo = false
+    self.onSlowMo = function(flag)
+        local speed = flag and self.slowHandSpeed or self.defaultHandSpeed
+        self.host.interact.singleHandSpeed = speed
+        self.host.interact.twoHandSpeed = speed
+        
+        local ph = self.host.interact:GetPrimaryHand()
+        if not IsNullOrDestroyed(ph) then
+            ph.handTracker:SetTrackSpeed(speed)
+        end
+
+        local sh = self.host.interact:GetSecondaryHand()
+        if not IsNullOrDestroyed(sh) then
+            sh.handTracker:SetTrackSpeed(speed)
+        end
+        
+        self.isSlowMo = flag
+        
+        if self.isSlowMo then
+            self:StrengthenHandJoint(self.isExtraLen, self:IsConnected() and 10 or 5)
+        else
+            self:StrengthenHandJoint(self.isExtraLen, self:IsConnected() and 2 or 1)
+        end
+        --print("set hand speed on slotmo:" .. tostring(flag))
+    end
+    CL.InteractCharacter.PlayerInstance:OnSlowMoEvent("+", self.onSlowMo)
+    
+    self.onStabEnter = function(si)
+        if IsNullOrDestroyed(si.stabTarget) then
+            return
+        end
+        
+        --print("onStabEnter-----------------:" .. si.stabTarget.name)
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+        if not IsNullOrDestroyed(pu) then
+            --print("onStabEnter-----------------pu:" .. pu.trans.name)
+            
+            if si.stabGeo.subObj == self.chainsRB[#self.chainsRB] then
+                local ph = self.host.interact:GetPrimaryHand()
+                if not IsNullOrDestroyed(ph) then
+                    local vel = nil
+                    if self.attachChain:IsBeingHeld() then
+                        vel = self.attachChain.attachedHand.velocityEstimator:GetVelocityEstimateLocal()
+                    else
+                        vel = ph.velocityEstimator:GetVelocityEstimateLocal()
+                    end
+                    if vel.sqrMagnitude >= self.swingSpeed * self.swingSpeed then
+                        --print("onStabEnter-------------DelayToBreakStab----pu:" .. pu.trans.name)
+                        self:DelayToBreakStab(si)
+                    end
+                end
+            end
+            
+            self:DelayToIgnoreCollision(pu, si.stabTargetRB, false)
+
+            if pu.unitType == CL.Tagger.Tag.InteractRole then
+                if CL.Network.VRNetworkManager.ClientOnline then
+                    if pu.unitType == CL.Tagger.Tag.InteractRole then
+                        pu.networkCharacter.networkRagdoll.physicsFollow = false
+                    end
+                end
+            end
+            
+            self.stabPu = pu
+        end
+    end
+    
+    self.onStabExit = function(si)
+        self:StopDelayToBreakStab()
+        self:StopDelayToIgnoreCollision()
+        
+        if IsNullOrDestroyed(si.stabTarget) then
+            return
+        end
+        --print("onStabExit-----------------:" .. si.stabTarget.root.name)
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+        if not IsNullOrDestroyed(pu) then
+            if self.stabPu == pu then
+                
+                if CL.Network.VRNetworkManager.ClientOnline then
+                    if pu.unitType == CL.Tagger.Tag.InteractRole then
+                        pu.networkCharacter.networkRagdoll.physicsFollow = true
+                    end
+                end
+            end
+        end
+    end
+    
+    
+    local so = self.host.interact:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("+", self.onStabEnter)
+        so:StabExitEvent("+", self.onStabExit)
+    end
+    
+    self.Phase1EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        local sqrSpeed = self.hammerRB.velocity.sqrMagnitude
+        local isEffect = false
+        if sqrSpeed > self.sqrMinHitEffectSpeed then
+            self:PlayCollisionHitEffect(point, normal)
+            isEffect = true
+        end
+        local relaSpeed = relaVel.magnitude
+        local isFrag = false
+        if self.isExtraLen and otherRB == self.hammerRB then
+            --print("Phase1EventHandler--------knockout sqrSpeed :" ..sqrSpeed .. " isFrag :" .. self.chainsRB[#self.chainsRB].velocity.magnitude)
+            
+            local disiredSpeed = self.sqrMinHitEffectSpeed 
+            if self.isOnline and not SafeLocalTrackPhysics(self.host.interact) then
+                disiredSpeed = self.sqrMinHitEffectSpeed / 2
+            end
+            
+            if sqrSpeed > disiredSpeed then
+                if not fc.muscleState:IsPowerfulCharacter() then
+                    CL.FullBodyMuscleState.dmgEffectData.knockout = true
+                    CL.FullBodyMuscleState.dmgEffectData.beThrown = true
+                end
+                
+                if fc.attr:IsDead() or (not fc.muscleState:IsPowerfulCharacter() and fc.attr:GetHpFactor() < self.destroyBodyHpFactor) then
+                    local checkMu = mu.muscleName
+                    if checkMu == CL.RagdollBoneInfo.LEar or checkMu == CL.RagdollBoneInfo.REar then
+                        checkMu = CL.RagdollBoneInfo.Head
+                    end
+                    local frag = fc.reactAnim:CheckHitDismemberPoint(checkMu, point)
+                    if frag and fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+                        CL.FullBodyMuscleState.dmgEffectData.LimbExplodePieces = 2
+                        CL.FullBodyMuscleState.dmgEffectData.LimbExplodeIterations = 1
+                        CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+                        isFrag = true
+                    else
+                    end
+                end
+            end
+            
+            
+            disiredSpeed = self.cutMuscleDisiredSpeed
+            --print("Phase1EventHandler--------destroyBodyFragment :  " .. relaSpeed .. "  muscle " ..mu.muscleName)
+            if self.isOnline and not SafeLocalTrackPhysics(self.host.interact) then
+                disiredSpeed = self.cutMuscleDisiredSpeed * 2 / 3
+            end
+            
+            if relaSpeed > disiredSpeed then
+                if fc.attr:IsDead() or not fc.muscleState:IsPowerfulCharacter() then
+                    local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+                    if frag then
+                        if fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+                            CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag
+                            isFrag = true
+                            if not isEffect then
+                                self:PlayCollisionHitEffect(point, normal)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        if self.curTime > self.nextPushTime then
+            if not IsNullOrDestroyed(mu.rb) then
+                
+                local impactDirection = (relaVel.normalized - normal * 0.1).normalized
+                if fc.motion:Standing() and not CL.FullBodyMuscleState.dmgEffectData.knockout then
+                    if not fc.muscleState:IsGrab() then
+                        local impactForce = otherRB.mass * relaSpeed * 0.05
+                        impactForce = UE.Mathf.Clamp(impactForce, 0.5, 5)
+                        fc.controller:AddPushbackByForce(impactForce * (isFrag and 1.5 or 1) * impactDirection)
+                        --print("Phase1EventHandler--------add force--- push back :" .. impactForce * (isFrag and 1.5 or 1))
+                        
+                        impactForce = otherRB.mass * relaSpeed * self.collisionForceMlp / 2
+                        impactForce = UE.Mathf.Clamp(impactForce, self.minCollisionForce, self.maxCollisionForce)
+                        fc:AddForceOnPart(mu.rb, impactForce * (isFrag and 1.5 or 1) * impactDirection, UE.ForceMode.Impulse)
+                        --print("Phase1EventHandler--------add force-not knockout-- impactForce :" ..impactForce .. " collision.relativeVelocity:" .. relaSpeed .. " isFrag :" .. tostring(isFrag) .. " add :" .. impactForce * (isFrag and 1.5 or 1))
+                    end
+                else
+                    local impactForce = otherRB.mass * relaSpeed * self.collisionForceMlp
+                    impactForce = UE.Mathf.Clamp(impactForce, self.minCollisionForce, self.maxCollisionForce)
+                    fc:AddForceOnPart(mu.rb, impactForce * (isFrag and 1.5 or 1) * impactDirection, UE.ForceMode.Impulse)
+                    --print("Phase1EventHandler--------add force--- impactForce :" ..impactForce .. " collision.relativeVelocity:" .. relaSpeed .. " isFrag :" .. tostring(isFrag) .. " add :" .. impactForce * (isFrag and 1.5 or 1))
+                end
+                
+                self.nextPushTime = self.curTime + 0.2
+            end
+        end
+        
+        CL.FullBodyMuscleState.dmgEffectData.breakDefenceFactor = math.min(relaSpeed / 2, 2)
+    end
+    
+    self.Phase2EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if self.snapMuscles[mu] then
+            if not fc.muscleState:IsPowerfulCharacter() or fc.attr:IsDead() then
+                local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+                
+                if frag then
+                    if not fc.muscleState:IsBodyFragmentCuttable(frag, mu.col) then
+                        return
+                    end
+                    
+                    CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+                    
+                    return
+                end
+            end
+        end
+        
+        --print("Phase2EventHandler---------------" .. tostring(self.isExtraLen) .. "  link action:" .. tostring(self:IsLinkAction()))
+        if not self.isExtraLen and self:IsLinkAction() then
+            --print("Phase2EventHandler---------------recall " .. " rb:" .. otherCol.attachedRigidbody.transform.name .. " parent:" ..                 otherCol.attachedRigidbody.transform.parent.name)
+            local idx = self:GetChainIdxByRigidbody(otherCol.attachedRigidbody)
+            if idx < 0 then
+                return
+            end
+            
+            local dir = (self.chainsRB[idx].transform.position - self.chainsRB[idx - 1].transform.position).normalized
+            local checkPoint = (self.chainsRB[idx].transform.position + self.chainsRB[idx - 1].transform.position) / 2
+            
+            local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, checkPoint)
+            --CL.DebugDraw.DrawLine(checkPoint, checkPoint + UE.Vector3.up, UE.Color.yellow, 5)
+            --print("Phase2EventHandler---------------check frag  mu:" .. mu.muscleName)
+            if frag then
+                --print("Phase2EventHandler--------------IsBodyFragmentCuttable-")
+                if not fc.muscleState:IsBodyFragmentCuttable(frag, mu.col) then
+                    return
+                end
+                
+                local cutPos = frag:GetCutPlanePos()
+                local cutNormal = frag:GetCutPlaneNormal()
+                local dot = UE.Vector3.Dot(cutNormal, dir)
+                --print("dot---------------::"  .. dot)
+                if dot < 0.3 and dot > -0.3 then
+                    local dir = (checkPoint - cutPos).normalized
+                    dot = UE.Vector3.Dot(dir, cutNormal)
+                    --print("dot of point---------------::"  .. dot)
+                    
+                    --CL.DebugDraw.DrawLine(cutPos, cutPos + dir, UE.Color.red, 5)
+                    --CL.DebugDraw.DrawLine(cutPos, cutPos + cutNormal, UE.Color.green, 5)
+                    
+                    local pass = false
+                    if dot < 0.2 and dot > -0.2 then
+                        pass = true
+                    else
+                        local dis = UE.Vector3.Distance(cutPos, checkPoint)
+                        if dis < 0.15 then
+                            pass = true
+                        end
+                        --print("dis---------------::"  .. dis)
+                    end
+                    
+                    if pass then
+                        --print("Phase2EventHandler---------------do cut body")
+                        CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+                        if CL.Network.VRNetworkManager.ClientOnline then
+                            local index = fc.reactAnim.dismember.Fragments:IndexOf(frag)
+                            fc.networkCharacter.networkDismemberment:CmdApplyDismember(index)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    self.hammerHitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.Phase1EventHandler)
+    self.bladeHitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.Phase1EventHandler)
+    self.chainHitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.Phase1EventHandler)
+    self.chainHitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.Phase2EventHandler)
+    
+    
+    self.BladeHitPhase2EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if fc.muscleState:IsPowerfulCharacter() and not fc.attr:IsDead() then
+            return
+        end
+        
+        if self.attachPrimary:IsBeingHeld() or not self.attachHammer:IsBeingHeld() then
+            return
+        end
+    
+        --local random = math.random(0, 100)
+        --local value = self.rb.velocity.magnitude * 3
+        --if random > value then
+        --    return
+        --end
+        if relaVel.sqrMagnitude < 25 then
+            return
+        end
+        
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+        if frag then
+            --print("BladeHitPhase2EventHandler--------------IsBodyFragmentCuttable-")
+            if not fc.muscleState:IsBodyFragmentCuttable(frag, mu.col) then
+                return
+            end
+            
+            local cutPos = frag:GetCutPlanePos()
+            local cutNormal = frag:GetCutPlaneNormal()
+            local dot = UE.Vector3.Dot(cutNormal, -self.trans.forward)
+            --print("BladeHitPhase2EventHandler dot---------------::"  .. dot)
+            if dot < 0.3 and dot > -0.3 then
+                local dir = (point - cutPos).normalized
+                dot = UE.Vector3.Dot(dir, cutNormal)
+                --print("BladeHitPhase2EventHandler dot of point---------------::"  .. dot)
+                
+                --CL.DebugDraw.DrawLine(cutPos, cutPos + dir, UE.Color.red, 5)
+                --CL.DebugDraw.DrawLine(cutPos, cutPos + cutNormal, UE.Color.green, 5)
+                
+                local pass = false
+                if dot < 0.2 and dot > -0.2 then
+                    pass = true
+                else
+                    local dis = UE.Vector3.Distance(cutPos, point)
+                    if dis < 0.15 then
+                        pass = true
+                    end
+                    --print("BladeHitPhase2EventHandler dis---------------::"  .. dis)
+                end
+                
+                if pass then
+                    --print("BladeHitPhase2EventHandler Phase2EventHandler---------------do cut body")
+                    CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+                    if CL.Network.VRNetworkManager.ClientOnline then
+                        local index = fc.reactAnim.dismember.Fragments:IndexOf(frag)
+                        fc.networkCharacter.networkDismemberment:CmdApplyDismember(index)
+                    end
+                end
+            end
+        end
+    end
+    
+    self.ChangeAttachedRB = function(ao, rb, isStartPoint)
+        if self.isOnline then
+            if not IsNullOrDestroyed(ao.attachedHand) and ao.attachedHand.character.IsLocalPlayer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandSwitchToChainBlock(ao.attachedHand, rb, isStartPoint) end
+            end
+        end
+        
+        self.handSlipSound:PlaySound()
+    end
+    self.attachChain:ChangeAttached("+", self.ChangeAttachedRB)
+    
+    --PVP
+    self.hitCharacterPhase1 = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        local count = self.curChainIdx - self.extraStartIdx
+        if count <= 1 then
+            return
+        end
+        
+        local finalDmgMlp = self.pvpExtendedDamageMlp * count
+        
+        character.aiProxy.finalDmgMlp = character.aiProxy.finalDmgMlp + finalDmgMlp
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        self.hammerHitInfoObj.hitInfo:OnInteractCharacterHitPhase1Event("+", self.hitCharacterPhase1)
+        self.bladeHitInfoObj.hitInfo:OnInteractCharacterHitPhase1Event("+", self.hitCharacterPhase1)
+    end
+    
+    self.slotRotation = UE.Quaternion.Euler(170, 0, 0)
+    
+    self.__base.Start(self)
+end
+
+function ChainHammer:DelayToBreakStab()
+    self.breakStabId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then return end
+            local stabObj = self.host.interact:GetStabObject()
+            if not IsNullOrDestroyed(stabObj) then
+                stabObj:BreakAllStab()
+            end
+        end
+    , 0, 0, 0.02).actionId
+end
+
+function ChainHammer:StopDelayToBreakStab()
+    self.breakStabId = CL.Scheduler.RemoveSchedule(self.breakStabId)
+end
+
+function ChainHammer:NetworkSwitchToChainBlock(hand, rb, isStartPoint)
+    self.attachChain:SwitchToChainBlock(hand, rb, isStartPoint)
+end
+
+function ChainHammer:OnSlot(slot, mount, isConnect, holder)
+    --self:BanChain(slot, mount)
+    if mount then
+        self:ActiveExtraChains(false)
+        self.chainsTrans.gameObject:SetActive(false)
+        self.slotTrans.gameObject:SetActive(true)
+        if isConnect then
+            if not holder then
+                self.slotTrans.localRotation = self.slotRotation
+            end
+        end
+    else
+        self.chainsTrans.gameObject:SetActive(true)
+        self.slotTrans.gameObject:SetActive(false)
+        if isConnect then
+            if not holder then
+                self.slotTrans.localRotation = UE.Quaternion.identity
+            end
+        end
+        
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:StartSyncForAWhile()
+            state.networkIB.networkRB:Reset()
+        end
+    end
+end
+
+function ChainHammer:OnGrabAlwaysTrigger(ao, g)
+    --print("OnGrabAlwaysTrigger-----:" .. ao.trans.name .. "  isGrab:" .. tostring(g))
+    if g then
+        
+        self:IgnoreChainCollison(g)
+        
+        if ao == self.attachChain then
+            self.attachChainHand = ao.attachedHand
+            
+            if self.isOnline then
+                self.ChangeAttachedRB(ao, ao.selfRB, true)
+            end
+        end
+        
+        if self:NeedHandMotionDetection() then
+            self:StartHandMotionDetection()
+        end
+        
+        self:GetInteract().grabDistanceLimit = true
+        if not IsNullOrDestroyed(ao) and ao == self.attachChain then
+            self.attachChainHand = ao.attachedHand
+        end
+        
+        self.grabSound:PlaySound()
+    else
+        if ao == self.attachChain then
+            self.attachChainHand = nil
+        end
+        
+        if not self:NeedHandMotionDetection() then
+            self:StopHandMotionDetection()
+        end
+        
+        if not self:GetInteract():IsGrabbed() then
+            self:GetInteract().grabDistanceLimit = false
+            self.dropSound:PlaySound()
+            
+            self:IgnoreChainCollison(g)
+        else
+            if self.isSlowMo then
+                self:StrengthenHandJoint(self.isExtraLen, self:IsConnected() and 10 or 5)
+            else
+                self:StrengthenHandJoint(self.isExtraLen, self:IsConnected() and 2 or 1)
+            end
+        end
+        
+        --print("OnGrabAlwaysTrigger-------- false")
+        
+        if ao == self.attachHammer or ao == self.attachChain then
+            self:TryEnhanceHammerThrow(ao)
+        end
+    end
+    
+    if self.isOnline then
+        self:RefreshEffectState()
+    else
+        self.defaultTrailEffect:Play()
+    end
+    
+    self.__base.OnGrabAlwaysTrigger(self, ao, g)
+end
+
+function ChainHammer:RefreshEffectState()
+    self.localPlayerOnly = true
+    local hand = self:GetInteract():GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        self.localPlayerOnly = hand.character.IsLocalPlayer
+    end
+    
+    hand = self:GetInteract():GetSecondaryHand()
+    if not IsNullOrDestroyed(hand) then
+        self.localPlayerOnly = hand.character.IsLocalPlayer
+    end
+    
+    if not self.localPlayerOnly then
+        self.defaultTrailEffect:Stop()
+        self.skillTrailEffect:Stop()
+        
+        if self.isExtraLen then
+            self.clientSkillTrailEffect:Play()
+        else
+            self.clientDefaultTrailEffect:Play()
+        end
+    else
+        self.clientDefaultTrailEffect:Stop()
+        self.clientSkillTrailEffect:Stop()
+        
+        if self.isExtraLen then
+            self.skillTrailEffect:Play()
+        else
+            self.defaultTrailEffect:Play()
+        end
+    end
+end
+
+function ChainHammer:OnGrabThisPart(ao)
+    self:StartAssistedMovement()
+    self.isGrabThisPart = true
+end
+
+function ChainHammer:OnUngrabThisPart(ao)
+    self:StopAssistedMovement()
+    self:DoCloseSkill()
+    
+    self.isGrabThisPart = false
+end
+
+function ChainHammer:IsGrabThisPart()
+    return self.isGrabThisPart
+end
+
+function ChainHammer:GetChain()
+    local child = nil
+    local chain = nil
+    for i = 0, self.chainsTrans.childCount - 1 do
+        child = self.chainsTrans:GetChild(i)
+        table.insert(self.chainsRB, child:GetChild(0):GetComponent(typeof(UE.Rigidbody)))
+        chain = child:GetChild(0):GetComponent(typeof(CL.ChainOfHammer))
+        --print("-------------GetChain:" .. lua.script:GetSelf().trans.name .. i)
+        table.insert(self.chainsScript, chain)
+    end
+    
+    self.baseChainRB = self.chainsRB[self.extraStartIdx - 1]
+    self.extraChainRB = self.chainsRB[self.extraEndIdx]
+    self.curChainIdx = self.extraStartIdx - 1
+    --print("-------------base chain:" .. self.baseChainRB.transform.parent.name .. "  extra chain:" .. self.extraChainRB.transform.parent.name)
+    
+    self.baseForce = self.host.interact.linearForce
+    self.baseDamper = self.host.interact.linearDamper
+    self.baseAngularForce = self.host.interact.angularForce
+    self.baseAngularDamper = self.host.interact.angularDamper
+    
+    self.hammerCols = self.chainsRB[#self.chainsRB].gameObject:GetComponentsInChildren(typeof(UE.Collider))
+    
+    self.hammerRB = self.chainsRB[#self.chainsRB]
+    self.rb = self.host.interact.rb
+end
+
+function ChainHammer:IgnoreChainCollison(flag)
+    local cols = self.host.interact:GetCols()
+    CL.PhysicsHelper.IgnoreCollisions(cols, cols, flag)
+end
+
+function ChainHammer:DelayToIgnoreCollision(pu, rb, flag)
+    CL.Scheduler.RemoveSchedule(self.stabColId)
+    self.stabColId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if not pu or IsNullOrDestroyed(pu) then return end
+            if pu.unitType == CL.Tagger.Tag.InteractRole then
+                self:IgnoreCollisionWithFC(pu, false)
+            else
+                self:IgnoreCollisionWithPU(pu, false)
+            end
+            
+            if not IsNullOrDestroyed(rb) then
+                self:IgnoreBladeCollisionWithPU(pu, rb, true)
+            end
+        end
+    , 0, 0, 0.1).actionId
+end
+
+function ChainHammer:StopDelayToIgnoreCollision()
+    self.stabColId = CL.Scheduler.RemoveSchedule(self.stabColId)
+end
+
+function ChainHammer:IgnoreCollisionWithFC(fc, flag)
+    local cols = self.host.interact:GetCols()
+    
+    fc.ra:SetCollisionIgnoreWith(cols, flag)
+end
+
+function ChainHammer:IgnoreCollisionWithPU(pu, flag)
+    local cols = self.host.interact:GetCols()
+    
+    CL.PhysicsHelper.IgnoreCollisions(pu:GetCols(), cols, flag)
+end
+
+function ChainHammer:IgnoreBladeCollisionWithPU(pu, rb, flag)
+    local cols = self.host.interact:GetCols()
+    
+    if rb == self.hammerRB then
+        for i = 0, self.hammerCols.Length - 1 do
+            CL.PhysicsHelper.IgnoreCollisions(self.hammerCols[i], pu:GetCols(), flag)
+        end
+    else
+        if self:IsConnected() then
+            local attached = self:GetAttached()
+            if attached then
+                if self:IsConnectWithSameType() then
+                    for i = 0, attached.hammerCols.Length - 1 do
+                        CL.PhysicsHelper.IgnoreCollisions(attached.hammerCols[i], pu:GetCols(), flag)
+                    end
+                else
+                    local cols = attached.host.interact:GetCols()
+                    for i = 0, cols.Length - 1 do
+                        CL.PhysicsHelper.IgnoreCollisions(cols[i], pu:GetCols(), flag)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function ChainHammer:GetChainIdxByRigidbody(rb)
+    if IsNullOrDestroyed(rb) then
+        return -1
+    end
+    
+    for k, v in ipairs(self.chainsRB) do
+        if v == rb then
+            return k
+        end
+    end
+    
+    return -1
+end
+
+function ChainHammer:IsHammerCol(col)
+    for i = 0, self.hammerCols.Length - 1 do
+        if col == self.hammerCols[i] then
+            return true
+        end
+    end
+end
+
+function ChainHammer:UpdateChainSound()
+    local lastChain = nil
+    local curChain = nil
+    local curChainRB = nil
+    local count = 0
+    local soundInfo = nil
+    local speed = 0
+    local dot = 0
+    local interval = self.swingSoundInterval
+    local hammer = self.chainsScript[#self.chainsScript]
+    self.chainSoundId = CL.Scheduler.RemoveSchedule(self.chainSoundId)
+    self.chainSoundId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            lastChain = self.chainsScript[1]
+            count = 0
+            interval = self.swingSoundInterval * (self:IsConnected() and 2 or 1)
+            interval = interval * (CL.InteractCharacter.InSuperMode and 1.5 or 1)
+            for i = 2, #self.chainsScript do
+                curChain = self.chainsScript[i]
+                if curChain.gameObject.activeSelf then
+                    curChainRB = self.chainsScript[i].rb
+                    if curChainRB.velocity.sqrMagnitude > self.swingSoundSpeed then
+                        dot = UE.Vector3.Dot(lastChain.trans.forward, curChain.trans.forward)
+                        if dot < self.swingSoundDot then
+                            self.curTime = UE.Time.time
+                            if self.curTime - curChain.lastSwingSound > interval then
+                                soundInfo = curChain.swingSound:PlaySoundInfo()
+                                if soundInfo then
+                                    soundInfo.ao.trans:SetParent(curChain.trans)
+                                    soundInfo.ao.trans.localPosition = UE.Vector3.zero
+                                    
+                                    soundInfo.audio.volume = math.max(curChainRB.velocity.magnitude * self.volMlp * (1 - math.abs(dot)), 1)
+                                end
+                                curChain.lastSwingSound = self.curTime
+                                --print("sound idx ----------:" .. i .. "  vol:".. soundInfo.audio.volume .. "  speed:" .. curChainRB.velocity.magnitude .. "  dot:" .. dot.. "  total :" .. curChainRB.velocity.magnitude * self.volMlp * (1 - math.abs(dot)))
+                                count = count + 1
+                            end
+                        end
+                    end
+                    lastChain = self.chainsScript[i]
+                end
+                
+                if count >= self.maxSwingCount then
+                    return
+                end
+            end
+            
+            if hammer then
+                if hammer.rb.velocity.sqrMagnitude > 4 then
+                    soundInfo = hammer:PlayWhooshSound()
+                    if soundInfo then
+                        soundInfo.audio.volume = math.min(1, ((hammer.rb.velocity.magnitude - 2) / self.maxSoundSpeed))
+                    end
+                else
+                    hammer:StopWhooshSound()
+                end
+            end
+        end
+    ,0.3, -1).actionId
+end
+
+function ChainHammer:SmoothChainTransition(chainRBs)
+    local curChains = nil
+    local nextChains = nil
+    local lastTrans = nil
+    local curTrans = nil
+    local lastAnchor = nil
+    local nextAnchor = nil
+    local lastPos = nil
+    local nextPos = nil
+    local lastIndex = -1
+    local index = -1
+    local dir = nil
+    local len = chainRBs.Count
+    for i = 1, #self.chainsScript do
+        index = chainRBs:IndexOf(self.chainsScript[i].rb)
+        if index + 1 == len then
+            return
+        end
+        
+        if index < 0 then
+            curTrans = self.chainsScript[i].trans
+            if curTrans.gameObject.activeSelf then
+                curChains = self.chainsScript[i]
+                nextChains = self.chainsScript[lastIndex + 1]
+                
+                lastAnchor = UE.Vector3.Scale(curChains.joint.connectedAnchor, lastTrans.localScale)
+                nextAnchor = UE.Vector3.Scale(nextChains.joint.connectedAnchor, curTrans.localScale)
+                
+                lastPos = lastTrans:TransformPoint(lastAnchor)
+                nextPos = curTrans:TransformPoint(nextAnchor)
+                dir = (lastPos - nextPos).normalized
+                
+                curTrans.position = lastPos + dir * self.disOfChain
+            end
+        else
+            lastTrans = self.chainsScript[i].trans
+            lastIndex = index
+        end
+    end
+end
+
+function ChainHammer:DoOpenSkill()
+    --print("DoOpenSkill--------:" .. self.trans.name)
+    self.isExtraLen = true
+    
+    self:SwitchTrailEffect(self.isExtraLen)
+    
+    if not self:IsMaxLength() then
+        self:ReleaseChainLink()
+    end
+    
+    if self.isSlowMo then
+        self:StrengthenHandJoint(true, self:IsConnected() and 10 or 5)
+    else
+        self:StrengthenHandJoint(true, self:IsConnected() and 2 or 1)
+    end
+end
+
+function ChainHammer:CloseSkill()
+    --print("CloseSkill--------:" .. self.trans.name)
+    self:StrengthenHandJoint(false, 1)
+    self:DoCloseSkill()
+end
+
+function ChainHammer:DoCloseSkill()
+    --print("DoRecallChain--------:" .. self.trans.name)
+    if IsNullOrDestroyed(self.trans) then
+        return
+    end
+    
+    self.isExtraLen = false
+    
+    self:SwitchTrailEffect(self.isExtraLen)
+    
+    self:ClearCollisionData()
+    
+    --self:StopAssistedMovement()
+    
+    if not self:IsMinLength() then
+        self:RecallChainLink()
+    end
+end
+
+function ChainHammer:SwitchAttachedChain(extraIdx)
+    local ph = self.host.interact:GetPrimaryHand()
+    local sh = self.host.interact:GetSecondaryHand()
+    if self.attachChain:IsBeingHeld() and ((not IsNullOrDestroyed(ph) and ph.attachTo == self.attachChain)
+        or (not IsNullOrDestroyed(sh) and sh.attachTo == self.attachChain)) then
+        
+        if self.attachChain:IsBeingHeld() then
+            local grabRB = self.attachChain.selfRB
+            local idx = self:GetChainIdxByRigidbody(grabRB)
+            
+            if idx >= extraIdx then
+                self.attachChain:SwitchToChainBlock(self.attachChain.attachedHand, self.chainsRB[idx - 1],  true)
+            end
+        end
+        
+    end
+    
+end
+
+function ChainHammer:SwitchTrailEffect(flag)
+    if not self.localPlayerOnly then
+        self.defaultTrailEffect:Stop()
+        self.skillTrailEffect:Stop()
+        
+        if flag then
+            self.clientSkillTrailEffect:Play()
+            self.clientDefaultTrailEffect:Stop()
+        else
+            self.clientSkillTrailEffect:Stop()
+            self.clientDefaultTrailEffect:Play()
+        end
+    else
+        self.clientDefaultTrailEffect:Stop()
+        self.clientSkillTrailEffect:Stop()
+        
+        if flag then
+            self.skillTrailEffect:Play()
+            self.defaultTrailEffect:Stop()
+        else
+            self.skillTrailEffect:Stop()
+            self.defaultTrailEffect:Play()
+        end
+    end
+end
+
+function ChainHammer:StartAssistedMovement()
+    self.moveActId = CL.Scheduler.RemoveSchedule(self.moveActId)
+    self.moveActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            self:HandHapticPulse()
+            
+            if self:IsGrabedChainAndHandle() then
+                self.attachChain.canSwitchToNext = false
+                --and self.attachChain:IsShiftAllowed() 
+                self.attachChain.canSwitchToPrev = false
+                
+                if self.attachChain.attachedHand:IsShifting() then
+                    self:UpdateAttachPosition()
+                end
+            else
+                self.attachChain.canSwitchToPrev = true
+                self.attachChain.canSwitchToNext = true
+            end
+                        
+            self:EnhancedForceTransmissionInChains()
+            self:RefleshConnectedTrail()
+        end
+    ,0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ChainHammer:TwoHandGrabed()
+    local hand = self:GetInteract():GetPrimaryHand()
+    if IsNullOrDestroyed(hand) then
+        return false
+    end
+    
+    hand = self:GetInteract():GetSecondaryHand()
+    if IsNullOrDestroyed(hand) then
+        return false
+    end
+
+    return true
+end
+
+function ChainHammer:HandleOverstretched(sqrOverstretchedForce, isDirty)
+    local maxForce = nil
+    local needUpdate = false
+    
+    local ph = nil
+    local sh = nil
+    local hostGrabChain = false
+    local attachedGrabChain = false
+    local otherAttachChain = nil
+    
+    if not self.isSlowMo then
+        if self:IsConnected() and not self:IsHolder() then
+            return false
+        end
+        
+        ph = self:GetInteract():GetPrimaryHand()
+        sh = self:GetInteract():GetSecondaryHand()
+        if not IsNullOrDestroyed(ph) and not IsNullOrDestroyed(sh) then
+            
+            if not self:IsConnected() then
+                local idx , endIdx = self:GetChainsIdxBetweenHands()
+                
+                --needUpdate = self:IsChainTautBetweenHand(idx , endIdx)
+                --if needUpdate then
+                    maxForce = self:GetChainsMaxJointForce(idx, endIdx)
+                --end
+                needUpdate = true
+            else
+                local idx = -1
+                local endIdx = -1
+                if self:IsConnectWithSameType() then
+                    if not self:GetAttached():IsGrabThisPart() then
+                        idx, endIdx = self:GetChainsIdxBetweenHands()
+                        hostGrabChain = self.attachChain:IsBeingHeld()
+                        --needUpdate =self:IsChainTautBetweenHand(idx , endIdx)
+                        
+                        --if needUpdate then
+                            maxForce = self:GetChainsMaxJointForce(idx, endIdx)
+                        --end
+                        needUpdate = true
+                    elseif not self:IsGrabThisPart() then
+                        idx, endIdx = self:GetAttached():GetChainsIdxBetweenHands()
+                        
+                        attachedGrabChain = self:GetAttached().attachChain:IsBeingHeld()
+                        otherAttachChain = self:GetAttached().attachChain
+                        --needUpdate = self:IsChainTautBetweenHand(idx , endIdx)
+                        
+                        --if needUpdate then
+                            maxForce = self:GetAttached():GetChainsMaxJointForce(idx, endIdx)
+                        --end
+                        needUpdate = true
+                    else
+                        if self.attachChain:IsBeingHeld() then
+                            hostGrabChain = true
+                            idx = 1
+                            endIdx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+                            --needUpdate = self:IsChainTautBetweenHand(idx , endIdx)
+                            --if needUpdate then
+                                maxForce = self:GetChainsMaxJointForce(idx, endIdx)
+                            --end
+                        elseif self.attachHammer:IsBeingHeld() then
+                            idx = 1
+                            endIdx = self.extraEndIdx
+                            --needUpdate = self:IsChainTautBetweenHand(idx , endIdx)
+                            --if needUpdate then
+                                maxForce = self:GetChainsMaxJointForce(idx, endIdx)
+                            --end
+                        end
+                        
+                        local otherForce = nil
+                        if self:GetAttached().attachChain:IsBeingHeld() then
+                            attachedGrabChain = true
+                            otherAttachChain = self:GetAttached().attachChain
+                            idx = 1
+                            endIdx = self:GetAttached():GetChainIdxByRigidbody(self:GetAttached().attachChain.selfRB)
+                            --needUpdate = self:GetAttached():IsChainTautBetweenHand(idx , endIdx)
+                            --if needUpdate then  
+                                otherForce = self:GetAttached():GetChainsMaxJointForce(idx, endIdx)
+                            --end
+                        elseif self:GetAttached().attachHammer:IsBeingHeld() then
+                            idx = 1
+                            endIdx = self.extraEndIdx
+                            --needUpdate = self:GetAttached():IsChainTautBetweenHand(idx , endIdx)
+                            --if needUpdate then  
+                                otherForce = self:GetAttached():GetChainsMaxJointForce(idx, endIdx)
+                            --end
+                        end
+                        
+                        if maxForce and otherForce then
+                            needUpdate = true
+                            if otherForce.sqrMagnitude > maxForce.sqrMagnitude then
+                                maxForce = otherForce
+                            end
+                        end
+                        if not needUpdate and otherForce then
+                            maxForce = otherForce
+                            needUpdate = true
+                        end
+                        if not needUpdate and maxForce then
+                            needUpdate = true
+                        end
+                    end
+                else
+                    if self.attachChain:IsBeingHeld() then
+                        if self.attachHammer:IsBeingHeld() then
+                            idx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+                            endIdx = self.extraEndIdx
+                        else
+                            idx = 1
+                            endIdx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+                        end
+                        needUpdate = true
+                        --needUpdate = self:IsChainTautBetweenHand(idx , endIdx)
+                    else
+                        if self.attachHammer:IsBeingHeld() then
+                            idx = 1
+                            endIdx = self.extraEndIdx
+                            
+                            needUpdate = true
+                            --needUpdate = self:IsChainTautBetweenHand(idx , endIdx)
+                        else
+                            needUpdate = false
+                        end
+                    end
+                    if needUpdate then
+                        maxForce = self:GetChainsMaxJointForce(idx, endIdx)
+                    end
+                end
+            end
+        end
+    end
+    
+    if not needUpdate then
+        if isDirty then
+            local base = 1
+            if self.isExtraLen then
+                if self.isSlowMo then
+                    base = 5
+                end
+                if self:IsConnected() then
+                    base = base * 2
+                end
+            end
+            
+            self:StrengthenHandJoint(self.isExtraLen, base)
+        end
+        return false
+    end
+    
+    --local hammerSpeed = self.hammerRB.velocity.magnitude
+    --local value = math.min(1, hammerSpeed / self.overstretchedSpeed)
+    local mlp = 1 - math.min(1, (maxForce.magnitude / self.overstretchedForce)) + self.baseLinearForceMlp
+    local base = 1
+    if self.isExtraLen then
+        if self.isSlowMo then
+            base = 5
+        end
+        if self:IsConnected() then
+            base = base * 2
+        end
+    end
+    
+    if self:IsConnected() then
+        if hostGrabChain == attachedGrabChain then
+            self:UpdateHandJoint(ph, base * mlp)
+            self:UpdateHandJoint(sh, base * mlp)
+        else
+            if ph.attachTo ~= self.attachChain and ph.attachTo ~= otherAttachChain then
+                self:UpdateHandJoint(ph, base * mlp) 
+            end
+            if sh.attachTo ~= self.attachChain and sh.attachTo ~= otherAttachChain then
+                self:UpdateHandJoint(sh, base * mlp) 
+            end
+        end
+    else
+        if ph.attachTo ~= self.attachChain then
+            self:UpdateHandJoint(ph, base * mlp) 
+        end
+        if sh.attachTo ~= self.attachChain then
+            self:UpdateHandJoint(sh, base * mlp) 
+        end
+    end
+    return true
+end
+
+function ChainHammer:GetChainsIdxBetweenHands()
+    local idx = -1
+    local endIdx = -1
+    if self.attachChain:IsBeingHeld() then
+        if self.attachHammer:IsBeingHeld() then
+            idx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+            endIdx = self.extraEndIdx
+        else
+            idx = 1
+            endIdx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+        end
+    else
+        idx = 1
+        endIdx = self.extraEndIdx
+    end
+    
+    return idx, endIdx
+end
+
+function ChainHammer:IsGrabedChainAndHandle()
+    if not self.host.interact:IsGrabbed() then
+        return
+    end
+    
+    return self.attachPrimary:IsBeingHeld() and self.attachChain:IsBeingHeld()
+end
+
+function ChainHammer:UpdateAttachPosition()
+    local idx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+    if self:IsChainTautBetween(idx) then
+        local rb = self.attachChain:GetNextChainBlock(self.attachChain.selfRB)
+        if not IsNullOrDestroyed(rb) then
+            self.attachChain:SwitchToChainBlock(self.attachChain.attachedHand, rb, false)
+        end
+        return
+    end
+    
+    if self:IsChainLooseBetween(idx) then
+        local rb = self.attachChain:GetPreviousChainBlock(self.attachChain.selfRB)
+        if not IsNullOrDestroyed(rb) then
+            self.attachChain:SwitchToChainBlock(self.attachChain.attachedHand, rb, true)
+        end
+        
+        return
+    end
+end
+
+function ChainHammer:GetChainsMaxJointForce(idx, endIdx)
+    local curChain = nil
+    local maxForce = UE.Vector3.zero
+    local curForce = maxForce
+    for i = idx, endIdx do
+        curChain = self.chainsScript[i]
+        if curChain.gameObject.activeSelf then
+            curForce = curChain.joint.currentForce
+            if curForce.sqrMagnitude > maxForce.sqrMagnitude then
+                maxForce = curForce
+            end
+        end
+    end
+    return maxForce
+end
+
+function ChainHammer:StopAssistedMovement()
+    self.moveActId = CL.Scheduler.RemoveSchedule(self.moveActId)
+end
+
+function ChainHammer:EnhancedForceTransmissionInChains()
+    self.curTime = UE.Time.time
+    if self.curTime < self.nextForceUpdateTime then
+        return 
+    end
+    ---print("EnhancedForceTransmissionInChains vel :" .. self.hammerRB.velocity.magnitude)
+    
+    --self._nextForceUpdateTime = self.curTime + 0.1
+    self._nextForceUpdateTime = self.curTime + math.ceil(0.1 / UE.Time.fixedDeltaTime)
+    
+    if self.isOnline and not SafeLocalTrackPhysics(self.host.interact) then
+        return
+    end
+    
+    local ph = self:GetInteract():GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+        
+    local count = self.curChainIdx - self.extraStartIdx
+    
+    local idx = -1
+    local attachHand = ph
+    if self.attachChain:IsBeingHeld() then
+        idx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+        attachHand = self.attachChain.attachedHand
+    end
+    
+    if self.attachHammer:IsBeingHeld() then
+        if not self:IsConnectWithSameType() then
+            self:EnhancedConnectPartSwing()
+        end
+        return
+    end
+    
+    local vel = attachHand.velocityEstimator:GetAvgVelocityLocal(0.2)
+    
+    if vel.sqrMagnitude < self.swingSpeed then
+        return
+    end
+    
+    
+    local sqrHandDis = (CL.InteractMgr.DISCONNECT_DISTANCE_SQRT * 2/3) * math.max(0, ph.character:GetHeightScale())
+    local offset = ph:GetArmTargetOffset().sqrMagnitude
+    if offset > sqrHandDis then
+        for i = #self.chainsRB, 1, -1 do
+            self.chainsRB[i].velocity = UE.Vector3.Lerp(self.chainsRB[i].velocity, UE.Vector3.zero, 0.01 * self.slowDownMlp)
+            --print("EnhancedForceTransmissionInChains---------protect ungrab-----:" .. self.chainsRB[i].velocity.magnitude .. "  " .. UE.Time.fixedDeltaTime * self.slowDownMlp)
+        end
+        return
+    end
+    
+    idx = idx < 2 and 2 or idx
+    
+    local isTaut = self:IsChainTaut(idx + 1)
+    local hammerSpeed = self.hammerRB.velocity.magnitude
+    local velLerpMlp = isTaut and CL.EasingEquations.EaseOutCubic(1 - math.min(1, hammerSpeed / self.maxVelBlendThreshold)) or 1
+    --print("EnhancedForceTransmissionInChains---------hammer vel-----:" .. self.hammerRB.velocity.magnitude .. "  taut:" .. tostring(isTaut).. "  lerp mlp:" .. velLerpMlp)
+    
+    if velLerpMlp > 0 then
+        local dot = nil
+        local dis = nil
+        
+        local lastChain = self.chainsScript[idx - 1]
+        local curChain = nil
+        local len = #self.chainsScript 
+        local pass = true
+        for i = idx, len do
+            curChain = self.chainsScript[i]
+            if pass and curChain.gameObject.activeSelf then
+                dot = UE.Vector3.Dot(lastChain.trans.forward, curChain.trans.forward)
+                if dot < self.tautDot then
+                    pass = false
+                    --print("EnhancedForceTransmissionInChains-----:" .. i .. "  dot:" .. dot)
+                end
+                dis = (lastChain.trans.position - curChain.trans.position).sqrMagnitude
+                if dis < self.sqrDisOfChain then
+                    pass = false
+                    --print("EnhancedForceTransmissionInChains-----:" .. i .. "  dis:" .. dis)
+                end
+                
+                if curChain.rb.velocity.sqrMagnitude < self.assistedMaxSpeed * self.assistedMaxSpeed then
+                    curChain.rb.velocity = UE.Vector3.Lerp(curChain.rb.velocity, curChain.rb.velocity + lastChain.rb.velocity * self.chainVelMixingMlp, self.velLerpValue * velLerpMlp) -- + vel * value * self.forceTransMlp
+                end
+                lastChain = curChain
+                
+                --print("EnhancedForceTransmissionInChains--------------:" .. i .. "  vel :" .. curChain.rb.velocity.magnitude)
+            end
+        end
+    end
+    
+    --print("EnhancedForceTransmissionInChains--add force-----")
+    if hammerSpeed < self.swingSpeed then
+        return
+    end
+    
+    if hammerSpeed > self.assistedMaxSpeed then
+        return
+    end
+    
+    if not self.isExtraLen or not self:IsLinkAction() then
+        return
+    end
+    
+    local estVel = attachHand.velocityEstimator:GetVelocityEstimateLocal()
+    local dot = UE.Vector3.Dot(estVel.normalized, vel.normalized)
+    --print("EnhancedForceTransmissionInChains--------straight Punch Dot-----:" .. dot)
+    
+    if dot < self.straightPunchDot then
+        return
+    end
+    
+    local mlp = math.max(1, self.curChainIdx - idx)
+    
+    vel = vel.sqrMagnitude > self.maxAssistedSpeed * self.maxAssistedSpeed and vel.normalized * self.maxAssistedSpeed or vel
+    --print("EnhancedForceTransmissionInChains--add force-------grab chain-----:" .. idx .. " avg speed--:" .. vel.magnitude .. "    hammerVel : ".. hammerSpeed .. "  mlp:" ..mlp)
+    
+    --CL.DebugDraw.DrawLine(self.hammerRB.transform.position, self.hammerRB.transform.position + vel * 0.1, UE.Color.red, 1)
+    self.hammerRB:AddForce(vel * self.assistedForceMlp * mlp, UE.ForceMode.VelocityChange)
+end
+
+function ChainHammer:RefleshConnectedTrail()
+    if self.attachPrimary:IsBeingHeld() or not self.attachHammer:IsBeingHeld() then
+        return
+    end
+    
+    if not self.connectedTrail and IsNullOrDestroyed(self.connectedTrail) then
+        return
+    end
+    if self.rb.velocity.sqrMagnitude > 4 then
+        self.connectedTrail.gameObject:SetActive(true)
+    else
+        self.connectedTrail.gameObject:SetActive(false)
+    end
+end
+
+function ChainHammer:EnhancedConnectPartSwing()
+    if IsNullOrDestroyed(self.connectedRB) then
+        return
+    end
+    
+    local attachHand = self.attachHammer.attachedHand
+    local idx = self.extraEndIdx
+    if self.attachChain:IsBeingHeld() then
+        idx = self:GetChainIdxByRigidbody(self.attachChain.selfRB) - 1
+        attachHand = self.attachChain.attachedHand
+    end
+    
+    local vel = attachHand.velocityEstimator:GetAvgVelocityLocal(0.2)
+    
+    if vel.sqrMagnitude < self.swingSpeed then
+        return
+    end
+    
+    local sqrHandDis = (CL.InteractMgr.DISCONNECT_DISTANCE_SQRT * 2/3) * math.max(0, attachHand.character:GetHeightScale())
+    local offset = attachHand:GetArmTargetOffset().sqrMagnitude
+    if offset > sqrHandDis then
+        for i = #self.chainsRB, 1, -1 do
+            self.chainsRB[i].velocity = UE.Vector3.Lerp(self.chainsRB[i].velocity, UE.Vector3.zero, 0.01 * self.slowDownMlp)
+            --print("EnhancedConnectPartSwing---------protect ungrab-----:" .. self.chainsRB[i].velocity.magnitude .. "  " .. UE.Time.fixedDeltaTime * self.slowDownMlp)
+        end
+        return
+    end
+    
+    local isTaut = self:IsChainReverseTaut(idx)
+    
+    local connectedRBSpeed = self.connectedRB.velocity.magnitude
+    local velLerpMlp = isTaut and CL.EasingEquations.EaseOutCubic(1 - math.min(1, connectedRBSpeed / self.maxVelBlendThreshold)) or 1
+    --print("EnhancedConnectPartSwing---------connectedRb vel-----:" .. connectedRB.velocity.magnitude .. "  taut:" .. tostring(isTaut).. "  lerp mlp:" .. velLerpMlp .. "  idx:" .. idx)
+    
+    if velLerpMlp > 0 then
+        local dot = nil
+        local dis = nil
+        
+        local lastChain = self.chainsScript[idx]
+        local curChain = nil
+        local pass = true
+        for i = idx - 1, 1, -1 do
+            curChain = self.chainsScript[i]
+            if pass and curChain.gameObject.activeSelf then
+                dot = UE.Vector3.Dot(lastChain.trans.forward, curChain.trans.forward)
+                if dot < self.tautDot then
+                    pass = false
+                    --print("EnhancedConnectPartSwing-----:" .. i .. "  dot:" .. dot)
+                end
+                dis = (lastChain.trans.position - curChain.trans.position).sqrMagnitude
+                if dis < self.sqrDisOfChain then
+                    pass = false
+                    --print("EnhancedConnectPartSwing-----:" .. i .. "  dis:" .. dis)
+                end
+                
+                if curChain.rb.velocity.sqrMagnitude < self.assistedMaxSpeed * self.assistedMaxSpeed then
+                    curChain.rb.velocity = UE.Vector3.Lerp(curChain.rb.velocity, curChain.rb.velocity + lastChain.rb.velocity * self.chainVelMixingMlp, self.velLerpValue * velLerpMlp) -- + vel * value * self.forceTransMlp
+                    --print("EnhancedConnectPartSwing---------assisted force-----:" .. i .. "  vel :" .. curChain.rb.velocity.magnitude)
+                end
+                lastChain = curChain
+            end
+        end
+    end
+    
+--    if connectedRBSpeed < self.swingSpeed then
+--        print("EnhancedConnectPartSwing--< self.swingSpeed----")
+--        return
+--    end
+    
+--    if connectedRBSpeed > self.assistedMaxSpeed then
+--        print("EnhancedConnectPartSwing--> self.assistedMaxSpeed-----")
+--        return
+--    end
+    
+--    if not self.isExtraLen or not self:IsLinkAction() then
+--        return
+--    end
+    
+--    local estVel = attachHand.velocityEstimator:GetVelocityEstimateLocal()
+--    local dot = UE.Vector3.Dot(estVel.normalized, vel.normalized)
+--    print("EnhancedConnectPartSwing--------straight Punch Dot-----:" .. dot)
+    
+--    if dot < self.straightPunchDot then
+--        return
+--    end
+    
+--    local mlp = math.max(1, self.curChainIdx - idx)
+    
+--    vel = vel.sqrMagnitude > self.maxAssistedSpeed * self.maxAssistedSpeed and vel.normalized * self.maxAssistedSpeed or vel
+--    print("EnhancedConnectPartSwing--add force-------grab chain-----:" .. idx .. " avg speed--:" .. vel.magnitude .. "    Vel : ".. connectedRBSpeed .. "  mlp:" ..mlp)
+    
+--    CL.DebugDraw.DrawLine(connectedRB.transform.position, connectedRBSpeed.transform.position + vel * 0.1, UE.Color.red, 1)
+--    connectedRB:AddForce(vel * self.assistedForceMlp * mlp, UE.ForceMode.VelocityChange)
+end
+
+function ChainHammer:TryAddStraightForce()
+    local ph = self:GetInteract():GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+    
+    local idx = -1
+    local attachHand = ph
+    if self.attachChain:IsBeingHeld() then
+        idx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+        attachHand = self.attachChain.attachedHand
+    end
+    local vel = attachHand.velocityEstimator:GetAvgVelocityLocal(0.2)
+    
+    if vel.sqrMagnitude < self.swingSpeed then
+        return
+    end
+    
+    local hammerSpeed = self.hammerRB.velocity.magnitude
+    
+    if hammerSpeed < self.swingSpeed then
+        return
+    end
+    
+    if hammerSpeed > self.assistedMaxSpeed then
+        return
+    end
+    
+    if not self.isExtraLen or not self:IsLinkAction() then
+        return
+    end
+    
+    local estVel = attachHand.velocityEstimator:GetVelocityEstimateLocal()
+    local dot = UE.Vector3.Dot(estVel.normalized, vel.normalized)
+    --print("EnhancedForceTransmissionInChains--------straight Punch Dot-----:" .. dot)
+    
+    if dot < self.straightPunchDot then
+        return
+    end
+    
+    local mlp = math.max(1, self.curChainIdx - idx)
+    
+    vel = vel.sqrMagnitude > self.maxAssistedSpeed * self.maxAssistedSpeed and vel.normalized * self.maxAssistedSpeed or vel
+    --print("EnhancedForceTransmissionInChains--add force-------grab chain-----:" .. idx .. " avg speed--:" .. vel.magnitude .. "    hammerVel : ".. hammerSpeed .. "  mlp:" ..mlp)
+    
+    --CL.DebugDraw.DrawLine(self.hammerRB.transform.position, self.hammerRB.transform.position + vel * 0.1, UE.Color.red, 1)
+    self.hammerRB:AddForce(vel * self.assistedForceMlp * mlp, UE.ForceMode.VelocityChange)
+end
+
+function ChainHammer:HandHapticPulse()
+    self.curTime = UE.Time.time
+
+    if self.curTime - self.lastHapticTime < 0.2 then
+        return
+    end
+    
+    self.lastHapticTime = self.curTime
+    
+    if self.hammerRB.velocity.sqrMagnitude < self.sqrDesiredForceSpeed then
+        return
+    end
+    
+    local ph = self:GetInteract():GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+
+    local isTaut = false
+    local idx = -1
+    if self.attachChain:IsBeingHeld() then
+        local grabRB = self.attachChain.selfRB
+        idx = self:GetChainIdxByRigidbody(grabRB)
+    end
+    
+    isTaut = self:IsChainTaut(idx + 1)
+    
+    if isTaut then
+        if idx > 0 then
+            if not self.isOnline or (self.isOnline and self.attachChain.attachedHand.character.IsLocalPlayer) then
+                self.attachChain.attachedHand:HapticPulse()
+            end
+        else
+            if not self.isOnline or (self.isOnline and ph.character.IsLocalPlayer) then
+                ph:HapticPulse()
+            end
+        end
+        
+        local speed = self.hammerRB.velocity.magnitude
+        local time = 2 * (self.curChainIdx + 1) * self.disOfChain * math.pi / speed
+        if self.curTime - self.lastTautSound > time then
+            self.lastTautSound = self.curTime
+            self.tautSound:PlaySound()
+        end
+    end
+end
+
+function ChainHammer:ReleaseChainLink()
+    if self.isOnline then
+        if not SafeLocalTrackPhysics(self.host.interact) then
+            self:EmissionForAWhile(1)
+            return
+        end
+    end
+    
+    local ph = self:GetInteract():GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+
+    self.curChainIdx = self.curChainIdx + 1
+    local count = self.curChainIdx - self.extraStartIdx
+    
+    local info = self.extendSound:PlaySoundInfo()
+    if info then
+        info.ao.trans.position = self.chainsScript[self.curChainIdx].trans.position
+    end
+    --CL.DebugDraw.DrawLine(grabTrans.position, grabTrans.position + avgVel * 0.1, UE.Color.red, 1)
+    
+    self:ActiveExtraChain(self.curChainIdx, true)
+    if self.isOnline then
+        local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:CommandActiveExtraChain(localPlayerId, self.curChainIdx, true) end
+    end
+    
+    self:EmissionForAWhile(1)
+    
+    if self:IsMaxLength() then
+        return
+    end
+    
+    self.linkActId = CL.Scheduler.RemoveSchedule(self.linkActId)
+    self.linkActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if self:IsMaxLength() then
+                sche:Stop()
+                self.linkActId = -1
+                return
+            end
+            
+            self.curChainIdx = self.curChainIdx + 1
+            count = self.curChainIdx - self.extraStartIdx
+
+            self:ActiveExtraChain(self.curChainIdx, true)
+            
+            if self.isOnline then
+                local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandActiveExtraChain(localPlayerId, self.curChainIdx, true) end
+            end
+        end
+    ,self.releaseInterval, self.releaseInterval * (self.extraEndIdx - self.extraStartIdx + 1))
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ChainHammer:IsMaxLength()
+    return self.curChainIdx >= self.extraEndIdx
+end
+
+function ChainHammer:IsMinLength()
+    return self.curChainIdx < self.extraStartIdx
+end
+
+function ChainHammer:IsChainTaut(idx, log)
+    local lastChain = nil
+    local dot = nil
+    local dis = nil
+    local len = #self.chainsRB
+    for k, v in ipairs(self.chainsRB) do
+        if k > idx and self.chainsScript[k].gameObject.activeSelf then
+            if not lastChain then
+                lastChain = v
+            else
+                dot = UE.Vector3.Dot(lastChain.transform.forward, v.transform.forward)
+                if dot < self.tautDot then
+                    --if log then
+                    --    print("not ChainTaut---------------------idx :" ..idx .. "  ".. lastChain.transform.parent.name .. "  " .. v.transform.parent.name .. "  dot: " .. dot)
+                    --end
+                    return false
+                end
+                dis = (lastChain.transform.position - v.transform.position).sqrMagnitude
+                if k < len and dis < self.sqrDisOfChain then
+                    --if log then
+                    --    print("not ChainTaut---------------------idx :" .. lastChain.transform.parent.name .. "  " .. v.transform.parent.name .. "  distance: " .. dis)
+                    --end
+                    return false
+                end
+                
+                lastChain = v
+            end
+        end
+    end
+    return true
+end
+
+function ChainHammer:IsChainReverseTaut(idx)
+    local lastChain = nil
+    local dot = nil
+    local dis = nil
+    if idx < 1 then
+        idx = #self.chainsScript
+    end
+    for i = idx, 1, -1 do
+        if self.chainsScript[i].gameObject.activeSelf then
+            if not lastChain then
+                lastChain = self.chainsScript[i].rb
+            else
+                dot = UE.Vector3.Dot(lastChain.transform.forward, self.chainsScript[i].rb.transform.forward)
+                if dot < self.tautDot then
+                    return false
+                end
+                dis = (lastChain.transform.position - self.chainsScript[i].rb.transform.position).sqrMagnitude
+                if dis < self.sqrDisOfChain then
+                    return false
+                end
+                
+                lastChain = self.chainsScript[i].rb
+            end
+        end
+    end
+    return true
+end
+
+function ChainHammer:IsChainTautBetween(idx)
+    idx = idx
+    if idx <= 0 then
+        return false
+    end
+    local len = (idx + 0.5) * self.disOfChain
+    local primaryPos = self.attachPrimary.attachedHand.physicsHand.trans.position
+    local chainPos = self.attachChain.attachedHand.physicsHand.trans.position
+    if (primaryPos - chainPos).sqrMagnitude > len * len then
+        return true
+    end
+    
+    return false
+end
+
+function ChainHammer:IsChainTautBetweenHand(idx, endIdx)
+    local lastChain = nil
+    local dot = nil
+    local dis = nil
+    local len = #self.chainsRB
+    for k, v in ipairs(self.chainsRB) do
+        if k >= idx and k <= endIdx and self.chainsScript[k].gameObject.activeSelf then
+            if not lastChain then
+                lastChain = v
+            else
+                dot = UE.Vector3.Dot(lastChain.transform.forward, v.transform.forward)
+                if dot < self.tautDot then
+                    --if log then
+                    --    print("not ChainTaut---------------------idx :" ..idx .. "  ".. lastChain.transform.parent.name .. "  " .. v.transform.parent.name .. "  dot: " .. dot)
+                    --end
+                    return false
+                end
+                dis = (lastChain.transform.position - v.transform.position).sqrMagnitude
+                if k < len and dis < self.sqrDisOfChain then
+                    --if log then
+                    --    print("not ChainTaut---------------------idx :" .. lastChain.transform.parent.name .. "  " .. v.transform.parent.name .. "  distance: " .. dis)
+                    --end
+                    return false
+                end
+                
+                lastChain = v
+            end
+        end
+    end
+    return true
+end
+
+function ChainHammer:IsChainLooseBetween(idx)
+    idx = idx - 1
+    if idx <= 0 then
+        return false
+    end
+    local len = (idx + 0.5) * self.disOfChain
+    local primaryPos = self.attachPrimary.attachedHand.physicsHand.trans.position
+    local chainPos = self.attachChain.attachedHand.physicsHand.trans.position
+    if len * len > (primaryPos - chainPos).sqrMagnitude then
+        return true
+    end
+    
+    return false
+end
+
+function ChainHammer:RecallChainLink()
+    --print("RecallChainLink---------start-----:" .. self.curChainIdx)
+    self:ResetChainEmission()
+    
+    if self.isOnline then
+        if not SafeLocalTrackPhysics(self.host.interact) then
+            return
+        end
+    end
+    
+    local count = (self.curChainIdx - self.extraStartIdx) + 1
+    self.linkActId = CL.Scheduler.RemoveSchedule(self.linkActId)
+    self.linkActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if self:IsMinLength() then
+                sche:Stop()
+                self.linkActId = -1
+                return
+            end
+            
+            count = (self.curChainIdx - self.extraStartIdx) + 1
+            
+            self:SwitchAttachedChain(self.curChainIdx)
+            --self:ActiveExtraChain(self.curChainIdx, false, self:IsChainTaut(-1) and count * self.recallForceMlp * self.recallBaseForce or nil, -1)
+            self:ActiveExtraChain(self.curChainIdx, false)
+            
+            
+            if self.isOnline then
+                local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandActiveExtraChain(localPlayerId, self.curChainIdx, false) end
+            end
+            
+            self.curChainIdx = self.curChainIdx - 1
+            
+        end
+    ,self.recallInterval, self.recallInterval * (count + 2)):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    
+    for i = self.curChainIdx, self.extraStartIdx, -1 do
+        if self:CheckDismember(i) then
+            break
+        end
+    end
+end
+
+function ChainHammer:StopChainLinkAction()
+    self.linkActId = CL.Scheduler.RemoveSchedule(self.linkActId)
+end
+
+function ChainHammer:IsLinkAction()
+    return self.linkActId > 0
+end
+
+function ChainHammer:GetEmissionChainMats()
+    if not self.emissionChainMats then
+        self.emissionChainMat = UE.Material(self.emissionChainMat)
+        
+        self.emissionChainMats = CS.System.Array.CreateInstance(typeof(UE.Material), 2)
+        self.emissionChainMats[0] = self.defaultChainMat
+        self.emissionChainMats[1] = self.emissionChainMat
+    end
+    
+    return self.emissionChainMats
+end
+
+function ChainHammer:EmissionForAWhile(time)
+    self.emissionActId = CL.Scheduler.RemoveSchedule(self.emissionActId)
+    self.emissionActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            self.emissionChainMat:SetFloat("Vector1_96c3cc496b414ea987143335ae0d99b4", 1-t/time)
+        end
+    , 0, time):SetUpdateChannel(CL.Scheduler.UpdateChannel.Update).actionId
+end
+
+function ChainHammer:StrengthenHandJoint(flag, mlp)
+    local interact = self:GetInteract()
+    if flag then
+        interact.linearForce = self.strengthenForce * mlp
+        interact.linearDamper = self.strengthenDamper * mlp
+        interact.angularForce = self.strengthenAngularForce * mlp
+        interact.angularDamper = self.strengthenAngularDamper * mlp
+    else
+        interact.linearForce = self.baseForce
+        interact.linearDamper = self.baseDamper
+        interact.angularForce = self.baseAngularForce
+        interact.angularDamper = self.baseAngularDamper
+    end
+    
+    self.hammerRB.mass = flag and 10 or 20
+    
+    interact:SetHandLinearDrive()
+end
+
+function ChainHammer:UpdateHandJoint(hand, mlp)
+    local linearForce = self.strengthenForce * mlp
+    local linearDamper = self.strengthenDamper * mlp
+    local angularForce = self.strengthenAngularForce * mlp
+    local angularDamper = self.strengthenAngularDamper * mlp
+    
+    local ld = hand.grabJoint.xDrive
+    ld.positionSpring = linearForce
+    ld.positionDamper = linearDamper
+    hand.grabJoint.xDrive = ld
+    hand.grabJoint.yDrive = ld
+    hand.grabJoint.zDrive = ld
+end
+
+
+function ChainHammer:ResetChainEmission()
+    self.emissionActId = CL.Scheduler.RemoveSchedule(self.emissionActId)
+    self.emissionChainMat:SetFloat("_Transparency", 1)
+end
+
+function ChainHammer:ActiveExtraChain(idx, active)
+    self.chainsScript[idx].gameObject:SetActive(active)
+    self.chainsRB[idx].isKinematic = not active
+    
+    if active then
+        self.chainsRB[idx].transform.position = self.chainsRB[idx - 1].transform.position
+        self.chainsRB[idx].transform.rotation = self.hammerRB.transform.rotation
+        
+        if not self.isOnline or SafeLocalTrackPhysics(self.host.interact) then
+            self.chainsRB[idx].velocity = self.hammerRB.velocity
+            --self.chainsRB[idx].velocity = UE.Vector3.zero
+            self.chainsRB[idx].angularVelocity = UE.Vector3.zero
+        end
+        
+        self.chainsScript[idx].joint.targetPosition = UE.Vector3.zero
+        self.chainsScript[idx].joint.targetRotation = UE.Quaternion.identity
+    end
+    
+
+    
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.chainEffectName, self.chainsRB[idx].transform.position, self.chainsRB[idx].transform.rotation)
+    --local ll = self.connectedHammerJoint.linearLimit
+    
+    if active then
+        self.hammerJoint.connectedBody = self.chainsRB[idx]
+        eo.trans:SetParent(self.chainsRB[idx].transform)
+        
+        --ll.limit = self.baseLimit + (idx - self.extraStartIdx + 1) * self.disOfChain 
+        
+        self.chainsScript[idx]:SetMaterials(self:GetEmissionChainMats())
+    else
+        if idx == self.extraStartIdx then
+            self.hammerRB.isKinematic = true
+        end
+        self.hammerJoint.connectedBody = self.chainsRB[idx - 1]
+        if not self.host.interact:IsSlotEquiped() then
+            self.hammerRB.isKinematic = false
+        end
+        --ll.limit = self.baseLimit + (idx - self.extraStartIdx) * self.disOfChain 
+        
+        self.chainsScript[idx]:ResetMaterials()
+    end
+
+    --self.connectedHammerJoint.linearLimit = ll
+end
+
+function ChainHammer:NetworkActiveExtraChain(idx, active)
+    --[[self.actActId = CL.Scheduler.RemoveSchedule(self.actActId)
+    self.actActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if not active then
+                if self.curChainIdx > (idx - 1) then
+                    for i = 1, self.curChainIdx - (idx - 1) do
+                        self:SwitchAttachedChain(self.curChainIdx)
+                        self:ActiveExtraChain(self.curChainIdx, false)
+                        self.curChainIdx = self.curChainIdx - 1
+                    end
+                end
+                
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    for i = self.curChainIdx, self.extraStartIdx, -1 do
+                        if self:CheckDismember(i) then
+                            break
+                        end
+                    end
+                end
+            else
+                if idx > self.curChainIdx then
+                    for i = 1, idx - self.curChainIdx do
+                        self.curChainIdx = self.curChainIdx + 1
+                        self:ActiveExtraChain(self.curChainIdx, true)
+                    end
+                end
+            end
+        end
+    , 0, 0):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    ]]
+    
+    if not active then
+        self:SwitchAttachedChain(self.curChainIdx)
+        self:ActiveExtraChain(self.curChainIdx, false)
+        self.curChainIdx = idx - 1
+        if CL.Network.VRNetworkManager.ServerOnline then
+            for i = self.curChainIdx, self.extraStartIdx, -1 do
+                if self:CheckDismember(i) then
+                    break
+                end
+            end
+        end
+    else
+        self.curChainIdx = idx
+        self:ActiveExtraChain(self.curChainIdx, true)
+    end
+end
+
+function ChainHammer:ActiveExtraChains(active)
+    local hammerTrans = self.chainsRB[#self.chainsRB]
+    for i = self.extraStartIdx, self.extraEndIdx do
+        self.chainsScript[i].gameObject:SetActive(active)
+        if active then
+            self.chainsRB[i].transform.position = hammerTrans.position
+        end
+        self.chainsRB[i].isKinematic = not active
+    end
+    
+    if active then
+        self.hammerJoint.connectedBody = self.extraChainRB
+    else
+        self.hammerJoint.connectedBody = self.baseChainRB
+    end
+    --local ll = self.connectedHammerJoint.linearLimit
+    --if active then
+    --    ll.limit = self.baseLimit + (self.extraEndIdx - self.extraStartIdx + 1) * self.disOfChain 
+    --else
+    --    ll.limit = self.baseLimit
+    --end
+    --self.connectedHammerJoint.linearLimit = ll
+    
+    self.curChainIdx = active and self.extraEndIdx or self.extraStartIdx - 1
+    --print("Active extra chains--------------:" .. self.curChainIdx)
+end
+
+function ChainHammer:GetAttachChain()
+    local holder = self:GetHolder()
+    return holder and holder.attachChain or self.attachChain
+end
+
+function ChainHammer:StartChainClippingDetection()
+    local joint = nil
+    local curTrans = nil
+    local nextTrans = nil
+    local vec = nil
+    local scaledAnchor = nil
+    local scaledConnectAnchor = nil
+    local targetPos = nil
+    local curPos = nil
+    local curRB = nil
+    local rb = self.host.interact.rb
+    local maxSpeed = 0
+    
+    local sqrOverstretchedForce = self.overstretchedForce * self.overstretchedForce
+    local isDirty = false
+    
+    CL.Scheduler.RemoveSchedule(self.stabActId)
+    self.stabActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(rb) then sche:Stop(); return end
+            isDirty = self:HandleOverstretched(sqrOverstretchedForce, isDirty)
+
+            if rb.velocity.sqrMagnitude < 1 then
+                return
+            end
+            
+            if self.isOnline then
+                if not SafeLocalTrackPhysics(self.host.interact) then
+                    return
+                end
+            end
+            if CL.InteractCharacter.InSuperMode then
+                return
+            end
+            
+            for i = 1, #self.chainsScript do
+                curTrans = self.chainsScript[i].trans
+                if curTrans.gameObject.activeSelf then
+                    joint = self.chainsScript[i].joint
+                    curRB = self.chainsScript[i].rb
+                    nextTrans = joint.connectedBody.transform
+                    
+                    maxSpeed = not IsNullOrDestroyed(self:GetInteract():GetPrimaryHand()) and i * 2 or self.maxChainSpeed
+                    if curRB.velocity.sqrMagnitude > maxSpeed * maxSpeed then
+                        curRB.velocity = curRB.velocity.normalized * maxSpeed
+                    end
+                    
+                    scaledAnchor = UE.Vector3.Scale(joint.anchor, curTrans.localScale)
+                    scaledConnectAnchor = UE.Vector3.Scale(joint.connectedAnchor, nextTrans.localScale)
+                    targetPos = nextTrans:TransformPoint(scaledConnectAnchor)
+                    curPos = curTrans:TransformPoint(scaledAnchor)
+                    vec = targetPos - curPos
+                    --print("ChainClippingDetection-----------offset :" .. vec.magnitude .. " idx: " .. i .. "  chain speed:" .. curRB.velocity.magnitude)
+                    --print("ChainClippingDetection---------------:" .. i  .. "  dis: ".. vec.magnitude)
+                    if vec.sqrMagnitude > self.sqrBreakStabDis then
+                        self.host.interact:GetStabObject():BreakAllStab()
+                        --print("need break all stab---------------:" .. i)
+                        curRB:MovePosition(curTrans.position + vec)
+                        --print("ChainClippingDetection-----------offset :" .. vec.magnitude ..  " idx: " .. i .. "  chain speed:" .. curRB.velocity.magnitude)
+                    end
+                end
+            end
+        end
+    , 0.2, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ChainHammer:StopChainClippingDetection()
+    CL.Scheduler.RemoveSchedule(self.stabActId)
+end
+
+function ChainHammer:RemoveChainStab()
+    for k, v in pairs(self.wrapJoints) do
+        if v and not IsNullOrDestroyed(v) then
+            v.xMotion = UE.ConfigurableJointMotion.Free
+            v.yMotion = UE.ConfigurableJointMotion.Free
+            v.zMotion = UE.ConfigurableJointMotion.Free
+    
+            UE.Object.DestroyImmediate(v)
+        end
+    end
+    
+    self.wrapJoints = {}
+end
+
+function ChainHammer:ClearCollisionData()
+    --self.chainCollision = {}
+    
+    --self:RemoveChainStab()
+end
+
+function ChainHammer:PlayCollisionHitEffect(point, normal)
+    self.curTime = UE.Time.time
+    if self.curTime < self.nextHitEffectTime then
+        return
+    end
+    self.nextHitEffectTime = self.curTime + self.hitEffectInterval
+    
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.curChainIdx > self.extraStartIdx and self.strongHitEffect or self.defaultHitEffect, point, UE.Quaternion.LookRotation(normal))
+    
+    local speed = self.chainsRB[#self.chainsRB].velocity.magnitude
+    local intensity = UE.Mathf.Clamp(speed/self.fullHitEffectSpeed, 0.3, 1)
+    eo:SetIntensity(intensity)
+end
+
+function ChainHammer:BanChain(slot, ban)
+    if ban then
+        self.trans.localPosition = - self.host.interact.mountAttachs[0].transform.localPosition
+        self.trans.localRotation = UE.Quaternion.identity
+        --print("localPosition :" .. self.host.interact.mountAttachs[0].transform.localPosition.z)
+    end
+    self.host.interact.rb.isKinematic = ban
+    
+    local curTrans = nil
+    for i = 1, #self.chainsScript do
+        if ban then
+            curTrans = self.chainsScript[i].trans
+            curTrans.localPosition = UE.Vector3.zero
+            curTrans.localRotation = UE.Quaternion.identity
+        end
+        self.chainsScript[i].rb.isKinematic = ban
+    end
+end
+-----------------------------------------------------Dismember-------------------------------------------------
+function ChainHammer:CheckDismember(idx)
+    self.attachMuscles1 = {}
+    --self.attachMuscles2 = {}
+    local exist = self:GetOverlapMu(idx, self.attachMuscles1)
+    if not exist then
+        return
+    end
+    
+    --exist = self:GetOverlapMu(idx - 1, self.attachMuscles2)
+    --if not exist then
+    --    return
+    --end
+    
+    local fc = nil
+    local mu = nil
+    local pass = false
+    for k, v in pairs(self.attachMuscles1) do
+        --for m, n in pairs(self.attachMuscles2) do
+        --    if k == m then
+                mu = k
+                fc = v
+                pass = self:IsFragmentPass(idx, fc, mu)
+        --    end
+        --end
+    end
+    --print("CheckDismember---------:" .. idx)
+    if pass then
+        local script = self.chainsScript[idx]
+        CL.FullBodyMuscleState.StayDmg = true
+        CL.InteractTrigger.BeginScanDmg()
+        CL.InteractTrigger.ApplyHitScanDamage(mu.col, self.host.interact, 
+            self.host.interact.rb, script:GetCol(0), self.trans.forward, CL.AIProxy.CampGood, true)
+        CL.InteractTrigger.EndHitScan()
+        CL.FullBodyMuscleState.StayDmg = false
+    end
+    return pass
+end
+
+
+function ChainHammer:IsFragmentPass(idx, fc, mu)
+    local dir = (self.chainsRB[idx].transform.position - self.chainsRB[idx - 1].transform.position).normalized
+    local point = (self.chainsRB[idx].transform.position + self.chainsRB[idx - 1].transform.position) / 2
+    
+    local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+    --print("IsFragmentPass---------------check frag  mu:" .. mu.muscleName)
+    if frag then
+        --print("IsFragmentPass--------------IsBodyFragmentCuttable-")
+        if not fc.muscleState:IsBodyFragmentCuttable(frag, mu.col) then
+            return false
+        end
+        
+        local cutPos = frag:GetCutPlanePos()
+        local cutNormal = frag:GetCutPlaneNormal()
+        local dot = UE.Vector3.Dot(cutNormal, dir)
+        --print("IsFragmentPass--dot---------------::"  .. dot)
+        if dot < 0.3 and dot > -0.3 then
+            local dir = (point - cutPos).normalized
+            dot = UE.Vector3.Dot(dir, cutNormal)
+            --print("IsFragmentPass----dot of point---------------::"  .. dot)
+            
+            --CL.DebugDraw.DrawLine(cutPos, cutPos + dir, UE.Color.red, 5)
+            --CL.DebugDraw.DrawLine(cutPos, cutPos + cutNormal, UE.Color.green, 5)
+            
+            local pass = false
+            if dot < 0.2 and dot > -0.2 then
+                pass = true
+            else
+                local dis = UE.Vector3.Distance(cutPos, point)
+                if dis < 0.15 then
+                    pass = true
+                end
+                --print("IsFragmentPass----dis---------------::"  .. dis)
+            end
+            
+            if pass then
+                --print("IsFragmentPass-------ApplyHitScanDamage--:" .. fc.gameObject.name)
+                return true
+            end
+        
+        end
+    end
+    
+    return false
+end
+
+function ChainHammer:GetOverlapMu(idx, list)
+    local chainRb = self.chainsRB[idx]
+    --CL.DebugDraw.DrawLine(chainRb.transform.position,  chainRb.transform.position + UE.Vector3.up, UE.Color.green, 5)
+    local num = UE.Physics.OverlapSphereNonAlloc(chainRb.transform.position, self.disOfChain * 2, 
+                CL.PhysicsHelper.shareOverlapColArray, UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollFakeLayer.value),
+                UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)
+                ))
+
+    if num <= 0 then
+        return false
+    end
+    
+    local pu = nil
+    local mu = nil
+    local col = nil
+    local exist = false
+    for i = 0, num - 1 do
+        col = CL.PhysicsHelper.shareOverlapColArray[i]
+        --print("GetOverlapMu overlap collider---------:" .. col.transform.name .. " parent:" .. col.transform.parent.name)
+        pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(col)
+        if not IsNullOrDestroyed(pu) then
+            if pu.unitType == CL.Tagger.Tag.InteractRole then
+                mu = pu.ra:GetMuscleByCol(col)
+                if mu and not list[mu] then
+                    list[mu] = pu
+                    --print("add overlap muscles---------:" .. mu.muscleName)
+                    exist = true
+                end
+            end
+        end
+    end
+    
+    return exist
+end
+
+
+function ChainHammer:TryEnhanceHammerThrow(ao)
+    local hand = ao.attachedHand
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local handVel = hand.velocityEstimator:GetAvgVelocityLocal(0.3)
+    local headset = hand.character:GetHeadset()
+    local dot = UE.Vector3.Dot(headset.forward, handVel.normalized)
+    if handVel.magnitude < (1 + self.minThrowSpeed * (1 - dot)) then
+        handVel = hand.velocityEstimator:GetVelocityEstimateLocal()
+        dot = UE.Vector3.Dot(headset.forward, handVel.normalized)
+        if handVel.magnitude < (1 + self.minThrowSpeed * (1 - dot)) then
+            return
+        end
+    end
+    local isTaut = self:IsChainTaut(-1)
+    if not isTaut or self:IsConnectWithSameType() then
+        self:DelayEnhanceHammerThrow(handVel)
+        if CL.Network.VRNetworkManager.ClientOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CmdEnhanceHammerThrow(handVel) end
+        end
+    end
+end
+
+function ChainHammer:DelayEnhanceHammerThrow(handVel)
+    CL.Scheduler.RemoveSchedule(self.delayThrowActId)
+    self.delayThrowActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self:DoEnhanceHammerThrow(handVel)
+        end
+    , 0, 0, 0).actionId
+end
+
+function ChainHammer:DoEnhanceHammerThrow(handVel)
+    local attachHand = self:GetInteract():GetPrimaryHand()
+    if IsNullOrDestroyed(attachHand) then
+        attachHand = self:GetInteract():GetSecondaryHand()
+    end
+    
+    if not IsNullOrDestroyed(attachHand) then
+        if self:IsConnectWithSameType() then
+            if self:IsHolder() then
+                if not self:IsSharedAttachObj(attachHand.attachTo) then
+                    local attached = self:GetAttached()
+                    if attached then
+                        attached:AddForceToAllChain(handVel, false)
+                    end
+                end
+            else
+                local holder = self:GetHolder()
+                if holder then
+                    if not holder:IsSharedAttachObj(attachHand.attachTo) then
+                        holder:AddForceToAllChain(handVel, false)
+                    end
+                end
+            end
+        end
+    end
+    self:AddForceToAllChain(handVel, true)
+end
+
+function ChainHammer:AddForceToAllChain(handVel, isAll)
+    if isAll or self.attachHammer:IsBeingHeld() then
+        local len = #self.chainsRB
+        local baseVel = handVel * self.assistedThrowForceMlp * self.assistedBaseForce
+        for i = len, 1, -1 do
+            self.chainsRB[i]:AddForce(UE.Vector3.Lerp(self.chainsRB[i].velocity, baseVel, i / len), UE.ForceMode.VelocityChange)
+        end
+    else
+        if self.attachChain:IsBeingHeld() then
+            local idx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+            local len = idx
+            local baseVel = handVel * self.assistedThrowForceMlp * self.assistedBaseForce
+            for i = len, 1, -1 do
+                self.chainsRB[i]:AddForce(UE.Vector3.Lerp(self.chainsRB[i].velocity, baseVel, i / len), UE.ForceMode.VelocityChange)
+            end
+        end
+    end
+end
+
+---------------------------------------------------------------------------------------------------------------------------------
+
+function ChainHammer:OnConnect(other, isHolder)
+    self.__base.OnConnect(self, other, isHolder)
+    
+    if isHolder then
+        local attached = self:GetAttached()
+        if attached then
+            local name = attached.connectUnit.script:GetSelf().name
+            if self.connectUnit.script:GetSelf().name == name then
+                self:ToggleAttachChainDependAO(self:GetAttached(), true)
+                attached:AssignChains(self.host)
+            else
+                self.connectedTrail = attached.host.weaponTrail
+            end
+            
+            if name == "DoubleBlade" then
+                self.bladeHitObj = attached.connectUnit.script:GetSelf().bladeHitObj
+                self.bladeHitObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.BladeHitPhase2EventHandler)
+            end
+        end
+    else
+        self.connectedTrail = self:GetHolder().host.weaponTrail
+    end
+end
+
+function ChainHammer:OnDisconnect(other, isHolder)    
+    if isHolder then
+        local attached = self:GetAttached()
+        if attached and self.connectUnit.script:GetSelf().name == attached.connectUnit.script:GetSelf().name then
+            self:ToggleAttachChainDependAO(self:GetAttached(), false)
+            attached:AssignChains(attached.host)
+        end
+    end
+    
+    if not IsNullOrDestroyed(self.connectedTrail) then
+        self.connectedTrail.gameObject:SetActive(false)
+    end
+    self.connectedTrail = nil
+    if self.bladeHitObj then
+        self.bladeHitObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.BladeHitPhase2EventHandler)
+    end
+    self.bladeHitObj = nil
+    
+    self.__base.OnDisconnect(self, other, isHolder)
+end
+
+function ChainHammer:AssignChains(interactTrigger)
+    for i = 1, #self.chainsScript do
+        if not self.chainsScript[i].isHammer then
+            self.chainsScript[i].interactTriggerX = interactTrigger
+        end
+    end
+end
+
+function ChainHammer:ToggleAttachChainDependAO(attached, on)
+    if on then
+        self.attachChain.dependAttachObjs:Add(attached.attachChain)
+        self.attachChain.dependAttachObjs:Add(attached.attachHammer)
+        
+        attached.attachChain.dependAttachObjs:Add(self.attachChain)
+        attached.attachChain.dependAttachObjs:Add(self.attachHammer)
+        
+        
+        self.attachHammer.dependAttachObjs:Add(attached.attachChain)
+        self.attachHammer.dependAttachObjs:Add(attached.attachHammer)
+        
+        attached.attachHammer.dependAttachObjs:Add(self.attachChain)
+        attached.attachHammer.dependAttachObjs:Add(self.attachHammer)
+    else
+        self.attachChain.dependAttachObjs:Remove(attached.attachChain)
+        self.attachChain.dependAttachObjs:Remove(attached.attachHammer)
+        
+        attached.attachChain.dependAttachObjs:Remove(self.attachChain)
+        attached.attachChain.dependAttachObjs:Remove(self.attachHammer)
+        
+        
+        self.attachHammer.dependAttachObjs:Remove(attached.attachChain)
+        self.attachHammer.dependAttachObjs:Remove(attached.attachHammer)
+        
+        attached.attachHammer.dependAttachObjs:Remove(self.attachChain)
+        attached.attachHammer.dependAttachObjs:Remove(self.attachHammer)
+    end
+end
+
+--------------------------------------------------Hand Motion---------------------------------------------------
+
+function ChainHammer:NeedHandMotionDetection()
+    local ph = self.host.interact:GetPrimaryHand()
+    local sh = self.host.interact:GetSecondaryHand()
+    
+    if IsNullOrDestroyed(ph) or IsNullOrDestroyed(sh) then
+        return false
+    end
+    
+    return true
+end
+
+function ChainHammer:StartHandMotionDetection()
+    local ph = self.host.interact:GetPrimaryHand()
+    local sh = self.host.interact:GetSecondaryHand()
+    
+    local interval = 0.5
+    local roundList = {}
+    local startIdx = 0
+    local endIdx = 0
+    
+    local twoHandDir = nil
+    local centerPos = nil
+    local dot = 0
+    local passChain = nil
+    local passCount = 0
+    local radius = 0
+    
+    local muList = nil
+    
+    local phVel = nil
+    local shVel = nil
+    
+    local curTime = nil
+    local  tearDisSqrt = CL.RagdollReactAnimation.TearDisSqrt
+    
+    local prevPrimaryIKPos = ph.armIK.target.position
+    local prevSecondaryIKPos = sh.armIK.target.position
+    local curPrimaryIKPos = prevPrimaryIKPos
+    local curSecondaryIKPos = prevSecondaryIKPos
+    local primarySpeed = 0
+    local primaryVel = nil
+    local secondarySpeed = 0
+    local secondaryVel = nil
+    
+    local nextSnapTime = -1
+    local nextCheckTime = -1
+    self.handMotionId = CL.Scheduler.RemoveSchedule(self.handMotionId)
+    self.handMotionId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            ph = self.host.interact:GetPrimaryHand()
+            sh = self.host.interact:GetSecondaryHand()
+            
+            if IsNullOrDestroyed(ph) or IsNullOrDestroyed(sh) then
+                return
+            end
+            
+            prevPrimaryIKPos = curPrimaryIKPos
+            prevSecondaryIKPos = curSecondaryIKPos
+            
+            curPrimaryIKPos = ph.armIK.target.position
+            curSecondaryIKPos = sh.armIK.target.position
+            
+            curTime = UE.Time.time
+            if curTime > nextSnapTime and curTime > nextCheckTime then
+                nextCheckTime = curTime + interval
+                
+                twoHandDir = (ph.trans.position - sh.trans.position).normalized
+                if self.attachChain:IsBeingHeld() then
+                    if self.attachPrimary:IsBeingHeld() then
+                        startIdx = 1
+                        dot = UE.Vector3.Dot(twoHandDir, self.chainsScript[startIdx].trans.forward)
+                        if dot < 0.6 and dot > -0.6 then
+                            --print("hand motion detection 1-1 fail---------------attach primary dot:" .. dot)
+                            return
+                        end
+                        --print("hand motion detection 1-1 pass---------------attach primary dot")
+                        endIdx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+                        if endIdx < 3 then
+                            return
+                        end
+                        --print("hand motion detection 1-2 pass---------------attach count >= 3")
+                        dot = UE.Vector3.Dot(twoHandDir, self.chainsScript[endIdx - 1].trans.forward)
+                        if dot < 0.6 and dot > -0.6 then
+                            --print("hand motion detection 1-final fail---------------attach chain dot: " .. dot)
+                            return
+                        end
+                        --print("hand motion detection 1-final pass---------------attach chain dot")
+                    else
+                        startIdx = self:GetChainIdxByRigidbody(self.attachChain.selfRB)
+                        if self.curChainIdx - startIdx < 3 then
+                            return
+                        end
+                        --print("hand motion detection 2-1 pass---------------attach chain count")
+                        dot = UE.Vector3.Dot(twoHandDir, self.chainsScript[startIdx + 1].trans.forward)
+                        if dot < 0.6 and dot > -0.6 then
+                            --print("hand motion detection 2-2 fail---------------attach chain dot:" .. dot)
+                            return
+                        end
+                        --print("hand motion detection 2-2 pass---------------attach chain dot")
+                        endIdx = self.curChainIdx
+                        dot = UE.Vector3.Dot(twoHandDir, self.chainsScript[endIdx].trans.forward)
+                        if dot < 0.6 and dot > -0.6 then
+                            --print("hand motion detection 2-final fail---------------attach hammer dot:" .. dot)
+                            return
+                        end
+                        --print("hand motion detection 2-final pass---------------attach hammer dot")
+                    end
+                else
+                    startIdx = 1
+                    dot = UE.Vector3.Dot(twoHandDir, self.chainsScript[startIdx].trans.forward)
+                    if dot < 0.6 and dot > -0.6 then
+                        --print("hand motion detection 3-1 fail---------------attach primary dot:" .. dot)
+                        return
+                    end
+                    --print("hand motion detection 3-1 pass---------------attach primary dot")
+                    
+                    endIdx = self.curChainIdx 
+                    dot = UE.Vector3.Dot(twoHandDir, self.chainsScript[endIdx].trans.forward)
+                    if dot < 0.6 and dot > -0.6 then
+                        --print("hand motion detection 3-final fail---------------attach hammer dot:" .. dot)
+                        return
+                    end
+                    --print("hand motion detection 3-final pass---------------attach hammer dot")
+                end
+                
+                
+                if not self:CheckIfWrappedAround(startIdx, endIdx) then
+                    --print("hand motion detection fail WrappedAround---------------  startIdx:" .. startIdx .. " endIdx:" .. endIdx )
+                    return
+                end
+                
+                --print("hand motion detection pass WrappedAround---------------  startIdx:" .. startIdx .. " endIdx:" .. endIdx )
+                
+                
+                passChain = nil
+                centerPos = UE.Vector3.zero
+                passCount = 0
+                radius = 0
+                for i = startIdx, endIdx do
+                    dot = UE.Vector3.Dot(twoHandDir, self.chainsScript[i].trans.forward)
+                    if dot < 0.9 and dot > -0.9 then
+                        if not passChain then
+                            passChain = self.chainsScript[i]
+                            centerPos = passChain.trans.position
+                        else
+                            passChain = self.chainsScript[i]
+                            centerPos = passChain.trans.position + centerPos
+                        end
+                        passCount = passCount + 1
+                    end
+                end
+                if passCount < 2 then
+                    return
+                end
+                
+                centerPos = centerPos / passCount
+                
+                radius = UE.Vector3.Distance(passChain.trans.position, centerPos)
+                if not self:GetSphereOverlapMu(centerPos, radius) then
+                    --print("hand motion detection fail OverlapMu---------------radius:"  .. radius)
+                    return
+                end
+                
+                --print("hand motion detection pass OverlapMu---------------radius:"  .. radius)
+                
+                if self.snapMusclesCount > 0 then
+                    nextSnapTime = curTime + interval
+                    self.processedMuscles = {}
+                else
+                    --print("hand motion detection fail :Filter---------------snapMusclesCount < 1")
+                    return
+                end
+            end
+            
+            --phVel = ph.velocityEstimator:GetVelocityEstimateLocal()
+            --shVel = ph.velocityEstimator:GetVelocityEstimateLocal()
+            
+            if curTime > nextSnapTime then
+                return
+            end
+            
+            if #self.processedMuscles < 1 then
+                self:FilterAffectedMuscles(centerPos, passChain.trans.position, radius)
+            end
+            
+            if #self.processedMuscles < 1 then
+                --print("hand motion detection check Muscles---------------processedMuscles < 1")
+                return
+            end
+            
+            ph:HapticPulse()
+            sh:HapticPulse()
+            
+            primaryVel = (curPrimaryIKPos - prevPrimaryIKPos) / UE.Time.fixedDeltaTime
+            secondaryVel = (curSecondaryIKPos - prevSecondaryIKPos) / UE.Time.fixedDeltaTime
+            primarySpeed = primaryVel.magnitude
+            secondarySpeed = secondaryVel.magnitude
+            --print("hand motion detection check speed--------------- primarySpeed:" .. primarySpeed .." secondarySpeed:" .. secondarySpeed .. " total:" .. primarySpeed + secondarySpeed)
+            if primarySpeed + secondarySpeed < self.limbSnapSpeed then
+                return
+            end
+            
+            dot = UE.Vector3.Dot(primaryVel.normalized, secondaryVel.normalized)
+            --print("hand motion detection check dot---------------hand vel dir:" .. dot)
+            if dot > 0 then
+                return
+            end
+            
+            --print("hand motion detection check TearVec---------------hand dis  ph:" .. ph:GetTearVec().sqrMagnitude .. "  sh:" .. sh:GetTearVec().sqrMagnitude)
+            --if ph:GetTearVec().sqrMagnitude < tearDisSqrt
+            --    and sh:GetTearVec().sqrMagnitude < tearDisSqrt then
+            --    return
+            --end
+            CL.DebugDraw.DrawLine(curPrimaryIKPos,  curPrimaryIKPos + primaryVel * 10, UE.Color.yellow, 2)
+            CL.DebugDraw.DrawLine(curSecondaryIKPos,  curSecondaryIKPos + secondaryVel * 10, UE.Color.yellow, 2)
+            
+
+            --print("hand motion detection check speed---------------secondarySpeed:" .. secondarySpeed)
+            --if secondarySpeed < self.limbSnapSpeed then
+            --    return
+            --end
+            
+            for k, v in ipairs(self.processedMuscles) do
+                --print("hand motion detection DO HitScan---------------:" .. v.muscleName)
+                CL.FullBodyMuscleState.StayDmg = true
+                CL.InteractTrigger.BeginScanDmg()
+                CL.InteractTrigger.ApplyHitScanDamage(v.col, self.host.interact, 
+                    self.host.interact.rb, passChain:GetCol(0), self.trans.forward, CL.AIProxy.CampGood, true)
+                CL.InteractTrigger.EndHitScan()
+                CL.FullBodyMuscleState.StayDmg = false
+            end
+            
+            nextSnapTime = -1
+        end
+    ,0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ChainHammer:CheckIfWrappedAround(startIdx, endIdx)
+    local totalAngle = 0
+    local angle = 0
+    local prevDir = self.chainsScript[startIdx].trans.forward
+    local curDir = nil
+    for i = startIdx + 1, endIdx do
+        curDir = self.chainsScript[i].trans.forward
+        angle = UE.Vector3.Angle(prevDir, curDir)
+        totalAngle = totalAngle + angle
+        prevDir = curDir
+        --print(" angle lastIdx:" .. i - 1 .. " curIdx: " .. i .. " total angle:" .. totalAngle)
+        
+        if totalAngle > 270 then
+            return true
+        end
+    end
+    
+    --print("hand motion detection fail WrappedAround------------ :" .. totalAngle)
+    return false
+end
+
+function ChainHammer:GetSphereOverlapMu(center, radius)
+    self.snapMuscles = {}
+    self.snapMusclesCount = 0
+    CL.DebugDraw.DrawLine(center,  center + UE.Vector3.up * radius, UE.Color.green, 5)
+    CL.DebugDraw.DrawLine(center,  center + UE.Vector3.right * radius, UE.Color.red, 5)
+    CL.DebugDraw.DrawLine(center,  center + UE.Vector3.forward * radius, UE.Color.blue, 5)
+    local num = UE.Physics.OverlapSphereNonAlloc(center, radius, 
+                CL.PhysicsHelper.shareOverlapColArray, UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollFakeLayer.value),
+                UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)
+                ))
+
+    if num <= 0 then
+        return false
+    end
+    
+    local pu = nil
+    local mu = nil
+    local col = nil
+    local exist = false
+    for i = 0, num - 1 do
+        col = CL.PhysicsHelper.shareOverlapColArray[i]
+        --print("GetSphereOverlapMu overlap collider---------:" .. col.transform.name .. " parent:" .. col.transform.parent.name)
+        pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(col)
+        if not IsNullOrDestroyed(pu) then
+            if pu.unitType == CL.Tagger.Tag.InteractRole then
+                mu = pu.ra:GetMuscleByCol(col)
+                if mu and not self.snapMuscles[mu] then
+                    self.snapMuscles[mu] = pu
+                    self.snapMusclesCount = self.snapMusclesCount + 1
+                    --print("GetSphereOverlapMu ---------:" .. mu.muscleName)
+                    exist = true
+                end
+            end
+        end
+    end
+    
+    return exist
+end
+
+function ChainHammer:FilterAffectedMuscles(center, point, radius)
+    local pass = false
+    local dir = nil
+    for k, v in pairs(self.snapMuscles) do
+        pass = false
+        
+        local frag = v.reactAnim:CheckHitDismemberPoint(k.muscleName, center)
+        --print("Phase2EventHandler---------------check frag  mu:" .. mu.muscleName)
+        if frag then
+            dir = (point - center).normalized
+            CL.DebugDraw.DrawLine(center, center + dir, UE.Color.yellow, 0.2)
+
+            local cutPos = frag:GetCutPlanePos()
+            local cutNormal = frag:GetCutPlaneNormal()
+            local dot = UE.Vector3.Dot(cutNormal, dir)
+            --print("FilterAffectedMuscles dot---------------::"  .. dot)
+            if dot < 0.3 and dot > -0.3 then
+                --local radius = UE.Vector3.Distance(point, cutPos)
+                --print("FilterAffectedMuscles  dis-----------------------:" .. (center - cutPos).magnitude .. "  radius:" .. radius)
+                if (center - cutPos).sqrMagnitude < radius * radius then
+                    dir = (point - cutPos).normalized
+                    dot = UE.Vector3.Dot(dir, cutNormal)
+                    --print("FilterAffectedMuscles  dot of point---------------::"  .. dot)
+                    if dot < 0.2 and dot > -0.2 then
+                        pass = true
+                        table.insert(self.processedMuscles, k)
+                        --print("FilterAffectedMuscles  pass-----------------------:"..k.muscleName)
+                    elseif UE.Vector3.Distance(cutPos, point) < self.disOfChain then
+                        pass = true
+                        table.insert(self.processedMuscles, k)
+                    end
+                end
+            end
+        else
+            --print("FilterAffectedMuscles---------------find frag  fail:" .. k.muscleName)
+        end
+        
+        if not pass then
+            self.snapMuscles[k] = nil
+            self.snapMusclesCount = self.snapMusclesCount - 1
+        end
+    end
+end
+
+function ChainHammer:StopHandMotionDetection()
+    self.handMotionId = CL.Scheduler.RemoveSchedule(self.handMotionId)
+end
+
+function ChainHammer:OnDead()
+    if not self.onSlowMo then
+        return
+    end
+    
+    CL.InteractCharacter.PlayerInstance:OnSlowMoEvent("-", self.onSlowMo)
+end
+
+return Class(Require("Weapon/ConnectWeaponScript"), nil, ChainHammer)

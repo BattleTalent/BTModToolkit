@@ -1,0 +1,180 @@
+
+local BulletElementThunder = {
+    flyObjName = "FlyThunderX_Shootable",
+    isUsed = false,
+    
+    thunderFlyTime = 1,
+}
+
+function BulletElementThunder:OnSpawn()
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        CL.FullBodyMuscleState.ApplyParalysisDamageEffect(fc)
+    end
+
+    self.hitInfoObj = self.host:GetRagdollHitInfoObj()
+    if self.hitInfoObj then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    end
+end
+
+
+function BulletElementThunder:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    local pos = self:GetClosetPoint(mu.col, point)
+    self:SpawnThunder(pos)
+    
+    self.host:PlayImpact(point, normal)
+    rb:AddForceAtPosition(rb.velocity, point, UE.ForceMode.Force)
+    
+    self.host:CollisionCountUpdate()
+end
+
+function BulletElementThunder:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function BulletElementThunder:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+end
+
+function BulletElementThunder:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    local pos = self:GetClosetPoint(col, point)
+    self:ThunderHitEffect(pos)
+    self:SpawnThunder(pos)
+
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+
+function BulletElementThunder:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function BulletElementThunder:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function BulletElementThunder:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.isUsed then
+        return
+    end
+    
+    self.isUsed = true
+    
+    self.host:OnCollisionUpdate(rb, col, point, normal, relaVel)
+    self.host:PlayImpact(point, normal)
+    
+    local pos = self:GetClosetPoint(col, point)
+    self:ThunderHitEffect(pos)
+    self:SpawnThunder(pos)
+end
+
+function BulletElementThunder:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithSceneHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity)
+end
+
+function BulletElementThunder:RpcOnCollisionWithScene(rb, col, point, normal, relaVel)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+end
+
+function BulletElementThunder:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self.host:OnCollisionUpdate(rb, col, point, normal, relaVel)
+
+    local pos = self:GetClosetPoint(col, point)
+    self:ThunderHitEffect(pos)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:PlaySceneImpactEffect(point, normal)
+end
+
+function BulletElementThunder:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, pu)
+end
+
+function BulletElementThunder:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+
+    if CL.Network.VRNetworkManager.IsOnline then
+        pu:OnSimulateCollision(self.host.rb, self.host.col, point, -normal, relaVel)
+    end
+end
+
+function BulletElementThunder:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self.host:OnCollisionUpdate(rb, col, point, normal, relaVel)
+    local pos = self:GetClosetPoint(col, point)
+    self:ThunderHitEffect(pos)
+end
+
+function BulletElementThunder:SpawnThunder(pos)
+    local fo = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = self.host:NetworkCreateFlyObj(self.flyObjName, self.host.owner, pos, UE.Vector3.up)
+            self.host.networkFO:ServerOnSpawnThunder(fo, self.thunderFlyTime, self.trans.forward)
+        else
+            return
+        end
+    else
+        fo = CL.FlyObject.CreateFlyObj(self.flyObjName, self.host.owner, pos, UE.Vector3.up)
+    end
+    fo.script:GetSelf():SetFlyTime(self.thunderFlyTime)
+    fo:FlyStart(self.trans.forward)
+    
+    fo.camp = self.host.camp
+    --thunder effect
+end
+
+function BulletElementThunder:NetworkOnSpawnThunder(fo, flyTime, dir)
+    fo.script:GetSelf():SetFlyTime(self.thunderFlyTime)
+    fo:FlyStart(self.trans.forward)
+end
+
+function BulletElementThunder:ThunderHitEffect(pos)
+    
+end
+
+function BulletElementThunder:GetClosetPoint(col, point)
+    if IsNullOrDestroyed(col) or (col.sharedMesh and not col.convex) then
+        return point
+    else
+        return col:ClosestPoint(point)
+    end
+end
+
+
+function BulletElementThunder:ResetState()
+    if self.hitInfoObj and self.hitPhase1 and self.hitInfoObj.hitInfo and self.hitInfoObj.hitInfo.OnInteractRoleHitPhase1Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+    end
+
+    self.isUsed = false
+    self.hitInfoObj = nil
+    self.hitPhase1 = nil
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, BulletElementThunder)

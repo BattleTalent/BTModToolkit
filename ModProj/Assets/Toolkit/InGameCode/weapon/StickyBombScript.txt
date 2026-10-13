@@ -1,0 +1,7 @@
+local StickyBomb = { }
+
+function StickyBomb:Ignite()
+    self.host:IgniteBomb()
+end
+
+return Class(nil, nil, StickyBomb)

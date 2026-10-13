@@ -1,0 +1,264 @@
+
+local GuitarString = {
+    stringList = {},
+    massList = {1, 1.2, 1.3, 1.4, 1.5, 1.6},
+    springConstantList = {0.5, 0.6, 0.7, 0.8, 0.9, 1},
+    dampingConstantList = {0.95, 0.94, 0.93, 0.92, 0.91, 0.9},
+    touchFinger = {},
+    enterCols = {},
+    num = 6,
+    
+    shockInfoList = {},  --time  speed
+    maxVolume = 0.8,
+    maxPitch = 1.3,
+    minPitch = 1,
+    soundAcce = 0.01,
+    
+    clipList = {},
+    guitarSoundPath = "Guitar/ElectricGuitar_",
+    
+    rayLayer = UE.LayerMask.GetMask(
+        UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value)),
+    
+    --cache bz point
+    points = {},
+    
+    --cache reflash string info
+    curPos = nil,
+    force = nil,
+    acce = nil,
+    
+    lifeCircleTimeId = -1,
+}
+
+function GuitarString:Start()
+    self.fingerboard = self.fingerboardLb.script.self
+    
+    for i = 1, 6 do
+        self.stringList[i] = {}
+        self.stringList[i]["end"] = self["string"..i]:Find("end").gameObject.transform
+        self.stringList[i]["c"] = self["string"..i]:Find("c").gameObject.transform
+        self.stringList[i]["rest"] = self["string"..i]:Find("r").gameObject.transform
+        
+        
+        self.stringList[i]["lineRenderer"] = self["string"..i]:GetComponent(typeof(UE.LineRenderer))
+        self.stringList[i]["velocity"] = UE.Vector3.zero
+    end
+    
+    self.bz = CL.Bezier(self.num)
+end
+
+function GuitarString:EnableString()
+    if self.lifeCircleTimeId > 0 then
+        return
+    end
+    
+    self.lifeCircleTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0.02, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function GuitarString:IsStringEnable()
+    return self.lifeCircleTimeId > 0
+end
+
+function GuitarString:DisableString()
+    CL.Scheduler.RemoveSchedule(self.lifeCircleTimeId)
+    self.lifeCircleTimeId = -1
+end
+
+function GuitarString:TickToDisable()
+    CL.Scheduler.RemoveSchedule(self.disableCheckTimeId)
+    self.disableCheckTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            self:DisableString()
+        end
+    , 0, 0, 5)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function GuitarString:Update()
+    if not IsNullOrDestroyed(self.interact) then
+        for i = 1, 6 do
+            self:RefreshLineRenderer(i)
+            self:RefreshSpring(i)
+        end
+    end
+end
+
+function GuitarString:RefreshLineRenderer(idx)
+    self.points = self.bz:GetQuadraticCurvePoints(UE.Vector3.zero, 
+        UE.Vector3(self.stringList[idx]["c"].localPosition.x, 
+            self.stringList[idx]["c"].localPosition.y,
+            0),
+        self.stringList[idx]["end"].localPosition)
+    
+    for i = 0, self.num - 1 do
+        self.stringList[idx]["lineRenderer"]:SetPosition(i, self.points[i])
+    end
+end
+
+function GuitarString:RefreshSpring(idx)
+    self.curPos = self.stringList[idx]["c"].position
+    self.force = self.springConstantList[idx] * (self.stringList[idx]["rest"].position - self.curPos)
+    self.acce = self.force / self.massList[idx]
+    
+    self.stringList[idx]["velocity"] = self.dampingConstantList[idx]
+    * (self.stringList[idx]["velocity"] + self.acce)
+    self.curPos = self.curPos + self.stringList[idx]["velocity"]
+    
+    --self.stringList[idx]["c"].position = curPos
+    self.stringList[idx]["c"].position = UE.Vector3(self.curPos.x,
+        self.curPos.y, self.stringList[idx]["rest"].position.z)
+end
+
+function GuitarString:SetTriggerActive(isActive)
+    self.isActive = isActive
+end
+
+function GuitarString:SetPlayHand(playHand)
+    self.playHand = playHand
+end
+
+--function GuitarString:OnTriggerEnter(col)
+--    if not self:IsPlayHandCol(col) then
+--        return
+--    end
+--    
+--    if not self:IsEnterColExist(col) then
+--        table.insert(self.enterCols, col)
+--    end
+--    
+--    if not self:IsStringEnable() then
+--        self:EnableString()
+--    end
+--    
+--    self:StopRayDetaction()
+--    self:StartRayDetaction()
+--end
+
+function GuitarString:IsEnterColExist(col)
+    for k, v in pairs(self.enterCols) do
+        if v == col then
+            return k
+        end
+    end
+    return false
+end
+
+--function GuitarString:OnTriggerExit(col)
+--    if not self:IsPlayHandCol(col) then
+--        return
+--    end
+--    
+--    local idx = self:IsEnterColExist(col)
+--    if idx then
+--        self.enterCols[idx] = nil
+--    end
+--    if #self.enterCols == 0 then
+--        self:StopRayDetaction()
+--    end
+--    
+--    self:TickToDisable()
+--end
+
+
+function GuitarString:IsPlayHandCol(col)
+    if not self.playHand then
+        return false
+    end
+    local pass = false
+    for i = 0, self.playHand.physicsHand.colliders.Length - 1 do
+        if self.playHand.physicsHand.colliders[i] == col then
+            pass = true
+            break
+        end
+    end
+    return pass
+end
+
+function GuitarString:StartRayDetaction()
+    self.touchFinger = {}
+    local speed = 0
+    self.rayTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.interact) then
+                self:StopRayDetaction()
+                return
+            end
+            
+            --ray
+            for i = 1, 6 do
+                local isHit, raycastHit = UE.Physics.SphereCast(self["string" .. i].position + 
+                    self["string"..i].forward * 0.03, 0.002, self["string" .. i].up, 0.32, self.rayLayer)
+                
+                
+                if isHit then
+                    if not self.touchFinger[i] and self:IsPlayHandCol(raycastHit.collider) then
+                        self.touchFinger[i] = true
+                        --print("hit obj name:".. raycastHit.transform.name)
+                        
+                        local speed = (raycastHit.collider.attachedRigidbody.velocity - self.rb.velocity).magnitude
+                        self:ShockString(i, speed, raycastHit.point)
+                        self:PlayStringSound(i, speed)
+                    end
+                end
+            end
+        end
+    , 0.03, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function GuitarString:StopRayDetaction()
+    CL.Scheduler.RemoveSchedule(self.rayTimeId)
+    self.rayTimeId = -1
+end
+
+function GuitarString:ShockString(idx, speed, point)
+    if not speed then
+        speed = UE.Random.Range(0.04, 0.07)
+    else
+        speed = math.min(speed / 60, 0.07)
+    end
+    
+    self:RefreshRestPos(idx, point)
+    self.stringList[idx]["c"].position = UE.Vector3(self.stringList[idx]["rest"].position.x - speed,
+        self.stringList[idx]["rest"].position.y, self.stringList[idx]["rest"].position.z)
+end
+
+function GuitarString:RefreshRestPos(idx, point)
+    local pos = self["string"..idx]:InverseTransformPoint(point)
+    local scale = pos.y / self.stringList[idx]["end"].localPosition.y
+    pos = self.stringList[idx]["end"].localPosition * scale
+    self.stringList[idx]["rest"].position = self["string"..idx]:TransformPoint(pos)
+end
+
+function GuitarString:PlayStringSound(idx, vel)
+    local fret = self.fingerboard:GetFret()
+    if not fret then
+        return
+    end
+    if not self.clipList[fret] then
+        self.clipList[fret] = self.guitarSoundPath .. (fret + 24)
+    end
+    self["stringSound" .. idx].soundInfo.soundNames[0] = self.clipList[fret]
+    self["stringSound" .. idx]:PlaySound()
+end
+
+function GuitarString:StopStringSound()
+    for i = 1, 6 do
+        self["stringSound" .. i]:Stop()
+    end
+end
+
+function GuitarString:OnDestroy()
+    CL.Scheduler.RemoveSchedule(self.lifeCircleTimeId)
+    self.lifeCircleTimeId = -1
+    
+    self:StopRayDetaction()
+end
+
+return Class(nil, nil, GuitarString)

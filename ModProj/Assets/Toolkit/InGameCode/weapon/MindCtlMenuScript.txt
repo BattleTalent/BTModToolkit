@@ -1,0 +1,349 @@
+
+local MindCtlMenu = {
+    updatebtnInterval = 0.1,
+    lastUpdateTime = 0,
+    
+    order_stay = 0,
+    order_follow = 1,
+    order_attack = 2,
+    
+    isVoiceProcessing = false,
+    isReconizerOn = false,
+    controlFc = nil
+}
+
+function MindCtlMenu:PreLoadReconizer()
+    CL.VoiceReconizer.Instance:AddCommand(self.stayCmd, 
+    function()
+    end)
+    :AddCommand(self.followCmd,
+    function()
+    end)
+    :AddCommand(self.attackCmd, 
+    function()
+    end):Preload()
+end
+
+function MindCtlMenu:OnDisable()
+    if self.isReconizerOn then
+        CL.VoiceReconizer.Instance:StopRecording()
+    end
+    self.isReconizerOn = false
+end
+
+function MindCtlMenu:OnDestroy()
+    if self.isReconizerOn then
+        CL.VoiceReconizer.Instance:StopRecording()
+    end
+    self.isReconizerOn = false
+end
+
+function MindCtlMenu:Show()
+    self.btnsTrans.gameObject:SetActive(true)
+    self.trans:SetParent(nil)
+    
+    self:ResetSelectBtn()
+    
+    -- if UE.Application.platform == UE.RuntimePlatform.Android then
+        self:KeepVoiceProcessing(self.isVoiceProcessing)
+        
+        if not self.isReconizerOn then
+            self:StartVoiceReconizer()
+        end
+    -- end
+end
+
+function MindCtlMenu:Hide()
+    self.btnsTrans.gameObject:SetActive(false)
+    self.trans:SetParent(self.centerTrans)
+    
+    self:ResetState()
+    
+    -- if UE.Application.platform == UE.RuntimePlatform.Android then
+        if not self.isVoiceProcessing and self.isReconizerOn then
+            self:StopVoiceReconizer()
+        end
+    -- end
+end
+
+function MindCtlMenu:OnMenuStart(fc, hand, directTrans, controlTb)
+    self.hand = hand
+    self.controlFc = fc
+    self.directTrans = directTrans
+    self.controlTb = controlTb
+    if IsNullOrDestroyed(self.hand) then
+        return
+    end
+    
+
+    
+    local headset = self.hand.character:GetHeadset()
+    --local height = self.hand.character:GetBodyHeight()
+    --local offset = self.hand:GetHandIndex() == 0 and UE.Vector3(0.2, -0.2, 0) or UE.Vector3(-0.2, -0.2, 0)
+    RemoveSchedule(self, self.updateTimer)
+
+    self:InitBtn()
+    --for k, v in ipairs(self.effects) do
+    --    v:Play()
+    --end
+    
+    self.updateTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if UE.Time.time - self.lastUpdateTime > self.updatebtnInterval then
+                self:UpdateBtn()
+                self.lastUpdateTime = UE.Time.time
+            end
+            self:UpdatePositionFollow(self.hand.trans.position, headset)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.Update)
+end
+
+function MindCtlMenu:InitBtn()
+    if IsNullOrDestroyed(self.hand) then
+        return
+    end
+    
+    self.btnsTrans.gameObject:SetActive(true)
+    
+    -- local isShowVoiceReconizer = UE.Application.platform == UE.RuntimePlatform.Android
+    
+    if self.hand:GetHandIndex() ~= 0 then
+        self["btn" .. 1].localPosition = UE.Vector3(-0.11, 0.014, 0)
+        self["btn" .. 2].localPosition = UE.Vector3(-0.07, 0.09, 0)
+        self["btn" .. 3].localPosition = UE.Vector3(0.01, 0.12, 0)
+        
+        -- if isShowVoiceReconizer then
+            self["btn" .. 4].localPosition = UE.Vector3(-0.088, -0.05, 0)
+        -- end
+    else
+        self["btn" .. 1].localPosition = UE.Vector3(0.11, 0.014, 0)
+        self["btn" .. 2].localPosition = UE.Vector3(0.07, 0.09, 0)
+        self["btn" .. 3].localPosition = UE.Vector3(-0.01, 0.12, 0)
+        
+        -- if isShowVoiceReconizer then
+            self["btn" .. 4].localPosition = UE.Vector3(0.088, -0.05, 0)
+        -- end
+    end
+    
+    -- self["btn" .. 4].gameObject:SetActive(isShowVoiceReconizer)
+    --if not self.effects then
+    --    self.effects = {}
+    --    
+    --    for i = 1, 4 do
+    --        self.effects[i] = self["btn" .. i]:GetComponent(typeof(UE.ParticleSystem))
+    --    end
+    --end
+end
+
+function MindCtlMenu:UpdateBtn()
+    local btn = self.btn1
+    local dot = nil
+    local lastDot = -1
+    for i = 1, 4 do
+        dot = UE.Vector3.Dot((self["btn" .. i].position - self.hand.trans.position).normalized, self.directTrans.forward)
+        if dot > lastDot then
+            btn = self["btn" .. i]
+            lastDot = dot
+        end
+    end
+    
+    if self.selectBtn ~= btn then
+        if self.selectBtn ~= nil then
+            self.selectBtn.localScale = UE.Vector3.one
+            self.selectBtn:GetChild(0).gameObject:SetActive(false)
+        end
+        
+        self.hand:HapticPulse(self.hand.character.skillChargeHapticCurve, 0.1, 0.3)
+        
+        self.selectBtn = btn
+        self.selectBtn:GetChild(0).gameObject:SetActive(true)
+        btn.localScale = UE.Vector3.one * 1.3
+    end
+end
+
+function MindCtlMenu:ResetSelectBtn()
+    if self.selectBtn ~= nil then
+        self.selectBtn.localScale = UE.Vector3.one
+        self.selectBtn:GetChild(0).gameObject:SetActive(false)
+    end
+end
+
+function MindCtlMenu:OrderAction(orderType)
+    if CL.Network.VRNetworkManager.ClientOnline and self.hand.character.IsLocalPlayer then
+        self.controlTb:CommandAction(orderType)
+        return
+    end
+    
+    local ais = CL.AIProxy.GetTarget(self.hand.character.attr.camp)
+    local aiPlayer = nil
+    if self.hand then
+        aiPlayer = self.hand.character.aiProxy
+    end
+    
+    if self.controlFc ~= nil then
+        for k, v in ipairs(self.controlFc) do
+            if v ~= nil and not IsNullOrDestroyed(v) and not v.attr:IsDead() then
+                if orderType == self.order_stay then
+                    self:StayCommand(v.ai)
+                elseif orderType == self.order_follow then
+                    self:MoveCommand(v.ai)
+                elseif orderType == self.order_attack then
+                    self:AttackCommand(v.ai) 
+                end
+            end
+        end
+    end
+    
+    for i = 0, ais.Count - 1 do
+        if ais[i] ~= aiPlayer and not ais[i]:GetControllerBase().networkPlayer then
+            cast(ais[i], typeof(CL.AIController))
+            if ais[i] and not ais[i].fc.attr:IsDead() then
+                if orderType == self.order_stay then
+                    self:StayCommand(ais[i])
+                elseif orderType == self.order_follow then
+                    self:MoveCommand(ais[i])
+                elseif orderType == self.order_attack then
+                    self:AttackCommand(ais[i])
+                end
+            end
+        end
+    end
+end
+
+function MindCtlMenu:Order()
+    local ais = CL.AIProxy.GetTarget(self.hand.character.attr.camp)
+    local aiPlayer = nil
+    if self.hand then
+        aiPlayer = self.hand.character.aiProxy
+    end
+    if self.selectBtn == self["btn1"] then
+        for k, v in ipairs(self.controlFc) do
+            if v ~= nil and not IsNullOrDestroyed(v) and not v.attr:IsDead() then
+                self:StayCommand(v.ai)
+            end
+        end
+        
+        for i = 0, ais.Count - 1 do
+            if ais[i] ~= aiPlayer and not ais[i]:GetControllerBase().networkPlayer then
+                cast(ais[i], typeof(CL.AIController))
+                if ais[i] and not ais[i].fc.attr:IsDead() then
+                    self:StayCommand(ais[i])
+                end
+            end
+        end
+    elseif self.selectBtn == self["btn2"] then
+        for k, v in ipairs(self.controlFc) do
+            if v ~= nil and not IsNullOrDestroyed(v) and not v.attr:IsDead() then
+                self:MoveCommand(v.ai)
+            end
+        end
+        
+        for i = 0, ais.Count - 1 do
+            if ais[i] ~= aiPlayer and not ais[i]:GetControllerBase().networkPlayer then
+                cast(ais[i], typeof(CL.AIController))
+
+                if ais[i] and not ais[i].fc.attr:IsDead() then
+                    self:MoveCommand(ais[i])
+                end
+            end
+        end
+    elseif self.selectBtn == self["btn3"] then
+        for k, v in ipairs(self.controlFc) do
+            if v ~= nil and not IsNullOrDestroyed(v) and not v.attr:IsDead() then
+                self:AttackCommand(v.ai) 
+            end
+        end
+        
+        for i = 0, ais.Count - 1 do
+            if ais[i] ~= aiPlayer and not ais[i]:GetControllerBase().networkPlayer then
+                cast(ais[i], typeof(CL.AIController))
+                if ais[i] and not ais[i].fc.attr:IsDead() then
+                    self:AttackCommand(ais[i])
+                end
+            end
+        end
+    elseif self.selectBtn == self["btn4"] then
+        self:KeepVoiceProcessing(not self.isVoiceProcessing)
+        print("order keep processing:" .. tostring(self.isVoiceProcessing))
+    end
+end
+
+function MindCtlMenu:KeepVoiceProcessing(flag)
+    self.isVoiceProcessing = flag
+    self.voiceOnTrans.gameObject:SetActive(self.isVoiceProcessing)
+end
+
+function MindCtlMenu:UpdatePositionFollow(pos, headset)
+    if IsNullOrDestroyed(headset) then
+        return
+    end
+    
+    self.trans.position = pos
+    self.trans.rotation = headset.rotation
+end
+
+function MindCtlMenu:StartVoiceReconizer()
+    CL.VoiceReconizer.Instance:AddCommand(self.stayCmd, 
+    function()
+        print("stay cmd")
+        self:OrderAction(self.order_stay)
+    end)
+    :AddCommand(self.followCmd,
+    function()
+        print("follow cmd")
+        self:OrderAction(self.order_follow)
+    end)
+    :AddCommand(self.attackCmd, 
+    function()
+        print("attack cmd")
+        self:OrderAction(self.order_attack)
+    end):StartRecording()
+    
+    print("start processing")
+    self.isReconizerOn = true
+end
+
+function MindCtlMenu:StopVoiceReconizer()
+    if self.isReconizerOn then
+        CL.VoiceReconizer.Instance:StopRecording()
+    end
+    
+    self.isReconizerOn = false
+    print("stop processing")
+end
+
+function MindCtlMenu:ResetState()
+    RemoveSchedule(self, self.updateTimer)
+    
+    --for k, v in ipairs(self.effects) do
+    --    v:Stop()
+    --end
+    
+    if self.selectBtn ~= nil then
+        self.selectBtn.localScale = UE.Vector3.one
+        self.selectBtn = nil
+    end
+end
+
+--[[
+    order
+--]]
+
+function MindCtlMenu:StayCommand(ai)
+    ai:StayCommand()
+end
+
+function MindCtlMenu:AttackCommand(ai)
+    local target = ai:GetClosestEnemy()
+    if not IsNullOrDestroyed(target) then
+        ai:AttackCommand(target)
+    end
+end
+
+function MindCtlMenu:MoveCommand(ai)
+    --ai:MoveCommand(self.hand.character.trans.position)
+    ai:FollowCommand(self.hand.character.aiProxy)
+end
+
+return Class(nil, nil, MindCtlMenu)

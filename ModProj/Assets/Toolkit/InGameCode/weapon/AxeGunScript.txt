@@ -1,0 +1,1001 @@
+
+local AxeGun = {
+    releaseBulletTime = 0.2,
+    releaseBulletNumber = 5,
+    
+    audioSources = {},
+    
+    axeColor = UE.Color(3, 1.3, 0.78, 0),
+    gunColor = UE.Color(3, 2, 0, 0),
+    unActiveColor = UE.Color(0, 0, 0, 0),
+    bodyRenderers = {},
+    bladeRenderers = {},
+    allRenderers = {},
+    
+    isAxeMode = false,
+    isHandlerShow = true,
+    
+    hitCount = 0,
+    
+    --laser
+    points = {},
+    curLength = 0,
+    maxLength = 1,
+    lineSize = 15,
+    widthTime = 0.2,
+    initTime = 0.35, 
+    closeTime = 0.1,
+    
+    lastDetactTime = 0,
+    detactInterval = 0,
+    --
+    
+    --pushback
+    pushBackDis = 0,
+    maxPushBackDis = 0.03,
+    dragPowerOnShoot = 0.02,
+    
+    --rayDetact index
+    rayIndexs = {1, 8, 12, 15},
+    
+    effectPool = {},
+    effectList = {},
+    --shootVel = -1,
+    --recoilRotate = -15,
+    --recoilRandomBias = 3,
+    --releaseBulletTime = 0.2,
+    --releaseBulletNumber = 6,
+    recoilVector = UE.Vector3(0, 0, -0.4),
+    
+    transformInfoList = {
+        ["joint1"] = {["delay"] = 0, ["duration"]   = 0.1, ["endLocalPos"] = UE.Vector3(0, 0.232, 0.4025)},
+        ["joint2"] = {["delay"] = 0.1, ["duration"]   = 0.1, ["endLocalPos"] = UE.Vector3(0, -0.0015, 0.0552)},
+        
+        ["group1"]  = {["delay"] = 0.2, ["duration"]   = 0.1, ["endLocalPos"] = UE.Vector3(0, -0.23, -0.4284)},
+        ["group2"]  = {["delay"] = 0.3, ["duration"]   = 0.1, ["endLocalPos"] = UE.Vector3(0, 0.015, 0)},
+        
+        ["joint4"] = {["delay"] = 0.4, ["duration"]   = 0.2, ["endLocalPos"] = UE.Vector3(0, 0.1331, 0.4283)},
+        
+        ["blade3"] = {["delay"] = 0.6, ["duration"]   = 0.2, ["endLocalPos"] = UE.Vector3(0, -0.1078, 0.026)},
+        ["blade2"] = {["delay"] = 0.8, ["duration"]   = 0.2, ["endLocalPos"] = UE.Vector3(0, -0.026, -0.0865)},
+        --["blade1"] = {["delay"] = 0, ["duration"]   = 0.3, ["endLocalPos"] = UE.Vector3()},
+
+        ["blade4"] = {["delay"] = 1, ["duration"]   = 0.2, ["endLocalRot"] = UE.Quaternion.Euler(UE.Vector3(90, 0, 0))},
+        
+        --["handle"] = {["delay"] = 0, ["duration"]   = 0.2, ["endLocalPos"] = UE.Vector3(0, 0.14, 0.153)},
+        --["handle"] = {["delay"] = 0.2, ["duration"]   = 0.3, ["endLocalRot"] = UE.Quaternion.Euler(UE.Vector3(-83, 0, 0))},
+    },
+    
+    handleInfoList = {
+        ["handle"] = {["delay"] = 0, ["duration"]   = 0.2, ["endLocalPos"] = UE.Vector3(0, 0.14, 0.153)},
+        ["handle"] = {["delay"] = 0.2, ["duration"]   = 0.3, ["endLocalRot"] = UE.Quaternion.Euler(UE.Vector3(-83, 0, 0))},
+    },
+    
+    audioSources = {},
+    handlerAudioSources = {},
+    
+    rayLayer = UE.LayerMask.GetMask(
+        UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.RagdollFakeLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.CharacterLayer.value)
+        
+        --UE.LayerMask.LayerToName(CL.LayerDefine.EnvOnlyLayer.value),
+    ),
+    
+    lineWidth = 0.15,
+    enhanceLineWidth = 0.23,
+}
+
+
+function AxeGun:Awake()
+    self.manaCost = self.host.manaCost
+    
+    self.totalTime = self:CacheInfo(self.transformInfoList, self.audioSources)
+    self.handlerTotalTime = self:CacheInfo(self.handleInfoList, self.handlerAudioSources)
+    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    local i =  1
+    while self["bodyRenderer" ..i] do
+        self.bodyRenderers[i] = self["bodyRenderer".. i]
+        self.allRenderers[#self.allRenderers + 1] = self["bodyRenderer".. i]
+        i = i + 1
+    end
+    
+    i = 1
+    while self["bladeRenderer" ..i] do
+        self.bladeRenderers[i] = self["bladeRenderer".. i]
+        self.allRenderers[#self.allRenderers + 1] = self["bladeRenderer".. i]
+        i = i + 1
+    end
+    
+    self.Phase1EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if otherCol ~= self.muzzleCol then
+            return
+        end
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp <= 0 then
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = 1
+        end
+    end
+    
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        self.hitInfoObj1.hitInfo:OnInteractRoleHitPhase1Event("+", self.Phase1EventHandler)
+        self.hitInfoObj2.hitInfo:OnInteractRoleHitPhase1Event("+", self.Phase1EventHandler)
+    end
+
+    self.Phase2EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult <= 0 or not self.isAxeMode then
+            return
+        end
+        
+        self.hitCount = self.hitCount + 1
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnLoadEnergy(self.hitCount) end
+        end
+        
+        if self.hitCount == self.hitTime then
+            self.laserOnReady = true
+            self:SetLight(self.bodyRenderers, self.gunColor, 0, 0.15)
+            self.reloadSound:PlaySound()
+        end
+    end
+    
+    self.hitCharacterPhase = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        if not fromLocalPlayer then
+            return
+        end
+        
+        if not self.isAxeMode then
+            return
+        end
+        
+        self.hitCount = self.hitCount + 1
+        
+        if CL.Network.VRNetworkManager.IsOnline then
+            if SafeIsOwnerLocalPlayer(self.host.interact) then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CmdOnLoadEnergy(self.hitCount) end
+            end
+        else
+            if self.hitCount == self.hitTime then
+                self.laserOnReady = true
+                self:SetLight(self.bodyRenderers, self.gunColor, 0, 0.15)
+                self.reloadSound:PlaySound()
+            end
+        end
+    end
+    self.hitInfoObj1.hitInfo:OnInteractCharacterHitPhase1Event("+", self.hitCharacterPhase) 
+    self.hitInfoObj2.hitInfo:OnInteractCharacterHitPhase1Event("+", self.hitCharacterPhase)
+
+    
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        self.hitInfoObj1.hitInfo:OnInteractRoleHitPhase2Event("+", self.Phase2EventHandler)
+        self.hitInfoObj2.hitInfo:OnInteractRoleHitPhase2Event("+", self.Phase2EventHandler)
+    end
+    
+    local pos = UE.Vector3.zero
+    for i = 1, self.lineSize do
+        self.points[i] = pos
+    end
+    
+    self:RefreshAttach()
+end
+
+function AxeGun:NetworkOnLoadEnergy(count)
+    self.hitCount = count
+    if self.hitCount == self.hitTime then
+        self.laserOnReady = true
+        self:SetLight(self.bodyRenderers, self.gunColor, 0, 0.15)
+        self.reloadSound:PlaySound()
+    end
+end
+
+function AxeGun:CacheInfo(list, audioList)
+    local totalTime = 0
+    local time = 0
+    for k, v in pairs(list) do
+        if v["endLocalPos"] then
+            v["startLocalPos"] = self[k].localPosition
+        end
+        if v["endLocalRot"] then
+            v["startLocalRot"] = self[k].localRotation
+        end
+        time = v["delay"] + v["duration"]
+        if time > totalTime then
+            totalTime = time
+        end
+        
+        if not audioList[k] then
+            audioList[k] = self[k]:GetComponent(typeof(CL.SoundEffectPlayer))
+        end
+    end
+    
+    return totalTime
+end
+
+
+function AxeGun:OnGrab(a, g)
+    self.aimWidget.gameObject:SetActive(g)
+    self:ShowAimWidget(self.host.interact:IsGrabbed() and not self.isAxeMode)
+    self.host.manaCost = g and 0 or self.manaCost
+    
+    if g then
+        self.character = a.attachedHand.character
+        self.camp = self.character.aiProxy:GetCamp()
+        
+        if a ~= self.handAttach then
+            if not self.grabHandle then  --to axe
+                if not self.isAxeMode then
+                    --print("to axe-----------")
+                    if self.isOnline then
+                        if CL.Network.VRNetworkManager.Instance.IsServer then
+                            local state = GetNetworkIBState(self)
+                            if state ~= nil then state:ServerTransformMode(self.isAxeMode) end
+                        end
+                    else
+                        self:TransformMode()
+                    end
+                end
+                self:CloseLight()
+                self:SetLight(self.bladeRenderers, self.axeColor, 0, 0.15)    
+            end
+        else                          --to gun
+            self.grabHandle = true
+            
+            if self.isAxeMode then
+                --print("to gun-----------")
+                if self.isOnline then
+                    if CL.Network.VRNetworkManager.Instance.IsServer then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerTransformMode(self.isAxeMode) end
+                    end
+                else
+                    self:TransformMode()
+                end
+            end
+            self:CloseLight()
+            self:SetLight(self.bladeRenderers, self.unActiveColor, 0, 0.15)
+        end
+        
+        self:RefreshAttach()
+    else
+        self:TryStopShoot(self.character)
+        
+        self.character = nil
+        
+        if a == self.handAttach then
+            self.grabHandle = false
+        end
+        
+        if self.tracker then
+            self.tracker.trackSpeedState = 1
+            self.tracker = nil
+        end
+    end
+end
+
+function AxeGun:ShowAimWidget(flag)
+    self.aimWidget.gameObject:SetActive(flag)
+    if flag then
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self.aimWidget.enabled = true
+        end
+    else
+        self.aimWidget.enabled = false
+    end
+end
+
+function AxeGun:NetworkTransformMode(mode)
+    self.isAxeMode = mode
+    if self.isAxeMode then
+        self.grabHandle = true
+    end
+    
+    self:TransformMode()
+end
+
+
+function AxeGun:CloseLight()
+    CL.Scheduler.RemoveSchedule(self.lightTimeId)
+end
+
+function AxeGun:SetLight(renders, color, delay, time)
+    if not delay or delay == 0 then
+        SetMaterialEmissionWithinTime(self, renders, color, time)
+        return
+    end
+    self.lightTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            SetMaterialEmissionWithinTime(self, renders, color, time)
+        end
+    , 0, 0, delay)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+
+-----------------------------------------------------Skill------------------------------------------------------------
+
+function AxeGun:OpenSkill()
+    self.triggerSound:PlaySoundInfo()
+    
+    if self.isAxeMode or self.hitCount < self.hitTime then
+        self.host.manaCost = 0
+        --tips("can not shoot!")
+        return
+    end
+    
+    self.onShootTime = UE.Time.time
+    self.lastHitTime = 0
+    
+    self.host.manaCost = self.manaCost
+    
+    if self.isOnline then
+        if SafeIsOwnerLocalPlayer(self.host.interact) then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CommandShootLaser(self.character.networkPlayer.netId) end
+            self:ShootLaser()
+        end
+    else
+        self:ShootLaser()
+    end
+end
+
+function AxeGun:NetworkShootLaser()
+    self.onShootTime = UE.Time.time
+    self.lastHitTime = 0
+    
+    self:ShootLaser()
+end
+
+function AxeGun:CloseSkill()
+    if self.onShootTime then
+        self.onShootTime = nil
+        if self.isOnline then
+            if SafeIsOwnerLocalPlayer(self.host.interact) then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandStopShoot(self.character.networkPlayer.netId) end
+                self:StopShoot()
+            end
+        else
+            self:StopShoot()
+        end
+    end
+end
+
+function AxeGun:TryStopShoot(character)
+    if not self.onShoot then
+        return
+    end
+    
+    if self.isOnline then
+        if not IsNullOrDestroyed(character) then
+            if character.IsLocalPlayer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandStopShoot(character.networkPlayer.netId) end
+            end
+        end
+    end
+    self:StopShoot()
+end
+
+function AxeGun:NetworkStopShoot()
+    self.onShootTime = nil
+    self:StopShoot()
+end
+
+function AxeGun:ShootLaser()
+    --show effect.
+    local isEnhance = self.host.interact:IsEnhance()
+    
+    if not IsNullOrDestroyed(self.muzzleEff) then
+        CL.EffectMgr.Instance:GiveBack(self.muzzleEff)
+        self.muzzleEff = nil
+    end
+    self.muzzleEff = CL.EffectMgr.Instance:PlayEffect(
+        isEnhance and self.muzzleEnhanceEffect or self.muzzleEffect
+        , self.shootPosition.position, self.shootPosition.rotation)
+    self.muzzleEff.trans:SetParent(self.shootPosition)
+    
+    local lineWidth = isEnhance and self.enhanceLineWidth or self.lineWidth
+    local w = 0
+    local curWidth = self.lineRenderer.startWidth
+    self:StopTimer(self.lineActTimeId)
+    
+    
+    local targetForward = self.shootPosition.forward
+    for i = 1, self.lineSize do
+        self.points[i] = self.shootPosition.position + targetForward * self.curLength * (i - 1)
+    end
+    
+    --tips
+    self.onShoot = true
+    
+    --sound
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.pluseASInfo)
+    self.shootSound:PlaySoundInfo()
+    self.pluseASInfo = self.pluseSound:PlaySoundInfo()
+    if self.pluseASInfo then
+        self.pluseAS = self.pluseASInfo.audio
+        self.pluseAS.volume = 0
+    end
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.pluse2ASInfo)
+    self.pluse2ASInfo = self.pluse2Sound:PlaySoundInfo()
+    if self.pluse2ASInfo then
+        self.pluse2AS = self.pluse2ASInfo.audio
+    end
+    --recoil
+    self:AddRecoil()
+    
+    --pushback
+    --self.character:OnBreakSticking()
+    
+    --handLerpspeed
+    if self.tracker then
+        self.tracker.trackSpeedState = 1
+        self.tracker = nil
+    end
+
+    local triggerHand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(triggerHand) then
+        self.tracker = triggerHand.handTracker
+        self.tracker.trackSpeedState = 0.03
+    end
+
+    --flyobj  only for dmg, so not necessary to deal with
+    self.laser = self.host:CreateFlyObj(self.flyObjName, self.shootPosition.position,
+        self.shootPosition.forward, 0)
+    
+    self.laserHitInfo = self.laser:GetRagdollHitInfo()
+    if self.laserHitInfo then
+        self.originDmgMlp = self.laserHitInfo:ReadValue("DamageMlp")
+        self.laserHitInfo:WriteValue("DamageMlp", self.originDmgMlp * self.enhanceIntensity)
+    end
+    self.laser.trans:SetParent(self.shootPosition)
+    
+    --effect
+    self:StartRecycleEffect()
+    
+    --dragpower
+    self:SetDragPower(self.dragPowerOnShoot)
+    
+    --breakStuck
+    if not IsNullOrDestroyed(self.character) then
+        self.character:BreakAllStuckActions()
+    end
+    
+    self.lineRenderer.enabled = true
+    self.lineActTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if t < self.widthTime then
+                w = CL.EasingEquations.EaseOutBack(curWidth, lineWidth, t/self.widthTime)
+                self.lineRenderer.startWidth = w
+                self.lineRenderer.endWidth = w
+                
+                --pushback
+                self:PushBack(-self.shootPosition.forward, self.maxPushBackDis * 2)
+            end
+            
+            self.curLength = self.maxLength * t/self.initTime
+            
+            --pushBack dis update
+            self.pushBackDis = t/self.initTime * self.maxPushBackDis
+            
+            --updateSound
+            if self.pluseAS then
+                self.pluseAS.volume = 0.5 + 0.25 * t/self.initTime
+                self.pluseAS.volume = 1 + 0.66 * t/self.initTime
+            end
+        end
+    , 0, self.initTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function AxeGun:RefleshLaser()
+    local targetForward = self.shootPosition:InverseTransformDirection(self.shootPosition.forward)
+    
+    local point = nil
+    local curPos = nil
+    local length = 0
+    local k = 0
+    local min = 0.4
+    for i = 1, self.lineSize do
+        point = self.shootPosition:InverseTransformPoint(self.points[i])
+        
+        k = (1-min) * (1-(i/15))
+        --local k = CL.EasingEquations.EaseOutCubic(1, 0.5, i/self.lineSize)
+        
+        length = self.curLength * (i-1)
+        curPos = UE.Vector3.Lerp(point, targetForward * length, min + k)
+        curPos = curPos.normalized * length
+        self.points[i] = self.shootPosition:TransformPoint(curPos)
+    end
+    
+    self.lineRenderer:SetPositions(self.points)
+end
+
+function AxeGun:NetworkRefleshLaser(targetForward)
+    local point = nil
+    local curPos = nil
+    local length = 0
+    local k = 0
+    local min = 0.4
+    for i = 1, self.lineSize do
+        point = self.shootPosition:InverseTransformPoint(self.points[i])
+        k = (1-min) * (1-(i/15))
+        length = self.curLength * (i-1)
+        curPos = UE.Vector3.Lerp(point, targetForward * length, 0.4 + k)
+        curPos = curPos.normalized * length
+        self.points[i] = self.shootPosition:TransformPoint(curPos)
+    end
+    
+    self.lineRenderer:SetPositions(self.points)
+end
+
+function AxeGun:StopShoot()
+    --tips
+    self.onShoot = false
+    
+    --reset hand lerpSpeeds
+    self.hitCount = 0
+    
+    if not IsNullOrDestroyed(self.muzzleEff) then
+        CL.EffectMgr.Instance:GiveBack(self.muzzleEff)
+        self.muzzleEff = nil
+    end
+
+    --sound
+    self.laserStopSound:PlaySoundInfo()
+    
+    --laser
+    if not IsNullOrDestroyed(self.laser) then
+        self.laserHitInfo:WriteValue("DamageMlp", self.originDmgMlp)
+        self.laser:OnFinish()
+        self.originDmgMlp = nil
+        self.laser = nil
+    end
+    
+    --dragpower
+    self:ResetDragPower()
+    
+    self:StopTimer(self.lineActTimeId)
+    local k = 0
+    local curWidth = self.lineRenderer.startWidth
+    local total = self.lineRenderer:GetPosition(14).magnitude
+    local perLength = 0
+    
+    local curPushBackDis = self.pushBackDis
+    local curVolume = self.pluseAS and self.pluseAS.volume or 0
+    local cur2Volume = self.pluse2AS and self.pluse2AS.volume or 0
+    --reset hand tracker
+    local isStop = false
+    self.lineActTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.lineRenderer) then
+                return
+            end
+            if self.closeTime - t < 0.02 then
+                if not isStop then
+                    self.lineRenderer.startWidth = 0
+                    self.lineRenderer.endWidth = 0
+    
+                    for i = 1, self.lineSize do
+                        self.points[i] = UE.Vector3.zero
+                        self:RefleshLaser()
+                    end
+                    
+                    if self.tracker then
+                        self.tracker.trackSpeedState = 1
+                        self.tracker = nil
+                    end
+                    if self.pluseASInfo then
+                        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.pluseASInfo)
+                    end
+                    if self.pluse2ASInfo then
+                        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.pluse2ASInfo)
+                    end
+                    
+                    self.lineRenderer.enabled = false
+                    isStop = true 
+                end
+            else
+                k = 1 - t/self.closeTime
+                self.lineRenderer.startWidth = k * curWidth
+                self.lineRenderer.endWidth = k * curWidth
+                
+                --pushBack dis update
+                self.pushBackDis = k * curPushBackDis
+                
+                if self.tracker then
+                    self.tracker.trackSpeedState = (1-k) * 1
+                end
+                   
+                if self.pluseAS then
+                    self.pluseAS.volume = curVolume * k
+                end
+                if self.pluse2AS then
+                    self.pluse2AS.volume = cur2Volume * k
+                end
+            end
+            
+            self:RefleshLaser()
+        end
+    , 0, self.closeTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self:SetLight(self.bodyRenderers, self.unActiveColor, 0, 0.15)
+end
+
+function AxeGun:UpdateSkill()
+    if not self.onShootTime or UE.Time.time - self.onShootTime >= self.continueTime then
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+                self.host:CloseSkill()
+            end
+        else
+            self.host:CloseSkill()
+        end
+        return
+    end
+    
+    --if UE.Time.time - self.lastHitTime < self.hitInterval then
+    --    return
+    --end
+    --self.lastHitTime = UE.Time.time
+    
+    --refleshLaser
+    self:RefleshLaser()
+    
+    --rayDetact
+    if UE.Time.time - self.lastDetactTime >= self.detactInterval then
+        if not self.isOnline or (self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact)) then
+            self:RayDetact()
+        end
+        self.lastDetactTime = UE.Time.time
+    end
+    
+    --pushBack
+    --self:HolderPushBack(5)
+    if not self.isOnline or (self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact)) then
+        self:PushBack(-self.shootPosition.forward, self.pushBackDis)
+    end
+end
+
+---------------------------------------------------RayDetact----------------------------------------------------------
+
+function AxeGun:RayDetact()
+    local dir = nil
+    local hitInfo = {}
+    local startDis = 0
+    for i = 1, #self.rayIndexs - 1 do
+        dir = (self.points[self.rayIndexs[i + 1]] - self.points[self.rayIndexs[i]]).normalized
+        local raycastHits = UE.Physics.SphereCastAll(self.points[self.rayIndexs[i]], 0.01, dir, 
+            (self.rayIndexs[i + 1] - self.rayIndexs[i]) * self.curLength, self.rayLayer)
+        
+        if raycastHits.Length > 0 then
+            if i > 1 then
+                startDis = (self.rayIndexs[i] - self.rayIndexs[i - 1]) * self.curLength
+            end
+            self:RayHit(raycastHits, hitInfo, startDis, i, dir)
+        end
+    end
+end
+
+function AxeGun:NetworkApplyHit(col, dir, camp)
+    --flyobj  only for dmg, so not necessary to deal with
+    if not self.laser or IsNullOrDestroyed(self.laser) then
+        self.laser = self.host:CreateFlyObj(self.flyObjName, self.shootPosition.position,
+        self.shootPosition.forward, 0)
+    
+        self.laserHitInfo = self.laser:GetRagdollHitInfo()
+        if self.laserHitInfo then
+            self.originDmgMlp = self.laserHitInfo:ReadValue("DamageMlp")
+            self.laserHitInfo:WriteValue("DamageMlp", self.originDmgMlp * self.enhanceIntensity)
+        end
+        self.laser.trans:SetParent(self.shootPosition)
+    end
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host.interact, 
+        self.laser.rb, self.laser.col, dir, camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+end
+
+function AxeGun:RayHit(raycastHits, hitInfo, startDis, idx, dir)
+    if not self.laser then
+        return
+    end
+
+    local pu = nil
+    local eff = nil
+    local root = nil
+    local effPos = nil
+    for i = 0, raycastHits.Length - 1 do
+        if raycastHits[i].distance ~= 0 then
+            
+            if self.isOnline then
+                if SafeIsOwnerLocalPlayer(self.host.interact) then
+                    if CL.Network.VRNetworkManager.ClientOnline then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:CommandApplyHit(raycastHits[i].collider, self.shootPosition.forward, self.camp) end
+                    end
+                end
+            end
+            
+            --client need hit effect(eg:bloodEffect)
+            CL.FullBodyMuscleState.SlashDmg = true
+            CL.InteractTrigger.BeginScanDmg()
+            CL.InteractTrigger.ApplyHitScanDamage(raycastHits[i].collider, self.host.interact, 
+                self.laser.rb, self.laser.col, self.shootPosition.forward, self.camp)
+            CL.InteractTrigger.EndHitScan()
+            CL.FullBodyMuscleState.SlashDmg = false
+         
+            pu = CL.PhysicsUnit.GetPhysicsUnit(raycastHits[i].transform)
+            
+            --effectReflesh
+            root = raycastHits[i].transform.root
+            
+            if self.effectList[root] then
+                if hitInfo[root] then
+                    --print("name:".. raycastHits[i].transform.gameObject.name.. "  dis:"..raycastHits[i].distance .. "  i:"..idx.. " startDis:" .. startDis)
+                    if raycastHits[i].distance + startDis < hitInfo[root]["dis"] then
+                        --update position
+                        effPos = raycastHits[i].point - dir * 0.05
+
+                        self.effectList[root]["eff"].trans.position = effPos
+                        self.effectList[root]["ts"] = UE.Time.time
+                        
+                        hitInfo[root]["dis"] = raycastHits[i].distance + startDis
+                    end
+                else
+                    effPos = raycastHits[i].point - dir * 0.05
+                    
+                    hitInfo[root] = {}
+                    hitInfo[root]["pos"] = effPos
+                    hitInfo[root]["dis"] = raycastHits[i].distance + startDis
+                    
+                    --update position
+                    self.effectList[root]["eff"].trans.position = raycastHits[i].point
+                    self.effectList[root]["ts"] = UE.Time.time
+                end
+            else
+                effPos = raycastHits[i].point - dir * 0.05
+                eff = self:CreateEffect(raycastHits[i].point, self.shootPosition.rotation)
+                
+                self.effectList[root] = {}
+                self.effectList[root]["eff"] = eff
+                self.effectList[root]["ts"] = UE.Time.time
+                
+                hitInfo[root] = {}
+                hitInfo[root]["pos"] = effPos
+                hitInfo[root]["dis"] = raycastHits[i].distance + startDis
+            end
+            
+            if effPos and self.effectList[root]["eff"].gameObject.activeSelf == false then
+                self.effectList[root]["eff"].gameObject:SetActive(true)
+                self.effectList[root]["eff"].trans.position = effPos
+            end
+        end
+        
+        effPos = nil
+    end
+end
+
+----------------------------------------------------effect----------------------------------------------------------
+function AxeGun:StartRecycleEffect()
+    local count = 0
+    self.recycleTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            count = self:RecycleEffect()
+            if count <= 0 and not self.onShoot then
+                self:StopTimer(self.recycleTimeId)
+            end
+        end
+    , 0.2, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function AxeGun:RecycleEffect()
+    local len = 0
+    local count = 0
+    for k, v in pairs(self.effectList) do
+        len = len + 1
+        if UE.Time.time - v.ts >= 0.01 then
+            self.effectList[k]["eff"].gameObject:SetActive(false)
+            table.insert(self.effectPool, v.eff)
+            self.effectList[k] = nil
+            count = count + 1
+        end
+    end
+    return len - count
+end
+
+function AxeGun:CreateEffect(point, rotation)
+    local effect = nil
+    if #self.effectPool > 0 then
+        effect = self.effectPool[#self.effectPool]
+        table.remove(self.effectPool, #self.effectPool)
+    else
+        effect = CL.EffectMgr.Instance:PlayEffect("LaserImpact2", point, rotation)
+    end
+    return effect
+end
+----------------------------------------------------PushBack----------------------------------------------------------
+
+function AxeGun:PushBack(dir, dis)
+    if not self.character then
+        return
+    end
+    
+    local vec = dir
+    
+    vec = self.character.trans:InverseTransformDirection(vec)
+    --vec.z = vec.z < 0 and vec.z/5 or vec.z
+    vec.y = vec.y < 0 and self.character.capsuleRB.velocity.y/5 + vec.y or vec.y/2
+    vec = self.character.trans:TransformDirection(vec)
+
+    local dest = UE.Vector3.Lerp(self.character.capsuleRB.position,
+        self.character.capsuleRB.position + vec * dis, 0.5)
+    
+    CL.PhysicsFollow.TrackPosition(self.character.capsuleRB, dest, 5)
+end
+
+function AxeGun:SetDragPower(value)
+    if self.character and not IsNullOrDestroyed(self.character) then
+        self.character:SetDragPower(value)
+    end
+end
+
+function AxeGun:ResetDragPower()
+    if self.character and not IsNullOrDestroyed(self.character) then
+        self.character:SetDragPower(self.character:GetOriginalDragPower())
+    end
+end
+
+---------------------------------------------------Transform----------------------------------------------------------
+function AxeGun:TransformMode()
+    self:StopTimer(self.actTimeId)
+    self:StopTimer(self.handlerActTimeId)
+
+    self.actTimeId = self:StartTransform(self.transformInfoList, self.audioSources, self.isAxeMode, self.totalTime)
+    self.handlerActTimeId = self:StartTransform(self.handleInfoList, self.handlerAudioSources, self.isAxeMode, self.handlerTotalTime)
+    
+    self.isAxeMode = not self.isAxeMode
+    self:ShowAimWidget(self.host.interact:IsGrabbed() and not self.isAxeMode)
+    
+    self:RefreshAttach()
+end
+
+function AxeGun:RefreshAttach()
+    if self.isAxeMode then
+        self.barrelAttachLine1.thumbLimit = CL.AttachLine.GrabThumbLimitType.None
+        self.barrelAttachLine1.palmLimit = CL.AttachLine.GrabPalmLimitType.None
+    else
+        if self.grabHandle then
+            local ph = self.host.interact:GetPrimaryHand()
+            if not IsNullOrDestroyed(ph) then
+                if ph:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND then
+                    self.barrelAttachLine1.palmLimit = CL.AttachLine.GrabPalmLimitType.FromY
+                else
+                    self.barrelAttachLine1.palmLimit = CL.AttachLine.GrabPalmLimitType.ToY
+                end
+            end
+        end
+        self.barrelAttachLine1.thumbLimit = CL.AttachLine.GrabThumbLimitType.Forward
+    end
+end
+
+function AxeGun:StartTransform(list, audioSources, isForward, totalTime)
+    local targetPos = nil
+    local targetRot = nil
+    --local audioList = {}
+    
+    local curStateList = {}
+    for k, v in pairs(list) do
+        curStateList[k] = {}
+        --position
+        if v["startLocalPos"] then
+            curStateList[k].localPosition = self[k].localPosition
+        end
+        
+        --rotation
+        if v["startLocalRot"] then
+            curStateList[k].localRotation = self[k].localRotation
+        end
+    end
+
+    if self.isAxeMode then
+        self.axeToGunTransformSound:PlaySoundInfo()
+    else
+        self.gunToAxeTransformSound:PlaySoundInfo()
+    end
+
+    local actTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            for k, v in pairs(list) do
+                if (not isForward and t > v["delay"] and t <= v["delay"] + v["duration"]) or
+                (isForward and t > totalTime - (v["delay"] + v["duration"]) and t <= totalTime - v["delay"]) then
+                    local time = isForward and t - (totalTime - (v["delay"] + v["duration"])) or t - v["delay"]
+                    local value = CL.EasingEquations.EaseOutBack(0, 1, time/v["duration"])
+
+                    --position
+                    if v["startLocalPos"] then
+                        targetPos = isForward and v["startLocalPos"] or v["endLocalPos"]
+                        self[k].localPosition = UE.Vector3.Lerp(curStateList[k].localPosition, targetPos, value)
+                    end
+                    
+                    --rotation
+                    if v["startLocalRot"] then
+                        targetRot = isForward and v["startLocalRot"] or v["endLocalRot"]
+                        self[k].localRotation = UE.Quaternion.Lerp(curStateList[k].localRotation, targetRot, value)
+                    end
+                    
+                    --if not audioList[k] then
+                    --    audioList[k] = true
+                    --    audioSources[k]:PlaySound()
+                    --end
+                end
+            end
+        end
+    , 0, totalTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    return actTimeId
+end
+
+function AxeGun:TransformReset()
+    for k, v in pairs(self.transformInfoList) do
+        if v["startLocalPosition"] then
+            self[k].localPosition = v["startLocalPosition"]
+        end
+        if v["startLocalRot"] then
+            self[k].localRotation = v["startLocalRot"]
+        end
+    end
+end
+
+function AxeGun:StopTimer(timeId)
+    CL.Scheduler.RemoveSchedule(timeId)
+end
+
+function AxeGun:OnDestroy()
+    self:TransformReset()
+    self:CloseLight()
+    self:StopTimer(self.lineActTimeId)
+    
+    if self.tracker then
+        self.tracker.trackSpeedState = 1
+        self.tracker = nil
+    end
+    
+    if not IsNullOrDestroyed(self.laser) and self.originDmgMlp then
+        self.laserHitInfo:WriteValue("DamageMlp", self.originDmgMlp)
+        self.laser:OnFinish()
+        self.originDmgMlp = nil
+        self.laser = nil
+    end
+    
+    if self.hitInfoObj1.hitInfo.OnInteractRoleHitPhase2Event then
+        self.hitInfoObj1.hitInfo:OnInteractRoleHitPhase2Event("-", self.Phase2EventHandler)
+    end
+    if self.hitInfoObj1.hitInfo.OnInteractRoleHitPhase1Event then
+        self.hitInfoObj1.hitInfo:OnInteractRoleHitPhase1Event("-", self.Phase1EventHandler)
+    end
+    
+    if self.hitInfoObj2.hitInfo.OnInteractRoleHitPhase2Event then
+        self.hitInfoObj2.hitInfo:OnInteractRoleHitPhase2Event("-", self.Phase2EventHandler)
+    end
+    if self.hitInfoObj2.hitInfo.OnInteractRoleHitPhase1Event then
+        self.hitInfoObj2.hitInfo:OnInteractRoleHitPhase1Event("-", self.Phase1EventHandler)
+    end
+    self.isAxeMode = false
+end
+
+return Class(Require("Weapon/WeaponFlyObjBaseScript"), nil, AxeGun)

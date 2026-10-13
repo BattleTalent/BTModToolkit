@@ -1,0 +1,157 @@
+
+local InspectorGun = {
+    maxDis = 100,
+    color1 = UE.Color(1, 0.37, 0.37, 0),
+    color2 = UE.Color(0, 0, 0, 0),
+    
+    lerpRate = 0.2,
+}
+
+function InspectorGun:OnGrab(a, g)
+    if g then
+        self.headset = a.attachedHand.character:GetHeadset()
+    else
+       self.headset = nil 
+    end
+end
+
+function InspectorGun:Awake()
+    self.lineRenderer = self.LaserPoint.gameObject:GetComponent(typeof(UE.LineRenderer))
+    
+    self.maxPos = UE.Vector3(0, 0, self.maxDis)
+end
+
+function InspectorGun:OpenSkill()
+    self.lineRenderer.enabled = true
+end
+
+function InspectorGun:UpdateSkill()
+    self:UpdateRay()
+end
+
+
+function InspectorGun:UpdateRay()
+    --raycast
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.LaserPoint.position, 0.04, self.LaserPoint.forward, self.maxDis, CL.LayerDefine.InteractLayerMask.value)
+    if isHit then
+        if self:IsCanShow(raycastHit.transform) then
+            self.TarPoint.transform.position = raycastHit.point
+            self.selectObj = raycastHit.transform
+            if self.lastSelectObj ~= self.selectObj then
+                if self:IsInspectorOpen() then
+                    self:RefleshInspector(self.selectObj)
+                else
+                    self:ShowInspector(self.selectObj)
+                end
+            else
+                if not self:IsInspectorOpen() then
+                    self:ShowInspector(self.selectObj)
+                end
+            end
+            self.lastSelectObj = self.selectObj
+        end
+        
+        self.lineRenderer:SetPosition(1, self.LaserPoint:InverseTransformPoint(raycastHit.point))
+        self.TarPoint:SetActive(true)
+    else
+        self.TarPoint:SetActive(false)
+        
+        self.lineRenderer:SetPosition(1, self.maxPos)
+    end
+end
+
+function InspectorGun:HighLightObj(obj)
+    self.renders = nil
+    self.renders = obj:GetComponentsInChildren(typeof(UE.Renderer))
+    if self.renders then
+        for i = 0, self.renders.Length - 1 do
+        --render.material.SetColor("_EmissionColor", UE.Color.Lerp(render.material:GetColor("_EmissionColor"), color, lerpRate));
+            self.renders[i].material:SetColor("_EmissionColor", self.color1);
+        end
+    end
+end
+
+function InspectorGun:CancelHighLight()
+    if not self.renders then
+        return
+    end
+    for i = 0, self.renders.Length - 1 do
+        self.renders[i].material:SetColor("_EmissionColor", self.color2);
+    end
+end
+
+function InspectorGun:ShowInspector(trans)
+    --show
+    self.panel = CL.HUDMgr.Instance:GetOrCreatePanel("RuntimeInspector")
+    local scp = self.panel.gameObject:GetComponent("RuntimeInspector")
+    scp:Inspect(trans.gameObject)
+    scp = self.panel.gameObject:GetComponent("HUDBillboard")
+    scp.followTarget = trans
+    local showPos = UE.Camera.main.transform.position
+
+    --timer
+    self.panelTimer = CL.Scheduler.Create(self.host,
+    function()
+        --chack close 1.angle 2.distance
+        if not self:IsCanShow(trans) then
+            self:CloseInspector()
+        end
+    end
+    , 0.1, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    
+    self:HighLightObj(trans.gameObject)
+end
+
+function InspectorGun:IsCanShow(trans)
+    if self.headset == nil then
+        return false
+    end
+
+    local vec = trans.position - self.headset.position
+    if UE.Vector3.Dot(self.headset.forward, vec) < 0.6 then
+        return false
+    else
+        --distance
+        local sqrDis = UE.Vector3.SqrMagnitude(trans.position-self.headset.position)
+        if  sqrDis > 100 then
+            return false
+        end
+    end
+    return true
+end
+
+function InspectorGun:RefleshInspector(trans)
+    local scp = self.panel.gameObject:GetComponent("RuntimeInspector")
+    scp:Inspect(trans.gameObject)
+    scp = self.panel.gameObject:GetComponent("HUDBillboard")
+    scp.followTarget = trans
+end
+
+function InspectorGun:CloseInspector()
+    --hide
+    if self.panel then
+        self.panel:Exit()
+        self.panel = nil
+    end
+    RemoveSchedule(self.host, self.panelTimer)
+    self:CancelHighLight()
+end
+
+function InspectorGun:IsInspectorOpen()
+    return self.panel ~= nil
+end
+
+function InspectorGun:CloseSkill()
+    self.lineRenderer.enabled = false
+    self.TarPoint:SetActive(false)
+    
+    --self:CloseInspector()
+    
+    if self.selectObj then
+        self.selectObj = nil
+    end
+end
+
+
+return Class(nil,nil,InspectorGun)

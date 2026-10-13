@@ -1,0 +1,136 @@
+
+local flyFlameBall = {
+    radius = 1,
+}
+
+
+--[[
+    collison
+]]
+
+function flyFlameBall:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, pu)
+end
+
+
+function flyFlameBall:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+end
+
+function flyFlameBall:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    if (not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.FlyObject) then    
+        if pu.owner == self.host.owner then
+            return
+        end
+    end
+    self.host:PlayImpact(point, normal)
+    --self.host:CollisionCountUpdate()
+    --self:TryGroundIgnite()
+end
+
+function flyFlameBall:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithSceneHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity)
+end
+
+function flyFlameBall:RpcOnCollisionWithScene(rb, col, point, normal, relaVel)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+end
+
+function flyFlameBall:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+    self.host:PlayImpact(point, normal)
+    self.host:PlaySceneImpactEffect(point, normal)
+    self.host:CollisionCountUpdate()
+    self:TryGroundIgnite()
+end
+
+function flyFlameBall:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    --self.host:CollisionCountUpdate()
+    --self:TryGroundIgnite()
+end
+
+--[[
+    trigger
+]]
+function flyFlameBall:OnTrigger(pu, col)
+    if not col or IsNullOrDestroyed(col) then
+        return
+    end
+
+    if (not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.FlyObject) then    
+        if pu.owner == self.host.owner then
+            return
+        end
+    end
+    self.__base.OnTrigger(self, pu, col)
+    --self:TryGroundIgnite()
+end
+
+function flyFlameBall:OnTriggerWithStaticScene(col)
+    self.__base.OnTriggerWithStaticScene(self, col)
+    self:TryGroundIgnite()
+end
+
+function flyFlameBall:OnTriggerWithRole(fc, col)
+    self.__base.OnTriggerWithRole(self, fc, col)
+    --self:TryGroundIgnite()
+end
+
+function flyFlameBall:TryGroundIgnite()
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    if self.isIgnite then
+        return
+    end
+    self.isIgnite = true
+    
+    local raycastHit = self:GetIgnirePos()
+    if not raycastHit then
+        return
+    end
+    local owner = self.host.owner
+
+    CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if CL.Network.VRNetworkManager.IsOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    local fo = CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.objName, owner, raycastHit.point, UE.Vector3(self.host.trans.forward.x, 0,
+                    self.host.trans.forward.z), -1)
+            
+                    local follower = fo.trans:GetComponent(typeof(CL.FlyObjectFollower))
+                    if not IsNullOrDestroyed(follower) then
+                        follower:SetData(raycastHit.collider.transform, raycastHit.collider.transform:InverseTransformPoint(raycastHit.point))
+                    end
+                end
+            else
+                CL.FlyObject.CreateFlyObj(self.objName, owner, raycastHit.point, UE.Vector3(self.host.trans.forward.x, 0,
+                    self.host.trans.forward.z))
+            end
+        end
+    , 0, 0, 0.1)
+    
+    CL.EffectMgr.Instance:PlayEffect(self.collisionEffect, self.trans.position, self.trans.rotation)
+end
+
+function flyFlameBall:GetIgnirePos()
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.host.trans.position, 0.05, UE.Vector3.down,
+        0.5, CL.LayerDefine.EnvLayerMask.value)
+    if isHit then
+        return raycastHit
+    else
+        return nil
+    end
+end
+
+
+function flyFlameBall:ResetState()
+    self.__base.ResetState(self)
+    
+    self.isIgnite = nil
+end
+
+return Class(Require("FlyObj/FlySpellBaseScript"),nil,flyFlameBall)

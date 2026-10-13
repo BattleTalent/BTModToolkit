@@ -1,0 +1,1142 @@
+
+
+
+local DefaultScaleSize = 0.05
+
+local spellBase = {
+    prepareActId = -1,
+    setupTriggerActId = -1,
+    --modelTrans(Transform) model 
+    --creation(Transform) mount point of magic ball
+    --intensity(float) 
+    
+    motionMinDot = 0.8,
+    
+    minSpeed = 0.1,
+    
+    isEnchantable = -1,
+    enchantDetectDura = 1,
+    pvpEnchantDetectDura = 0.7,
+    enchantSkillDura = 30,
+    enchantSkillCount = 3,
+    enchantMana = 10,
+}
+
+function spellBase:Awake()
+    self:InitLightPillar()
+    self.host.interact:GetCols(true)
+    self:AllowTrigger(false)
+    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    
+    self:OnAwake()
+end
+
+function spellBase:OnAwake()
+end
+
+function spellBase:CleanupSpellBaseRuntime()
+    self.velTimer = SafeStopSchedule(self.velTimer, self)
+    self.prepareActId = SafeRemoveSchedule(self.prepareActId)
+    self.setupTriggerActId = SafeRemoveSchedule(self.setupTriggerActId)
+    self.lightPillarId = SafeRemoveSchedule(self.lightPillarId)
+    self.detectEnchantId = SafeRemoveSchedule(self.detectEnchantId)
+    self.dtTimer = SafeStopSchedule(self.dtTimer, self)
+end
+
+function spellBase:OnDestroy()
+    self:CleanupSpellBaseRuntime()
+    self:StopDetectingEnchant()
+    self:ClearHandPose()
+end
+
+function spellBase:AllowTrigger(isAllow)
+    for i = 0, self.host.interact.attachList.Length - 1 do
+        self.host.interact.attachList[i].allowTrigger = isAllow
+    end
+end
+
+--[[ Hand Pose ]]
+function spellBase:ClearHandPose()
+    --[[
+    CL.Scheduler.RemoveSchedule(self.expTimeId)
+    self.expTimeId = nil
+    ]]
+end
+
+
+function spellBase:SetHandPose(isOnCharge)
+    
+    
+    local isEquip = self.host.interact:IsSlotEquiped()
+    local needFingerChange = false
+    
+    if isEquip then
+        needFingerChange = isOnCharge
+        local sh = self.host.interact:GetSlotHand()        
+        if sh ~= nil then
+            sh.handPoseControl:SetFingerFreeze(needFingerChange)
+        end     
+        self:ClearHandPose()
+    else
+        self:ClearHandPose()
+        needFingerChange = true
+    end
+    
+    --print("SetHandPose:" .. tostring(isOnCharge) .. " fingerChange:" .. tostring(needFingerChange) .. " isEquip:" .. tostring(isEquip))
+    
+    if needFingerChange then    
+        local hand = self.host.interact:GetAssociatedHand()
+        if hand == nil then
+            return
+        end
+        local tarValue = isOnCharge and 0.2 or 0.5 
+        hand.handPoseControl:SubmitHandPose(tarValue, true)
+        
+        --[[ should not call SetPose directly
+        self.expTimeId = CL.Scheduler.Create(self,
+            function(sche, t, s)
+                for i = 0, 4 do
+                    local weight = UE.Mathf.Lerp(hand.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
+                    hand.handPoseControl.fingers[i]:SetPose(weight)
+                end
+            end
+        , 0, 0.2)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+        ]]
+    end
+end
+
+
+--[[ end of Hand Pose ]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+--[[ VelSample ]]
+
+function spellBase:StartVelSample()
+    self:StopVelSample()
+
+    self.minSpeed = 0.1
+    self.velTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            --local realVol = self.host.interact:GetLocalVelocity()
+            local hand = self:GetSpellHand()
+            if hand == nil then
+                sche:Stop()
+                return
+            end
+            
+            local realVol = hand.velocityEstimator:GetVelocityEstimateLocal()
+            local realSpeed = realVol.magnitude            
+            
+            --print(realSpeed)
+            
+            --record if velocity larger then minSpeed
+            if realSpeed >= self.minSpeed then
+                if (self.isReadyToThrow == false and self.OnReady ~= nil) then
+                    self:OnReady()
+                end
+                self.lastRecordTime = UE.Time.time
+                self.lastMaxVol = realVol
+                self.minSpeed = realSpeed
+                self.isReadyToThrow = true                
+            end        
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)    
+end
+
+function spellBase:GetSpellHand()
+    return self.slotHand
+end
+
+function spellBase:StopVelSample()
+    if IsNullOrOwnerChanged(self.velTimer, self) == false then
+        --print("velTimer:Stop Before")
+        self.velTimer:Stop()
+        self.velTimer = nil
+        --print("velTimer:Stop After")
+    end
+    self.isReadyToThrow = false
+end
+
+function spellBase:IsReadyToThrow()
+    local hand = self:GetSpellHand()
+    if IsNullOrDestroyed(hand) or hand.velocityEstimator == nil then
+        return false
+    end
+
+    return hand.velocityEstimator:GetAvgVelocityLocal(0.2).magnitude > self.minSpeed
+end
+
+    
+    
+    
+function spellBase:SpawnSpellOnHand(flyObjName, createTrans)
+    local pos = createTrans.position
+    local fo = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = self.host:NetworkCreateFlyObj(flyObjName, pos, self.host.interact.trans.forward)
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerOnSpawnSpell(fo)
+            end
+        end
+    else
+        fo = self.host:CreateFlyObj(flyObjName, pos, self.host.interact.trans.forward)
+    end
+    
+    self:InitSpellOnSpawn(fo, createTrans)
+    return fo
+end
+
+function spellBase:NetworkOnSpawnSpell(fo)
+    self:InitSpellOnSpawn(fo, self.createPoint or self.host.trans)
+end
+
+function spellBase:InitSpellOnSpawn(fo, createTrans)
+    fo.trans.parent = createTrans
+    fo.trans.localPosition = UE.Vector3.zero
+    fo.trans.localRotation = UE.Quaternion.identity
+    fo.trans.localScale = UE.Vector3(DefaultScaleSize, DefaultScaleSize, DefaultScaleSize)
+    self.fo = fo
+    fo.col.enabled = false
+    fo.col.isTrigger = true
+    fo.rb.isKinematic = true
+    if self.isOnline then
+        fo.networkFO.networkRB.enabled = false
+    end
+    local hand = self:GetSpellHand()
+    if not IsNullOrDestroyed(hand) then
+        if not IsNullOrDestroyed(hand.physicsHand) then
+            CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand.physicsHand.colliders, true)
+        end
+
+        if not IsNullOrDestroyed(hand.character) and not IsNullOrDestroyed(hand.character.aiProxy)
+            and not IsNullOrDestroyed(hand.character.aiProxy.ra) then
+            local mu = hand.character.aiProxy.ra:GetMuscle(hand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND and CL.RagdollBoneInfo.RHand or CL.RagdollBoneInfo.LHand)
+            if mu ~= nil then
+                CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), mu.cols, true)
+            end
+            
+            mu = hand.character.aiProxy.ra:GetMuscle(hand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND and CL.RagdollBoneInfo.RForeArm or CL.RagdollBoneInfo.LForeArm)
+            if mu ~= nil then
+                CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), mu.cols, true)
+            end
+        end
+    end
+    --CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), hand:GetAnotherHand().physicsHand:GetCols(), true)
+    CL.PhysicsHelper.IgnoreCollisions(self.fo:GetCols(), self.host.interact:GetCols(), true)    
+    
+    return fo
+end
+
+function spellBase:PrepareSpellOnHand()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerPrepareSpellOnHand(self.fo)
+            end
+        else
+            return
+        end
+    end
+    
+    self:DoPrepareSpell(self.fo)
+end
+
+function spellBase:DoPrepareSpell(fo)
+    fo.col.enabled = true
+    CL.Scheduler.RemoveSchedule(self.prepareActId)
+    self.prepareActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or not fo or IsNullOrDestroyed(fo) then
+                sche:Stop()
+                return
+            end
+            local scale = t/0.2
+            fo.trans.localScale = UE.Vector3(scale, scale, scale)
+        end,
+    0, 0.2).actionId
+end
+
+function spellBase:GetSampleDir()
+    local hand = self:GetSpellHand()
+    local dir = hand ~= nil and hand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.1) or UE.Vector3.zero
+    return dir
+end
+    
+function spellBase:TryThrow()
+    local hand = self:GetSpellHand()
+    
+    if not self.fo then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:CommandTryThrow(-1, UE.Vector3.zero, UE.Vector3.zero, hand and hand.character.IsLocalPlayer)
+            end
+        end
+        return false
+    end
+
+    local curDir = hand.velocityEstimator:GetVelocityEstimateLocal()
+    if curDir.sqrMagnitude < 0.3*0.3 then
+        if self.isOnline then
+            local throwPos = self.fo.trans.position
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:CommandTryThrow(self.fo.netId, throwPos, UE.Vector3.zero, hand and hand.character.IsLocalPlayer)
+            end
+        end
+        return false
+    end
+    
+    local dir = hand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.15)
+    local dirSqrt = dir.sqrMagnitude
+    if not self.isOnline and dirSqrt < 0.2*0.2 then
+        return false
+    end
+    
+    --self.fireball:AddForce(dir.normalized * self.intensity, UE.ForceMode.VelocityChange)
+
+    if self.isOnline then
+        local throwPos = self.fo.trans.position
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:CommandTryThrow(self.fo.netId, throwPos, curDir, hand and hand.character.IsLocalPlayer)
+        end
+        --self:OwnerPrepareThrow(self.fo)
+        return true
+    else
+        self:DoThrow(dir)
+    end
+    return true
+end
+
+function spellBase:DoThrow(dir)
+    self:PrepareThrow(self.fo)
+    self.fo:FlyStart((dir.sqrMagnitude > 1 and dir.normalized or dir) * self.intensity)
+    
+    --CL.AgentWebSocket.CommitPlayerBehaviourEvent(CL.PlayerBehaviour.SpellAttack);
+end
+
+function spellBase:NetworkOnThrow(netId, pos, dir, clientLocalThrow)
+    if not self.fo then
+        --if CL.Network.VRNetworkManager.Instance.IsServer then
+        --    self.host.interact.networkIB.networkIBState:ServerThrowFail(self.fo)
+        --else
+        if clientLocalThrow then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:CmdThrowFail(netId)
+            end
+        end
+        self:NetworkThrowFail(self.fo)
+        return
+    end
+    
+    if dir.sqrMagnitude < 0.2*0.2 then
+        --if CL.Network.VRNetworkManager.Instance.IsServer then
+        --    self.host.interact.networkIB.networkIBState:ServerThrowFail(self.fo)
+        --else
+        if clientLocalThrow then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:CmdThrowFail(netId)
+            end
+        end
+        self:NetworkThrowFail(self.fo)
+        return
+    end
+    
+    local hand = self:GetSpellHand()
+    if hand == nil then
+        --if CL.Network.VRNetworkManager.Instance.IsServer then
+        --    self.host.interact.networkIB.networkIBState:ServerThrowFail(self.fo)
+        --else
+        if clientLocalThrow then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:CmdThrowFail(netId)
+            end
+        end
+        self:NetworkThrowFail(self.fo)
+        return
+    end
+    
+    
+    self.fo.trans.position = pos
+    --CL.DebugDraw.DrawLine(self.fo.trans.position, pos + dir, UE.Color.red, 5)
+    
+    if self.isOnline then
+        --if CL.Network.VRNetworkManager.Instance.IsServer then
+        --    self.host.interact.networkIB.networkIBState:ServerThrowSuc(self.fo)
+        --else
+        if clientLocalThrow then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:CmdThrowSuc(netId)
+            end
+        end
+        self:NetworkThrowSuc(self.fo)
+    end
+    
+    self.fo.trans.position = pos
+    self:DoThrow(dir)
+    
+    self.fo = nil
+end
+
+function spellBase:NetworkThrowFail(fo)
+    if fo and not IsNullOrDestroyed(fo) and fo.networkFO then
+        fo.networkFO.networkRB.enabled = true
+    end
+    self:ReleaseSpell(nil, true)
+    self.fo = nil
+end
+
+function spellBase:NetworkThrowSuc(fo, rpc)
+    if fo and not IsNullOrDestroyed(fo) and fo.networkFO then
+        fo.networkFO.networkRB.enabled = true
+    end
+
+    self:PrepareThrow(fo)
+    if rpc then
+        self.fo = nil
+    end
+end
+
+function spellBase:OwnerPrepareThrow(fo)
+    fo.trans.parent = nil
+    fo.rb.isKinematic = true
+    fo.col.isTrigger = false
+end
+
+function spellBase:PrepareThrow(fo)
+    fo.rb.isKinematic = false 
+    fo.trans.parent = nil
+    fo.col.isTrigger = false
+    
+    CL.Scheduler.RemoveSchedule(self.setupTriggerActId)
+    self.setupTriggerActId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            --self.fo.col.isTrigger = false
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or IsNullOrDestroyed(fo) or IsNullOrDestroyed(self.slotHand)
+                or IsNullOrDestroyed(self.slotHand.physicsHand)
+                or IsNullOrDestroyed(self.slotHand.character)
+                or IsNullOrDestroyed(self.slotHand.character.aiProxy)
+                or IsNullOrDestroyed(self.slotHand.character.aiProxy.ra) then
+                sche:Stop()
+                return
+            end
+
+            if self.slotHand and not IsNullOrDestroyed(fo) then
+                CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.slotHand.physicsHand.colliders, false)
+                local mu = self.slotHand.character.aiProxy.ra:GetMuscle(self.slotHand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND and CL.RagdollBoneInfo.RHand or CL.RagdollBoneInfo.LHand)
+                if mu ~= nil then
+                    CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), mu.cols, false)
+                end
+                
+                mu = self.slotHand.character.aiProxy.ra:GetMuscle(self.slotHand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND and CL.RagdollBoneInfo.RForeArm or CL.RagdollBoneInfo.LForeArm)
+                if mu ~= nil then
+                    CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), mu.cols, false)
+                end
+            end
+        end,
+    0, 0, 0.05).actionId
+
+    if not self.spellThrowSound or IsNullOrDestroyed(self.spellThrowSound) then
+        return
+    end
+    
+    self.spellThrowSound:PlaySoundInfo()
+end
+
+function spellBase:ReleaseSpell(attach)
+    --print("ReleaseSpell")
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerReleaseSpell(self.fo)
+            end
+        else
+            return
+        end
+    end
+    
+    self:CleanupSpellBaseRuntime()
+    self:ClearHandPose()
+    
+    self:OnRelease(attach)
+    
+    local fo = self.fo
+    self.fo = nil
+    
+    if fo then
+        fo:OnFinish()    
+    end
+end
+
+function spellBase:ReleaseSpellWithAnim(fo)
+    self:CleanupSpellBaseRuntime()
+    self:ClearHandPose()
+    
+    self:OnRelease()
+    self.fo = nil
+    
+    if not fo or IsNullOrDestroyed(fo) then
+        return
+    end
+    local time = 0.2
+    local scale = fo.trans.localScale.x
+    CL.Scheduler.Create(self.host.interact, 
+        function(sche, t, s)
+            if not fo or IsNullOrDestroyed(fo) then
+                sche:Stop()
+                return
+            end
+            fo.trans.localScale = UE.Vector3.one * scale * (1 - t / time)
+
+            if t >= time and not IsNullOrDestroyed(fo) then
+                fo:OnFinish()
+            end
+        end,
+    0, time)
+end
+
+function spellBase:NetworkReleaseSpell(fo)
+    self:CleanupSpellBaseRuntime()
+    self:ClearHandPose()
+    
+    if fo then
+        fo.script:GetSelf():SetOwner(nil)
+        fo:OnFinish()    
+    end    
+end
+
+function spellBase:ControlFlyObj(fo, dir, speed, value)
+    fo.rb.velocity = UE.Vector3.Lerp(fo.rb.velocity, dir * speed, value)
+end
+
+function spellBase:OnRelease(attach)
+end
+
+function spellBase:CloseSkill()
+    self:CleanupSpellBaseRuntime()
+    self:ClearHandPose()
+end
+
+
+function spellBase:SlotSpell(slot)
+end
+
+function spellBase:UnSlotSpell(slot)
+end
+
+function spellBase:OnSlot(slot, t)
+    if t then
+        if self:IsGemSlot(slot) then
+            self:AllowTrigger(true)
+            
+            self.slotHand = slot.body.hands[slot.attachedHandIndex]
+        
+            self:SlotSpell(slot)
+        end
+        
+        self:StopLightPillarTimer()
+    else
+        if self:IsGemSlot(slot) then
+            self:AllowTrigger(false)
+            
+            self.slotHand = nil
+            
+            self:UnSlotSpell(slot)
+            self:CleanupSpellBaseRuntime()
+        end
+        
+        self:InitLightPillar()
+    end
+end
+
+function spellBase:GetSlotHand()
+    return self.slotHand
+end
+
+function spellBase:IsGemSlot(slot)
+    for i = 0, slot.slotTypes.Length - 1 do
+        if slot.slotTypes[i] == "Gem" then
+            return true
+        end
+    end
+    return false
+end
+
+
+function spellBase:GrabSpell(attach)
+end
+
+function spellBase:UnGrabSpell(attach)
+end
+
+--[[
+-- this is ready for magic combination
+-- by default, we'll just disable the slot one
+function spellBase:OnEquipmentOverlap(o)
+    if o then
+        local pos = self.modelTrans.localPosition
+        pos.z = pos.z - 0.002
+        pos.y = pos.y + 0.004
+        pos.x = pos.x + 0.004
+        self.modelTrans.localPosition = pos
+        
+        local hand = self.host.interact:GetAssociatedHand()
+        if hand ~= nil and hand.attachTo ~= nil then
+            local otherSpell = hand.attachTo.interact
+            if otherSpell ~= nil then
+                local otherSpellHost = otherSpell:GetInteractTrigger()
+                local otherSpellScript = otherSpellHost.script.self
+                local pos = otherSpellScript.modelTrans.localPosition
+                pos.z = pos.z + 0.002
+                pos.y = pos.y - 0.004
+                pos.x = pos.x - 0.004
+                otherSpellScript.modelTrans.localPosition = pos
+            end
+        end        
+    else
+        ResetTransform(self.modelTrans)
+    end    
+end
+]]
+
+
+
+function spellBase:OnGrab(attach, t)
+    if t then
+        --[[ -- will attach a col to controller, causing shaking movement
+        self.modelTrans.parent = attach.attachedHand.gemTrans
+        ResetTransform(self.modelTrans)
+        ]]
+        --self.modelTrans.position = attach.attachedHand.gemTrans.position
+        --self.modelTrans.rotation = attach.attachedHand.gemTrans.rotation
+        ----[[
+        
+        
+        if attach.attachedHand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND then
+            self.modelTrans.localPosition = UE.Vector3(0.0018, 0.0047, -0.0034)
+            self.modelTrans.localRotation = UE.Quaternion.Euler(81.383, 82.763, 35.038)
+        else
+            --self.modelTrans.localPosition = UE.Vector3(-0.01835, -0.1146, -0.0181)
+            self.modelTrans.localPosition = UE.Vector3(-0.006, -0.0027, 0.0063)--UE.Vector3(-0.01835, -0.1146, -0.0181)
+            self.modelTrans.localRotation = UE.Quaternion.Euler(-81.439, 13.757, 33.331)
+        end
+        --]]
+        self:GrabSpell(attach)
+        self:StopLightPillarTimer()
+        self:SetLightPillar(false)
+    else
+        self:UnGrabSpell(attach)
+        local gemTrans = attach.attachedHand.gemTrans
+        --self.host.interact.trans.position = self.modelTrans.position
+        --self.modelTrans.localPosition = UE.Vector3.zero
+        --self.host.interact.trans.position = self.modelTrans.position
+        ResetTransform(self.modelTrans)
+        --[[
+        self.modelTrans.parent = self.host.interact.trans
+        ResetTransform(self.modelTrans)
+        ]]
+        if gemTrans then        
+            self.host.interact:AddForce(gemTrans.forward * 1.5, UE.ForceMode.VelocityChange)
+        end
+        
+        --self:ReleaseSpell(attach)
+        
+        self.lastLightTime = UE.Time.time
+        self:SetLightPillar(false)
+        
+        self:InitLightPillar()
+    end
+end
+
+
+
+function spellBase:InitLightPillar()
+    self.hzLightUpdate = CL.FramerateController(CL.PhysicsHelper.FPS10Sec)
+    self.lastLightTime = 0
+    local rotation = UE.Quaternion.identity
+    CL.Scheduler.RemoveSchedule(self.lightPillarId)
+    
+    local isCheckShadow = false
+    self.lightPillarId = CL.Scheduler.Create(self.host.interact, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or IsNullOrDestroyed(self.host.interact.rb) then
+                sche:Stop()
+                return
+            end
+            if not isCheckShadow then
+                isCheckShadow = true
+                if self.host.interact.unitType == CL.Tagger.Tag.InteractWeapon then
+                    if self.host.interact:IsShadow() then
+                        self:SetLightPillar(false)
+                        sche:Stop()
+                        return
+                    end
+                end
+            end
+            
+            if self.host.interact:IsGrabbed() then
+                self:SetLightPillar(false)
+                sche:Stop()
+                return
+            end
+            
+            if self.lightPillar ~= nil then
+                self.lightPillar.trans.rotation = rotation
+                if self.host.interact.rb.velocity.sqrMagnitude > 1 then
+                    self:SetLightPillar(false)
+                    self.lastLightTime = UE.Time.time
+                    return
+                end
+            end
+            
+            self.hzLightUpdate:TickToZero(UE.Time.deltaTime)    
+            if self.hzLightUpdate.limitUpdateFrequency == false then
+                return
+            end
+            
+            if self.host.interact:CheckGrounded(1) then
+                if UE.Time.time - self.lastLightTime > 3 then
+                    self:SetLightPillar(true)
+                end
+            else
+                self:SetLightPillar(false)
+            end
+        end,
+    UE.Time.unscaledDeltaTime, -1, 0.1).actionId
+end
+
+function spellBase:StopLightPillarTimer()
+    self.lightPillarId = CL.Scheduler.RemoveSchedule(self.lightPillarId)
+end
+
+function spellBase:SetLightPillar(isPlay)
+    if isPlay then
+        if IsNullOrDestroyed(self.lightPillar) then
+            self.lightPillar = CL.EffectMgr.Instance:PlayEffect("LightPillar", self.host.interact.trans.position, UE.Quaternion.identity)
+            self.lightPillar.trans.parent = self.host.interact.trans
+            
+            local particles = self.lightPillar.particles
+            for i = 0, particles.Length -1 do
+                local mm = particles[i].main
+                mm.startColor = UE.ParticleSystem.MinMaxGradient(self.host.chargeColor or UE.Color.yellow)
+            end
+        end
+    else
+        if not IsNullOrDestroyed(self.lightPillar) then
+            CL.EffectMgr.Instance:GiveBack(self.lightPillar)
+            self.lightPillar = nil
+        end
+    end
+end
+
+
+--[[ Effect ]]
+function spellBase:SetEffect(name, position, rotation, isPlay, trans)
+    if isPlay then
+        self.effectList[name] = CL.EffectMgr.Instance:PlayEffect(name, position, rotation)
+        if trans and self.effectList[name] then
+            self.effectList[name].trans.parent = trans
+        end
+    else
+        if self.effectList[name] then
+            CL.EffectMgr.Instance:GiveBack(self.effectList[name])
+            self.effectList[name] = nil
+        end
+    end
+end
+--[[ end of Effect ]]
+
+--[[enchantment]]
+
+function spellBase:StartDetectingEnchant(createTrans)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local hand = self:GetSlotHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    if not self.isOnline or 
+    (self.isOnline and not CL.Network.VRNetworkManager.ServerOnly and CS.Mirror.NetworkClient.localPlayer.netId == hand.character.networkPlayer.netId) then
+        local needMana = self.enchantMana
+        if not hand.character:HasEnoughMana(needMana) then
+            NoManaTips()
+            return
+        end
+    end
+
+    local detectInfo = nil
+    local enchantDetectDura = CL.Network.NetworkRoomMgr.IsInPvpMode and self.pvpEnchantDetectDura or self.enchantDetectDura
+    local thisCols = self.host.interact:GetCols()
+    self.detectEnchantId = CL.Scheduler.RemoveSchedule(self.detectEnchantId)
+    self.detectEnchantId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or IsNullOrDestroyed(hand) or not self.fo or IsNullOrDestroyed(self.fo) then
+				if detectInfo then				
+					self:StopEnchanting(detectInfo.pu)
+				end
+				sche:Stop()
+                return
+            end
+            
+            if detectInfo and IsNullOrDestroyed(detectInfo.pu) then
+                detectInfo = nil
+            end
+            
+            if detectInfo then
+                if UE.Time.time >= detectInfo.triggerTime then
+                    local pos = detectInfo.col:ClosestPoint(self.fo.trans.position)
+                    
+                    if CostMana(self.host, self.enchantMana, hand.character) then
+                        self:EnchantWeapon(detectInfo.pu, pos)
+                    else
+                        self:StopEnchanting(detectInfo.pu)
+                    end
+                    sche:Stop()
+                    return
+                else
+                    detectInfo.isCollision = false                
+                end
+            end
+            
+            local num = UE.Physics.OverlapSphereNonAlloc(createTrans.position, 0.2, 
+            CL.PhysicsHelper.shareOverlapColArray, UE.LayerMask.GetMask(UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)))
+            local curCol = nil
+            if num <= 0 then
+                detectInfo = nil
+                return
+            end
+            
+            local pass = true
+            for i = 0, num - 1 do
+                pass = true
+                for j = 0, thisCols.Length - 1 do
+                    if CL.PhysicsHelper.shareOverlapColArray[i] == thisCols[j] then
+                        pass = false
+                        break
+                    end
+                end
+                
+                if pass then
+                    curCol = CL.PhysicsHelper.shareOverlapColArray[i]
+                    local pu = CL.PhysicsUnit.GetPhysicsUnit(curCol)
+                    if IsNullOrDestroyed(pu) or
+                        (pu.unitType ~= CL.Tagger.Tag.InteractWeapon 
+                            and pu.unitType ~= CL.Tagger.Tag.InteractObj) then
+                        pass = false
+                    end
+                    
+                    if pass and self.isOnline and IsNullOrDestroyed(pu.networkIB) then
+                        pass = false
+                    end
+                    
+                    if pass then
+                        pass = pu:IsEnchantble() and not pu:IsOnEnchanting()
+                    end
+                    
+                    if pass then
+                        if not detectInfo then
+                            detectInfo = {}
+                            detectInfo.pu = pu
+                            detectInfo.triggerTime = UE.Time.time + enchantDetectDura
+                            detectInfo.startTime = UE.Time.time
+                            detectInfo.isCollision = true
+                            detectInfo.col = curCol
+                            self:StartEnchanting(pu)
+                            break
+                        else
+                            if detectInfo.pu == pu then
+                                self:OnEnchanting(pu, (UE.Time.time - detectInfo.startTime)/enchantDetectDura)
+                                local hand = pu:GetPrimaryHand()
+                                if hand and not IsNullOrDestroyed(hand) then
+                                    hand:HapticPulse(hand.character.skillOpenHapticCurve, 0.2)
+                                end
+                                detectInfo.col = curCol
+                                detectInfo.isCollision = true
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+            
+            if detectInfo and not detectInfo.isCollision then
+                self:StopEnchanting(detectInfo.pu)
+                detectInfo = nil
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+function spellBase:StartEnchanting(pu)
+    self.enchantingPu = pu
+    self:StartEnchantingEffect(pu)
+end
+
+function spellBase:OnEnchanting(pu, progress)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetIBNetworkState(pu)
+        if state ~= nil then
+            state:ServerOnEnchanting(progress)
+        end
+    end
+    pu:OnEnchanting(progress)
+end
+
+function spellBase:StopEnchanting(pu)
+    self:StopEnchantingEffect(pu)
+    self.enchantingPu = nil
+end
+
+function spellBase:StartEnchantingEffect(pu)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetIBNetworkState(pu)
+        if state ~= nil then
+            state:ServerStartEnchanting(self.enchantingEffect)
+        end
+    end
+    pu:StartEnchanting(self.enchantingEffect)
+end
+
+function spellBase:StopEnchantingEffect(pu)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetIBNetworkState(pu)
+        if state ~= nil then
+            state:ServerStopEnchanting()
+        end
+    end
+    pu:StopEnchanting()
+end
+
+function spellBase:EnchantWeapon(pu, point, fc)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    if self.IsOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerEnchantEnd()
+        end
+    end
+    pu:EnchantEnd()
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local puState = not IsNullOrDestroyed(pu) and pu.networkIB ~= nil and not IsNullOrDestroyed(pu.networkIB) and pu.networkIB.networkIBState or nil
+        if puState ~= nil then
+            puState:ServerEnchant(self.host.interact, self.enchantSkillDura, self.enchantSkillCount, self.enchantEffectLoop, self.enchantEffectEnd)
+        end
+        local selfState = GetNetworkIBState(self)
+        if selfState ~= nil then
+            selfState:ServerOnEnchantWeapon(IsNullOrDestroyed(self.fo) and pu.trans.position or self.fo.trans.position, pu, point)
+        end
+    end
+    pu:Enchant(self.host, self.enchantSkillDura, self.enchantSkillCount, self.enchantEffectLoop, self.enchantEffectEnd, fc)
+    self:OnEnchantWeapon(IsNullOrDestroyed(self.fo) and pu.trans.position or self.fo.trans.position, pu, point)
+    
+    self.enchantingPu = nil
+end
+
+function spellBase:OnEnchantWeapon(startPos, pu, target)
+    --local hand = pu:GetPrimaryHand()
+    --if hand and not IsNullOrDestroyed(hand) then
+    --    hand:HapticPulse()
+    --end
+    --
+    --if target then
+    --    for i = 0, 3 do
+    --        local fly = CL.EffectMgr.Instance:PlayEffect(self.enchantEffectFly, startPos, UE.Quaternion.identity)
+    --        local lb = fly.trans:GetComponent(typeof(CL.LuaBehaviour))
+    --        if lb then
+    --            local tb = lb.script:GetSelf()
+    --            tb:FlyTo(pu.trans, pu.trans:InverseTransformPoint(target))
+    --        end
+    --    end
+    --end
+    if self.enchantSound and not IsNullOrDestroyed(self.enchantSound) then
+        self.enchantSound:PlaySound()
+    end
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerReleaseSpellWithAnim(self.fo)
+        end
+    end
+    
+    self:ReleaseSpellWithAnim(self.fo)
+    self:SetHandPose(false)
+    self:StopDetectingEnchant()
+end
+
+
+function spellBase:StopDetectingEnchant()
+    if self.enchantingPu and not IsNullOrDestroyed(self.enchantingPu) then
+        self:StopEnchanting(self.enchantingPu)
+    end
+    
+    self.detectEnchantId = SafeRemoveSchedule(self.detectEnchantId)
+end
+
+
+function spellBase.OnEnchantSkillByStab(ib, si)
+end
+
+function spellBase.OnEnchantSkillWithRole(ib, collision, fc)
+end
+
+function spellBase.OnEnchantSkillWithPlayer(ib, rb, thisCol, otherCol, point, normal, relaVel, character)
+end
+
+--[[Enchant Fly Object]]
+
+function spellBase.EnchantFlyObj(fo)
+    
+end
+
+function spellBase.OnEnchantFlyObj(fo)
+end
+
+function spellBase.EnchantFlyObjOnFinish(fo)
+
+end
+
+function spellBase.EnchantFlyObjOnCollision(fo, collision, pu)
+
+end
+
+function spellBase.EnchantFlyObjOnCollisionUpdate(fo, collision)
+
+end
+
+function spellBase.EnchantFlyObjOnCollisionWithHitScan(fo, rb, col, point, normal, relaVel)
+
+end
+
+function spellBase.EnchantFlyObjOnCollisionWithPlayer(fo, collision, player)
+
+end
+
+function spellBase.EnchantFlyObjOnCollisionWithPlayerHand(fo, collision, hand)
+
+end
+
+function spellBase.EnchantFlyObjOnCollisionWithRole(fo, fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function spellBase.EnchantFlyObjOnCollisionWithScene(fo, collision)
+
+end
+
+function spellBase.EnchantFlyObjOnTrigger(fo, pu, col)
+
+end
+
+function spellBase.EnchantFlyObjOnTriggerWithStaticScene(fo, col)
+
+end
+
+function spellBase.EnchantFlyObjOnTriggerWithPlayerHand(fo, collider, hand)
+
+end
+
+function spellBase.EnchantFlyObjOnTriggerWithPlayer(fo, pu, collider)
+
+end
+
+function spellBase.EnchantFlyObjOnTriggerWithRole(fo, fc, collider)
+
+end
+---------------------------------------------------------
+
+
+
+
+function spellBase.OnEnchantExpired(ib)
+
+end
+--[[end of enchantment]]
+
+---------------------------------------------------------------------------------------------------------
+function spellBase:MotionDetectByDir(dir, speed, checkfunc, progressCb, reachCb, isLocal)
+    self:StopMotionDetect()
+    
+    dir = dir.normalized
+    local slotHand = self:GetSlotHand()
+    local volocity = nil
+    local velDir = nil
+    local realSpeed = 0
+    
+    local curPos = 0
+    local dot = 0
+    local curDir = nil
+    self.dtTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not slotHand or IsNullOrDestroyed(slotHand) then sche:Stop(); return end
+            volocity = slotHand.velocityEstimator:GetVelocityEstimateLocal()
+            realSpeed = volocity.magnitude
+            if progressCb then
+                progressCb((realSpeed / speed) % 1)
+            end
+            velDir = volocity.normalized
+            if realSpeed >= speed and checkfunc() then
+                if isLocal then
+                    dot = UE.Vector3.Dot(self.host.interact.trans:TransformDirection(dir), velDir)
+                else
+                    dot = UE.Vector3.Dot(dir, velDir)
+                end
+                
+                if dot >= self.motionMinDot then
+                    if reachCb then
+                        reachCb()
+                    end
+                    self:StopMotionDetect()
+                end
+            end        
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)    
+end
+
+function spellBase:StopMotionDetect()
+    if IsNullOrOwnerChanged(self.dtTimer, self) == false then
+        self.dtTimer:Stop()
+        self.dtTimer = nil
+    end
+end
+
+
+
+return Class(nil,nil,spellBase)

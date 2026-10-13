@@ -1,0 +1,506 @@
+
+local SpellBase = Require("Weapon/SpellBaseScript")
+
+local SpellForceGrab = {
+    maxRange = 16,
+    
+    recordTime = 0.2,
+    recordEndTime = 0,
+    
+    throwLimit = 1,
+    
+    rayLayer = UE.LayerMask.GetMask(
+        UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value)
+    ),
+}
+
+function SpellForceGrab:Awake()
+    local hand = nil
+    local hitPu = nil
+    local attachHand = nil 
+    local lastHolder = nil
+    local sqrVel = 25
+    self.onHitFunc = function (fc)
+        if fc ~= self.target then
+            return
+        end
+        
+        hand = self:GetSlotHand()
+        if not hand then
+            return
+        end
+        
+        hitPu = CL.FullBodyMuscleState.dmgHitData.basicData.hitPu
+        
+        if IsNullOrDestroyed(hitPu) then
+            return
+        end
+        
+        --body part
+        if hitPu.trans.root == hand.character:GetPlayerUnit().trans then
+            self:TargetStopMove(self.target)
+            self:ClearTarget()
+            self:StopGrab()
+            return
+        end
+        
+        --InteractBase on attach
+        if hitPu.unitType == CL.Tagger.Tag.InteractWeapon or 
+        hitPu.unitType == CL.Tagger.Tag.InteractObj then
+            attachHand = hitPu:GetPrimaryHand() or hitPu:GetSecondaryHand()
+            if not IsNullOrDestroyed(attachHand) then
+                if attachHand.character == hand.character then
+                    self:TargetStopMove(self.target)
+                    self:ClearTarget()
+                    --print("ib on attach hit pu ::" .. hitPu.name)
+                    self:StopGrab()
+                    return
+                end
+            else
+                --InteractBase on Throw  vel > value and lastAttach is Player
+                lastHolder = hitPu:GetLatestHolder()
+                if not IsNullOrDestroyed(lastHolder) and lastHolder == hand.character.aiProxy then
+                    if hitPu.rb.velocity.sqrMagnitude > sqrVel then
+                        self:TargetStopMove(self.target)
+                        --print("ib on throw hit pu ::" .. hitPu.name)
+                        self:ClearTarget()
+                        self:StopGrab()
+                    end
+                end
+            end
+        end
+    end
+    
+    
+    --Disable When Grab Other
+    self.disanableFunc = function(ao)
+        hand = self:GetSlotHand()
+        if not IsNullOrDestroyed(hand) and ao.attachedHand == hand then
+            self:StopAim()
+        end
+    end
+    
+    self.__base.Awake(self)
+end
+
+function SpellForceGrab:SlotSpell(slot)
+    self.isSlot = true
+    
+    local hand = self:GetSlotHand()
+    if hand and not hand:IsTriggering() then
+        self:StartAim()
+    end
+end
+
+function SpellForceGrab:CleanupForceGrabRuntime()
+    self.aimTimer = SafeStopSchedule(self.aimTimer, self.host)
+    self.grabTimer = SafeStopSchedule(self.grabTimer, self.createTrans)
+    self:HideHint()
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.forceSoundInfo)
+    self.forceSoundInfo = nil
+end
+
+function SpellForceGrab:OnDestroy()
+    self:StopGrab()
+    self:CleanupForceGrabRuntime()
+    SpellBase.OnDestroy(self)
+end
+
+function SpellForceGrab:UnSlotSpell(slot)
+    self.isSlot = false
+    self:StopGrab()
+    self:ClearTarget()
+    self:StopAim()
+    SpellBase.UnSlotSpell(self, slot)
+end
+
+function SpellForceGrab:StartAim()
+    local hand = self:GetSlotHand()
+    local headset = hand.character:GetHeadset()
+    
+    local cacheList = {}
+    local results = {}
+    local list1 = {}
+    local list2 = {}
+    self:StopAim()
+    local curTarget = nil
+    
+    self.aimTimer = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or not hand or IsNullOrDestroyed(hand)
+                or IsNullOrDestroyed(headset) then
+                self.aimTimer = nil
+                sche:Stop()
+                return
+            end
+            if hand:IsGrabbing() or not self.isSlot then
+                self:ClearTarget()
+                self:HideHint()
+                return
+            end
+            
+            curTarget = self:FindTarget(hand, headset, results, list1, list2)
+            if curTarget and not IsNullOrDestroyed(curTarget) then
+                self.target = curTarget
+                self:ShowHint(self.target)
+                self.recordEndTime = UE.Time.time + self.recordTime
+            elseif UE.Time.time <= self.recordEndTime and self.target and not IsNullOrDestroyed(self.target) then
+                self:ShowHint(self.target)
+            else
+                self:ClearTarget()
+                self:HideHint()
+            end
+        end
+    , 0.02, -1)
+end
+
+function SpellForceGrab:StopAim()
+    self.aimTimer = SafeStopSchedule(self.aimTimer, self.host)
+    
+    self:HideHint()
+end
+
+function SpellForceGrab:OpenSkill()
+    self:StopAim()
+    self:TryGrab()
+end
+
+function SpellForceGrab:CloseSkill()
+    self:StopGrab()
+    self:StartAim()
+    SpellBase.CloseSkill(self)
+end
+
+function SpellForceGrab:FindTarget(hand, headset, results, list1, list2)
+    list1 = {}
+    list2 = {}
+    
+    local eyeDir = headset.forward
+    local headPos = headset.position
+    
+    local handPos = hand.trans.position
+    local headHandOffset = handPos - headPos
+    local headHandDis = headHandOffset.magnitude
+    local headHandDir = headHandOffset/headHandDis
+    local headHandDot = UE.Vector3.Dot(headHandDir, eyeDir)
+    
+    if headHandDot < 0.75 then
+        return nil
+    end
+    
+    headHandDot = UE.Mathf.Pow(headHandDot, 25)
+    
+    local fingerDir = hand.handDir.forward
+    local grabDir = UE.Vector3.Lerp(fingerDir, headHandDir, headHandDot)
+    local grabPos = handPos
+    
+    local origin = grabPos + grabDir * 0.2
+    results = UE.Physics.SphereCastAll(origin, 1.5,
+        grabDir, self.maxRange, CL.LayerDefine.BodyMask.value)
+    
+    if results.Length <= 0 then
+        return nil
+    end
+    
+    local count = 0
+    local fc = nil
+    local mu = nil
+    local dot = nil
+    while(count < results.Length - 1) do
+        fc = CL.CharacterMgr.Instance:GetFullCharacter(results[count].transform)
+        
+        if not list2[fc] then
+            if not IsNullOrDestroyed(fc) then            
+                mu = fc.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+                if mu then
+                    dot = UE.Vector3.Dot((mu.rbTrans.position - grabPos).normalized, grabDir)
+                    
+                    if not mu.IsBlownUp then
+                        table.insert(list1, {["idx"] = count, ["fc"] = fc, ["dot"] = dot})
+                        list2[fc] = true
+                    end
+                --else
+                --    dot = UE.Vector3.Dot((results[count].point - grabPos).normalized, grabDir)
+                end
+                --print("list add item:" .. fc.trans.name .. " dot::" .. dot)
+
+            end
+        end
+        count = count + 1
+    end
+    
+    table.sort(list1, 
+    function(a, b)
+        return a.dot > b.dot
+    end)
+    
+    count = 1
+    local isHit = true
+    local curCastHit = nil
+    while (count <= #list1) do
+        curCastHit = results[list1[count].idx]
+        isHit = UE.Physics.SphereCast(origin, 0.01,
+        curCastHit.point - origin, curCastHit.distance, self.rayLayer)
+        if not isHit then
+            --print(" find pu")
+            return list1[count].fc
+        end
+        count = count + 1
+    end
+    
+    return nil
+end
+
+function SpellForceGrab:ShowHint(pu)
+    local trans = nil
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        cast(pu, typeof(CL.FullCharacterControl))
+        local mu = pu.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+        if mu then
+            trans = mu.rbTrans
+        end
+    end
+    
+    if not trans then
+        return
+    end
+    
+    --if not self.hintPoint or IsNullOrDestroyed(self.hintPoint) then
+    --    self.hintPoint = CL.QuadUIMgr.Instance:CreateUI("AttachPointQuad")
+    --    self.hintHud = self.hintPoint:GetComponent(typeof(CL.HUDBillboard))
+    --else
+    --    self.hintPoint.gameObject:SetActive(true)
+    --end
+    --self.hintHud.followTarget = trans
+    
+    
+    if not self.hintEffect or IsNullOrDestroyed(self.hintEffect) then
+        self.hintEffect = CL.EffectMgr.Instance:PlayEffect(self.effectName, trans.position, UE.Quaternion.identity)
+        
+        local hand = self:GetSlotHand()
+        if hand then
+            local lb = self.hintEffect.trans:GetComponent(typeof(CL.LuaBehaviour))
+            if not IsNullOrDestroyed(lb) then
+                local scp = lb.script:GetSelf()
+                scp:SetTargetTrans(hand.character:GetHeadset())
+            end
+        end
+    end
+    self.hintEffect.trans:SetParent(trans)
+    self.hintEffect.trans.localPosition = UE.Vector3.zero
+    
+    local camPos = CL.HUDMgr.Instance:GetHudTracker()
+    local dir = camPos.position - self.hintEffect.trans.position
+    self.hintEffect.trans.forward = dir
+end
+
+function SpellForceGrab:HideHint()
+    --if self.hintPoint and not IsNullOrDestroyed(self.hintPoint) then
+    --    self.hintPoint.gameObject:SetActive(false)
+    --end
+    
+    
+    CL.EffectMgr.Instance:GiveBack(self.hintEffect)
+    self.hintEffect = nil
+end
+
+function SpellForceGrab:PlayGrabEffect(pos)
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    local dir = hand.character:GetHeadset().position - pos
+    CL.EffectMgr.Instance:PlayEffect(self.grabEffectName, pos, UE.Quaternion.LookRotation(dir))
+end
+
+function SpellForceGrab:TryGrab()
+    if not self.target or IsNullOrDestroyed(self.target) then
+        return
+    end
+    self.target.motion:Knockout()
+    
+    RemoveSchedule(self.createTrans, self.grabTimer)
+    self.grabTimer = nil
+    
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    
+    if hand.character:IsMidAir() then
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_AirStay") then
+            hand.character:StartAerialStay(hand, self.target)
+        end
+    end
+    
+    -- cost mana when do grabbing
+    local needMana = 20 * self.host.AppliedManaCostMultiplier
+    if not CostMana(self.host, needMana, hand.character) then
+        return
+    end
+        
+    local localBeginPos = hand.character.trans:InverseTransformPoint(hand.trans.position)
+    local handOffset = nil
+    local handOffsetDir = nil
+    local handOffsetLen = nil
+    local intensity = 0
+    
+    local aimLen = hand.character:GetBodyHeight() * 0.55
+    local targetPos = nil
+    local midHeight = self.target.controller.capsuleCollider.height * 7/9
+    
+    local mu = self.target.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+    if IsNullOrDestroyed(self.rotTrans) then
+        self.rotTrans = UE.GameObject().transform
+    end
+    self.rotTrans.rotation = mu.rbTrans.rotation
+    self.rotTrans:SetParent(hand.character.trans)
+    
+    self.forceSoundInfo = self.forceSound:PlaySoundInfo()
+    if self.forceSoundInfo then
+        self.forceSoundInfo.audio.pitch = 0
+    end
+    
+    self.target:OnAttachBuild(hand.physicsHand, nil, mu.rb)
+    self.buildAttachHand = hand
+    
+    --effect
+    self:PlayGrabEffect(mu.rbTrans.position)
+    self.grabTime = UE.Time.time
+    
+    self.grabTimer = CL.Scheduler.Create(self.createTrans,
+        function(sche, t, s)
+            hand = self:GetSlotHand()
+            if IsNullOrDestroyed(self.host) or not hand or IsNullOrDestroyed(hand) then
+                self:ClearTarget()
+                self:StopGrab()
+                sche:Stop()
+                return
+            end
+            
+            if IsNullOrDestroyed(self.target) then
+                self:ClearTarget()
+                self:StopGrab()
+                sche:Stop()
+                return
+            end
+            
+            if not IsNullOrDestroyed(self.target.bone) then
+                handOffset = hand.trans.position - hand.character.trans:TransformPoint(localBeginPos)
+                handOffsetDir = handOffset.normalized
+                handOffsetLen = handOffset.magnitude
+                intensity = handOffsetLen > 1 and 1 or CL.EasingEquations.EaseOutQuad(0, 1, handOffsetLen)
+                
+                targetPos = hand.character.trans.position + hand.character.trans.forward * aimLen * 1.2 + 
+                    self.target.trans.up * midHeight + handOffsetDir * intensity * 0.3
+                
+                targetPos = UE.Vector3.Lerp(mu.rbTrans.position, targetPos, UE.Time.deltaTime * 10)
+                
+                self.target.bone:MuscleFollow(CL.RagdollBoneInfo.Spine, targetPos, 
+                    self.rotTrans.rotation, 0.5, 0.08)
+                
+                if self.forceSoundInfo then
+                    self.forceSoundInfo.audio.pitch = math.min(3, math.max(0.01, 2.8 * math.min(mu.rb.velocity.magnitude, 45)/45 ))
+                end
+            end
+        end
+    , 0, -1)
+
+    self:AddCharacterListener(self.target)
+end
+
+function SpellForceGrab:AddCharacterListener(fc)
+    if not IsNullOrDestroyed(fc) and fc.muscleState.BeHittedEvent then
+        fc.muscleState:BeHittedEvent("+", self.onHitFunc)
+    end
+end
+
+function SpellForceGrab:RemoveCharacterListener(fc)
+    if not IsNullOrDestroyed(fc) and fc.muscleState.BeHittedEvent then
+        fc.muscleState:BeHittedEvent("-", self.onHitFunc)
+    end
+end
+
+function SpellForceGrab:Throw(fc)
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    
+    local mu = fc.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+    fc:OnAttachBreak(hand.physicsHand, nil, mu.rb)
+    
+    local vel = hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+    local speed = vel.magnitude
+    if speed > self.throwLimit then
+    
+        fc.muscleState:DoThrowing()
+        local forceFactor = 6
+        local limitVel = 30 -- 30 is already very large, since npc have multiple rigidbodies
+        --vel = hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+        local force = CL.PhysicsHelper.LimitVelocityForce(vel * (speed - self.throwLimit) * forceFactor, limitVel)
+        fc:AddForceOnPart(mu.rb, force, UE.ForceMode.VelocityChange)
+    else
+        ---fc.bone:ChangeVelocityWithMusclePart(CL.RagdollBoneInfo.Spine, UE.Vector3.zero)
+        self:TargetStopMove(fc)
+    end
+end
+
+function SpellForceGrab:TargetStopMove(fc)
+    if not fc or IsNullOrDestroyed(fc) then
+        return
+    end
+    CL.Scheduler.Create(self.createTrans,
+        function(sche, t, s)
+            if not fc or IsNullOrDestroyed(fc) then
+                return
+            end        
+            
+            local mus = fc.bone:GetTemporaryListMuscleChain(CL.RagdollBoneInfo.Spine)
+            local mu = nil
+            for i = 0, mus.Count - 1 do
+                mu = fc.bone.ragdoll:GetMuscle(mus[i])
+                if mu then
+                    if not IsNullOrDestroyed(mu.rb) then
+                        mu.rb.velocity = UE.Vector3.zero
+                        mu.rb.angularVelocity = UE.Vector3.zero
+                        if not mu.rb:IsSleeping() then
+                            mu.rb:Sleep()
+                            mu.rb:WakeUp()
+                        end
+                    end
+                end
+            end
+        end
+    , 0, 0, 0.01):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function SpellForceGrab:ClearTarget()
+    if self.buildAttachHand then
+        if self.target and not IsNullOrDestroyed(self.target) then
+            local mu = self.target.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+            self.target:OnAttachBreak(self.buildAttachHand.physicsHand, nil, mu.rb)
+        end
+        
+        self.buildAttachHand = nil
+    end
+    
+    self.target = nil
+end
+
+function SpellForceGrab:StopGrab()
+    self.grabTimer = SafeStopSchedule(self.grabTimer, self.createTrans)
+    
+    if self.target and not IsNullOrDestroyed(self.target) then
+        self:Throw(self.target)
+        self:RemoveCharacterListener(self.target)
+    end
+    self:ClearTarget()
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.forceSoundInfo)
+    self.forceSoundInfo = nil
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellForceGrab)

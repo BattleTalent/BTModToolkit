@@ -1,0 +1,74 @@
+
+local spellStickScript = {
+    --flyObjName(string) = "FlyFireBallX"
+    lastStickBall = nil,
+}
+
+
+
+
+function spellStickScript:GrabSpell(attach)
+    self.lastStickBall = nil
+end
+
+
+function spellStickScript:OnChargeBegin()    
+    --print("OnChargeBegin")
+    self:SpawnSpellOnHand(self.flyObjName, self.createPoint)    
+    
+    self:SetHandPose(true)
+    -- you can access base function in this way:
+    -- self.__base.StartVelSample(self)    
+    self:StartVelSample()
+end
+
+
+
+function spellStickScript:OnChargeReady()
+    self:PrepareSpellOnHand()
+end
+
+
+
+
+function spellStickScript:OnChargeCancel()
+    --print("OnChargeCancel")
+
+    self:ReleaseSpell()
+    
+    self:SetHandPose(false)
+    self:StopVelSample()
+end
+
+
+
+
+function spellStickScript:OnChargeRelease()
+    --print("OnChargeRelease:" .. tostring(self.isReadyToThrow))
+    
+    --throw
+    if self:IsReadyToThrow() then
+        self:TryThrow()
+        
+        --是否有上一个stickball，是：设置为上个stickball的child 否：设置为parent
+        if self.fo then
+            if self.lastStickBall then
+                local scp = self.fo.gameObject:GetComponent("FlyObjectX").script
+                local lua = scp.self
+                lua:SetParent(self.lastStickBall)
+                self.lastStickBall = nil
+            else
+                self.lastStickBall = self.fo
+            end
+        end
+    else
+        self:ReleaseSpell()
+    end
+    
+    self:SetHandPose(false)
+    self:StopVelSample()
+
+end
+
+
+return Class(Require("Weapon/SpellBaseScript"), nil, spellStickScript)

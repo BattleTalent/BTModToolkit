@@ -1,0 +1,167 @@
+
+local tt = {}
+
+function tt:Awake()
+    self.flyObjName = "FlyThunder"
+    self.dis = -0.1
+    self.lifetime = 5
+    self.intensity = 80
+    self.minSpeed = 0.8
+    self.followSpeed = 800
+    self.root = self.host.transform.root
+end
+
+function tt:OnGrab(a, g)
+    if (g) then
+        self.renders = a.attachedHand:GetHandIndex() == 0 and CL.InteractTrigger.GetHandRRenderer() or CL.InteractTrigger.GetHandLRenderer()
+        local player = CL.InteractCharacter.PlayerInstance
+        if player == nil then
+            return
+        end
+        self.handPoseControl = player.hands[a.attachedHand:GetHandIndex()].handPoseControl
+        
+        local ai = self.host.interact:GetHolder()
+        self.character = ai.character
+        self.playerRb = self.character.capsuleRB
+        
+
+    else
+        self:Reset()
+    end
+end
+
+function tt:OnChargeBegin()
+    self:SetExpression(true)
+    self:SetChargeEffect(true)
+end
+
+function tt:OnChargeReady()
+    if not self.lighting then
+        self:CreateLightning()
+    end
+    self:SetChargeEffect(false)
+end
+
+function tt:OnChargeCancel()
+    self:Reset()
+end
+
+function tt:OnChargeRelease()
+    if self.timer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+    if self.lighting then
+        if not self:AttamptRelease() then
+            self.lighting:OnFinish()
+            self.lighting = nil
+        end
+    end
+    self:Reset()
+end
+
+function tt:AttamptRelease()
+    if not self.lighting then
+        return false
+    end
+    if UE.Time.time - self.lastRecordTime < 0.15 then
+        local realVol = self.host.interact.rb.velocity - self.playerRb.velocity
+        
+        if realVol.magnitude < 0.4 then
+            return false
+        end
+        local dir;
+        for k, vol in ipairs(self.velocityList) do
+            dir = dir + vol
+        end
+
+        self.lighting:AddForce(dir.normalized * self.intensity, UE.ForceMode.VelocityChange)
+        self.lighting.autoTrack = true
+        self.lighting:SetIsTriggerAfter(0.2)
+        self.lighting = nil
+
+        return true
+    end
+    return false
+end
+
+function tt:CreateLightning()
+    if self.timer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+    
+    self.lastRecordTime = 0
+    self.velocityList = {}
+    local lastSamplingTime = 0
+        
+    local pos = self.createPoint.position
+    local dir = self.createPoint.forward
+    self.lighting = self.host:CreateFlyObj(self.flyObjName, pos, dir)
+    self.lighting.col.isTrigger = true
+    self.lighting.autoTrack = false
+    local rb = self.lighting.trans:GetComponent(typeof(UE.Rigidbody))
+    rb.velocity = UE.Vector3.zero
+    
+    --Reset after throwing, reset when hit monster, reset at the end of life
+    self.timer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            local tarPos = self.createPoint.position
+            CL.PhysicsFollow.TrackPosition(rb, tarPos, UE.Time.unscaledDeltaTime * self.followSpeed)
+            if t >= self.lifetime then
+                if self.lighting then
+                    self.lighting:OnFinish()
+                    self:Reset()
+                end
+            end
+            if not self.lighting then
+                CL.Scheduler.RemoveSchedule(self.timer.actionId)
+                self.timer = nil
+            end
+            local realVol = self.host.interact.rb.velocity - self.playerRb.velocity
+            local realSpeed = realVol.magnitude
+            
+            local curTime = UE.Time.time
+            if curTime - lastSamplingTime > 0.007 then
+                if #self.velocityList >= 15 then
+                    table.remove(self.velocityList, 1)
+                end
+                table.insert(self.velocityList, realVol)
+                lastSamplingTime = curTime
+            end
+            
+            --record if velocity bigger then minSpeed
+            if realSpeed >= self.minSpeed then
+                self.lastRecordTime = curTime
+                self.lastMaxVol = realVol
+            end
+        end
+    , UE.Time.deltaTime, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function tt:SetExpression(isOnCharge)
+    local tarValue = isOnCharge and 0.2 or 0.5
+    CL.Scheduler.RemoveSchedule(self.expTimeId)
+    self.expTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            for i = 0, 4 do
+                local weight = UE.Mathf.Lerp(self.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
+                self.handPoseControl.fingers[i]:SetPose(weight)
+            end
+        end
+    , UE.Time.unscaledDeltaTime, 0.2)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function tt:SetChargeEffect(isPlay)
+    self.soundEffect.enabled = isPlay
+end
+
+function tt:Reset()
+    self:SetExpression(false)
+    self:SetChargeEffect(false)
+    self.lighting = nil
+end
+
+return Class(nil,nil,tt)

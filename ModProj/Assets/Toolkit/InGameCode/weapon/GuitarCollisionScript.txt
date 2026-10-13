@@ -1,0 +1,19 @@
+
+local GuitarCollision = {
+    
+}
+
+function GuitarCollision:IsCondition(collision)
+    local fc = CL.PhysicsUnit.GetPhysicsUnit(collision.collider)
+    if not IsNullOrDestroyed(fc) then
+        self.fc = fc
+        return true
+    end
+    return false
+end
+
+function GuitarCollision:ColliderEnterHandler(collision)
+    self.mainPart.script.self:OnCollisionWithRole(self.fc)
+end
+
+return Class(nil, nil, GuitarCollision)

@@ -1,0 +1,77 @@
+local RolerCoster = {
+    runActId = -1,
+    players = {},
+    
+    posLerpValue = 0.1,
+    rotLerpValue = 0.1,
+}
+
+function RolerCoster:Awake()
+    self:StartRun()
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        local networkRB = self.trans:GetComponent(typeof(CL.Network.NetworkRigidbodySyncBase))
+        networkRB.enabled = false
+    end
+    
+    self.onPlayerJoinScene = function()
+        local roomPlayers = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+        local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+        for i = 0, roomPlayers.Count - 1 do
+            local netId = roomPlayers[i].netId
+            if not self.players[netId] and netId ~= localPlayerId then
+                self:IgnoreCollisionWithPlayer(netId)
+                self.players[netId] = true
+            end
+        end
+    end
+    
+    if CL.Network.VRNetworkManager.Instance.IsServer then
+        self.cols = self.trans:GetComponentsInChildren(typeof(UE.Collider))
+        CL.EventHub.ListenEvent("NetworkRoomPlayerJoin", self.onPlayerJoinScene)
+    end
+    
+    self.rb.centerOfMass = UE.Vector3(0, 0, -1)
+end
+
+function RolerCoster:IgnoreCollisionWithPlayer(netId)
+    local character = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(netId).interactCharacter
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    
+    local playerCols = character.trans:GetComponentsInChildren(typeof(UE.Collider))
+    
+    for i = 0, self.cols.Length - 1 do
+        if not IsNullOrDestroyed(self.cols[i]) then
+            for j = 0, playerCols.Length - 1 do
+                if not IsNullOrDestroyed(playerCols[j]) then
+                    UE.Physics.IgnoreCollision(self.cols[i], playerCols[j], true)
+                end
+            end
+        end
+    end
+end
+
+--function RolerCoster:OnEnable()
+--    self:StartRun()
+--end
+
+function RolerCoster:StartRun()
+    local isClient = CL.Network.VRNetworkManager.ClientOnline
+    
+    self.trans.position = self.guider.position
+    self.trans.rotation = self.guider.rotation
+    CL.Scheduler.RemoveSchedule(self.runActId)
+    self.runActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self.trans.position = UE.Vector3.Lerp(self.trans.position, self.guider.position, self.posLerpValue)
+            
+            if self.faceToMoveDir == 1 then
+                self.trans.rotation = UE.Quaternion.Lerp(self.trans.rotation, self.guider.rotation, self.rotLerpValue)
+            end
+        end
+    , 0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+return Class(nil, nil, RolerCoster)

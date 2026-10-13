@@ -1,0 +1,327 @@
+
+local Doubleblade = {
+    lastSpeedRecord = 0,
+    swingSpeed = 4,
+    
+    disconnectVecSqrt = 0.35 * 0.35,
+    
+    isFlip = false,
+    
+    slashList = {},
+}
+
+function Doubleblade:Start()
+    self.unitTb = self.connectUnit.script:GetSelf()
+    
+    self.__base.Start(self)
+end
+
+function Doubleblade:OnGrabThisPart(ao)
+    self.character = ao.attachedHand.character
+    
+    if not self.unitTb then
+        self.unitTb = self.connectUnit.script:GetSelf()
+    end
+    
+    if self.unitTb.isConnect then
+        if ao.attachedHand and not IsNullOrDestroyed(ao.attachedHand) then
+            local dot = UE.Vector3.Dot(ao.attachedHand.trans.up, -self.host.interact.trans.right)
+            self.isFlip = dot < 0
+            --print("is filp ::" .. tostring(self.isFlip) .. " dot :" .. dot)
+        end
+        
+        
+        if not self.isUnsole then
+            self:DetectingDisconnect()
+        end
+    else
+        self.isFlip = false
+    end
+end
+
+function Doubleblade:OnUngrabThisPart(ao)
+    CL.Scheduler.RemoveSchedule(self.detectActId)
+    --print("Ungrab this part: need closeSkill")
+    self:DoCloseSkill()
+end
+
+
+function Doubleblade:DoOpenSkill()
+    --print("DoOpenSkill:" .. self.trans.name)
+    self.trail:Activate()
+    self:PlayChargeLoopSound(true)
+    
+    if CL.Network.VRNetworkManager.IsOnline and not self.character.IsLocalPlayer then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.updateActId)
+    self.updateActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            self:DoUpdateSkill()
+        end,
+    0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function Doubleblade:CloseSkill()
+    --print("CloseSkill:" .. self.trans.name)
+    self:DoCloseSkill()
+end
+
+
+function Doubleblade:DoCloseSkill()
+    if IsNullOrDestroyed(self.trans) then
+        return
+    end
+    
+    --print("DoCloseSkill:" .. self.trans.name .. "  isOnline:" .. tostring(self.isOnline))
+    CL.Scheduler.RemoveSchedule(self.updateActId)
+    
+    if not CL.Network.VRNetworkManager.IsOnline and self.shootReady then
+        local ph = self:GetInteract():GetPrimaryHand()
+        if not IsNullOrDestroyed(ph) then
+            local headDir = ph.character:GetHeadset().forward
+            self:TrySlash(headDir, self.slashPos, self.slashForward, self.slashDir, self.slashUp)
+        end
+    end
+    
+    self.trail:StopSmoothly(0.5)
+    self:PlayChargeLoopSound(false)
+    
+    self.shootReady = false
+    self.curDir = nil
+    self.curForward = nil
+    self.lastSpeedRecord = 0
+end
+
+
+function Doubleblade:TrySlash(headDir, slashPos, slashForward, slashDir, slashUp)
+    self.lastSpawnTime = UE.Time.time
+    local interact = self:GetInteract()
+    local hand = interact:GetPrimaryHand()
+    if hand then
+        local character = hand.character
+        if not CostMana(self.host, self.host.manaCost, character) then
+            return
+        end
+        
+        --if character then
+        --    character:CostMana(self:GetInteract():GetInteractTrigger(), self.host.manaCost)
+        --end
+    end
+    local spawnDir = nil
+    
+    if UE.Vector3.Dot(headDir, slashForward) > 0.5 then
+        spawnDir = slashDir + slashForward
+    else
+        spawnDir = slashForward
+    end
+    
+    local rotation = UE.Quaternion.LookRotation(spawnDir, slashUp)
+    if self:IsConnected() and self:IsConnectTheSameType() then
+        local slash = nil
+        if CL.Network.VRNetworkManager.IsOnline then
+            local spawnStates = CL.Network.FoSpawnStates()
+            spawnStates.assignClientAuthority = false
+            slash = self.host:NetworkCreateFlyObj(self.flyObjNameOnConnect, slashPos + slashForward, spawnDir, -1, slashUp, spawnStates)
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerOnCreateFlyObj(slash, rotation)
+            end
+        else
+            slash = self.host:CreateFlyObj(self.flyObjNameOnConnect, slashPos + slashForward, spawnDir)
+            slash.trans.rotation = rotation
+        end
+        
+        table.insert(self.slashList, slash.script:GetSelf())
+        
+        if UE.Vector3.Dot(headDir, -slashForward) > 0.5 then
+            spawnDir = slashDir - slashForward
+        else
+            spawnDir = - slashForward
+        end 
+        rotation = UE.Quaternion.LookRotation(spawnDir, slashUp)
+        local slashBack = nil
+        if CL.Network.VRNetworkManager.IsOnline then
+            local spawnStates = CL.Network.FoSpawnStates()
+            spawnStates.assignClientAuthority = false
+            slashBack = self.host:NetworkCreateFlyObj(self.flyObjNameOnConnect, slashPos - slashForward, spawnDir, -1, slashUp, spawnStates)
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerOnCreateFlyObj(slashBack, rotation)
+            end
+        else
+            slashBack = self.host:CreateFlyObj(self.flyObjNameOnConnect, slashPos - slashForward, spawnDir)
+            slashBack.trans.rotation = rotation
+        end
+        
+        table.insert(self.slashList, slashBack.script:GetSelf())
+        
+        local attached = self:GetAttached()
+        if attached and self.connectUnit.name == attached.connectUnit.name then
+            attached:StartWithDelay(self.lastSpawnTime)
+        end
+    else
+        local slash = nil
+        if CL.Network.VRNetworkManager.IsOnline then
+            local spawnStates = CL.Network.FoSpawnStates()
+            spawnStates.assignClientAuthority = false
+            slash = self.host:NetworkCreateFlyObj(self.flyObjName, slashPos, spawnDir, -1, slashUp, spawnStates)
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerOnCreateFlyObj(slash, rotation)
+            end
+        else
+            slash = self.host:CreateFlyObj(self.flyObjName, slashPos, slashDir + slashForward)
+            slash.trans.rotation = rotation
+        end
+        
+        table.insert(self.slashList, slash.script:GetSelf())
+        
+    end
+    if not CL.Network.VRNetworkManager.IsOnline then
+        self.slashSound.soundInfo:Play(self.slashPos)
+    end
+    self:StartWithDelay(self.lastSpawnTime)
+
+    self.host.interact:CostDurability()
+end
+
+function Doubleblade:NetworkOnCreateFlyObj(fo, rot)
+    --fo.trans.rotation = rot
+    table.insert(self.slashList, fo.script:GetSelf())
+end
+
+function Doubleblade:StartWithDelay(lastSpawnTime)
+    CL.Scheduler.RemoveSchedule(self.waitActId)
+    self.waitActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            self:TriggerAllSlash()
+        end,
+    0, 0, self.delayTime).actionId
+end
+
+function Doubleblade:TriggerAllSlash()
+    --print("TriggerAllSlash:" .. self.trans.name)
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerStartAllSlash()
+            end
+        end
+    else
+        self:StartAllSlash()
+    end
+end
+
+function Doubleblade:StartAllSlash()
+    --print("StartAllSlash:" .. self.trans.name)
+    CL.Scheduler.RemoveSchedule(self.waitActId)
+    for k, v in ipairs(self.slashList) do
+        if not IsNullOrDestroyed(v.host) then
+            v:DelayFlyStart(v.host.trans.forward * v.host.force)
+        end
+    end
+    self.slashList = {}
+end
+
+function Doubleblade:GetLastSpawnTime()
+    return self.lastSpawnTime
+end
+
+function Doubleblade:DoUpdateSkill()
+    if CL.Network.VRNetworkManager.IsOnline and not self.character.IsLocalPlayer then
+        return
+    end
+    local interact = self:GetInteract()
+    local vel = interact:GetPrimaryHand().velocityEstimator:GetVelocityEstimateLocal()
+    local speedMag = interact.rb.angularVelocity.magnitude
+    
+    if speedMag > self.swingSpeed and speedMag > self.lastSpeedRecord then
+        --if UE.Vector3.Dot(vel, (self.isFlip and -self.host.interact.trans.right or self.host.interact.trans.right)) < self.swingSpeed * 0.5 then
+        --    return
+        --end
+        if UE.Vector3.Dot(vel, self.dirTrans.right) > self.swingSpeed * 0.5
+            or UE.Vector3.Dot(vel, -self.dirTrans.right) > self.swingSpeed * 0.5 then
+            self.lastSpeedRecord = speedMag
+            self.lastRecordTime = UE.Time.unscaledTime
+            self.slashPos = self.dirTrans.position
+            self.slashForward = self.dirTrans.forward
+            self.slashDir = interact:GetPrimaryHand().character:GetHeadset().forward
+            self.slashUp = self.dirTrans.up
+            
+            if not self.shootReady then
+                self.shootReady = true
+            end
+        
+        end
+        return
+    end
+    
+    if not self.shootReady or (self.shootReady and UE.Time.unscaledTime - self.lastRecordTime < 0.1) then
+        return
+    end
+    if CL.Network.VRNetworkManager.IsOnline then
+        self.slashSound.soundInfo:Play(self.slashPos)
+        local headDir = interact:GetPrimaryHand().character:GetHeadset().forward
+        local state = GetNetworkIBState(self)
+        if CL.Network.VRNetworkManager.ServerOnline then
+            self:TrySlash(headDir, self.slashPos, self.slashForward, self.slashDir, self.slashUp)
+            if state ~= nil then
+                state:ServerCloseSkill()
+            end
+        else
+            self.flash:Play()
+            if state ~= nil then
+                state:CmdTrySlash(headDir, self.slashPos, self.slashForward, self.slashDir, self.slashUp)
+            end
+        end
+    end
+    self.host:CloseSkill()
+    self.lastSpeedRecord = 0
+end
+
+
+function Doubleblade:OnChargeReady()
+end
+
+
+function Doubleblade:OnConnect(other, isHolder)
+    self.__base.OnConnect(self, other, isHolder)
+    
+    self:TriggerAllSlash()
+    --if isHolder then
+    --local attached = self:GetAttached()
+    --if attached and self.connectUnit.script:GetSelf().name == attached.connectUnit.script:GetSelf().name then
+    --    print("OnConnect---------trigger other:" .. self.trans.name)
+    --    attached:TriggerAllSlash()
+    --end
+    --end
+end
+
+function Doubleblade:OnDisconnect(other, isHolder)
+    self:TriggerAllSlash()
+    
+    --if isHolder then
+    --    local attached = self:GetAttached()
+    --    if attached and self.connectUnit.script:GetSelf().name == attached.connectUnit.script:GetSelf().name then
+    --        attached:TriggerAllSlash()
+    --    end
+    --end
+    
+    self.__base.OnDisconnect(self, other, isHolder)
+end
+
+function Doubleblade:PlayChargeLoopSound(play)
+    if play then
+        if not self.chargeLoopSoundInfo then
+            self.chargeLoopSoundInfo = self.chargeLoopSound:PlaySoundInfo()
+        end
+    else
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.chargeLoopSoundInfo)
+        self.chargeLoopSoundInfo = nil
+    end
+end
+
+return Class(Require("Weapon/ConnectWeaponScript"), nil, Doubleblade)

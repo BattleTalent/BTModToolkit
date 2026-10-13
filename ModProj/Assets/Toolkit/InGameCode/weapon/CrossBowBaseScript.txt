@@ -1,0 +1,594 @@
+local crossBowBase = {
+        loadAnimTime = 0.15,
+        intensity = 20,
+        
+        flyObjName = "Arrow",
+        
+        initNetIds = {},
+        
+        useNetworkShootData = false,
+        weaponForceDirFromNetwork = {},
+        weaponPositionFromNetwork = {},
+        weaponRotationFromNetwork = {},
+        weaponForceDirToSync = {},
+        weaponPositionToSync = {},
+        weaponRotationToSync = {},
+
+        weaponListIndexFromNetwork = 1,
+    }
+
+
+function crossBowBase:Start()
+    self:InitInfo()
+    self.puller = self.pullerScript:GetSelf()
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetIds[netId] then
+            self.initNetIds[netId] = nil
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            self:EnchantIB(netIb.ib)
+            self:PlayShootActionClientAfterGen(netIb.ib)            
+        end
+    end
+    
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function crossBowBase:OnEnchantStart()
+    if self.arrowIb then
+        self:EnchantIB(self.arrowIb)        
+    end
+end
+
+function crossBowBase:OnEnchantEnd()
+    if self.arrowIb then
+        self.arrowIb:EnchantEnd()
+    end
+end
+
+function crossBowBase:OnDestroy()
+    if self.isOnline and CL.Network.NetworkSpawnMgr.Instance then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+    end
+end
+
+function crossBowBase:OpenSkill()
+    if not self.isReady then
+        self.host:CloseSkill()
+        self:PlayTriggerSound()
+        return
+    end
+    self.puller:SetFireSignal()
+    self.host:CloseSkill()
+end
+
+function crossBowBase:PlayShootAction()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self:PlayShootActionServer()
+        else
+            local weapon = self.putedWeapon
+            self:PlayShootActionClient()
+            if not IsNullOrDestroyed(weapon) then
+                self.putedWeapon = weapon
+                self:PlayShootActionLocal()
+            end
+        end
+    else
+        self:PlayShootActionLocal()
+    end    
+end
+
+function crossBowBase:PlayShootActionServer()
+    if not IsNullOrDestroyed(self.arrowIb) then
+        local position,rotation = self:GetSpawnArrowTransData(self.arrowIb)
+
+        -- TODO: apply in PVE mode?
+        --if CL.Network.NetworkRoomMgr.IsInPvpMode then
+        --    self:SetIBLastHolder(self.arrowIb)
+        --    self:EnchantIB(self.arrowIb)
+        --    self:Shoot(self.arrowIb)
+        --    self.arrowIb = nil
+        --else
+        if not CL.Network.NetworkRoomMgr.IsInPvpMode then
+            self:ArrowIbDoGiveBack()
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(
+                self.flyObjName, 
+                position, rotation,
+                false, false, self.host.interact.netId, true, 
+                function(netIb, go)
+                    if IsNullOrDestroyed(go) then
+                        return
+                    end
+                    self:SetIBLastHolder(netIb.ib)
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerSpawnInteractBase(netIb.netId) end
+                    self.arrowIb = netIb.ib
+                    self:EnchantIB(self.arrowIb)
+                    self:Shoot(self.arrowIb)
+                    self.arrowIb = nil
+                end
+            )
+            self.arrowIb = nil
+        else
+            self:Shoot(self.arrowIb)
+            self.arrowIb = nil
+        end
+
+        if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state.putedWeapon = nil end
+        end
+        self.host.interact:CostDurability()
+    end
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self:Shoot(self.putedWeapon)
+        self.putedWeapon = nil
+        if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state.putedWeapon = nil end
+        end
+        self.host.interact:CostDurability()
+    end
+    self:PullString(self.stringTrans, self.defaultPos, self.loadAnimSpeed /3, true)
+end
+
+function crossBowBase:PlayShootActionClient()
+    if not IsNullOrDestroyed(self.arrowIb) then
+        self.arrowIb.trans:SetParent(nil)
+        self:RecordReleaseWeaponData(self.puller.trans.forward,self.arrowIb.trans.position,self.arrowIb.trans.rotation)
+
+        -- TODO: apply in PVE mode?
+        if CL.Network.NetworkRoomMgr.IsInPvpMode then
+            self:Shoot(self.arrowIb)
+            self.arrowIb = nil
+        end
+    end
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self:RecordReleaseWeaponData(self.puller.trans.forward,self.putedWeapon.trans.position,self.putedWeapon.trans.rotation)
+
+        self.putedWeapon.trans:SetParent(nil)
+        self.putedWeapon:SetKinematic(false)
+        self.putedWeapon:SetRBCols(true)
+        self:EnableIbNetworkSync(self.putedWeapon)
+
+        self.putedWeapon = nil
+    end
+    self:PullString(self.stringTrans, self.defaultPos, self.loadAnimSpeed /3, true)
+end
+function crossBowBase:PlayShootActionClientAfterGen(ib)
+    if not IsNullOrDestroyed(self.arrowIb) then
+        self:ArrowIbDoGiveBack()
+    end
+    
+	self:IgnoreCollision(ib, true)
+    if not IsNullOrDestroyed(ib) then
+        self:Shoot(ib)
+    end
+end
+
+function crossBowBase:PlayShootActionLocal()
+    if not IsNullOrDestroyed(self.arrowIb) then
+        self:Shoot(self.arrowIb)
+        self.arrowIb = nil
+        self.putedWeapon = nil
+        self.host.interact:CostDurability()
+    end
+    
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self:Shoot(self.putedWeapon)
+        self.putedWeapon = nil
+        self.host.interact:CostDurability()
+    end
+    self.isReady = false
+    self:PullString(self.stringTrans, self.defaultPos, self.loadAnimSpeed /3, true)
+end
+
+function crossBowBase:PlayTriggerSound()
+    if self.triggerSound then
+        self.triggerSound:PlaySound()
+    end
+end
+
+function crossBowBase:SetIBLastHolder(ib)
+    local holder = self.host.interact:GetLatestHolder()
+    if not IsNullOrDestroyed(holder) then
+        if not IsNullOrDestroyed(ib) then
+            ib:SetLatestHolder(holder)
+        end
+    end
+end
+
+function crossBowBase:OnLoadCompeleted()
+    self.isReady = true
+end
+
+function crossBowBase:SetArrowOnShootPos(arrow, trans)
+    arrow.transform.parent = trans
+    arrow.transform.localPosition = UE.Vector3.zero
+    
+    arrow.transform.forward = self.puller.trans.forward
+
+    local interactTrigger = arrow.gameObject:GetComponent(typeof(CL.InteractTriggerX))
+    if interactTrigger then
+        if interactTrigger.script:GetScriptName() == "Weapon/BowTransformScript" then
+            local script = interactTrigger.script:GetSelf()
+            if script and not script.isTransform then
+                arrow.transform.right = -self.puller.trans.forward
+            end
+        end
+    end
+end
+
+function crossBowBase:CreateArrow()
+    local obj = CL.PrefabPool.SpawnPrefab(self.flyObjName, "Weapon/")
+    local ib = obj:GetComponent(typeof(CL.InteractBase))
+    self:SetIBLastHolder(ib)
+    return ib
+end
+
+function crossBowBase:GetSpawnArrowTransData(arrowIb)
+    if IsNullOrDestroyed(arrowIb) then
+        return self.puller.attach.transform.position,self.puller.attach.transform.rotation
+    end
+    if self.useNetworkShootData then
+        return self.weaponPositionFromNetwork[self.weaponListIndexFromNetwork],self.weaponRotationFromNetwork[self.weaponListIndexFromNetwork]
+    end
+    return arrowIb.trans.position,arrowIb.trans.rotation
+end
+
+function crossBowBase:NetworkSpawnInteractBase(netId)
+    if not self.initNetIds then
+        self.initNetIds = {}
+    end
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if not IsNullOrDestroyed(netIb) then
+        self:EnchantIB(netIb.ib)
+        self:PlayShootActionClientAfterGen(netIb.ib)    
+        return
+    end
+    if not self.initNetIds[netId] then
+        self.initNetIds[netId] = true
+    end
+end
+
+function crossBowBase:DisableIbNetworkSync(ib)
+    --if CL.Network.VRNetworkManager.ClientOnline then
+        SafeSetNetworkRBEnabled(ib, false)
+    --end
+end
+
+function crossBowBase:EnableIbNetworkSync(ib)
+    --if CL.Network.VRNetworkManager.ClientOnline then
+        if GetIBNetwork(ib) ~= nil then
+            SafeSetNetworkRBEnabled(ib, true)
+            SafeSetNetworkRBPhysicsFollow(ib, true)
+            
+            if CL.Network.VRNetworkManager.ServerOnly then
+                if ib.unitType == CL.Tagger.Tag.InteractObj or ib.unitType == CL.Tagger.Tag.InteractWeapon then
+                    local ibState = GetIBNetworkState(ib)
+                    if ibState ~= nil then ibState.isClientGrab = false end
+                    SafeRemoveClientAuthority(ib)
+                end
+            end
+        end
+    --end
+end
+
+function crossBowBase:EnchantIB(ib)
+    if self.host.interact:IsOnEnchant() and ib:IsEnchantble() then
+        self.host.interact:EnchantOther(ib)
+    end
+end
+
+function crossBowBase:ArrowIbDoGiveBack()
+    --print("arrow Ib do give back-------")
+    if IsNullOrDestroyed(self.arrowIb) then
+        return
+    end
+    local arrow = self.arrowIb.trans:GetComponent(typeof(CL.LuaBehaviour))
+    if arrow and string.find(arrow.script:GetScriptName(), "Arrow") then
+        arrow.script.self:DoGiveBack()
+    else
+        arrow = self.arrowIb.trans:GetComponent(typeof(CL.ArrowBase))
+        if arrow then
+            arrow:DoGiveBack()
+        end
+    end
+    self.arrowIb = nil
+    --print("arrow Ib do give back-------suc ")
+end
+
+function crossBowBase:OnCancel()
+    local ib = IsNullOrDestroyed(self.arrowIb) and self.putedWeapon or self.arrowIb
+
+    if not IsNullOrDestroyed(ib) then
+        
+        ib.trans:SetParent(nil)
+        ib:SetKinematic(false)
+        self:EnableIbNetworkSync(ib)
+        self:IgnoreCollision(ib, false)
+        ib:SetRBCols(true)
+
+        local arrow = ib.trans:GetComponent(typeof(CL.LuaBehaviour))
+        if arrow and string.find(arrow.script:GetScriptName(), "Arrow") then
+            arrow.script.self:GiveBack()
+        else
+            arrow = ib.trans:GetComponent(typeof(CL.ArrowBase))
+            if arrow then
+                arrow:OnCancel(nil)
+            end
+        end
+    end
+    
+    
+    self.stringTrans.localPosition = self.defaultPos
+    self.arrowIb = nil
+    self.putedWeapon = nil
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerRefleshPutedWeapon(nil) end
+    end
+end
+
+function crossBowBase:Shoot(ib)
+    if IsNullOrDestroyed(ib) then
+        return
+    end
+
+    local cols = ib:GetCols()
+
+    
+    ib.trans:SetParent(nil)
+    ib:SetKinematic(false)
+    self:EnableIbNetworkSync(ib)
+    ib:SetRBCols(true)
+    self:IgnoreCollisionOnTime(ib, false, 1)
+
+    local stab = ib:GetStabObject()
+
+    if stab then    
+        stab:AddStabTargetForce(self.puller.trans.forward * self.intensity);
+    end
+    
+    if self.arrowIb then
+        local arrow = ib.trans:GetComponent(typeof(CL.LuaBehaviour))
+        if arrow then
+            arrow.script.self:OnShoot(self)
+        else
+            arrow = ib.trans:GetComponent(typeof(CL.ArrowBase))
+            if arrow then
+                arrow:OnShoot(self.host)
+            end
+        end
+        if self.arrowIb:IsOnEnchant() then
+            self.host.interact:EnchantSkillCountUpdate()
+        end
+    end
+    
+    if self.useNetworkShootData then
+        ib.trans.position = self.weaponPositionFromNetwork[self.weaponListIndexFromNetwork]
+        ib.trans.rotation = self.weaponRotationFromNetwork[self.weaponListIndexFromNetwork]
+        -- print("Shoot useNetworkShootData")
+        -- print(ib.trans.position)
+        -- print(ib.trans.rotation)
+        ib:AddForce(self.weaponForceDirFromNetwork[self.weaponListIndexFromNetwork] * self.intensity, UE.ForceMode.VelocityChange)
+        self.weaponListIndexFromNetwork = self.weaponListIndexFromNetwork + 1
+    else
+        ib:AddForce(self.puller.trans.forward * self.intensity, UE.ForceMode.VelocityChange)
+    end
+    ib:MarkThrowAssist(1)
+    self:SetIBLastHolder(ib)
+    
+    TryAerialStayByInteract(self.host.interact)
+end
+
+function crossBowBase:UseNetworkShootData(use)
+    self.useNetworkShootData = use
+end
+
+function crossBowBase:RecordReleaseWeaponData(forceDir,position,rotation)
+    -- print("RecordReleaseWeaponData")
+    -- print(forceDir)
+    -- print(position)
+    -- print(rotation)
+    self.weaponForceDirToSync[#self.weaponForceDirToSync+1] = forceDir
+    self.weaponPositionToSync[#self.weaponPositionToSync+1] = position
+    self.weaponRotationToSync[#self.weaponRotationToSync+1] = rotation
+end
+
+function crossBowBase:SetNetworkShootData(forceDir,position,rotation)
+    -- print("SetNetworkShootData")
+    -- print(forceDir)
+    -- print(position)
+    -- print(rotation)
+    self:UseNetworkShootData(true)
+    self.weaponForceDirFromNetwork[#self.weaponForceDirFromNetwork+1] = forceDir
+    self.weaponPositionFromNetwork[#self.weaponPositionFromNetwork+1] = position
+    self.weaponRotationFromNetwork[#self.weaponRotationFromNetwork+1] = rotation
+end
+
+function crossBowBase:ClearNetworkShootData()
+    self.useNetworkShootData = false
+    self.weaponListIndexFromNetwork = 1
+    self.weaponForceDirFromNetwork = {}
+    self.weaponPositionFromNetwork = {}
+    self.weaponRotationFromNetwork = {}
+    self.weaponForceDirToSync = {}
+    self.weaponPositionToSync = {}
+    self.weaponRotationToSync = {}
+end
+
+function crossBowBase:SyncLastReleaseWeaponShootData(stateId)
+    local list_v3 = CS.System.Collections.Generic.List(UE.Vector3)
+    local paramList = list_v3()
+    for i = 1, #self.weaponForceDirToSync, 1 do
+        paramList:Add(self.weaponForceDirToSync[i])
+        paramList:Add(self.weaponPositionToSync[i])
+    end
+    local list_q = CS.System.Collections.Generic.List(UE.Quaternion)
+    local quatList = list_q()
+    for i = 1, #self.weaponRotationToSync, 1 do
+        quatList:Add(self.weaponRotationToSync[i])
+    end
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:CmdSyncShootData(stateId,paramList,quatList) end
+end
+
+function crossBowBase:NetworkShoot(stateId)
+    self.puller:NetworkShoot(stateId)
+end
+
+function crossBowBase:IgnoreCollisionOnTime(ib, ignore, time)
+    CL.Scheduler.Create(ib, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(ib) or IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact) then
+                sche:Stop()
+                return
+            end
+            self:IgnoreCollision(ib, ignore)
+        end
+    , 0, 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function crossBowBase:IgnoreCollision(ib, ignore)
+    local cols = ib:GetCols()
+    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), cols, ignore)
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        local playerCols = hand.character:GetPlayerUnit():GetCols()
+        CL.PhysicsHelper.IgnoreCollisions(playerCols, cols, ignore)
+    end
+end
+
+function crossBowBase:OnPutedArrow(arrowIb)
+    self.arrowIb = arrowIb
+    --print("OnPutedArrow ------------------- set arrowIb")
+    
+    arrowIb:SetKinematic(true)
+    self:DisableIbNetworkSync(arrowIb)
+    self:IgnoreCollision(arrowIb,true)
+    arrowIb:SetRBCols(false)
+    self:EnchantIB(arrowIb)
+    self:SetArrowOnShootPos(arrowIb, self.stringTrans)
+end
+
+function crossBowBase:OnPutedWeapon(weapon)
+    self.putedWeapon = weapon
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerRefleshPutedWeapon(self.putedWeapon) end
+    end
+    
+    self:SetArrowOnShootPos(weapon, self.stringTrans)
+    weapon:SetKinematic(true)
+    self:DisableIbNetworkSync(weapon)
+    self:IgnoreCollision(weapon,true)
+    weapon:SetRBCols(false)
+end
+
+--[[
+    loading animation
+]]
+
+function crossBowBase:InitInfo()
+    self.loadAnimSpeed = UE.Vector3.Distance(self.stringTrans.position, self.targetTrans.position)/self.loadAnimTime
+    
+    self.defaultPos = self.stringTrans.localPosition
+end
+
+function crossBowBase:PullString(stringTrans, localPosition, speed, isRelease)
+    --local time = UE.Vector3.Distance(stringTrans.localPosition, localPosition)/speed
+    
+    --local beginPos = stringTrans.localPosition
+    --local value = 0
+    --CL.Scheduler.RemoveSchedule(self.loadActTimeId)
+    --self.loadActTimeId = CL.Scheduler.Create(self, 
+    --    function(sche, t, s)
+    --        if IsNullOrDestroyed(stringTrans) then
+    --            return
+    --        end
+    --        
+    --        if isRelease then
+    --            value = CL.EasingEquations.EaseOutElastic(0, 1, t/s)
+    --        else
+    --            value = CL.EasingEquations.EaseOutCubic(0, 1, t/s)
+    --        end
+    --        stringTrans.localPosition = UE.Vector3.Lerp(beginPos, localPosition, value)
+    --    end
+    --, 0, time)
+    --:SetOnStop(function()
+    --    if not IsNullOrDestroyed(stringTrans) then
+    --        stringTrans.localPosition = localPosition
+    --    end
+    --end)
+    --:SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    stringTrans.localPosition = localPosition
+end
+
+function crossBowBase:OnReleaseEnd()
+end
+
+function crossBowBase:OnGrab(attach, t)
+    self.aimWidget.gameObject:SetActive(t)
+    if t and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+        self.aimWidget.enabled = true
+    else
+        self.aimWidget.enabled = false
+    end
+    self.puller:OnGrab(attach,t)
+end
+
+-------------------------------------Network--------------------------------------------
+
+function crossBowBase:CmdStartHandPull(stateId,hand)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:CmdStartHandPull(stateId,hand.character.networkPlayer.netId,hand:GetHandIndex()) end
+end
+
+function crossBowBase:RpcStartHandPull(stateId,hand)
+    self.puller:NetworkStartHandPull(stateId,hand)
+end
+
+function crossBowBase:ServerSyncPullerState(stateId,state)
+    local networkState = GetNetworkIBState(self)
+    if networkState ~= nil then networkState:ServerSyncPullerState(stateId,state) end
+end
+
+function crossBowBase:CmdSyncPullerState(stateId,state)
+    local networkState = GetNetworkIBState(self)
+    if networkState ~= nil then networkState:CmdSyncPullerState(stateId,state) end
+end
+
+function crossBowBase:NetworkSyncPullerState(stateId,state)
+    self.puller:NetworkSyncState(stateId,state)
+end
+
+function crossBowBase:NetworkLocalOnPutArrow(arrowIb)
+    --self:OnPutedArrow(arrowIb)
+end
+
+function crossBowBase:CmdOnHandAction(isEnter, hand, holderNetId)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:CmdOnHandAction(isEnter,hand.character.networkPlayer.netId,hand:GetHandIndex(), holderNetId) end
+end
+
+function crossBowBase:NetworkOnHandAction(isEnter, hand, isHolder)
+    if self.puller then
+        self.puller:NetworkOnHandAction(isEnter, hand, isHolder)
+    end
+end
+
+return Class(nil, nil, crossBowBase)

@@ -1,0 +1,12 @@
+local PotionMP = {
+}
+
+function PotionMP:AddCharacterAttr(character, value)
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    
+    character.attr:PotionRecoverMp(value)
+end
+
+return Class(Require("InteractObj/PotionBaseScript"), nil, PotionMP)

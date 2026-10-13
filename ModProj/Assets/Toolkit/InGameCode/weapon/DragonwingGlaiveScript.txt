@@ -1,0 +1,176 @@
+
+local DragonwingGlaive = {
+    state = 0,
+    state_default = 0,
+    state_winged = 1,
+}
+
+function DragonwingGlaive:OpenSkill()
+    self.pressStartTime = UE.Time.time
+end
+
+function DragonwingGlaive:CloseSkill()
+    local character = self:GetHolder()
+    if not character then
+        return
+    end
+    local pressTime = UE.Time.time - self.pressStartTime
+    
+    if pressTime > 0.2 then
+        if pressTime > self.wingModeChargeTime then
+            if self.state == self.state_default then
+                self:ChangeState(self.state_winged)
+            end
+        end
+    else
+        if self.state == self.state_default then
+            if self:IsAllowDive(character.trans.position) then
+                self:StartDive(character)
+                return
+            else
+                self:DiveFailTips()
+            end
+            print("is allow dive----------:" .. tostring(self:IsAllowDive(character.trans.position)))
+        else
+            if self:IsAllowDive(character.trans.position) then
+                self:StartDive(character)
+                self:ChangeState(self.state_default)
+                return
+            else
+                self:DiveFailTips()
+            end
+        end
+    end
+end
+
+function DragonwingGlaive:UpdateSkill()
+    local pressTime = UE.Time.time - self.pressStartTime
+    if pressTime > 0.2 then
+        if self.state == self.state_default then
+            self:UpdateChargeEffect(pressTime/self.wingModeChargeTime)
+            if pressTime >= self.wingModeChargeTime then
+                self.host:CloseSkill()
+                self:StopChargeEffect()
+                return
+            end
+        end
+    end
+end
+
+function DragonwingGlaive:ChangeState(to)
+    if to == self.state_default then
+        self:RetractDragonWings()
+    elseif to == self.state_winged then
+        self:SpreadDragonWings()
+    end
+    self.state = to
+end
+
+function DragonwingGlaive:SpreadDragonWings()
+    local character = self:GetHolder()
+    if not character then
+        return
+    end
+    
+    if self.wingEo and not IsNullOrDestroyed(self.wingEo) then
+        return
+    end
+    
+    local chestTrans = character.ik.references.chest
+    local neckTrans = character.ik.references.neck
+    
+    local leftUpArmTrans = character.ik.references.leftUpperArm
+    local rightUpArmTrans = character.ik.references.rightUpperArm
+    local dis = UE.Vector3.Distance(leftUpArmTrans.position, rightUpArmTrans.position)
+    local targetPos = (chestTrans.position + neckTrans.position) / 2
+    self.wingEo = CL.EffectMgr.Instance:PlayEffect(self.wingEffectName, targetPos + dis / 2 * (-character.trans.forward)
+        , UE.Quaternion.LookRotation(character.trans.forward))
+    self.wingEo.trans:SetParent(chestTrans)
+    
+    self.wingEo:PlayAnimationClip("Glaive_Wing_activation")
+end
+
+function DragonwingGlaive:RetractDragonWings()
+    if IsNullOrDestroyed(self.wingEo) then
+        return
+    end
+    print("RetractDragonWings---------------")
+    self.wingEo:PlayAnimationClipThenGiveBack("Glaive_Wing_end")
+    self.wingEo = nil
+end
+
+function DragonwingGlaive:UpdateChargeEffect()
+    
+end
+
+function DragonwingGlaive:StopChargeEffect()
+
+end
+
+function DragonwingGlaive:GetHolder()
+    local hand = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(hand) then
+        return nil
+    end
+    
+    return hand.character
+end
+
+function DragonwingGlaive:IsAllowDive(pos)
+    local isHit, raycastHit = UE.Physics.SphereCast(pos + UE.Vector3.up * 0.1, 0.1, UE.Vector3.down, self.diveHeight, CL.LayerDefine.EnvLayerMask.value)
+    return not isHit
+end
+
+function DragonwingGlaive:DiveFailTips()
+    CL.SoundTable.PlaySound("Error")
+    CL.TextPanel.ShowTipsByTextIdAndCheckInterval("UI_Tips_NoMana", 3)
+end
+
+function DragonwingGlaive:StartDive(character)
+    local dir = ((character.trans.forward * (1 - self.slopeIntensity)) + (-character.trans.up * self.slopeIntensity)).normalized
+    self.drveEo = CL.EffectMgr.Instance:PlayEffect(self.diveEffect,
+        character:GetCentrePos() + character.trans.forward, UE.Quaternion.LookRotation(dir))
+    
+    local endPos = character.trans.position + dir * self.diveSpeed * self.maxDiveTime
+    character.aiProxy:IgnoreDamage(true)
+    local nextPos = nil
+    CL.Scheduler.RemoveSchedule(self.diveActId)
+    self.diveActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(character) then
+                return
+            end
+            
+            if not self.host.interact:IsGrabbed() then
+                sche:Stop()
+                return
+            end
+            
+            if character:IsGround() then
+                self:DoStomp(character)
+                character.capsuleRB.velocity = UE.Vector3.zero
+                character.capsuleRB.angularVelocity = UE.Vector3.zero
+                sche:Stop()
+                return
+            end
+            
+            nextPos = character.trans.position + dir * self.diveSpeed * UE.Time.deltaTime
+            CL.PhysicsFollow.TrackPosition(character.capsuleRB, nextPos)
+        end,
+    0, self.maxDiveTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function DragonwingGlaive:DoStomp(character)
+    local pos = character:GetGroundPos()
+    local dir = character.trans.forward
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self.host:NetworkCreateFlyObj(self.stompFlyObjName, pos, dir)
+        end
+    else
+        self.host:CreateFlyObj(self.stompFlyObjName, pos, dir)
+    end
+end
+
+return Class(nil, nil, DragonwingGlaive)

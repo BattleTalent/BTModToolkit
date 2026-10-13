@@ -1,0 +1,163 @@
+local RisingRock = {
+    pushSpeed = 10,
+    characterPushSpeed = 10,
+    fcPushSpeed = 10,
+    
+    rockAnimTime = 0.3,
+    defaultHeight = -1.45,
+    
+    brokenEffectName = "RisingRock_explosion",
+    risingEffectName = "RisingRock_effects",
+    puList = {},
+}
+
+function RisingRock:FlyStart()
+    self.rasingCol.enabled = true
+    self.endEffectTime = UE.Time.time + self.rockAnimTime + 0.3
+    self:RockAnimStart()
+    
+    self:CheckOther()
+end
+
+function RisingRock:RockAnimStart()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.risingEffectName, self.trans.position, self.trans.rotation)
+
+    self.rockActId = CL.Scheduler.RemoveSchedule(self.rockActId)
+    self.rockActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            local val = CL.EasingEquations.EaseOutExpo(self.defaultHeight, 0, t/self.rockAnimTime)
+            self.rockTrans.localPosition = UE.Vector3(0, 0, val)
+            if t >= self.rockAnimTime then
+                self.rasingCol.enabled = false
+            end
+        end
+    , 0, self.rockAnimTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function RisingRock:OnCollision(collision, pu)
+    if UE.Time.time > self.endEffectTime then
+        return
+    end
+    if not IsNullOrDestroyed(pu) then
+        if self.puList[pu] then
+            return
+        end
+        self.puList[pu] = true
+        
+        pu:AddForce(self.trans.forward * self.pushSpeed, UE.ForceMode.VelocityChange)
+    else
+        local otherCol = collision:GetContactOtherContact(0)
+        if not IsNullOrDestroyed(otherCol.attachedRigidbody) then
+            otherCol.attachedRigidbody:AddForce(self.trans.forward * self.pushSpeed, UE.ForceMode.VelocityChange)
+        end
+    end
+end
+
+function RisingRock:OnCollisionWithPlayer(collision, character)
+    if UE.Time.time > self.endEffectTime then
+        return
+    end
+    
+    if self.puList[character:GetPlayerUnit()] then
+        return
+    end
+    
+    self.puList[character:GetPlayerUnit()] = true
+    character:SetDragForAWhile(0, 0.3)
+    character.capsuleRB:AddForce(self.trans.forward * self.characterPushSpeed, UE.ForceMode.VelocityChange)
+end
+
+function RisingRock:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if UE.Time.time > self.endEffectTime then
+        return
+    end
+    
+    if fc.muscleState:IsPowerfulCharacter() and not fc.attr:IsDead() then
+        self.host:OnFinish()
+        return
+    end
+    
+    if self.puList[fc] then
+        return
+    end
+    
+    self.puList[fc] = true
+    if not fc.attr:IsDead() then
+        fc.motion:Knockout()
+        fc.ra:AddForce(self.trans.forward * self.fcPushSpeed, UE.ForceMode.VelocityChange)
+    else
+        rb:AddForce(self.trans.forward * self.fcPushSpeed, UE.ForceMode.VelocityChange)
+        fc.ra:AddForce(self.trans.forward * self.fcPushSpeed, UE.ForceMode.VelocityChange)
+    end
+end
+
+function RisingRock:OnTriggerWithRole(fc, col)
+    if UE.Time.time > self.endEffectTime then
+        return
+    end
+    
+    if fc.muscleState:IsPowerfulCharacter() and not fc.attr:IsDead() then
+        self.host:OnFinish()
+        return
+    end
+    
+    --if self.puList[fc] then
+    --    return
+    --end
+    --
+    --self.puList[fc] = true
+    --if not fc.attr:IsDead() then
+    --    fc.motion:Knockout()
+    --    fc.ra:AddForce(self.trans.forward * self.fcPushSpeed, UE.ForceMode.VelocityChange)
+    --else
+    --    if not IsNullOrDestroyed(col.attachedRigidbody) then
+    --        col.attachedRigidbody:AddForce(self.trans.forward * self.fcPushSpeed, UE.ForceMode.VelocityChange)
+    --    end
+    --    fc.ra:AddForce(self.trans.forward * self.fcPushSpeed, UE.ForceMode.VelocityChange)
+    --end
+end
+
+function RisingRock:OnCollisionWithScene(collision)
+
+end
+
+function RisingRock:CheckOther()
+    local num = UE.Physics.OverlapSphereNonAlloc(self.trans.position, 0.3, 
+        CL.PhysicsHelper.shareOverlapColArray, UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)))
+    local otherCollider = nil
+    if num > 0 then
+        for i = 0, num - 1 do
+            if CL.PhysicsHelper.shareOverlapColArray[i] ~= self.host.col then
+                otherCollider = CL.PhysicsHelper.shareOverlapColArray[i]
+                local pu = CL.PhysicsUnit.GetPhysicsUnit(otherCollider)
+                if not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.FlyObject then
+                    if pu.script then
+                        if pu.script:GetScriptName() == self.host.script:GetScriptName() then
+                            local tb = pu.script:GetSelf()
+                            if tb.endEffectTime < self.endEffectTime then
+                                tb.host:OnFinish()
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+function RisingRock:OnFinish()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.brokenEffectName, self.trans.position, self.trans.rotation)
+    eo.trans.position = self.rockTrans.position
+    eo.trans.rotation = self.trans.rotation
+    self.host:DoFinish()
+end
+
+function RisingRock:ResetState()
+    self.puList = {}
+    self.rockTrans.localPosition = UE.Vector3(0, 0, self.defaultHeight)
+end
+
+return Class(nil, nil, RisingRock)

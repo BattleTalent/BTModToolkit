@@ -1,0 +1,642 @@
+local BowTransform = {
+    isTransform = false,
+    transformInterval = 2,
+    nextTransformTime = 0,
+    
+    isDestroyBodyFragment = false,
+    
+        transformInfoList = {
+        ["leftPart"] = {["delay"] = 0, ["duration"]   = 0.25, ["endLocalRot"] = UE.Quaternion.Euler(UE.Vector3(0, 0, -123))},
+        ["rightPart"] = {["delay"] = 0, ["duration"]   = 0.25, ["endLocalRot"] = UE.Quaternion.Euler(UE.Vector3(0, 0, 123))},
+    },
+    
+    audioSources = {},
+    leftRelativePoses = {},
+    rightRelativePoses = {},
+    
+    transformHitCol = {},
+    stabMu = nil,
+    
+    cutFragment = {},
+    manaCache = 0,
+}
+
+
+function BowTransform:Awake()
+    self.__base.isBowBlade = true
+    self.totalTime = self:CacheInfo(self.transformInfoList, self.audioSources)
+    
+    --Destroy body fragment on stab
+    self.Phase1EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+        
+        if not fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+            return
+        end
+        
+        if frag then
+            --print("self.isDestroyBodyFragment -- ".. tostring(self.isDestroyBodyFragment))
+            if self.isDestroyBodyFragment then
+                self.isDestroyBodyFragment = false
+                CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag
+            end
+        end
+    end
+    if not IsNullOrDestroyed(self.hitInfoObj0) then
+        self.hitInfoObj0.hitInfo:OnInteractRoleHitPhase1Event("+", self.Phase1EventHandler)
+    end
+    if not IsNullOrDestroyed(self.hitInfoObj1) then
+        self.hitInfoObj1.hitInfo:OnInteractRoleHitPhase1Event("+", self.Phase1EventHandler)
+    end
+
+    
+    
+    --weaken enemy
+    self.Phase2EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        --if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult <= 0 then
+        --    return
+        --end
+        local count = 0
+        for k, v in pairs(self.cutFragment) do
+            count = count + 1
+        end
+        if count >= self.maxCutNum then
+            return
+        end
+        
+        if self.onTransform and not self.isStab then
+            local hitPoint = self.transformHitCol[thisCol]
+            if hitPoint == nil then
+                return
+            end
+            --if thisCol.transform.parent then
+            --    print(" hitCol ---:" .. thisCol.transform.name .. " parent:" ..thisCol.transform.parent.name)
+            --else
+            --    print(" hitCol ---:" .. thisCol.transform.name)
+            --end
+            local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, hitPoint)
+            if frag and not self.cutFragment[frag] then
+                
+                if not fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+                    return
+                end
+                
+                if frag.reactType == CS.BodyFragment.ReactType.Dead then
+                    local hpFactor = fc.attr:GetHpFactor()
+                    if hpFactor > 0.3 then
+                        return
+                    end
+                end
+                
+                local cutPos = frag:GetCutPlanePos()
+                local cutNormal = frag:GetCutPlaneNormal()
+                local dot = UE.Vector3.Dot(cutNormal, self.trans.up)
+                --print("dot---------------::"  .. dot)
+                if dot > 0.6 or dot < -0.6 then
+                    local dir = (hitPoint - cutPos).normalized
+                    dot = UE.Vector3.Dot(dir, cutNormal)
+                    --print("dot of point---------------::"  .. dot)
+                    
+                    --CL.DebugDraw.DrawLine(cutPos, cutPos + dir, UE.Color.red, 5)
+                    --CL.DebugDraw.DrawLine(cutPos, cutPos + cutNormal, UE.Color.green, 5)
+                    
+                    local pass = false
+                    if dot < 0.1 and dot > -0.1 then
+                        pass = true
+                    else
+                        local dis = UE.Vector3.Distance(cutPos, hitPoint)
+                        if dis < 0.15 then
+                            pass = true
+                        end
+                        --print("dis---------------::"  .. dis)
+                    end
+                    
+                    if pass then
+                        self.cutFragment[frag] = true
+                        CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+                    end
+                
+                end
+            end
+        end
+    end
+    if not IsNullOrDestroyed(self.hitInfoObj0) then
+        self.hitInfoObj0.hitInfo:OnInteractRoleHitPhase2Event("+", self.Phase2EventHandler)
+    end
+    if not IsNullOrDestroyed(self.hitInfoObj1) then
+        self.hitInfoObj1.hitInfo:OnInteractRoleHitPhase2Event("+", self.Phase2EventHandler)
+    end
+    
+    
+    self.onStabEnterHandler = function(si)
+        self.isStab = true
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+        if not IsNullOrDestroyed(pu) then
+            if pu.unitType == CL.Tagger.Tag.InteractRole then
+                self.mu = pu.ra:GetMuscle(si.stabTarget)
+            end
+        end
+    end
+    self.onStabExitHandler = function(si)
+        self.isStab = false
+        self.mu = nil
+    end
+    
+    local so = self.host.interact:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("+", self.onStabEnterHandler)
+        so:StabExitEvent("+", self.onStabExitHandler)
+        self.stabObj = so
+    end
+    
+    local attachs = self.host.interact.attachList
+    for i = 0, attachs.Length - 1 do
+        table.insert(self.rightRelativePoses, attachs[i].handRelativePosition[1])
+        table.insert(self.leftRelativePoses, attachs[i].handRelativePosition[0])
+    end
+
+    self.manaCache = self.host.manaCost
+end
+
+function BowTransform:RegisterSpawnNetworkIBCallback()
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetIds[netId] then
+            self.initNetIds[netId] = nil
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) or IsNullOrDestroyed(netIb.ib) then
+                return
+            end
+            self:ClearArrowStabObject(netIb.ib)
+            self:EnchantArrowIB(netIb.ib)
+            self:IgnoreArrowCollision(netIb.ib, true)
+            CL.EffectMgr.Instance:PlayEffect(self.shotEffectName, netIb.ib.trans.position + netIb.ib.trans.forward * 0.5, netIb.ib.trans.rotation)
+            self:OnReleaseClientAfterGen(netIb.ib)
+        end
+    end
+    
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function BowTransform:Start()
+    self.__base.Start(self)
+    if self.puller and not IsNullOrDestroyed(self.puller.ib) then
+        self.puller.ib:HideHint(self.puller.hintPoint)
+    end
+    
+    if not IsNullOrDestroyed(self.pullerScript) then
+        self.pullerScript.gameObject:SetActive(false)
+    end
+    
+    self:loadArrow()
+    
+    self:SetHandAttach(true)
+end
+
+function BowTransform:loadArrow()
+    CL.ResourceMgr.LoadAsync(CL.InteractTrigger.WeaponPath .. self.arrowPrefab, nil)
+end
+
+function BowTransform:OnGrab(attach, t)
+    if self.isTransform then
+        self:OnBowGrab(t)
+    end
+    
+    if t and attach and not IsNullOrDestroyed(attach.attachedHand) then
+        self.holdingCharacter = attach.attachedHand.character
+        if self.holdingCharacter and self.holdingCharacter.aiProxy then
+            self.camp = self.holdingCharacter.aiProxy:GetCamp()
+        end
+    end
+    
+    self.isGrab = t
+end
+
+function BowTransform:OnBowGrab(t)
+    self.aimWidget.gameObject:SetActive(t)
+    if t and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+        self.aimWidget.enabled = true
+    else
+        self.aimWidget.enabled = false
+    end
+    
+    if t == false and CL.InteractCharacter.PlayerInstance ~= nil then
+        for i = 0, CL.RagdollBoneInfo.HAND_NUM - 1 do
+            CL.InteractCharacter.PlayerInstance.hands[i]:Ban(false)
+        end
+    end
+    
+    self.pullerScript.gameObject:SetActive(t)
+    if self.puller then
+        self.puller:OnGrab(self.host.interact.attachList[0], t)
+    end
+end
+
+function BowTransform:ShootArrow(arrow)
+    if arrow and not IsNullOrDestroyed(arrow.ib) then
+        CL.EffectMgr.Instance:PlayEffect(self.shotEffectName, arrow.ib.trans.position + arrow.ib.trans.forward * 0.5, arrow.ib.trans.rotation)
+    end
+    self.__base.ShootArrow(self, arrow)
+end
+
+
+function BowTransform:CacheInfo(list, audioList)
+    local totalTime = 0
+    local time = 0
+    for k, v in pairs(list) do
+        if v["endLocalPos"] then
+            v["startLocalPos"] = self[k].localPosition
+        end
+        if v["endLocalRot"] then
+            v["startLocalRot"] = self[k].localRotation
+        end
+        time = v["delay"] + v["duration"]
+        if time > totalTime then
+            totalTime = time
+        end
+        
+        if not audioList[k] then
+            audioList[k] = self[k]:GetComponent(typeof(CL.SoundEffectPlayer))
+        end
+    end
+    
+    return totalTime
+end
+
+
+function BowTransform:OpenSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if UE.Time.time < self.nextTransformTime then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerCloseSkill()
+            end
+        end
+        self.host:CloseSkill()
+        return
+    end
+    self.nextTransformTime = self.transformInterval + UE.Time.time
+
+    self.host.manaCost = self.manaCache
+    local hand = self.host.interact:GetPrimaryHand()
+    if hand then
+        local character = hand.character
+        if character then
+            character:CostMana(self.host, self.host.manaCost)
+        end
+    end
+    self.host.manaCost = 0
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerTransformMode(self.isTransform)
+        end
+    end
+    self:TransformMode()
+end
+
+function BowTransform:NetworkTransformMode(isTransform)
+    self.isTransform = isTransform
+    self:TransformMode()
+end
+
+function BowTransform:TransformMode()
+    self.onTransform = true
+    
+    local isStab = self.isStab
+    local ripMu = self.mu
+    self:BreakAllStab()
+    if self.stabObj then
+        self.stabObj.isActive = false
+    end
+    self:StartTransform(self.transformInfoList, self.audioSources, self.isTransform, self.totalTime, 
+        function()
+            self.onTransform = false
+            self.transformHitCol = {}
+            self.cutFragment = {}
+            if self.stabObj then
+                self.stabObj.isActive = true
+            end
+        end)
+    self.isTransform = not self.isTransform
+    
+    self:SetHandAttach(not self.isTransform)
+    if not IsNullOrDestroyed(self.pullerScript) then
+        self.pullerScript.gameObject:SetActive(self.isTransform)
+    end
+    
+    --other hand release
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        local other = hand:GetAnotherHand()
+        if not IsNullOrDestroyed(other) and other:IsGrabbing() then
+            local rb = other:GetFingerGrabObj()
+            if not IsNullOrDestroyed(rb) and rb == self.host.interact.rb then
+                other:ReleaseFingerGrab()
+            end
+        end
+    end
+    
+    self:OnBowGrab(self.isTransform and self.isGrab)
+    
+    local posL = nil
+    local posR = nil
+    if self.isTransform then
+        local info = self.transformSound:PlaySoundInfo()
+        if info then
+            info.audio.pitch = 1
+        end        
+        self:UpdateString()
+        if isStab then
+            self:TryRipEnemyApart(ripMu)
+        end
+        posL = self.effectPoint1
+        posR = self.effectPoint0
+        self.host.interact.rb.centerOfMass = UE.Vector3(0.1, 0, 0)
+        self.host.interact.interactType = CL.InteractBase.InteractType.Fragile
+    else
+        local info = self.transformSound:PlaySoundInfo()
+        if info then
+            info.audio.pitch = 0.9
+        end
+        self:StopString()
+        posL = self.endEffectPoint1
+        posR = self.endEffectPoint0
+        if self.puller ~= nil then
+            self.puller:ChangeState(self.puller.PullerState.CANCEL)
+            self.puller:ChangeState(self.puller.PullerState.IDLE)
+        end
+        self.host.interact.rb.centerOfMass = UE.Vector3(-0.2, 0, 0)
+        self.host.interact.interactType = CL.InteractBase.InteractType.Default
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.effActId)
+    self.effActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(posR) or IsNullOrDestroyed(posL) then
+                sche:Stop()
+                return
+            end
+            CL.EffectMgr.Instance:PlayEffect(self.transformEffectName, posR.position, posR.rotation)
+            CL.EffectMgr.Instance:PlayEffect(self.transformEffectName, posL.position, posL.rotation)
+        end
+    , 0, 0, 0.05)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.Update).actionId
+end
+
+function BowTransform:BreakAllStab()
+    if self.stabObj then
+        self.stabObj:BreakAllStab()
+    end
+end
+
+function BowTransform:TryRipEnemyApart(mu)
+    if not mu then
+        return
+    end
+    
+    local hand = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    local character = hand.character
+    if not character then
+        return
+    end
+    
+    self.isDestroyBodyFragment = true
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(mu.col, self.host.interact, 
+        self.host.interact.rb, self["bladeCol1"], self.trans.forward, self.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+    self.isDestroyBodyFragment = false
+end
+
+function BowTransform:SetHandAttach(isStraight)
+    local leftRotateSpace = isStraight and UE.Vector3(180, 90, 0) or UE.Vector3(180, 90, 0)    
+    local leftGrabRotateSpace = isStraight and UE.Vector3(0, -60, 0) or UE.Vector3(0, -90, 0)
+
+    local rightRotateSpace = isStraight and UE.Vector3(0, 95, 0) or UE.Vector3(0, 95, 0)    
+    local rightGrabRotateSpace = isStraight and UE.Vector3(0, -60, 0) or UE.Vector3(0, -90, 0)
+    
+    for k, v in ipairs(self.rightRelativePoses) do
+        v.rotateSpace = rightRotateSpace
+        v.grabRotateSpace = rightGrabRotateSpace
+    end
+    
+    for k, v in ipairs(self.leftRelativePoses) do
+        v.rotateSpace = leftRotateSpace
+        v.grabRotateSpace = leftGrabRotateSpace
+    end
+    
+    local vec = UE.Vector3(-0.0752, 0, isStraight and 0.0129 or 0.066)
+    local hand = self.host.interact:GetPrimaryHand()
+    if hand and not IsNullOrDestroyed(hand.attachTo) and not IsNullOrDestroyed(hand.grabJoint) then
+        hand.attachTo.transform.localPosition = vec
+        hand.attachTo:SetupHandPose(hand)
+        hand.attachTo:Mount(hand.grabJoint)
+        hand.attachTo:UpdateMountJointDrive(hand.grabJoint)
+    end
+    
+    --if hand then
+    --    local attachTo = hand.attachTo
+    --    if attachTo then
+    --        hand:Grab(nil)
+    --        hand:Grab(attachTo)
+    --    end
+    --end
+end
+
+function BowTransform:UpdateString()
+    if IsNullOrDestroyed(self.stringRenderer) then
+        return
+    end
+    self.stringRenderer.enabled = true
+    local initTime = 0.2
+    local value = 0
+    CL.Scheduler.RemoveSchedule(self.stringActId)
+    self.stringActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.stringRenderer)
+            or IsNullOrDestroyed(self.ropeTrans) or IsNullOrDestroyed(self.leftStringPoint)
+            or IsNullOrDestroyed(self.rightStringPoint) then
+                sche:Stop()
+                return
+            end
+            if t < initTime then
+                value = CL.EasingEquations.EaseOutExpo(0, 1, t/initTime)
+                self.stringRenderer:SetPosition(0, UE.Vector3.Lerp(self.ropeTrans.position, self.leftStringPoint.position, value))
+                self.stringRenderer:SetPosition(1, self.ropeTrans.position)
+                self.stringRenderer:SetPosition(2, UE.Vector3.Lerp(self.ropeTrans.position, self.rightStringPoint.position, value))
+                return
+            end
+            
+            
+            self.stringRenderer:SetPosition(0, self.leftStringPoint.position)
+            self.stringRenderer:SetPosition(1, self.ropeTrans.position)
+            self.stringRenderer:SetPosition(2, self.rightStringPoint.position)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.LateUpdate).actionId
+end
+
+function BowTransform:StopString()
+    --local time = 0.3
+    --local value = 0
+    --CL.Scheduler.RemoveSchedule(self.stringActId)
+    --self.stringActId = CL.Scheduler.Create(self, 
+    --    function(sche, t, s)
+    --        value = CL.EasingEquations.EaseOutExpo(0, 1, t/time)
+    --        self.stringRenderer:SetPosition(0, UE.Vector3.Lerp(self.leftStringPoint.position, self.ropeTrans.position, value))
+    --        self.stringRenderer:SetPosition(1, self.ropeTrans.position)
+    --        self.stringRenderer:SetPosition(2, UE.Vector3.Lerp(self.rightStringPoint.position, self.ropeTrans.position, value))
+    --        
+    --        if t >= time then
+                if not IsNullOrDestroyed(self.stringRenderer) then
+                    self.stringRenderer.enabled = false
+                end
+    --        end
+    --    end
+    --, 0, time)
+    --:SetUpdateChannel(CL.Scheduler.UpdateChannel.Update).actionId
+end
+
+function BowTransform:StartTransform(list, audioSources, isForward, totalTime, callback)
+    local targetPos = nil
+    local targetRot = nil
+    local audioList = {}
+    
+    local curStateList = {}
+    for k, v in pairs(list) do
+        curStateList[k] = {}
+        --position
+        if v["startLocalPos"] then
+            curStateList[k].localPosition = self[k].localPosition
+        end
+        
+        --rotation
+        if v["startLocalRot"] then
+            curStateList[k].localRotation = self[k].localRotation
+        end
+    end
+    
+    if not IsNullOrDestroyed(self.trail0) then
+        self.trail0.enabled = true
+    end
+    if not IsNullOrDestroyed(self.trail1) then
+        self.trail1.enabled = true
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.actTimeId)
+    self.actTimeId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then
+                sche:Stop()
+                return
+            end
+            for k, v in pairs(list) do
+                if IsNullOrDestroyed(self[k]) then
+                    sche:Stop()
+                    return
+                end
+                if (not isForward and t > v["delay"] and t <= v["delay"] + v["duration"]) or
+                (isForward and t > totalTime - (v["delay"] + v["duration"]) and t <= totalTime - v["delay"]) then
+                    local time = isForward and t - (totalTime - (v["delay"] + v["duration"])) or t - v["delay"]
+                    local value = CL.EasingEquations.EaseOutBack(0, 1, time/v["duration"])
+
+                    --position
+                    if v["startLocalPos"] then
+                        targetPos = isForward and v["startLocalPos"] or v["endLocalPos"]
+                        self[k].localPosition = UE.Vector3.Lerp(curStateList[k].localPosition, targetPos, value)
+                    end
+                    
+                    --rotation
+                    if v["startLocalRot"] then
+                        targetRot = isForward and v["startLocalRot"] or v["endLocalRot"]
+                        self[k].localRotation = UE.Quaternion.Lerp(curStateList[k].localRotation, targetRot, value)
+                    end
+                    
+                    if not audioList[k] then
+                        audioList[k] = true
+                        audioSources[k]:PlaySound()
+                    end
+                end
+            end
+            if not IsNullOrDestroyed(self.trail0) then
+                self.trail0.time = self.trailTime * (1-t/totalTime)
+            end
+            if not IsNullOrDestroyed(self.trail1) then
+                self.trail1.time = self.trailTime * (1-t/totalTime)
+            end
+    
+            if t >= totalTime then
+                if not IsNullOrDestroyed(self.trail0) then
+                    self.trail0.enabled = false
+                end
+                if not IsNullOrDestroyed(self.trail1) then
+                    self.trail1.enabled = false
+                end
+                
+                if callback then
+                    callback()
+                end
+
+            end
+        end
+    , 0, totalTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.Update).actionId
+end
+
+function BowTransform:OnColliderEnter(collision)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    if not self.onTransform then
+        return
+    end
+    
+    local thisCol, otherCol, point = collision:GetContactPoint(0)
+    if not IsNullOrDestroyed(self.holdingCharacter) and otherCol.transform.root == self.holdingCharacter.trans then
+        return
+    end
+    
+    if thisCol ~= self.bladeCol1 and thisCol ~= self.bladeCol0 then
+        return
+    end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(otherCol)
+    if IsNullOrDestroyed(pu) or self.transformHitCol[otherCol] then
+        return
+    end
+    
+    --CL.DebugDraw.DrawSphere(point, 0.1, UE.Color.yellow, 5)
+    
+    --if otherCol.transform.parent then
+    --    print("hitCol blade-----------::" .. thisCol.transform.name .." otherCOl:" .. otherCol.transform.name .. " parent ---:" .. otherCol.transform.parent.name)
+    --else
+    --    print("hitCol blade-----------::" .. thisCol.transform.name .." otherCOl:" ..  otherCol.transform.name)
+    --end
+    
+    self.transformHitCol[otherCol] = point
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.hitScanProtect = false
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(otherCol, self.host.interact, 
+        self.host.interact.rb, thisCol, self.trans.forward, self.camp, true)
+    CL.InteractTrigger.EndHitScan()
+    CL.InteractTrigger.hitScanProtect = true
+    CL.FullBodyMuscleState.StayDmg = false
+    CL.FullBodyMuscleState.SlashDmg = false
+end
+
+return Class(Require("Weapon/BowBaseScript"), nil, BowTransform)

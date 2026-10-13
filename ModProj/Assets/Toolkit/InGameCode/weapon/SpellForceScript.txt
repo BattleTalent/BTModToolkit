@@ -1,0 +1,712 @@
+
+local SpellBase = Require("Weapon/SpellBaseScript")
+
+local forceSpell = {}
+
+--local EnableParticleEffect = true
+local MaxDis = 10
+local BreakMaxDis = MaxDis * 1.5
+local MaxDisSqrt = BreakMaxDis * BreakMaxDis
+local PerForce = 3000
+local ParticleSpeed = 10
+local DragSpeed = 10
+local CurveMaker = CL.Bezier(30)
+local MassSpringFactor = 500
+local SpringMin = 1000
+
+function forceSpell:CleanupForceRuntime()
+    self.chargeTimeId = SafeRemoveSchedule(self.chargeTimeId)
+    self.ceTimer = SafeStopSchedule(self.ceTimer, self.host)
+
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.chargeAU)
+    self.chargeAU = nil
+
+    if self.chargeEo then
+        CL.EffectMgr.Instance:GiveBack(self.chargeEo)
+        self.chargeEo = nil
+    end
+    if self.controlEo then
+        CL.EffectMgr.Instance:GiveBack(self.controlEo)
+        self.controlEo = nil
+    end
+end
+
+function forceSpell:OnDestroy()
+    self:BreakConnect()
+    self:CleanupForceRuntime()
+    SpellBase.OnDestroy(self)
+end
+
+
+function forceSpell:GrabSpell(a)
+    self.hand = a.attachedHand --player.hands[a.attachedHand:GetHandIndex()]
+    if self.joint == nil then
+        self.joint = self.hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint.autoConfigureConnectedAnchor = false
+        self.limitPoint = self.joint.gameObject.transform:InverseTransformPoint(self.hand.trans.position + self.hand:GetGrabDir() * MaxDis)
+    end
+end
+
+function forceSpell:UnGrabSpell(a)
+    self:BreakConnect()
+    self:CleanupForceRuntime()
+    if self.joint ~= nil then
+        UE.Object.Destroy(self.joint)
+        self.joint = nil
+    end
+end
+
+function forceSpell:SlotSpell(s)
+    
+    self.hand = s:GetAttachedHand()
+    
+    -- means this is not a slot for triggering skill, but you still can put it in this slot anyway
+    if self.hand == nil then
+        return
+    end
+    
+    if self.joint == nil then
+        self.joint = self.hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint.autoConfigureConnectedAnchor = false
+        self.limitPoint = self.joint.gameObject.transform:InverseTransformPoint(self.hand.trans.position + self.hand:GetGrabDir() * MaxDis)
+    end    
+end
+
+function forceSpell:UnSlotSpell(s)
+    self:BreakConnect()
+    if self.joint ~= nil then
+        UE.Object.Destroy(self.joint)
+        self.joint = nil
+    end
+    self:CleanupForceRuntime()
+    SpellBase.UnSlotSpell(self, s)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--[[Skill Update]]
+function forceSpell:OpenSkill()
+    self:SetHandPose(true)
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.chargeAU)
+    self.chargeAU = self.chargeSound:PlaySoundInfo()
+    if self.chargeAU then
+        self.chargeAU.ao.trans.parent = self.hand.trans
+    end
+    self:PlayChargeEffect()
+end
+
+function forceSpell:UpdateSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not IsNullOrDestroyed(self.connectRb) then
+        local cp = self.dragRBTrans:TransformPoint(self.joint.connectedAnchor)
+        if ((cp - self.hand.trans.position).sqrMagnitude > MaxDisSqrt) then
+            if self.isOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+            end
+            self.host:CloseSkill()
+            return
+        end
+    end
+
+
+    if IsNullOrRecycled(self.pu) then
+        if self.connectionBuilt then
+            if self.isOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+            end
+            self.host:CloseSkill()
+            return
+        end
+             
+        self:RayDetect()
+    else
+        self:AxisPush()
+        if self.resistFC and CL.Time.time > self.resistTime then
+            self.resistFC.motion:Knockout()
+            self.resistFC = nil
+        end
+        -- check pull to knock down
+        if self.joint.connectedBody and self.pu.unitType == CL.Tagger.Tag.InteractRole and self.pu.motion:IsKnockoutDown() == false then
+            local anchorPos = self.joint.transform:TransformPoint(self.joint.anchor)
+            local anotherPos = self.joint.connectedBody.transform:TransformPoint(self.joint.connectedAnchor)
+            if (anchorPos - anotherPos).sqrMagnitude > 6 then
+                self.pu.motion:Knockout()
+            end
+        end
+    end
+    
+end
+
+function forceSpell:CloseSkill()    
+    self:BreakConnect()
+    self:SetHandPose(false)    
+    if self.hand and not IsNullOrDestroyed(self.hand) and self.hand.handTracker then
+        self.hand.handTracker:SetTrackSpeed(1)
+    end
+    
+    self:CleanupForceRuntime()
+    SpellBase.CloseSkill(self)
+end
+
+--[[ end of Skill Update]]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function forceSpell:AxisPush()
+    local v = self.isOnline and self.hand.inputs[CL.VRTKInputButton.ButtonType.Touchpad].networkInputBtn.GetAxis or self.hand.inputs[CL.VRTKInputButton.ButtonType.Touchpad].Axis
+    if v.y ~= 0 then
+        local curAnchor = self.joint.anchor
+        local point = curAnchor + v.y * curAnchor.normalized * DragSpeed * UE.Time.deltaTime
+        
+        
+        if (self.limitPoint.x > 0 and (point.x > self.limitPoint.x or point.x < 0)) or (self.limitPoint.x < 0 and (point.x < self.limitPoint.x or point.x > 0)) then
+            return
+        elseif (self.limitPoint.y > 0 and (point.y > self.limitPoint.y or point.y < 0)) or (self.limitPoint.y < 0 and (point.y < self.limitPoint.y or point.y > 0)) then
+            return
+        elseif (self.limitPoint.z > 0 and (point.z > self.limitPoint.z or point.z < 0)) or (self.limitPoint.z < 0 and (point.z < self.limitPoint.z or point.z > 0)) then
+        end
+    
+        self.joint.anchor = point --self.joint.anchor + v.y * self.joint.anchor.normalized * DragSpeed * UE.Time.deltaTime
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerUpdateAnchor(point) end
+            end
+        end
+    end
+end
+
+function forceSpell:NetworkUpdateAnchor(point)
+    if IsNullOrDestroyed(self.joint) then
+        return
+    end
+    self.joint.anchor = point
+end
+
+
+function forceSpell:RayDetect()    
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.hand.trans.position, 0.15, 
+        self.hand:GetGrabDir(), --self.createPoint.up, 
+        MaxDis, 
+        CL.LayerDefine.VisibleCollisionMask.value)
+        --CL.LayerDefine.BodyMask.value)
+
+    if isHit then        
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(raycastHit.transform)
+        if (pu == nil             
+            or pu.unitType == CL.Tagger.Tag.PlayerRole
+            or pu.unitType == CL.Tagger.Tag.PlayerHand
+            or pu:IsStaticScene()) then
+            return 
+        end
+        
+        --local obj = raycastHit.transform.root.gameObject
+        --print("hit obj ----------------:"..raycastHit.transform.name .."root:"..obj.name)        
+        self.dragRB = raycastHit.rigidbody
+        self.dragCol = raycastHit.collider
+        if IsNullOrDestroyed(self.dragRB) then
+            return
+        end
+        if (self.dragCol.isTrigger or self.dragRB.isKinematic) then
+            return
+        end
+        
+        local mass = 0
+        self.pu = pu
+        
+        
+
+        if pu.unitType == CL.Tagger.Tag.InteractRole then
+            local fc = pu--CL.CharacterMgr.Instance:GetFullCharacterByChild(rbTrans) --obj:GetComponent("FullCharacterControl")
+            if fc then
+                
+                if fc.motion:Standing() then
+                    self.resistFc = fc                        
+                    self.resistTime = UE.Time.time + fc.attr.hp.BaseValue / 100
+                    fc.muscleState:DoStiff(1)
+                end                
+                
+                if fc.muscleState:IsPowerfulCharacter() then
+                    mass = 0.01
+                else
+                    --mass = 60                    
+                    local mu = fc.ra:GetMuscle(self.dragRB.transform)
+                    if mu then
+                        local mus = fc.bone:GetTemporaryListMuscleChain(mu.muscleName)
+                        for i = 0, mus.Count - 1 do
+                            local rm = fc.ra:GetMuscle(mus[i])
+                            if rm then
+                                mass = mass + rm.rb.mass
+                                --print("name:"..boneList[i].. " mass:"..rm.rb.mass)                
+                            end
+                        end                    
+                    else
+                        mass = self.dragRB.mass
+                    end                                    
+                end     
+            end   
+        else
+            mass = pu:GetTotalMass()
+        end
+
+        local spring = MassSpringFactor * mass
+        if spring < SpringMin then
+            spring = SpringMin
+        end        
+
+        --print("total mass--------------", mass)
+        local targetPoint = self.dragCol:ClosestPoint(raycastHit.point)
+        self:BuildConnect(pu, spring, targetPoint)
+        self:ControlEffect(pu, self.dragRB, self.dragCol, targetPoint)
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local lp = self.dragCol.transform:InverseTransformPoint(targetPoint)
+                local jp = self.dragCol.transform:InverseTransformPoint(targetPoint)
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerOnDetect(self.dragRB, self.dragCol, lp, spring, self.joint.anchor, self.joint.connectedAnchor) end
+            end
+        end
+        --enhance
+        --[[
+        if self.host.interact:IsEnhance() and pu.unitType == CL.Tagger.Tag.InteractRole then
+            pu.motion:Knockout()
+        end
+        ]]
+    end
+end
+
+function forceSpell:NetworkOnDetect(rb, col, point, spring, anchor, connectedAnchor)
+    if IsNullOrDestroyed(self.joint) or IsNullOrDestroyed(self.hand)
+        or IsNullOrDestroyed(rb) or IsNullOrDestroyed(col) then
+        return
+    end
+    self.dragRB = rb
+    self.dragCol = col
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(col)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    self.pu = pu
+    local wp = self.dragCol.transform:TransformPoint(point)
+    self:NetworkBuildConnect(self.pu, spring, anchor, connectedAnchor)
+    self:ControlEffect(self.pu, self.dragRB, self.dragCol, wp)
+end
+
+function forceSpell:NetworkBuildConnect(pu, spring, anchor, connectAnchor)
+    self.connectionBuilt = true
+    self.connectRb = self.dragRB
+    
+    self.grabPoint = anchor  
+        
+    --joint Contect
+    self.joint.connectedBody = self.dragRB
+    self.dragRBTrans = self.dragRB.transform
+    self.joint.anchor = self.grabPoint
+    self.joint.connectedAnchor = connectAnchor
+        
+    pu:OnAttachBuild(self.hand.physicsHand, self.joint, self.dragRB)
+    self:UpdateLocalTargetTracking()
+    
+    local damper = spring * 0.5
+    local ld = self.joint.xDrive        
+    ld.positionSpring = spring
+    ld.positionDamper = damper
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = spring * 0.005
+    sd.positionDamper = damper * 0.002
+    self.joint.slerpDrive = sd
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    
+    if self.chargeAU then
+        self.chargeAU.audio.pitch = math.min(3, math.max(0.01, self.chargeAU.audio.pitch + 0.5))
+    end
+end
+
+
+function forceSpell:BuildConnect(pu, spring, point)
+    self.connectionBuilt = true
+    self.connectRb = self.dragRB
+    
+    
+    self.grabPoint = self.joint.gameObject.transform:InverseTransformPoint(point)--rb.transform.position)    
+        
+    --joint Contect
+    self.joint.connectedBody = self.dragRB
+    self.dragRBTrans = self.dragRB.transform
+    self.joint.anchor = self.grabPoint
+    self.joint.connectedAnchor = self.dragRB.transform:InverseTransformPoint(point)--UE.Vector3.zero
+        
+    pu:OnAttachBuild(self.hand.physicsHand, self.joint, self.dragRB)
+    self:UpdateLocalTargetTracking()
+    
+    local damper = spring * 0.5
+    local ld = self.joint.xDrive        
+    ld.positionSpring = spring
+    ld.positionDamper = damper
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = spring * 0.005
+    sd.positionDamper = damper * 0.002
+    self.joint.slerpDrive = sd
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    
+    if self.chargeAU then
+        self.chargeAU.audio.pitch = math.min(3, math.max(0.01, self.chargeAU.audio.pitch + 0.5))
+    end
+end
+
+function forceSpell:UpdateLocalTargetTracking()
+    if not CL.Network.VRNetworkManager.ClientOnline or IsNullOrDestroyed(self.hand)
+        or not self.hand.character.IsLocalPlayer or IsNullOrDestroyed(self.pu) then
+        return
+    end
+
+    if self.pu.unitType == CL.Tagger.Tag.InteractRole then
+        local character = self.pu.networkCharacter
+        local player = self.hand.character.networkPlayer
+        if not IsNullOrDestroyed(character) and not IsNullOrDestroyed(character.networkRagdoll)
+            and not IsNullOrDestroyed(player) then
+            local grabbed = player.networkInteractHand:GrabRagdoll(character.netId)
+            character.networkRagdoll.physicsFollow = not grabbed
+            self.hand.character:SetCapsuleIgnore(self.pu.controller.capsuleCollider, grabbed)
+        end
+    else
+        local ib = self.pu:GetComponent(typeof(CL.InteractBase))
+        if not IsNullOrDestroyed(ib) and not IsNullOrDestroyed(ib.networkIB)
+            and not IsNullOrDestroyed(ib.networkIB.networkRB) then
+            local primary = ib:GetPrimaryHand()
+            local secondary = ib:GetSecondaryHand()
+            local heldLocally = (not IsNullOrDestroyed(primary) and primary.character.IsLocalPlayer)
+                or (not IsNullOrDestroyed(secondary) and secondary.character.IsLocalPlayer)
+            ib.networkIB:SetLocalHandWeapon(self.connectionBuilt or heldLocally or ib.networkIB:LocalTrackPhysics())
+        end
+    end
+end
+
+function forceSpell:BreakConnect()
+    self.connectionBuilt = false
+    if IsNullOrDestroyed(self.pu) == false then
+        self.pu:OnAttachBreak(self.hand.physicsHand, self.joint, self.dragRB)  
+        self:UpdateLocalTargetTracking()
+        
+        local needForce = (self.pu.unitType == CL.Tagger.Tag.InteractRole 
+            and self.pu.motion:IsKnockoutDown() == false) == false
+        
+        if needForce then
+            local vel = self.hand.velocityEstimator:GetVelocityEstimateLocal()                    
+            --local vel = self.hand.velocityEstimator:GetAvgVelocityLocal(5)
+            --if vel.sqrMagnitude > 1.4*1.4 then            
+            --print("force:" .. vel.magnitude)
+            
+            if vel.sqrMagnitude > 0.8*0.8 then
+                CL.SoundTable.PlaySound("ForceThrow")
+                --print("force:" .. vel.magnitude)
+                local forceFactor = 10
+                local limitVel = 40
+                if self.pu.unitType == CL.Tagger.Tag.InteractRole then
+                    --self.pu.muscleState:ProtectRagdollCCDForAWhile(4) -- avoid passing though the walls
+                    --[[
+                    self.pu.muscleState:DetectPassThroughWalls(
+                        function(muscleState, rb)           
+                            if muscleState.fc.attr:IsDead() then
+                                return
+                            end
+                                
+                            muscleState:Teleport(rb.transform.position, UE.Vector3.up)
+                            muscleState.fc.attr:ToDead()
+                        end)
+                    ]]
+                    self.pu.muscleState:DoThrowing()
+                    forceFactor = 7
+                    limitVel = 20 -- 30 is already very large, since npc have multiple rigidbodies
+                end
+                
+                vel = self.hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+                --CL.DebugDraw.DrawVector(self.dragRB.transform.position, vel, 0.1, 0.1, UE.Color.white, 2)
+                --self.pu:AddForceOnPart(self.dragRB, (vel) * forceFactor, UE.ForceMode.VelocityChange)
+                self.pu:AddForceOnPart(self.dragRB, CL.PhysicsHelper.LimitVelocityForce((vel) * forceFactor, 6, limitVel), UE.ForceMode.VelocityChange)
+                --self.pu:AddForceOnPart(self.dragRB, (vel) * forceFactor, UE.ForceMode.VelocityChange)                
+                --self.pu:AddForceOnPart(self.dragRB, (vel) * 100, UE.ForceMode.Impulse)                
+            end
+        end                    
+    end 
+    self.pu = nil
+
+    CL.SoundTable.GiveBack(self.chargeAU)
+    self.chargeAU = nil
+
+    self.connectRb = nil
+    --self.lineRenderer.enabled = false
+    if self.joint then
+        self.joint.connectedBody = nil
+        local ld = self.joint.xDrive
+        ld.positionSpring = 0
+        ld.positionDamper = 0
+        self.joint.xDrive = ld
+        self.joint.yDrive = ld
+        self.joint.zDrive = ld
+        local sd = self.joint.slerpDrive
+        sd.positionSpring = 0
+        sd.positionDamper = 0
+        self.joint.slerpDrive = sd
+    end
+
+    self.resistFC = nil
+    self.dragRB = nil
+    --UE.Object.Destroy(self.joint)
+    --self.joint = nil
+end
+
+
+
+
+--[[       effect       ]]
+
+--function forceSpell:StopPathEffect()
+--    if EnableParticleEffect then
+--        self.pathFlow:Stop()
+--    end
+--end
+
+--function forceSpell:UpdateParticle(target, curve)
+--    local time = UE.Vector3.Distance(self.hand.trans.position, target)/ParticleSpeed
+--    
+--    local startPos = self.hand.trans.position
+--    local palmDir = self.hand:GetPalmDir()
+--    
+--    --local middle = UE.Vector3.Lerp(time/2 * self.createPoint.up * ParticleSpeed + self.createPoint.position, target, 0.5)
+--    local middle
+--    if curve then
+--        middle = (time/ 4 * palmDir * ParticleSpeed + startPos + target) * 0.5
+--    else
+--        middle = (startPos + target) * 0.5
+--    end
+--    
+--    self.particlePath:SetPath(CurveMaker:GetCubicCurvePoints(startPos, startPos + (palmDir * 0.5), middle, target), 
+--        -- -self.hand:GetPalmDir()--UE.Vector3.up
+--        palmDir
+--        )
+--    self.pathFlow:DoEmitAtPath()
+--end
+
+function forceSpell:PlayChargeEffect()
+    if self.chargeTimeId then
+        CL.Scheduler.RemoveSchedule(self.chargeTimeId)
+        self.chargeTimeId = nil
+    end
+    
+    if self.chargeEo then
+        CL.EffectMgr.Instance:GiveBack(self.chargeEo)
+    end
+    
+    self.chargeEo = CL.EffectMgr.Instance:PlayEffect(self.chargePointEffect, self.createPoint.position, UE.Quaternion.identity)
+    self.chargeEo.trans.localScale = UE.Vector3.one * 0.1
+    self.chargeEo.trans:SetParent(self.createPoint)
+    self.chargeTimeId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.chargeEo) then
+                self.chargeTimeId = SafeRemoveSchedule(self.chargeTimeId)
+                sche:Stop()
+                return
+            end
+            if t > 0.2 then
+                self.chargeEo.trans.localScale = UE.Vector3.one *(self.chargeEo.trans.localScale.x + UE.Time.deltaTime * 5)
+                if self.chargeEo.trans.localScale.x >= 1 then
+                    self.chargeEo.trans.localScale = UE.Vector3.one
+                    
+                    self.chargeTimeId = SafeRemoveSchedule(self.chargeTimeId)
+                    sche:Stop()
+                end
+            end
+        end,
+    0, 0.5).actionId
+end
+
+function forceSpell:CloseChargeEffect()
+    if self.chargeTimeId then
+        CL.Scheduler.RemoveSchedule(self.chargeTimeId)
+        self.chargeTimeId = nil
+    end
+    
+    if self.chargeEo then
+        self.chargeEo:Stop()
+        CL.EffectMgr.Instance:GiveBack(self.chargeEo)
+        self.chargeEo = nil
+    end
+    
+end
+
+function forceSpell:ControlEffect(pu, rb, col, point)
+    if self.ceTimer then
+        RemoveSchedule(self.host, self.ceTimer)
+        self.ceTimer = nil
+    end
+    
+    if self.controlEo then
+        CL.EffectMgr.Instance:GiveBack(self.controlEo)
+    end
+    
+    local eoScale = 1
+    local muDirection = nil
+    local dir = nil
+    local eoPos = nil
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        local mu = pu.ra:GetMuscleByCol(col)
+        --print("mu randius------::" .. col.radius)
+        if mu and (mu.muscleName == CL.RagdollBoneInfo.Head or
+            mu.muscleName == CL.RagdollBoneInfo.RUpArm or mu.muscleName == CL.RagdollBoneInfo.LUpArm or
+            mu.muscleName == CL.RagdollBoneInfo.RForeArm or mu.muscleName == CL.RagdollBoneInfo.LForeArm or
+            mu.muscleName == CL.RagdollBoneInfo.RHand or mu.muscleName == CL.RagdollBoneInfo.LHand or
+            mu.muscleName == CL.RagdollBoneInfo.RThigh or mu.muscleName == CL.RagdollBoneInfo.LThigh or
+            mu.muscleName == CL.RagdollBoneInfo.RCalf or mu.muscleName == CL.RagdollBoneInfo.LCalf) then
+            --print("grab muscle------------::" .. mu.muscleName)
+            if col:GetType():IsAssignableFrom(typeof(UE.CapsuleCollider)) then
+                --print("col randius------::" .. col.radius)
+                eoScale = col.radius
+
+                --muDirection = pu.bone:GetMuscleDirection(mu.muscleName)
+                
+                --if pu.reactAnim.dismember then
+                --    local fragment = pu.reactAnim.dismember:FindFragment(mu.muscleName)
+                --    if fragment then
+                --        --print("fragment------")
+                --        local lcdir = fragment.cutPlaneNormal
+                --        dir = col.transform:TransformDirection(lcdir)
+                --        
+                --        local lcpos = col.transform:InverseTransformPoint(point)
+                --        eoPos = UE.Vector3.Project(lcpos, lcdir)
+                --    
+                --        eoPos = col.transform:TransformPoint(eoPos)
+                --    end
+                --    --local bi = pu.bone:GetBoneInfo(mu.muscleName)
+                --    --dir = bi.bone.transform:TransformDirection(muDirection.parent)
+        --
+                --    --local lcpos = col.transform:InverseTransformPoint(point)
+                --    --local lcdir = col.transform:InverseTransformDirection(dir)
+                --    --eoPos = UE.Vector3.Project(lcpos, lcdir)
+                --    --
+                --    --eoPos = col.transform:TransformPoint(eoPos)
+                --else
+                    local center = col.transform:TransformPoint(col.center)
+                    if col.direction == 0 then
+                        dir = col.transform.right
+                    elseif col.direction == 1 then
+                        dir = col.transform.up
+                    elseif col.direction == 2 then
+                        dir = col.transform.forward
+                    end
+                    eoPos = self:GetPerpendicularPoint(point, center, dir)
+                --end
+            end
+
+        end
+    end
+    if eoPos then
+        self.controlEo = CL.EffectMgr.Instance:PlayEffect(self.controlRingEffect, eoPos, UE.Quaternion.LookRotation(dir))
+        self.controlEo.trans.localScale = UE.Vector3.one * (eoScale * 2)
+    else
+        self.controlEo = CL.EffectMgr.Instance:PlayEffect(self.controlPointEffect, point, UE.Quaternion.identity)
+        self.controlEo.trans.localScale = UE.Vector3.one * (eoScale * 1.3)
+    end
+    self.controlEo.trans:SetParent(col.transform)
+    
+    self.ceTimer = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.controlEo) then
+                self.ceTimer = nil
+                sche:Stop()
+                return
+            end
+            if t > 0.2 then
+                self.controlEo.trans.localScale = UE.Vector3.one * (self.controlEo.trans.localScale.x - UE.Time.deltaTime)
+                if self.controlEo.trans.localScale.x <= eoScale then
+                    self.controlEo.trans.localScale = UE.Vector3.one * eoScale
+                    
+                    self.ceTimer = nil
+                    sche:Stop()
+                end
+            end
+        end,
+    0, -1)
+end
+
+function forceSpell:GetPerpendicularPoint(target, center, dir)
+    local ba = target - center
+    local nbc = dir
+    local dbp = UE.Vector3.Dot(ba, nbc)
+    return center + dbp * nbc
+end
+
+function forceSpell:CloseControlEffect()
+    self.ceTimer = SafeStopSchedule(self.ceTimer, self.host)
+    if not self.controlEo then
+        return
+    end
+    
+    self.controlEo:Stop()
+    self.chargeTimeId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then
+                sche:Stop()
+                return
+            end
+            if self.controlEo then
+                CL.EffectMgr.Instance:GiveBack(self.controlEo)
+                self.controlEo = nil
+            end
+            sche:Stop()
+        end,
+    0, 0.2).actionId
+end
+
+
+
+
+
+
+function forceSpell:OnEnhance()
+    if self.host.manaCost > 0 then
+        self.host.manaCost = self.host.manaCost / 2
+    end
+    if self.host.manaCostOnCharge > 0 then
+        self.host.manaCostOnCharge = self.host.manaCostOnCharge / 2
+    end
+end
+
+
+return Class(Require("Weapon/SpellBaseScript"), nil, forceSpell)

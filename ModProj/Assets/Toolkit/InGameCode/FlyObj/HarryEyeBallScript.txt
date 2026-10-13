@@ -1,0 +1,495 @@
+
+local HarryEyeBall = {
+    spring = 100000,
+    force = 200,
+    
+    isUsed = false,
+    
+    roleForce = 400,
+    playerForce = 500,
+    
+    name = "HarryEyeBall",
+}
+
+function HarryEyeBall:OnSpawn()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    self.onStickyPuDead = function(pu)
+        if pu == self.stickPu then
+            self:StickRelease()
+            self:StopPush()
+        end
+    end
+    self:ReleaseJoint()
+end
+
+function HarryEyeBall:InitState(isSticky, owner)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.isOnline then
+        self.host.networkFO:ServerSetState(isSticky, owner.host.interact.netId)
+    end
+    
+    self.isSticky = isSticky
+    self.owner = owner
+end
+
+function HarryEyeBall:SetState(isSticky, netId)
+    self.isSticky = isSticky
+    local nib = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(nib) then
+        return
+    end
+    self.owner = nib.ib:GetInteractTrigger().script:GetSelf()
+end
+
+function HarryEyeBall:OnCollision(collision, pu)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, pu)
+end
+
+function HarryEyeBall:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    if pu == self.host.owner then
+        return
+    end
+        
+    if self.isUsed then
+        return
+    end
+    if pu.unitType == CL.Tagger.Tag.FlyObject then
+        if pu.script then
+            local tb = pu.script:GetSelf()
+            if tb.foName == self.foName then
+                return
+            end
+        end
+    end
+    self.isUsed = true
+    if self.isSticky then
+        if self.isOnline then
+            if self.host.networkFO:LocalTrackPhysics() then
+                self:StickOn(col, rb, point, pu)
+                self.host.networkFO:CommandJointWithTarget(rb, col, self.joint.anchor, self.joint.connectedAnchor)
+            end
+        else
+            self:StickOn(col, rb, point, pu)
+        end
+
+        self.host.forwardAlwayFollowVelocity = false
+    else
+        self:HitAway(rb, pu)
+    end
+    
+    if pu.unitType == CL.Tagger.Tag.FlyObject then
+        pu:DespawnEvent("+", self.onStickyPuDead)
+    else
+        self:CheckPuGiveBack(pu)
+    end
+end
+
+function HarryEyeBall:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+end
+
+function HarryEyeBall:CheckPuGiveBack(pu)
+    self.checkActId = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.trans) then
+                sche:Stop()
+                return
+            end
+            
+            if IsNullOrDestroyed(pu) then
+                sche:Stop()
+                return
+            end
+            
+            if not pu.gameObject.activeSelf then
+                self:StickRelease()
+                sche:Stop()
+            end
+        end
+    , 0.5, -1).actionId
+end
+
+function HarryEyeBall:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    if self.isSticky then
+        if self.isOnline then
+            if self.host.networkFO:LocalTrackPhysics() then
+                self:StickOn(mu.col, mu.rb, point, fc)
+                self.host.networkFO:CommandJointWithTarget(mu.rb, mu.col, self.joint.anchor, self.joint.connectedAnchor)
+            end
+        else
+            self:StickOn(mu.col, mu.rb, point, fc)
+        end
+        
+        
+        self.host.forwardAlwayFollowVelocity = false
+    else
+        self:HitAway(mu.rb, fc)
+    end
+end
+
+
+function HarryEyeBall:OnCollisionWithPlayer(collision, interactCharacter)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    if IsNullOrDestroyed(thisCol.attachedRigidbody) then
+        return
+    end
+    
+    self:OnCollisionWithPlayerHandler(thisCol.attachedRigidbody, thisCol, point, normal, collision.relativeVelocity, interactCharacter)
+end
+
+function HarryEyeBall:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, interactCharacter)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel, interactCharacter)
+end
+
+function HarryEyeBall:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, interactCharacter)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    if self.isSticky then
+        if self.isOnline then
+            if self.host.networkFO:LocalTrackPhysics() then
+                self:StickOn(col, rb, col:ClosestPoint(point), interactCharacter:GetPlayerUnit())
+                self.host.networkFO:CommandJointWithTarget(rb, col, self.joint.anchor, self.joint.connectedAnchor)
+            end
+        else
+            self:StickOn(col, rb, col:ClosestPoint(point), interactCharacter:GetPlayerUnit())
+        end
+        
+        self.host.forwardAlwayFollowVelocity = false
+    else
+        self:HitAway(rb, interactCharacter:GetPlayerUnit())
+    end
+end
+
+function HarryEyeBall:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithSceneHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity)
+end
+
+function HarryEyeBall:RpcOnCollisionWithScene(rb, col, point, normal, relaVel)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+end
+
+function HarryEyeBall:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    if self.isSticky then
+        if self.isOnline then
+            if self.host.networkFO:LocalTrackPhysics() then
+                self:StickOn(col, rb, col:ClosestPoint(point), nil)
+                self.host.networkFO:CommandJointWithTarget(rb, col, self.joint.anchor, self.joint.connectedAnchor)
+            end
+        else
+            self:StickOn(col, rb, col:ClosestPoint(point), nil)
+        end
+        
+        self.host.forwardAlwayFollowVelocity = false
+    else
+        self:HitAway(rb, nil)
+    end
+end
+
+function HarryEyeBall:StickOn(col, rb, point, pu)
+    if IsNullOrDestroyed(rb) then
+        return
+    end
+    
+    local anchorPos = self.host.col.transform:InverseTransformPoint(self.host.col:ClosestPoint(point)) * 0.7
+    local connectedAnchor = rb.transform:InverseTransformPoint(point)
+    self:JointWithTarget(rb, anchorPos, connectedAnchor)
+    if pu then
+        if pu.unitType == CL.Tagger.Tag.InteractRole then
+            pu:OnAttachBuild(self.host, self.joint, self.host.rb)
+            self.stickFc = pu
+        else
+            self.stickFc = nil
+        end
+        pu:DeadEvent("+", self.onStickyPuDead)
+    end
+    
+    --local damper = self.spring * 0.05
+    --local ld = self.joint.xDrive        
+    --ld.positionSpring = self.spring
+    --ld.positionDamper = damper
+    --self.joint.xDrive = ld
+    --self.joint.yDrive = ld
+    --self.joint.zDrive = ld
+    --local sd = self.joint.slerpDrive
+    --sd.positionSpring = self.spring * 0.05
+    --sd.positionDamper = damper * 0.02
+    --self.joint.slerpDrive = sd
+    --self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    
+    self.stickCol = col
+    self.stickRb = rb
+    self.stickPu = pu
+end
+
+function HarryEyeBall:ClientJointWithTarget(rb, col, anchorPos, connectedAnchor)
+    self.stickRb = rb
+    self.stickPu = CL.PhysicsUnit.GetPhysicsUnit(col)
+    self.stickCol = col
+    self:JointWithTarget(rb, anchorPos, connectedAnchor)
+
+    self.host.col.enabled = false
+    self.host.networkFO.networkRB.enabled = false
+end
+
+function HarryEyeBall:JointWithTarget(rb, anchorPos, connectedAnchor)
+    self.joint = self.host.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.joint.autoConfigureConnectedAnchor = false
+    
+    self.joint.connectedBody = rb
+    self.joint.anchor = anchorPos
+    self.joint.connectedAnchor = connectedAnchor
+    
+    self.joint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.zMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularXMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularYMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularZMotion = UE.ConfigurableJointMotion.Locked
+end
+
+function HarryEyeBall:StartPush()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer and self.host.networkFO then
+            self.host.networkFO:ServerOnStartPush()
+        end
+    end
+    
+    self:DoPush()
+end
+
+function HarryEyeBall:DoPush()
+    if not self.stickRb or IsNullOrDestroyed(self.stickRb) then
+        return
+    end
+    
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.effectName, self.trans.position, UE.Quaternion.identity)
+    eo.trans.forward = -self.trans.forward
+    
+    local needUpdate = false
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.NetworkRoomMgr.Instance.RoomInfo.isDedicatedServer then
+            if not IsNullOrDestroyed(self.stickPu) and
+                (self.stickPu.unitType == CL.Tagger.Tag.InteractObj or self.stickPu.unitType == CL.Tagger.Tag.InteractWeapon) then
+                if not self.stickPu:IsBodyPart() and SafeLocalTrackPhysics(self.stickPu) then
+                    needUpdate = true
+                end
+            end
+        else
+            if CL.Network.VRNetworkManager.ServerOnline then
+                needUpdate = true
+            end
+        end
+    else
+        needUpdate = true
+    end
+
+    local mu = nil
+    if self.stickPu and self.stickPu.unitType == CL.Tagger.Tag.InteractRole then
+        if self.stickPu.muscleState:IsPowerfulCharacter() then
+            return
+        else
+            needUpdate = true
+        end
+        mu = self.stickPu.ra:GetMuscleByCol(self.stickCol)
+    end
+
+    if not needUpdate then
+        return
+    end
+
+    CL.Scheduler.RemoveSchedule(self.pushActTimerId)
+    self.pushActTimerId = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if not self.stickRb or IsNullOrDestroyed(self.stickRb) then
+                sche:Stop()
+                return
+            end
+            
+            if CL.Network.VRNetworkManager.IsOnline then
+                if CL.Network.NetworkRoomMgr.Instance.RoomInfo.isDedicatedServer then
+                    if not IsNullOrDestroyed(self.stickPu) then
+                        if self.stickPu.unitType == CL.Tagger.Tag.InteractObj or self.stickPu.unitType == CL.Tagger.Tag.InteractWeapon then
+                            if SafeLocalTrackPhysics(self.stickPu) then
+                                needUpdate = true
+                            end
+                        else
+                            needUpdate = true
+                        end
+                    end
+                else
+                    if CL.Network.VRNetworkManager.ServerOnline then
+                        needUpdate = true
+                    end
+                end
+            end
+            
+            if not needUpdate then
+                return
+            end
+            
+            if self.stickPu then
+                if mu ~= nil then
+                    self.stickPu.muscleState:PushMuscle(mu, self.host)
+                end
+                
+                self.stickPu:AddForceOnPart(self.stickRb, self.force * self.trans.forward, UE.ForceMode.Force)
+            else
+                self.stickRb:AddForce(self.force * self.trans.forward, UE.ForceMode.Force)
+            end
+        end
+    , 0, -1).actionId
+end
+
+function HarryEyeBall:StopPush()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.ServerOnline and self.host.networkFO then
+            self.host.networkFO:ServerOnStopPush()
+        end
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.pushActTimerId)
+end
+
+function HarryEyeBall:NetworkOnStopPush()
+    CL.Scheduler.RemoveSchedule(self.pushActTimerId)
+end
+
+function HarryEyeBall:NetworkOnStartPush()
+    self:DoPush()
+end
+
+function HarryEyeBall:NetworkOnHitAway(rb, pos, rot)
+    CL.EffectMgr.Instance:PlayEffect(self.effectName, pos, rot)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(rb.transform)
+        if not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.PlayerRole then
+            if pu.character.IsLocalPlayer then
+                pu:AddForceOnPart(rb, self.playerForce * self.trans.forward, UE.ForceMode.Impulse)
+            end
+        end
+    end
+end
+
+function HarryEyeBall:HitAway(rb, pu)
+    if IsNullOrDestroyed(rb) then
+        return
+    end
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer and self.host.networkFO then
+            self.host.networkFO:ServerOnHitAway(rb, self.trans.position, self.trans.rotation)
+        end
+    end
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    CL.EffectMgr.Instance:PlayEffect(self.effectName, self.trans.position, self.trans.rotation)
+    
+    if pu then
+        local force = self.force
+        if pu.unitType == CL.Tagger.Tag.InteractRole then
+            force = self.roleForce
+        elseif pu.unitType == CL.Tagger.Tag.PlayerRole then
+            force = self.playerForce
+        end
+        pu:AddForceOnPart(rb, force * self.trans.forward, UE.ForceMode.Impulse)
+    else
+        rb:AddForce(self.force * self.trans.forward, UE.ForceMode.Impulse)
+    end
+    
+    self.host:OnFinish()
+end
+
+function HarryEyeBall:StickRelease()
+    if self.stickFc and not IsNullOrDestroyed(self.stickFc) then
+        self.stickFc:OnAttachBreak(self.host, self.joint, self.host.rb)
+        self.stickFc = nil
+    end
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer and self.host.networkFO then
+            self.host.networkFO:ServerReleaseJoint()
+        end
+    end
+    self:ReleaseJoint()
+end
+
+function HarryEyeBall:ReleaseJoint()
+    if not IsNullOrDestroyed(self.joint) then
+        self.joint.xMotion = UE.ConfigurableJointMotion.Free
+        self.joint.yMotion = UE.ConfigurableJointMotion.Free
+        self.joint.zMotion = UE.ConfigurableJointMotion.Free
+        self.joint.angularXMotion = UE.ConfigurableJointMotion.Free
+        self.joint.angularYMotion = UE.ConfigurableJointMotion.Free
+        self.joint.angularZMotion = UE.ConfigurableJointMotion.Free
+        
+        self.joint.connectedBody = nil
+        UE.Object.Destroy(self.joint)
+    end
+    
+    self.host.col.enabled = true
+
+    if CL.Network.VRNetworkManager.ClientOnline then
+        if not IsNullOrDestroyed(self.host.networkFO) then
+            self.host.networkFO.networkRB.enabled = true
+        end
+    end
+end
+
+function HarryEyeBall:OnFinish()
+    self:StopPush()
+    self:StickRelease()
+end
+
+function HarryEyeBall:ResetState()
+    self:StopPush()
+    self:StickRelease()
+    CL.Scheduler.RemoveSchedule(self.checkActId)
+    
+    if self.stickPu then
+        self.stickPu:DeadEvent("-", self.onStickyPuDead)
+        
+        if self.stickPu.unitType == CL.Tagger.Tag.FlyObject then
+            self.stickPu:DespawnEvent("-", self.onStickyPuDead)
+        end
+    end
+    
+    self.stickPu = nil
+    self.stickRb = nil
+    self.joint = nil
+
+    self.host.forwardAlwayFollowVelocity = true
+    
+    self.isUsed = false
+    if self.owner then
+        self.owner:OnEyeBallDead(self)
+    end
+end
+
+
+return Class(nil,nil,HarryEyeBall)

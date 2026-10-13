@@ -1,0 +1,1171 @@
+
+local ElementalGun = {
+    triggerCol = nil,
+    
+    defaultBullet = "ElementBullet",
+    
+    slots = {},
+    maxCount = 5,
+    
+    isShowHit = false,
+    shootActionId = 0,
+    useNetworkShootData = false,
+    velFromNetwork = nil,
+    shootTargetPostionFromNetwork = nil,
+    networkUseLocalEstimate = true,
+    
+}
+
+-----------------------------------------Slot-----------------------------------------
+function ElementalGun:Awake()
+    self.OnGemDestroy = function(pu)
+        for k, v in ipairs(self.slots) do
+            if v == pu then
+                v:DeadEvent("-", self.OnGemDestroy)
+                table.remove(self.slots, k)
+                break
+            end
+        end
+        self:RefleshSlot()
+        self:RefleshSkillInfo()
+    end
+    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+end
+
+function ElementalGun:Start()
+    self.onSave = function(data)
+        data.info =  CS.System.Collections.Generic.Dictionary(CS.System.String, CS.System.String)()
+        for k, v in ipairs(self.slots) do
+            if not IsNullOrDestroyed(v) then
+                local saveData = CL.SavePointMgr.WeaponSaveData.ConvertToSaveData(v)
+                data.info:Add("Slot" .. k, saveData.weaponPrefab)
+            end
+        end
+    end
+    self.host.interact:SaveEvent("+", self.onSave)
+    
+    if self.host.savePointLoadInfo ~= nil then
+        local count = 1
+        while self.host.savePointLoadInfo:ContainsKey("Slot" .. count) do
+            local name = self.host.savePointLoadInfo:get_Item("Slot" .. count)
+            self:SpawnGemAndSlot(name)
+            count = count + 1
+        end
+    end
+    
+    self.onDead = function(pu)
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerPopAllGem()
+                end
+            end
+
+            if CL.Network.NetworkSpawnMgr.Instance ~= nil and self.OnSpawnNetworkIB then
+                CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+            end
+        end
+        self:PopAllGem()
+    end
+    self.host.interact:DeadEvent("+", self.onDead)
+    
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self.initNetIds = {}
+        self:RegisterSpawnNetworkIBCallback()
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:CommandInitSlot(CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+        end
+    end
+end
+
+function ElementalGun:RegisterSpawnNetworkIBCallback()
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetIds[netId] then
+            self.initNetIds[netId] = nil
+            
+            --print("OnSpawnNetworkIB:" .. netId)
+            self:NetworkInitSlot(self.netIds)
+        end
+    end
+    
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function ElementalGun:NetworkReqSlotInfo(netId)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then
+        state:ServerTargetInitSlot(self.slots, netId)
+    end
+end
+
+function ElementalGun:OnGrab(a, g)
+    self.isGrab = g
+    self.aimWidget.gameObject:SetActive(g)
+    if g then
+        self.host.interact:SetAttachable(false)
+        self.primaryHand = self.host.interact:GetPrimaryHand()
+        
+        self:StartListenButton(a.attachedHand)
+        
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self.aimWidget.enabled = true
+        end
+    else
+        self.host.interact:SetAttachable(true)
+        self.primaryHand = nil
+        self:StopListenButton()
+        
+        self.aimWidget.enabled = false
+        
+
+        if self.hintPoint and not IsNullOrDestroyed(self.hintPoint) then
+            self.host.interact:HideHint(self.hintPoint)
+        end
+        self.isShowHit = false
+    end
+end
+
+function ElementalGun:IsFullGem()
+    return #self.slots >= self.maxCount
+end
+
+function ElementalGun:IsEmpty()
+    return #self.slots <= 0
+end
+
+function ElementalGun:TriggerStay(collider)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if not self.isGrab then
+        return
+    end
+    
+    if self.onSwitchAnim then
+        return
+    end
+    
+    if not self:IsFullGem() then
+        local gem = self:TryGetGem(collider)
+        if not gem or IsNullOrDestroyed(gem) then
+            self:TryPopGem(collider)
+        else
+            if not self:IsLegalGem(gem) then
+                if self.illegalGem ~= gem then
+                    self.illegalGem = gem
+                    CL.SoundTable.PlaySound("Error")
+                end
+                return
+            end
+            
+            self.triggerCol = collider
+            
+            if not IsNullOrDestroyed(gem:GetPrimaryHand()) then
+                local pass = true
+                local grabHand = gem:GetPrimaryHand()
+                if self.isOnline and grabHand.character ~= self.primaryHand.character then
+                    pass = false
+                end
+                
+                if pass then
+                    if IsNullOrDestroyed(self.hintPoint) then
+                        self.hintPoint = self.host.interact:CreateHint(self.slot, UE.Vector3.zero)
+                    else
+                        self.host.interact:ShowHint(self.hintPoint)
+                    end
+                end
+                if not self.isShowHit then
+                    self.isShowHit = true
+                    local hand = gem:GetPrimaryHand()
+                    if hand and not IsNullOrDestroyed(hand) then
+                        hand:HapticPulse()
+                    end
+                end
+            else
+                if self.hintPoint and not IsNullOrDestroyed(self.hintPoint) then
+                    self.host.interact:HideHint(self.hintPoint)
+                end
+                self.isShowHit = false
+                
+                self:SlotGem(gem)
+            end
+        end
+    else
+        self:TryPopGem(collider)
+    end
+end
+
+function ElementalGun:TriggerExit(other)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if not self.isGrab then
+        return
+    end
+    
+    if self.triggerCol == other then
+        if self.hintPoint and not IsNullOrDestroyed(self.hintPoint) then
+            self.host.interact:HideHint(self.hintPoint)
+        end
+        self.isShowHit = false
+        self.triggerCol = nil
+    else
+        local hand = CL.InteractHand.GetHandByCollider(other)
+        if IsNullOrDestroyed(hand) or self.primaryHand == hand then
+            return
+        end
+
+        if self.hintPoint and not IsNullOrDestroyed(self.hintPoint) then
+            self.host.interact:HideHint(self.hintPoint)
+        end
+        self.isShowHit = false
+    end
+    
+    self.illegalGem = nil
+end
+
+function ElementalGun:TryGetGem(col)
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(col)
+    if not self:IsGemAndEquippable(pu) then
+        return nil
+    end
+    
+    return pu
+end
+
+function ElementalGun:IsGemAndEquippable(pu)
+    if not pu or pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return false
+    end
+    
+    if pu:IsHeldByNpc() then
+        return false
+    end
+    
+    if pu.handCalling then
+        return false
+    end
+    
+    if not pu:IsExistItemType("Gem") then
+        return false
+    end
+    
+    if not IsNullOrDestroyed(pu.trans:GetComponent(typeof(CL.InteractBasePendant))) then
+        return false
+    end
+    
+    return true
+end
+
+function ElementalGun:IsLegalGem(pu)
+    local itx = pu:GetInteractTrigger()
+    if not itx.script then
+        return false
+    end
+
+    local tb = itx.script:GetSelf()
+    if not tb.elementBullet or tb.elementBullet == "" then
+        return false
+    end
+    
+    return true
+end
+
+function ElementalGun:GetSlotPos(idx)
+    return self.slot.position + self.trans.forward * (idx - 1) * 0.01
+end
+
+function ElementalGun:SlotGem(pu)
+    if self.isOnline then
+        local playerNetId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            if CL.Network.VRNetworkManager.ClientOnline then
+                state:CommandSlotGem(pu.netId, playerNetId)
+            else
+                state:ServerSlotGem(pu, playerNetId)
+            end
+        end
+    end
+    self:DoSlotGem(pu)
+end
+
+function ElementalGun:DoSlotGem(pu)
+    pu.trans:SetParent(nil)
+    pu.trans.position = self:GetSlotPos(1)
+    
+    pu.trans:SetParent(self.slot)
+    pu.trans.localRotation = UE.Quaternion.identity
+    pu:SetSpecialSlotted(true)
+    if CL.Network.VRNetworkManager.IsOnline then
+        pu.networkIB.networkRB.enabled = false
+        pu.networkIB.networkRB.isClientLocalWeapon = true
+        pu.networkIB.networkRB.physicsFollow = false
+    end
+    
+    pu.rb.isKinematic = true
+    
+    local cols = pu:GetCols()
+    self:IgnoreCollision(cols, true)
+    self:SetColsEnable(cols, false)
+    
+    table.insert(self.slots, 1, pu)
+    --print("DoSlotGem:" .. pu.trans.name)
+    self:RefleshSlot()
+    
+    self:OnGemChanged()
+    
+    CL.InteractMgr.Instance:UnregInteractDrop(pu)
+    pu:GetInteractTrigger().script:GetSelf():StopLightPillarTimer()
+    pu:GetInteractTrigger().script:GetSelf():SetLightPillar(false)
+    
+    local hand = self.host.interact:GetPrimaryHand()
+    if hand and not IsNullOrDestroyed(hand) then
+        hand:HapticPulse()
+    end
+    
+    self.slotSound:PlaySound()
+    
+    --pu:GrabEvent("+", self.OnGrabGem)
+    pu:DeadEvent("+", self.OnGemDestroy)
+    --self:PutGemEffect()
+end
+
+
+function ElementalGun:SetColsEnable(cols, isEnable)
+    for i = 0, cols.Length - 1 do
+        cols[i].enabled = isEnable
+    end
+end
+
+function ElementalGun:IgnoreCollision(cols, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), cols, ignore)
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        local playerCols = hand.character:GetPlayerUnit():GetCols()
+        CL.PhysicsHelper.IgnoreCollisions(playerCols, cols, ignore)
+    end
+end
+
+
+function ElementalGun:TryPopGemWithHand(hand)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    if hand:IsCalling() or self.primaryHand == hand then
+        return
+    end
+    
+    if hand:IsGrabbing() then
+        if not self:IsFullGem() then
+            return
+        end
+        
+        if not self:IsGemAndEquippable(hand.attachTo.interact) then
+            return
+        else
+            local pass = true
+            if self.isOnline and hand.character ~= self.primaryHand.character then
+                pass = false
+            end
+            if pass then
+                if IsNullOrDestroyed(self.hintPoint) then
+                    self.hintPoint = self.host.interact:CreateHint(self.slot, UE.Vector3.zero)
+                else
+                    self.host.interact:ShowHint(self.hintPoint)
+                end
+            end
+        end
+        
+        local pressUp = hand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressUp
+        if pressUp then
+            if self.hintPoint and not IsNullOrDestroyed(self.hintPoint) then
+                self.host.interact:HideHint(self.hintPoint)
+            end
+            self:PushGemToPlayer(hand)
+        end
+    else
+        if self:IsEmpty() then
+            return
+        end
+        
+        local pass = true
+        if self.isOnline and hand.character ~= self.primaryHand.character then
+            pass = false
+        end
+        
+        if pass then
+            if IsNullOrDestroyed(self.hintPoint) then
+                self.hintPoint = self.host.interact:CreateHint(self.slot, UE.Vector3.zero)
+            else
+                self.host.interact:ShowHint(self.hintPoint)
+            end
+        end
+        if not self.isShowHit then
+            self.isShowHit = true
+            local hand = self.host.interact:GetPrimaryHand()
+            if hand and not IsNullOrDestroyed(hand) then
+                hand:HapticPulse()
+            end
+        end
+        local pressDown = hand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressDown
+        if pressDown then
+            if self.hintPoint and not IsNullOrDestroyed(self.hintPoint) then
+                self.host.interact:HideHint(self.hintPoint)
+            end
+            self.isShowHit = false
+            self:PushGemToPlayer(hand)
+        end
+    end
+end
+
+function ElementalGun:TryPopGem(collider)
+    if not collider or IsNullOrDestroyed(collider) then
+        return
+    end
+    
+    local firstGem = self:GetFirstGem()
+    if not firstGem or IsNullOrDestroyed(firstGem) then
+        return
+    end
+    
+    local hand = CL.InteractHand.GetHandByCollider(collider)
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    self:TryPopGemWithHand(hand)
+end
+
+function ElementalGun:PushGemToPlayer(hand)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+
+    
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local firstGem = self:GetFirstGem()
+    if not firstGem then
+        return
+    end
+    local anotherGem = nil
+    if not IsNullOrDestroyed(hand.attachTo) then
+        if self:IsGemAndEquippable(hand.attachTo.interact) then
+            anotherGem = hand.attachTo.interact
+        end
+        hand:Grab(nil, true)
+        
+        if self.isOnline then
+            self:NetworkLocalHandGrab(hand, nil, true)
+        end
+    end
+    
+    self:PopGem()
+    firstGem.trans.position = firstGem.trans.position + self.trans.up * 0.03
+    if anotherGem and not IsNullOrDestroyed(anotherGem) then
+        local cacheGem = firstGem
+        CL.Scheduler.RemoveSchedule(self.delayGrabActId)
+        self.delayGrabActId = CL.Scheduler.Create(self.host.interact, 
+            function(sche, t, s)
+                if not IsNullOrDestroyed(cacheGem) and not IsNullOrDestroyed(hand) then
+                    hand:Grab(cacheGem.attachList[0], true)
+                    
+                    if self.isOnline then
+                        self:NetworkLocalHandGrab(hand, cacheGem, true)
+                    end
+                end
+            end
+        , 0, 0, 0.02).actionId
+    
+        self:SlotGem(anotherGem)
+    else
+        hand:Grab(firstGem.attachList[0], true)
+        
+        if self.isOnline then
+            self:NetworkLocalHandGrab(hand, firstGem, true)
+        end
+    end
+end
+
+function ElementalGun:NetworkLocalHandGrab(hand, ib, ignoreLocalPlayer)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then
+        if CL.Network.VRNetworkManager.ClientOnline then
+            state:CommandLocalHandGrab(hand.character.networkPlayer.netId,
+                hand:GetHandIndex(), ib and ib.netId or -1, ignoreLocalPlayer)
+            if ib then
+                ib.networkIB.networkRB.isClientLocalWeapon = true
+                ib.networkIB.networkRB.physicsFollow = false
+            end
+        else
+            state:ServerLocalHandGrab(hand, ib, ignoreLocalPlayer)
+        end
+    end
+end
+
+function ElementalGun:DoLocalHandGrab(hand, ib)
+    
+    hand:Grab(ib and ib.attachList[0] or nil, true)
+end
+
+function ElementalGun:PopGem()
+    local firstGem = self:GetFirstGem()
+    
+    if self.isOnline then
+        if firstGem and not IsNullOrDestroyed(firstGem) then
+            local netId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ClientOnline then
+                    state:CommandPopGem(firstGem.netId, netId)
+                else
+                    state:ServerPopGem(firstGem, netId)
+                end
+            end
+        end
+    end
+    
+    self:DoPopGem(firstGem)
+end
+
+function ElementalGun:DoPopGem(firstGem)
+    if firstGem and not IsNullOrDestroyed(firstGem) then
+        --firstGem:GrabEvent("-", self.OnGrabGem)
+        firstGem.trans:SetParent(nil)
+        firstGem.rb.isKinematic = false
+        firstGem:SetSpecialSlotted(false)
+        if CL.Network.VRNetworkManager.IsOnline then
+            firstGem.networkIB.networkRB.enabled = true
+        end
+        
+        firstGem:DeadEvent("-", self.OnGemDestroy)
+        
+        local cols = firstGem:GetCols()
+        self:IgnoreCollision(cols, false)
+        self:SetColsEnable(cols, true)
+    end
+    
+    for k, v in ipairs(self.slots) do
+        if v == firstGem then
+            table.remove(self.slots, k)
+            break
+        end
+    end
+    
+    self:RefleshSlot()
+    self:RefleshSkillInfo()
+    self:PlayGemEffect()
+end
+
+function ElementalGun:RefleshSlot()
+    --print("Reflesh slot start")
+    for k, v in ipairs(self.slots) do
+        if not IsNullOrDestroyed(v) then
+            v.trans.position = self:GetSlotPos(k)
+            v.trans.localRotation = UE.Quaternion.identity
+            --print("Reflesh slot idx:" .. k .. "  name :" .. v.trans.name)
+        end
+    end
+    --print("Reflesh slot end")
+end
+
+function ElementalGun:NetworkInitSlot(netIds)
+    self.netIds = netIds
+    
+    self.slots = {}
+    local isExist = true
+    for i = 0, netIds.Length - 1 do
+        if not self:NetworkSlotGem(netIds[i]) then
+            isExist = false
+        end
+    end
+    
+    if isExist then
+        self:NetworkRefleshSlot(netIds)
+    end
+end
+
+function ElementalGun:NetworkSlotGem(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        self.initNetIds[netId] = true
+        return false
+    end
+    
+    --print("NetworkInitSlot slot gem:" .. netId .. "  name:" .. netIb.ib.trans.name)
+    self:DoSlotGem(netIb.ib)
+    self.initNetIds[netId] = nil
+    
+    return true
+end
+
+function ElementalGun:NetworkRefleshSlot(netIds)
+    CL.Scheduler.RemoveSchedule(self.switchActId)
+    self.onSwitchAnim = false
+    
+    self.slots = {}
+    for i = 0, netIds.Length - 1 do
+        local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netIds[i])
+        if not IsNullOrDestroyed(netIb) then
+            --print("NetworkRefleshSlot slot gem:" .. i .. "  name:" .. netIb.ib.trans.name)
+            table.insert(self.slots, netIb.ib)
+        end
+    end
+        
+    self:RefleshSkillInfo()
+    self:RefleshSlot()
+    self:PlayGemEffect()
+end
+
+function ElementalGun:PopAllGem()
+    for k, v in ipairs(self.slots) do
+        if IsNullOrDestroyed(v) then
+            goto continue
+        end
+        
+        v.trans:SetParent(nil)
+        v.rb.isKinematic = false
+        v:SetSpecialSlotted(false)
+
+        if CL.Network.VRNetworkManager.IsOnline then
+            if v.networkIB and not IsNullOrDestroyed(v.networkIB) and v.networkIB.networkRB then
+                v.networkIB.networkRB.enabled = true
+            end
+        end
+        
+        if not self.isOnline or CL.Network.VRNetworkManager.ServerOnline then
+            CL.InteractMgr.Instance:RegInteractDrop(v)
+        end
+        
+        local itx = v:GetInteractTrigger()
+        if itx and not IsNullOrDestroyed(itx) and itx.script then
+            local scp = itx.script:GetSelf()
+            if scp then
+                scp:InitLightPillar()
+            end
+        end
+        
+        local cols = v:GetCols()
+        self:IgnoreCollision(cols, false)
+        self:SetColsEnable(cols, true)
+        
+        ::continue::
+    end
+    
+    self:RefleshSkillInfo()
+    self:StopGemEffect()
+    self.slots = {}
+end
+
+function ElementalGun:SpawnGemAndSlot(name)
+    local weaponGO = CL.ResourceMgr.Instantiate(CL.StringCache.GetString(name, CL.InteractTrigger.WeaponPath))
+    if IsNullOrDestroyed(weaponGO) then
+        return
+    end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(weaponGO.transform)
+    if not IsNullOrDestroyed(pu) and self:IsGemAndEquippable(pu) then
+        CL.InteractMgr.Instance:RegInteract(pu)
+        self:SlotGem(pu)
+    else
+        UE.Object.DestroyImmediate(weaponGO)
+    end
+end
+
+function ElementalGun:SwitchGem()
+    if #self.slots <= 1 or self.onSwitchAnim then
+        return
+    end
+    
+    self:SwitchAnim()
+end
+
+function ElementalGun:SwitchAnim()
+    local first = self.slots[1]
+    local last = #self.slots
+    local time = 0.2
+    local height = 0.05
+    CL.Scheduler.RemoveSchedule(self.switchActId)
+    
+    self.onSwitchAnim = true
+    
+    local localStartPos = self.slot:InverseTransformPoint(first.trans.position)
+    local localEndPos = self.slot:InverseTransformPoint(self:GetSlotPos(last))
+    local value = 0
+    local sin = 0
+    local isNew = false
+    
+    --self.popSound:PlaySound()
+    self.switchSound:PlaySound()
+    self.switchActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.trans) then
+                sche:Stop()
+                return
+            end
+            
+            if IsNullOrDestroyed(first) then
+                self.onSwitchAnim = false
+                table.remove(self.slots, 1)
+                self:RefleshSlot()
+                self:RefleshSkillInfo()
+                self:PlayGemEffect()
+                sche:Stop()
+                return
+            end
+            
+            
+            value = CL.EasingEquations.EaseOutCirc(0, 1, t/time)
+            
+            sin = math.sin(math.rad(value * 180))
+            --print("sin value----------:"  .. value .."  ".. math.rad(value/time * 180) .. "  " .. value/time * 180 .. "   " .. sin)
+            local pos = UE.Vector3.Lerp(localStartPos, localEndPos, math.min(1, (t * 1.3)/time))
+            pos = self.slot:TransformPoint(pos) + self.trans.up * sin * height
+            first.trans.position = pos
+            
+            if t >= time/3 then
+                value = CL.EasingEquations.EaseOutQuart(0, 1, t/time)
+                if not isNew then
+                    table.remove(self.slots, 1)
+                    self.slots[#self.slots + 1] = first
+                    self:RefleshSkillInfo()
+                    self:PlayGemEffect()
+                    
+                    
+                    
+                    self.eo.trans.localScale = UE.Vector3.one
+                    isNew = true
+                else
+                    for k, v in ipairs(self.slots) do
+                        if v ~= first then
+                            v.trans.position = UE.Vector3.Lerp(self:GetSlotPos(k + 1), self:GetSlotPos(k), value)
+                        end
+                    end
+                end
+            else
+                if not IsNullOrDestroyed(self.eo) then
+                    self.eo.trans.localScale = UE.Vector3.one * (1 - t/time)
+                end
+            end
+            
+            if t >= time then
+                self.onSwitchAnim = false
+                
+                self:RefleshSlot()
+                
+                if self.isOnline then
+                    local playerNetId = -1
+                    
+                    if self.primaryHand ~= nil and not IsNullOrDestroyed(self.primaryHand) then
+                        playerNetId = self.primaryHand.character.networkPlayer.netId
+                    else
+                        playerNetId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                    end
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.ServerOnline then
+                            state:ServerRefleshSlot(self.slots, playerNetId)
+                        else
+                            state:ClientRefleshSlot(self.slots, playerNetId)
+                        end
+                    end
+                end
+                
+                sche:Stop()
+                return
+            end
+        end
+    , 0, time).actionId
+end
+
+-------------------------------------------Button-----------------------------------------
+
+function ElementalGun:StartListenButton(hand)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.buttonActId)
+    self.buttonActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self:ButtonClick()
+        end
+    , 0, -1).actionId
+end
+
+
+function ElementalGun:StopListenButton()
+    CL.Scheduler.RemoveSchedule(self.buttonActId)
+end
+
+function ElementalGun:ButtonClick()
+    if not self.primaryHand then
+        return
+    end
+    local p = self.primaryHand.inputs[CL.VRTKInputButton.ButtonType.ButtonOne].IsPressed
+    if self.isPress and not p then
+        self:OnPressUp()
+    end
+    if not self.isPress and p then
+        self:OnPressDown()
+    end
+end
+
+function ElementalGun:OnPressUp()
+    self.isPress = false
+end
+
+function ElementalGun:OnPressDown()
+    self.isPress = true
+    
+    self:SwitchGem()
+end
+
+-------------------------------------------Shot-------------------------------------------
+
+function ElementalGun:OnGemChanged()
+    local firstGem = self:GetFirstGem()
+    if IsNullOrDestroyed(firstGem) then
+        return
+    end
+    
+    self:RefleshSkillInfo()
+    self:PlayGemEffect()
+end
+
+function ElementalGun:GetLastGem()
+    return self.slots[#self.slots]
+end
+
+function ElementalGun:GetFirstGem()
+    return #self.slots >= 1 and self.slots[1] or nil
+end
+
+function ElementalGun:RefleshSkillInfo()
+    self.flyObjName = self.defaultBullet
+    self.loopEffectName = nil
+    
+    local gem = self:GetFirstGem()
+    if not gem then
+        return
+    end
+    local itx = gem:GetInteractTrigger()
+    if not itx.script then
+        return
+    end
+
+    local tb = itx.script:GetSelf()
+    self.skillType = tb.elementBullet
+    
+    self.flyObjName = tb.elementBullet
+    self.loopEffectName = tb.elementStateEffect
+    if tb.networkUseLocalEstimate == 1 then
+        self.networkUseLocalEstimate = true
+    else
+        self.networkUseLocalEstimate = false
+    end
+end
+
+function ElementalGun:PlayGemEffect(idx)
+    self:StopGemEffect()
+    if self.loopEffectName then
+        self.eo = CL.EffectMgr.Instance:PlayEffect(self.loopEffectName, self.trans.position, self.trans.rotation)
+        self.eo.trans:SetParent(self.slots[idx and idx or 1].trans)
+        self.eo.trans.localPosition = UE.Vector3.zero
+        self.eo.trans.localRotation = UE.Quaternion.identity
+    end
+end
+
+function ElementalGun:StopGemEffect()
+    if self.eo then
+        CL.EffectMgr.Instance:GiveBack(self.eo)
+    end
+    self.eo = nil
+end
+
+--[[
+function ElementalGun:OpenSkill()
+    if not self.host.instantSkill then
+        self:StartCharge()
+    end
+end
+]]
+
+function ElementalGun:UpdateSkill()
+    if self.isOnline then
+        if self.networkUseLocalEstimate then
+            self:UpdateSkillClientFirst()
+        else
+            self:UpdateSkillServerFirst()
+        end
+    else
+        self:UpdateSkillLocal()
+    end
+end
+
+function ElementalGun:UpdateSkillLocal()
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        self:PlayShootAction()
+    end
+    self:OnUpdateSkill()
+end
+
+function ElementalGun:UpdateSkillClientFirst()
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        local ph = self.host.interact:GetPrimaryHand()
+        if ph.character.IsLocalPlayer then
+            self.shootActionId = self.shootActionId + 1;
+            self:PlayShootActionClient()
+        end
+    end
+    self:OnUpdateSkill()
+end
+
+function ElementalGun:UpdateSkillServerFirst()
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        self:PlayShootAction()
+    end
+    self:OnUpdateSkill()
+end
+--[[
+function ElementalGun:CloseSkill()
+end
+function ElementalGun:StartCharge()
+end
+function ElementalGun:UpdateCharge()
+end
+]]
+
+function ElementalGun:GetAimDir(shootPosition) 
+    local aimDir = shootPosition.forward
+    return aimDir
+end
+
+function ElementalGun:DoLocalSyncShootResult(result)
+    local state = GetNetworkIBState(self)
+    if state == nil then return end
+    if result.collisionType == CL.FlyObjSimulateCollisionResult.IGNORE then
+        state:CmdOnShootLocal(self.shootActionId)
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.SCENE then
+        state:CmdOnShootLocalHitScene(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel)
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.PLAYER_HAND then
+        state:CmdOnShootLocalHitPlayerHand(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel,result.pu.logicHand.character.networkPlayer.netId,result.pu.logicHand:GetHandIndex())
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.INTERACT_ROLE then
+        local muscle = result.pu.ra:GetMuscleByCol(result.collider)
+        local muscleName = ""
+        if muscle ~= nil then
+            muscleName = muscle.muscleName
+        end
+        state:CmdOnShootLocalHitInteractRole(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.localPoint,result.localNormal,result.localRelaVel,result.pu.networkCharacter.netId,muscleName)
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.PLAYER then
+        state:CmdOnShootLocalHitPlayer(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel,result.pu.character.networkPlayer.netId)
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.OTHER then
+        state:CmdOnShootLocalHitOther(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel)
+    else
+        state:CmdOnShootLocal(self.shootActionId)
+    end
+end
+
+function ElementalGun:PlayShootActionClient()
+    local ph = self.host.interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = self:GetAimDir(self.shootPosition)
+    if self.useNetworkShootData then
+        aimDir = self.shootTargetPostionFromNetwork - self.shootPosition.position
+    end
+    local fo = nil
+
+    if self.networkUseLocalEstimate then
+        fo = self.host:CreateFlyObj(self.flyObjName,self.shootPosition.position,aimDir,self.shootVel)
+        fo.col.enabled = false;
+
+        if ph.character.IsLocalPlayer then
+            local simulateTime = 3
+            local result = CL.FlyObject.CmdSimulateCollisionEnterResult(fo,self.shootPosition.position,aimDir,simulateTime,self.shootVel)
+            
+            local flyVelocity = aimDir * fo:CalVelMagnitude(self.shootVel)
+            fo.rb.velocity = flyVelocity
+            fo.maxFlyTime = result.flytime
+            self:DoLocalSyncShootResult(result)
+        else 
+            if self.useNetworkShootData then
+                fo.maxFlyTime = UE.Vector3.Distance(self.shootTargetPostionFromNetwork,self.shootPosition.position) / self.velFromNetwork.magnitude
+                fo.rb.velocity = self.velFromNetwork
+            end
+        end
+    else 
+        local bulletScript = self:SpawnBullet(self.flyObjName, self.shootPosition.position,
+        aimDir, self.shootVel)
+    end
+    
+    --if bulletScript and bulletScript:IsEnchantble() then
+    --    bulletScript:Enchant()
+    --end
+    if IsNullOrDestroyed(fo) then
+        return nil
+    end
+    
+    if not IsNullOrDestroyed(fo) then
+        TryAerialStay(ph)
+    end
+    self:OnShoot(fo)
+    
+    return fo
+end
+
+
+function ElementalGun:isValidNetShootActionId(netShootActionId)
+    return netShootActionId > self.shootActionId
+end
+
+
+function ElementalGun:RpcOnShootLocal(netShootActionId)
+    -- print("RpcOnShootLocal")
+    if not self:isValidNetShootActionId(netShootActionId) then
+        return
+    end
+    self:PlayShootActionClient()
+    self.shootActionId = netShootActionId
+
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+    fo:DoFinish();
+end
+
+function ElementalGun:RpcOnShootLocalHitScene(netShootActionId,rb,col,point,normal,relaVel)
+    -- print("RpcOnShootLocalHitScene")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.shootActionId = netShootActionId
+        self.useNetworkShootData = false
+    end
+
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+    fo:RpcOnCollisionWithScene(rb,col,point,normal,relaVel);
+    fo:DoFinish();
+end
+
+function ElementalGun:RpcOnShootLocalHitPlayerHand(netShootActionId,rb,col,point,normal,relaVel,hand)
+    -- print("RpcOnShootLocalHitPlayerHand")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.shootActionId = netShootActionId
+        self.useNetworkShootData = false
+    end
+
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+    fo.ownerHolder = self.host.interact:GetLatestHolder()
+    fo:RpcOnCollisionWithPlayerHand(rb,col,point,normal,relaVel,hand);
+    fo:DoFinish();
+end
+
+function ElementalGun:RpcOnShootLocalHitPlayer(netShootActionId,rb,col,point,normal,relaVel,player)
+    --print("RpcOnShootLocalHitPlayer")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.shootActionId = netShootActionId
+        self.useNetworkShootData = false
+    end
+
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false
+    fo.trans.position = point
+    local holder = self.host.interact:GetLatestHolder()
+    local camp = not IsNullOrDestroyed(holder) and holder:GetCamp() or CL.AIProxy.CampNone
+    local dmgMlp = 1
+    if camp == player.attr.camp then
+        dmgMlp = CL.Network.NetworkRoomMgr:GetTeammateDmgMlp()
+    end
+    fo.ownerHolder = holder
+    if dmgMlp > 0 then
+        CL.InteractTrigger.BeginScanDmg()
+        CL.InteractTrigger.ApplyHitScanDamage(col, fo, fo.rb, fo.col, relaVel.normalized, camp, false, dmgMlp, nil, relaVel)
+        CL.InteractTrigger.EndHitScan()
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        if not IsNullOrDestroyed(fo.ownerHolder) then
+            player.aiProxy:ProcessRangeAttackTalentsOnHit(fo.ownerHolder, col)
+        end
+    end
+    
+    fo:RpcOnCollisionWithPlayer(rb,col,point,normal,relaVel,player)
+    fo:DoFinish()
+end
+
+function ElementalGun:RpcOnShootLocalHitInteractRole(netShootActionId,rb,col,point,normal,relaVel,fc,mu)
+    -- print("RpcOnShootLocalHitInteractRole")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.shootActionId = netShootActionId
+        self.useNetworkShootData = false
+    end
+    
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    local holder = self.host.interact:GetLatestHolder()
+    fo.ownerHolder = holder
+    local camp = not IsNullOrDestroyed(holder) and holder:GetCamp() or CL.AIProxy.CampNone
+    fo.camp = camp
+    fo.col.enabled = false
+    if true then
+    -- if CL.Network.VRNetworkManager.Instance.IsServer then
+        fo.trans.position = point
+
+        CL.InteractTrigger.BeginScanDmg()
+        CL.InteractTrigger.ApplyHitScanDamage(col, fo, fo.rb, fo.col, relaVel.normalized, camp, false, 1, nil, relaVel)
+        CL.InteractTrigger.EndHitScan()
+        fo:OnCollisionWithRole(fc,mu,rb,col,point,normal,relaVel)
+        rb:AddForce(relaVel*fo.rb.mass,UE.ForceMode.Impulse)
+    end
+    fo:DoFinish();
+end
+
+function ElementalGun:RpcOnShootLocalHitOther(netShootActionId,rb,col,point,normal,relaVel,pu)
+    -- print("RpcOnShootLocalHitOther")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.shootActionId = netShootActionId
+        self.useNetworkShootData = false
+    end
+end
+return Class(Require("Weapon/WeaponFlyObjBaseScript"), nil, ElementalGun)

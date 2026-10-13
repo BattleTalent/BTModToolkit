@@ -1,0 +1,1754 @@
+
+local ConnectUnit = {
+    --configurableJoint joint,
+    --Transform connectPoint1,
+    --Transform connectPoint2,
+    --Transform connectPoint3,
+
+    --string bodyType,
+    breakforce = 30000,
+    maxAngle = 30,
+    maxConnectDis = 0.1,
+    
+    coolTime = 1,
+    connectEndTime = 0,
+    
+    checkAngle = 15,
+    checkDis = 3,
+    
+    cacheAttachPoint = {},
+    cacheAttachPos = {},
+    
+    weight = 0,
+    
+    handGrip = {},
+    
+    handDir = {}, --Thand dir at the time of grasping, is used to determine the dir at the time of releasing.
+    
+    connectPoints = {},
+    connectName = "connectPoint",
+    
+    checkTime = 0.2,
+    
+    enterBodyCols = {},
+    allowNextConnectTime = -1,
+    
+    checkInterval = 0.1,
+    curCheckTime = 0,
+    
+    connectDot = -0.9,
+    connectSqrDis = 0.05,
+    
+    anotherNetId = -1,
+}
+
+function ConnectUnit:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+    self.isServer = self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer
+    
+    self.modelOffset = (self.modelTrans.position - self.modelTarget.position).magnitude
+    self.connectAnchorZ = self.modelTarget.localPosition.z
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if self.anotherNetId == netId then
+            self.anotherNetId = nil
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            
+            self:OnSpawnAnother(netIb.ib.gameObject)
+        end
+    end
+    
+    
+    
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+    
+    self:RecordAttachData()
+end
+
+function ConnectUnit:RecordAttachData()
+    self.primaryAttachData = {}
+    self.primaryAttachData["start"] = self.primaryAO.lineStartPoint
+    self.primaryAttachData["end"] = self.primaryAO.lineEndPoint
+    self.primaryAttachData["indexLimit"] = self.primaryAO.indexLimit
+    self.primaryAttachData["isIndependentGrab"] = self.primaryAO.isIndependentGrab
+    
+    self.cacheAttachPos = {}
+    for i = 0, self.ib.attachList.Length - 1 do
+        self.cacheAttachPos[self.ib.attachList[i]] = self.ib.attachList[i].transform.localPosition
+    end
+end
+
+function ConnectUnit:Start()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then
+            state:ReqConnectWeaponNetId(localPlayerId)
+        end
+        self:BanTriggerConnect()
+        return
+    end
+    
+    self.onSave = function(data)
+        if self.isConnect then
+            local name = string.gsub(self.body.ib.trans.name, "%(Clone%)", "")
+            data.info =  CS.System.Collections.Generic.Dictionary(CS.System.String, CS.System.String)()
+            data.info:Add("name", name)
+            data.info:Add("forgeLevel", tostring(self.body.ib.ForgeLevel))
+            data.info:Add("isConnect", "1")
+            
+            self:RecordBuffData(data)
+        else
+            data.info =  CS.System.Collections.Generic.Dictionary(CS.System.String, CS.System.String)()
+            data.info:Add("isConnect", "0")
+        end
+    end
+    self.ib:SaveEvent("+", self.onSave)
+    
+--    self.onDead = function(data)
+--        if self.isConnect then
+--            --if self.body then
+--            --    self.body.interactTrigger:RemoveOneMaterial("WeaponBrokenMat")
+--            --
+--            --    if self.ib:IsUnsold() then
+--            --        CL.DungeonShop.ClearMerchandise(self.body.ib)
+--            --    end
+--            --end
+--            --
+--            --if self.isOnline then
+--            --    self.ib.networkIB.networkIBState:ServerDisconnect()
+--            --else
+--            --    self:Disconnect()
+--            --end
+--            if self.body and not IsNullOrDestroyed(self.body.ib) then
+--                self.body.ib:Dead()
+--            end
+--        end
+--    end
+--    self.ib:DeadEvent("+", self.onDead)
+    
+    if self.interactTrigger.savePointLoadInfo ~= nil then
+        self.spawnAnother = 0
+        if self.interactTrigger.savePointLoadInfo:ContainsKey("isConnect") then
+            local str = self.interactTrigger.savePointLoadInfo:get_Item("isConnect")
+            --print("self.interactTrigger.savePointLoadInfo ::" .. str)
+            if str == "1" then
+                --print("self.interactTrigger.savePointLoadInfo  load another" )
+                self:OnSavePointLoad()
+            end
+        end
+    end
+    
+    self:ConnectOnSpawn()
+end
+
+function ConnectUnit:ConnectOnSpawn()
+    if self.loadConnected ~= nil then
+        self.loadConnected:TryConnectWithOtherImmediate(self.trans)
+        if self.loadConnected.ib:IsSlotEquiped() then
+            local trigger = self.loadConnected.ib:GetInteractTrigger()
+            trigger.script:GetSelf().OnSlotFunc(nil, true)
+        end
+        return
+    end
+    
+    if self.initialConnected ~= nil then
+        self.initialConnected:TryConnectWithOtherImmediate(self.trans)
+        return
+    end
+    
+    if self.spawnAnother ~= 0 then
+        if self.isOnline then
+            self:NetworkSpawnAnother()
+        else
+            --print("check name---------: " .. self.interactTrigger.script:GetSelf().connectUnit.script:GetSelf().name)
+            self:SpawnAnother()
+        end
+    end
+end
+
+function ConnectUnit:OnGrab(ao, g)
+    if g then
+        local dir = (ao.attachedHand:GetIndexDir() + ao.attachedHand:GetThumbDir()).normalized
+        self.handDir[ao.attachedHand] = UE.Vector3.Dot(dir, self.ib.trans.forward)
+        local oh = self.ib:GetSecondaryHand()
+        if not IsNullOrDestroyed(oh) then
+            if oh == ao.attachedHand then
+                local ph = self.ib:GetPrimaryHand()
+                dir = (ph:GetIndexDir() + ph:GetThumbDir()).normalized
+                self.handDir[ph] = UE.Vector3.Dot(dir, self.ib.trans.forward)
+                oh = ph
+            else
+                dir = (oh:GetIndexDir() + oh:GetThumbDir()).normalized
+                self.handDir[oh] = UE.Vector3.Dot(dir, self.ib.trans.forward)
+            end
+        end
+        
+        --self:DrawHand(ao.attachedHand)
+        --CL.Scheduler.RemoveSchedule(self.drawId)
+        --self.drawId = CL.Scheduler.Create(self.ib,
+        --    function(sche, t, s)
+        --        self:DrawHand(ao.attachedHand)
+        --        self:DrawHand(oh, UE.Color.red)
+        --    end
+        --, 0, -1).actionId
+    else
+        CL.Scheduler.RemoveSchedule(self.drawId)
+    end
+end
+
+function ConnectUnit:OnDestroy()
+    if self.isOnline and CL.Network.NetworkSpawnMgr.Instance then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+    end
+end
+
+function ConnectUnit:RecordBuffData(data)
+    local str = CS.System.String.Empty
+    local hitInfoRef = self.body.ib:GetRagdollHitInfoRef()
+    local idx = 0
+    if hitInfoRef then
+        for i = 0, hitInfoRef.refs.Length - 1 do
+            str = CS.System.String.Empty
+            
+            local arr = CL.SavePointMgr.ConvertBuffList(CL.BuffMgr.Instance:GetBuffList(hitInfoRef.refs[i].hitInfo))
+            if arr ~= nil and arr.Length > 0 then
+                for b = 0, arr.Length -1 do
+                    if str == CS.System.String.Empty then
+                        str = arr[b]
+                    else
+                        str = str .. "," .. arr[b]
+                    end
+                end
+            end
+            if str ~= CS.System.String.Empty then
+                --print("hitinfo:" .. i .. " " .. str)                    
+                data.info:Add("RefBuff" .. i, str)
+                idx = i
+            end
+        end
+    else
+        str = CS.System.String.Empty
+        local hitInfoObj = self.body.ib:GetRagdollHitInfoObj()
+        if hitInfoObj then
+            local arr = CL.SavePointMgr.ConvertBuffList(CL.BuffMgr.Instance:GetBuffList(hitInfoObj.hitInfo))
+            if arr ~= nil and arr.Length > 0 then
+                for b = 0, arr.Length -1 do
+                    if str == CS.System.String.Empty then
+                        str = arr[b]
+                    else
+                        str = str .. "," .. arr[b]
+                    end
+                end
+            end
+            if str ~= CS.System.String.Empty then
+                --print("hitinfo:" .. str)
+                data.info:Add("ObjBuff", str)
+            end
+        end
+    end
+end
+
+function ConnectUnit:DrawHand(ph, color)
+    if ph then
+        local dir = (ph:GetIndexDir() + ph:GetThumbDir()).normalized
+        CL.DebugDraw.DrawLine(ph.trans.position, ph.trans.position + dir, color or UE.Color.white, 0.01)
+    end
+end
+
+function ConnectUnit:Draw()
+    local ph = self.ib:GetPrimaryHand()
+    if ph then
+        local dir = (ph:GetIndexDir() + ph:GetThumbDir()).normalized
+        CL.DebugDraw.DrawLine(ph.trans.position, ph.trans.position + dir, UE.Color.red, 0.95)
+        
+        local other = ph:GetAnotherHand()
+        dir = (other:GetIndexDir() + other:GetThumbDir()).normalized
+        CL.DebugDraw.DrawLine(other.trans.position, other.trans.position + dir, UE.Color.red, 0.95)
+    end
+end
+
+function ConnectUnit:SpawnAnother()
+    if not self.name then
+        return
+    end
+    
+    local go = CL.ResourceMgr.Instantiate(CL.InteractTrigger.WeaponPath .. self.name)
+    if IsNullOrDestroyed(go) then
+        return
+    end
+    
+    self:OnSpawnAnother(go)
+end
+
+function ConnectUnit:NetworkSpawnAnother()
+    if not self.isOnline then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.Instance.IsServer then
+        CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.name, 
+            self.ib.trans.position, UE.Quaternion.LookRotation(-self.ib.trans.forward),
+            false, false, self.ib.netId, true, 
+            function(netIb, go)
+                if IsNullOrDestroyed(go) then
+                    return
+                end
+                self:OnSpawnAnother(go)
+                local state = GetIBNetworkState(self.ib)
+                if state ~= nil then
+                    state:ServerSpawnAnother(netIb.netId)
+                end
+            end)
+    end
+end
+
+function ConnectUnit:OnSpawnAnother(go)
+    local lb = go.transform:GetComponent(typeof(CL.LuaBehaviour))
+    local tb = lb.script:GetSelf()
+    tb.spawnAnother = 0
+    tb.initialConnected = self
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(go.transform, true)
+    pu.trans.position = self.ib.trans.position
+    pu.trans.forward = -self.ib.trans.forward
+    
+    
+    --self:TryConnectWithOtherImmediate(pu.trans)
+end
+
+function ConnectUnit:NetworkSpawnedAnother(netId)
+    self.anotherNetId = netId
+    
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    else
+        self:OnSpawnAnother(netIb.ib.gameObject)
+    end
+end
+
+function ConnectUnit:RecvConnectWeaponNetId(netId, isSlot)
+    --print("RecvConnectWeaponNetId:" .. self.ib.trans.name .. "   " ..  self.ib.netId .. " connectId:" .. netId)
+    self:BanTriggerConnect(false)
+    
+    if netId <= 0 then
+        return
+    end
+    
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    else
+        --print("RecvConnectWeaponNetId:" .. self.ib.trans.name .. "   " ..  self.ib.netId .. "   ".. tostring(isSlot) .. "  connect with id :" .. netId .. "  name:" .. netIb.ib.trans.name)
+        netIb.ib.trans.position = self.ib.trans.position
+        netIb.ib.trans.forward = -self.ib.trans.forward
+        self:TryConnectWithOtherImmediate(netIb.ib.trans)
+        
+        if isSlot then
+            local trigger = self.ib:GetInteractTrigger()
+            trigger.script:GetSelf().OnSlotFunc(nil, true)
+        end
+    end
+end
+
+function ConnectUnit:OnReceiveConnectWeaponRequest(playerId)
+    local connectId = (self.isConnect and self.body) and self.body.ib.netId or 0
+    local state = GetIBNetworkState(self.ib)
+    if state ~= nil then
+        state:SendConnectWeaponNetId(playerId, connectId)
+    end
+end
+
+function ConnectUnit:OnSavePointLoad()
+    --local name = string.gsub(self.interactTrigger.savePointLoadInfo, "ConnectObjName", "")
+    local name = self.interactTrigger.savePointLoadInfo:get_Item("name")
+    
+    local go = CL.ResourceMgr.Instantiate(CL.InteractTrigger.WeaponPath .. name)
+    if not go then
+        return
+    end
+    
+    go.transform.position = self.modelTarget.position
+    go.transform.rotation = self.modelTarget.rotation
+    
+    local lb = go.transform:GetComponent(typeof(CL.LuaBehaviour))
+    local tb = lb.script:GetSelf()
+    tb.spawnAnother = 0
+    tb.loadConnected = self
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(go.transform, true)
+    
+    --self:TryConnectWithOtherImmediate(pu.trans)
+    
+    --buff
+    if self.interactTrigger.savePointLoadInfo:ContainsKey("forgeLevel") then
+        local lv = tonumber(self.interactTrigger.savePointLoadInfo:get_Item("forgeLevel"))
+        pu:UpdateForgeLevel(lv)
+    end
+    
+    self:PasteBuffDataToWeapon(self.interactTrigger.savePointLoadInfo, pu)
+    
+    self.interactTrigger.savePointLoadInfo = nil
+end
+
+function ConnectUnit:StringSplit(str, reps)
+    local list = {}
+    string.gsub(str, '[^' .. reps .. ']+', function (w)
+            table.insert(list, w)
+        end)
+    return list
+end
+
+function ConnectUnit:PasteBuffDataToWeapon(data, ib)
+    local hitInfoRef = ib:GetRagdollHitInfoRef()
+    local idx = 0
+    if hitInfoRef then
+        for i = 0, hitInfoRef.refs.Length - 1 do
+            if data:ContainsKey("RefBuff" .. i) then
+                local buffs = self:StringSplit(data:get_Item("RefBuff" .. i) , ",")
+                if buffs ~= nil and #buffs > 0 then
+                    for b = 1, #buffs do
+                        --print("add buff to hitinfo:" .. i .. " " .. buffs[b])                    
+                        CL.WeaponEmpower.ForgeWeaponDataAddBuff(hitInfoRef.refs[i].hitInfo, buffs[b])
+                    end
+                end
+            end
+        end
+    else
+        local hitInfoObj = ib:GetRagdollHitInfoObj()
+        if hitInfoObj then
+            if data:ContainsKey("ObjBuff") then
+                local buffs = self:StringSplit(data:get_Item("ObjBuff"), ",")
+                if buffs ~= nil and #buffs > 0 then
+                    for b = 1, #buffs do
+                        --print("add buff to hitinfoObj:" .. b .. " " .. buffs[b])                    
+                        CL.WeaponEmpower.ForgeWeaponDataAddBuff(hitInfoObj.hitInfo, buffs[b])
+                    end
+                end
+            end
+        end
+    end
+end
+
+function ConnectUnit:OnTriggerStay(other)
+    if self.isBanTrigger then
+        return
+    end
+    
+    if not self.ib:IsUsable() then
+        return
+    end
+    
+    if self.isOnline and not self.isServer
+        and not SafeIsOwnerLocalPlayer(self.ib) then
+        return
+    end
+    
+    local currentTime = UE.Time.time
+    
+    if self.isConnect or currentTime < self.connectEndTime then
+        return
+    end
+    
+    if currentTime - self.curCheckTime < self.checkInterval then
+        return
+    end
+    
+    self.curCheckTime = currentTime
+    --print("trigger stay try connect-----------")
+    self:TryConnectWithOther(other.transform.root, true)
+end
+
+function ConnectUnit:OnTriggerExit(other)
+    if self.isBanTrigger then
+        return
+    end
+    
+    if not self.ib:IsUsable() then
+        return
+    end
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer
+        and not SafeIsOwnerLocalPlayer(self.ib) then
+        return
+    end
+    
+    
+    if self.isConnect or UE.Time.time < self.connectEndTime then
+        return
+    end
+    
+    self:TryConnectWithOther(other.transform.root, false)
+end
+
+function ConnectUnit:BanTriggerConnect(flag)
+    self.isBanTrigger = flag
+end
+
+function ConnectUnit:TryConnectWithOther(root, connect)
+    if connect and not self:IsAllowConnect() then
+        return
+    end
+    
+    if self.ib:IsUnsold() then
+        return
+    end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(root)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+    
+    if not pu.isCombinable then
+        return
+    end
+    
+    local lb = root:GetComponent(typeof(CL.LuaBehaviour))
+    if lb then
+        local tb = lb.script:GetSelf()
+        if tb.GetBodyType and tb:GetBodyType() == self.bodyType and not tb:IsConnected() 
+            and tb:GetWeight() <= self.weight and tb:IsAllowConnect() and not tb.ib:IsUnsold() then
+            if self.ib:IsBrokwnWarning() or tb.ib:IsBrokwnWarning() then
+                return
+            end
+            if not connect then
+                self:StopConnectCountdown()
+            else
+                local body = root.gameObject
+                local dot = UE.Vector3.Dot(self.ib.trans.forward, body.transform.forward)
+                local dis = (tb:GetConnectCenter() - self:GetConnectCenter()).sqrMagnitude
+                if dot < self.connectDot and dis < self.connectSqrDis then
+                    self:StartConnectCountdown(tb, body, tb.ib.rb)
+                    --print("TryConnectWithOther.StartConnectCountdown:" .. self.ib.trans.name .. "   " ..  self.ib.netId .. " connectId:" .. tb.ib.netId)
+                    --self.main:SetActive(true)
+                    --tb.main:SetActive(false)
+                end
+            end
+        end
+    end
+end
+
+function ConnectUnit:IsAllowConnect()
+    return UE.Time.time >= self.allowNextConnectTime
+end
+
+function ConnectUnit:TryConnectWithOtherImmediate(root)
+    if self.isConnect then
+        return
+    end
+    
+    local lb = root:GetComponent(typeof(CL.LuaBehaviour))
+    if lb then
+        local tb = lb.script:GetSelf()
+        if tb.GetBodyType and tb:GetBodyType() == self.bodyType and not tb:IsConnected() 
+            and tb:GetWeight() <= self.weight then
+            if self.ib:IsBrokwnWarning() or tb.ib:IsBrokwnWarning() then
+                return
+            end
+            
+            local body = root.gameObject
+            local dot = UE.Vector3.Dot(self.ib.trans.forward, body.transform.forward)
+            if dot < self.connectDot then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    local state = GetIBNetworkState(self.ib)
+                    if state ~= nil then
+                        state:ServerConnectWithOther(tb.ib, tb.ib.rb)
+                    end
+                end
+                self:ConnectWithOther(tb, tb.ib.rb)
+                --self.main:SetActive(true)
+                --tb.main:SetActive(false)
+            end
+        end
+    end
+end
+
+function ConnectUnit:SetAsShadowWeapon()
+    self.isShadowWeapon = true
+end
+
+function ConnectUnit:StopConnectCountdown()
+    self.allowNextConnectTime = 0
+    CL.Scheduler.RemoveSchedule(self.connectCountdownId)
+end
+
+function ConnectUnit:StartConnectCountdown(tb, body, rb)
+    self.allowNextConnectTime = UE.Time.time + self.checkTime
+    tb.allowNextConnectTime = UE.Time.time + self.checkTime
+    CL.Scheduler.RemoveSchedule(self.connectCountdownId)
+    self.connectCountdownId = CL.Scheduler.Create(self.ib,
+        function(sche, t, s)
+            if self.isConnect then
+                sche:Stop()
+                return
+            end
+            
+            if IsNullOrDestroyed(self.ib) or not body or IsNullOrDestroyed(body.transform) then
+                self.allowNextConnectTime = 0
+                tb.allowNextConnectTime = 0
+                sche:Stop()
+                return
+            end
+            
+            local dot = UE.Vector3.Dot(self.ib.trans.forward, body.transform.forward)
+            if dot > self.connectDot then
+                self.allowNextConnectTime = 0
+                tb.allowNextConnectTime = 0
+                sche:Stop()
+                return
+            end
+            local dis = (tb:GetConnectCenter() - self:GetConnectCenter()).sqrMagnitude
+            if dis > self.connectSqrDis then
+                self.allowNextConnectTime = 0
+                tb.allowNextConnectTime = 0
+                sche:Stop()
+            end
+            
+            if t >= self.checkTime then
+                if self.ib:IsBrokwnWarning() or tb.ib:IsBrokwnWarning() then
+                    self.allowNextConnectTime = 0
+                    tb.allowNextConnectTime = 0
+                    return
+                end
+                if self.isOnline then
+                    --print("StartConnectCountdown:" .. self.ib.trans.name .. "   " ..  self.ib.netId .. " connectId:" .. tb.ib.netId)
+                    local state = GetIBNetworkState(self.ib)
+                    if CL.Network.VRNetworkManager.Instance.IsServer then
+                        if state ~= nil then
+                            state:ServerConnectWithOther(tb.ib, rb)
+                        end
+                        self:ConnectWithOther(tb, rb)
+                    else
+                        if state ~= nil then
+                            state:CommandConnectWithOther(tb.ib, rb)
+                        end
+                        --print("command connect with other")
+                    end
+                else
+                    self:ConnectWithOther(tb, rb)
+                end
+            end
+        end
+    , 0, self.checkTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ConnectUnit:CmdConnectWithOther(tb, rb)
+    if not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    --print("command connect with other------:" .. tostring(self.isConnect))
+    
+    if self.isConnect then
+        return
+    end
+    
+    local state = GetIBNetworkState(self.ib)
+    if state ~= nil then
+        state:ServerConnectWithOther(tb.ib, rb)
+    end
+    self:ConnectWithOther(tb, rb)
+end
+
+function ConnectUnit:ConnectWithOther(tb, rb)
+    if self.isConnect then
+        return
+    end
+    
+    self.isConnecting = true
+
+    self.body = tb
+    self:IgnoreCollision(tb, true)
+    self:OnConnect(tb)
+    self:BuildConnect(rb)
+    
+    self:DoMerge(tb)
+    --if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+    --    self:TryMerging(tb)
+    --end
+    
+    self:IgnoreCollisionWithPlayer(self.ib, true)
+    self:IgnoreCollisionWithPlayer(tb.ib, true)
+
+    self.isConnecting = false
+    self.isConnect = true
+    tb.isConnect = true
+end
+
+function ConnectUnit:IsConnected()
+    return self.isConnect
+end
+
+function ConnectUnit:GetWeight()
+    return self.weight
+end
+
+function ConnectUnit:IgnoreCollision(body, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(body.ib:GetCols(), self.ib:GetCols(), ignore)
+end
+
+function ConnectUnit:IgnoreCollisionWithPlayer(ib, ignore)
+    local ph = self.ib:GetPrimaryHand()
+    if not IsNullOrDestroyed(ph) then
+        ib:SetHolderCollision(ph.character, true, true, true, ignore)
+    end
+end
+
+function ConnectUnit:TryMerging(targetBody)
+    if self.isOnline then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then
+            state:ServerDoMerge(targetBody.ib)
+        end
+    end
+    self:DoMerge(targetBody)
+    
+    --local dot = 0
+    --self.mergeActId = CL.Scheduler.Create(self.trans.gameObject,
+    --    function(sche, t, s)
+    --        dot = UE.Vector3.Dot(self.ib.trans.forward, targetBody.ib.trans.forward)
+    --        if dot < -0.95 then
+    --            if self.isOnline then
+    --                self.ib.networkIB.networkIBState:ServerDoMerge(targetBody.ib)
+    --            end
+    --            self:DoMerge(targetBody)
+    --            
+    --            sche:Stop()
+    --            return
+    --        end
+    --    end
+    --, -1, -1).actionId
+end
+
+function ConnectUnit:DoMerge(targetBody)
+    self:MoveModel(targetBody, targetBody:GetModelTrans())
+    self.bodyLocalPos = self.ib.trans:InverseTransformPoint(targetBody.trans.position)
+    
+    if targetBody.bodyJoint ~= nil then
+        targetBody.bodyJoint.connectedBody = self.ib.rb
+        targetBody.bodyJoint.connectedAnchor = self.ib.trans:InverseTransformPoint(targetBody.jointPos.position)
+    end
+    
+    targetBody.trans.gameObject:SetActive(false)
+    
+    if not IsNullOrDestroyed(self.cJoint) then
+        self.cJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.cJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.cJoint.zMotion = UE.ConfigurableJointMotion.Free
+    end
+    if not IsNullOrDestroyed(self.lJoint) then
+        self.lJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.lJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.lJoint.zMotion = UE.ConfigurableJointMotion.Free
+    end
+    if not IsNullOrDestroyed(self.rJoint) then
+        self.rJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.rJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.rJoint.zMotion = UE.ConfigurableJointMotion.Free
+    end
+    
+    self.targetRootScale = self.ib.trans.localScale
+    targetBody.trans:SetParent(self.ib.trans)
+end
+
+function ConnectUnit:GetModelTrans()
+    return self.modelTrans
+end
+
+function ConnectUnit:GetBodyType()
+    return self.bodyType
+end
+
+function ConnectUnit:GetConnectPoint(name, idx)
+    return self[name .. idx]
+end
+
+function ConnectUnit:GetConnectCenter()
+    local idx = 1
+    local center = UE.Vector3.zero
+    while self[self.connectName .. idx] do
+        center = center + self[self.connectName .. idx].position
+        idx = idx + 1
+    end
+    return center
+end
+
+function ConnectUnit:LimitDistanceGrabs(isLimit)
+    self.ib.grabDistanceLimit = isLimit
+end
+
+function ConnectUnit:MoveModel(targetBody, modelTrans)  
+    self.targetBodyTrans = modelTrans.parent
+    self.targetBodyPos = modelTrans.localPosition
+    self.targetBodyRot = modelTrans.localRotation
+    self.targetBodyScale = modelTrans.localScale
+    self.targetModelTrans = modelTrans
+    
+    local offsetZ = self.connectPoint1.localPosition.z
+    local bodyOffsetZ = targetBody.connectPoint1.localPosition.z
+    
+    self.modelTarget.localPosition = UE.Vector3(0, 0, -targetBody.modelOffset + offsetZ)
+    modelTrans:SetParent(self.modelTarget)
+    modelTrans.localPosition = UE.Vector3.zero
+    modelTrans.localRotation = UE.Quaternion.identity
+    
+    self.ib:GetCols(true)
+end
+
+function ConnectUnit:ResetModel()
+    if IsNullOrDestroyed(self.targetBodyTrans) then
+       return
+    end
+    
+    self.targetModelTrans:SetParent(self.targetBodyTrans)
+    self.targetModelTrans.localPosition = self.targetBodyPos
+    self.targetModelTrans.localRotation = self.targetBodyRot
+    self.targetModelTrans.localScale = self.targetBodyScale
+    
+    self.ib:GetCols(true)
+end
+
+function ConnectUnit:OnConnect(body)
+    --hitinfo
+    --local ref = self.ib:GetRagdollHitInfoRef()
+    --if ref then
+    --    local arr = self.ib.trans:GetComponentsInChildren(typeof(CL.RagdollHitInfoObj))
+    --    cast(arr, typeof(CL.RagdollHitInfoObj))
+    --    local t = ref.refs:GetType()
+    --end
+    
+    local connectWeapon = self.interactTrigger.script:GetSelf()
+    if connectWeapon then
+        connectWeapon:BeforeConnect()
+    end
+    
+    local bodyConnectWeapon = body.interactTrigger.script:GetSelf()
+    if bodyConnectWeapon then
+        bodyConnectWeapon:BeforeConnect()
+    end
+    
+    self.boxTrigger.enabled = false
+    
+    local offsetZ = self.connectAnchorZ
+    local bodyOffsetZ = self.body.connectAnchorZ
+    --local center = self.modelTarget.localPosition / 2
+    --local bodyCenter = body.modelTarget.localPosition / 2
+    --rb
+    self.cacheCenterMass = self.ib.rb.centerOfMass
+    self.cacheMass = self.ib.rb.mass
+    self.ib.rb.centerOfMass = UE.Vector3(0, 0, self.cacheCenterMass.z - (body.ib.rb.centerOfMass.z - bodyOffsetZ)) 
+    --print("self.ib.rb.centerOfMass------------:" ..self.ib.rb.centerOfMass.z .. "  body.ib.rb.centerOfMass:" ..body.ib.rb.centerOfMass.z .. "  " .. bodyOffsetZ)
+    --self.ib.rb.centerOfMass = UE.Vector3(0, 0, offsetZ)
+    self.ib.rb.mass = self.ib.rb.mass + body.ib.rb.mass
+    
+    self.ib.combineIB = body.ib
+    body.ib.combiner = self.ib
+    
+    --renderer
+    if not self.cacheRenderers then
+        self.cacheRenderers = CS.System.Array.CreateInstance(typeof(UE.Renderer), self.interactTrigger.skillChangeColors.Length)
+        self.interactTrigger.skillChangeColors:CopyTo(self.cacheRenderers, 0)
+    end
+    local len = self.cacheRenderers.Length + body.interactTrigger.skillChangeColors.Length
+    
+    local newRenderers = nil
+    if self.cacheAllRenderers and self.cacheAllRenderers.Length == len then
+        newRenderers = self.cacheAllRenderers
+    else
+        newRenderers = CS.System.Array.CreateInstance(typeof(UE.Renderer), len)
+        self.cacheAllRenderers = newRenderers
+    end
+    
+    self.interactTrigger.skillChangeColors:CopyTo(newRenderers, 0)
+    body.interactTrigger.skillChangeColors:CopyTo(newRenderers, self.cacheRenderers.Length)
+    self.interactTrigger.skillChangeColors = newRenderers    
+    
+    
+    body.ib.indestructible = true
+    
+    --stab
+    local so = self.ib:GetStabObject()
+    local bodySo = body.ib:GetStabObject()
+    local geoLength = 0
+    if bodySo then
+        if not so or IsNullOrDestroyed(so) then
+            so = self.ib.gameObject:AddComponent(typeof(CL.StabObject))
+            so.ib = self.ib
+        else
+            geoLength = so.geos.Length
+        end
+        self.cacheStabGeo = so.geos
+        
+        local length = geoLength + bodySo.geos.Length
+        local newGeos = nil
+        if self.cacheGeos and self.cacheGeos.Length == length then
+            newGeos = self.cacheGeos
+        else
+            newGeos = CS.System.Array.CreateInstance(typeof(CL.StabObject.StabGeometry), geoLength + bodySo.geos.Length)
+            self.cacheGeos = newGeos
+        end
+        local curGeo = nil
+        if geoLength > 0 then
+            so.geos:CopyTo(newGeos, 0)
+        end
+        
+        --local clone = bodySo.geos:Clone()
+        --clone:CopyTo(newGeos, so.geos.Length)
+        for i = geoLength, newGeos.Length - 1 do
+            newGeos[i] = CL.StabObject.StabGeometry()
+            curGeo = bodySo.geos[i - geoLength]
+            newGeos[i].geoFwdDis = curGeo.geoFwdDis
+            newGeos[i].thickness = curGeo.thickness
+            newGeos[i].geoWidth = curGeo.geoWidth
+            
+            if IsNullOrDestroyed(curGeo.subObj) or curGeo.subObj == body.ib.rb then
+                newGeos[i].geoPoint = UE.Vector3(curGeo.geoPoint.x, curGeo.geoPoint.y, -curGeo.geoPoint.z + offsetZ + bodyOffsetZ)
+                newGeos[i].geoForward = UE.Vector3(-curGeo.geoForward.x, -curGeo.geoForward.y, -curGeo.geoForward.z)
+            else
+                newGeos[i].geoPoint = curGeo.geoPoint
+                newGeos[i].geoForward = curGeo.geoForward
+            end
+            
+            newGeos[i].geoThick = curGeo.geoThick
+            newGeos[i].sliceDir = curGeo.sliceDir
+            newGeos[i].stabMin = curGeo.stabMin
+            newGeos[i].stabMax = curGeo.stabMax
+            newGeos[i].stabTie = curGeo.stabTie
+            newGeos[i].stabDot = curGeo.stabDot
+            newGeos[i].stabHandVelSqrtRequire = curGeo.stabHandVelSqrtRequire
+            newGeos[i].stabSlideFactor = curGeo.stabSlideFactor
+            newGeos[i].subObj = curGeo.subObj
+            newGeos[i].subObjTrans = curGeo.subObjTrans
+            newGeos[i].sideGeo = curGeo.sideGeo
+            newGeos[i].noStabOut = curGeo.noStabOut
+            newGeos[i].isBlade = curGeo.isBlade
+            newGeos[i]:Init()
+        end
+        
+        so.geos = newGeos
+    end
+    
+    --attachline
+    body.combineAO.interact = self.ib
+    body.combineAO.selfRB = self.ib.rb
+    body.combineAO.transform:SetParent(self.ib.trans)
+    body.combineAO.gameObject:SetActive(true)
+    body.combineAO.transform.localPosition = UE.Vector3(0, 0, offsetZ)
+    body.combineAO.transform.localRotation = UE.Quaternion.identity
+    if body.primaryAO.isIndependentGrab then
+        self.primaryAO.isIndependentGrab = true
+    end
+    if self.primaryAO.isIndependentGrab then
+        body.combineAO.isIndependentGrab = true
+    end
+    
+    local attachNum = 2
+    if self.isCombineAO == 1 then
+        attachNum = attachNum + self.ib.attachList.Length - (self.primaryAO and 1 or 0) - (self.secondaryAO and 1 or 0)
+        --print("self attach-------------:" .. self.ib.attachList.Length .. "  combine:" .. - (self.primaryAO and 1 or 0) - (self.secondaryAO and 1 or 0))
+    end
+    
+    if body.isCombineAO == 1 then
+        attachNum = attachNum + body.ib.attachList.Length - (body.primaryAO and 1 or 0) - (body.secondaryAO and 1 or 0)
+        --print("body attach-------------:" .. body.ib.attachList.Length .. "  combine:" .. - (body.primaryAO and 1 or 0) - (body.secondaryAO and 1 or 0))
+    end
+    
+    if not self.cacheAttachList then
+        self.cacheAttachList = CS.System.Array.CreateInstance(typeof(CL.AttachObj), self.ib.attachList.Length)
+        self.ib.attachList:CopyTo(self.cacheAttachList, 0)
+    end
+    local newAttachList = nil
+    if self.attachList and attachNum == self.attachList.Length then
+        newAttachList = self.attachList
+    else
+        newAttachList = CS.System.Array.CreateInstance(typeof(CL.AttachObj), attachNum)
+        self.attachList = newAttachList
+    end
+    
+    newAttachList[0] = self.primaryAO
+    newAttachList[1] = body.combineAO
+    
+    if self.isOnline then
+        self.ib.networkIB.attachList:Clear()
+        
+        newAttachList[0].netId = self.ib.netId
+        newAttachList[0].index = 0
+        self.ib.networkIB.attachList:Add(newAttachList[0])
+        
+        newAttachList[1].netId = self.ib.netId
+        newAttachList[1].index = 1
+        self.ib.networkIB.attachList:Add(newAttachList[1])
+    end
+    
+    local attachCount = 2
+    local curAttach = nil
+    if self.isCombineAO == 1 then
+        for i = 0, self.ib.attachList.Length - 1 do
+            curAttach = self.ib.attachList[i]
+            if curAttach ~= self.primaryAO then
+                if self.isOnline then
+                    curAttach.netId = self.ib.netId
+                    curAttach.index = attachCount
+                    
+                    self.ib.networkIB.attachList:Add(curAttach)
+                end
+                
+                newAttachList[attachCount] = curAttach
+                attachCount = attachCount + 1
+                
+                
+                
+                if curAttach.dependAttachObj == self.primaryAO then
+                    if not curAttach.dependAttachObjs:Contains(body.primaryAO) then
+                        curAttach.dependAttachObjs:Add(body.combineAO)
+                    end
+                elseif curAttach.dependAttachObjs and curAttach.dependAttachObjs:Contains(self.primaryAO) then
+                    if not curAttach.dependAttachObjs:Contains(body.primaryAO) then
+                        curAttach.dependAttachObjs:Add(body.combineAO)
+                    end
+                end
+            end
+        end
+    end
+    
+    if body.isCombineAO == 1 then
+        for i = 0, body.ib.attachList.Length - 1 do
+            curAttach = body.ib.attachList[i]
+            
+            if curAttach ~= body.primaryAO then
+                curAttach.interact = self.ib
+                
+                if self.isOnline then
+                    curAttach.netId = self.ib.netId
+                    curAttach.index = attachCount
+                    
+                    self.ib.networkIB.attachList:Add(curAttach)
+                end
+                
+                newAttachList[attachCount] = curAttach
+                attachCount = attachCount + 1
+                
+                if curAttach.dependAttachObj == body.primaryAO then
+                        curAttach.dependAttachObj = self.primaryAO
+                    if not curAttach.dependAttachObjs:Contains(body.combineAO) then
+                        curAttach.dependAttachObjs:Add(body.combineAO)
+                    end
+                elseif curAttach.dependAttachObjs and curAttach.dependAttachObjs:Contains(body.primaryAO) then
+                    curAttach.dependAttachObjs:Remove(body.primaryAO)
+                    if not curAttach.dependAttachObjs:Contains(self.primaryAO) then
+                        curAttach.dependAttachObjs:Add(self.primaryAO)
+                    end
+                    if not curAttach.dependAttachObjs:Contains(body.combineAO) then
+                        curAttach.dependAttachObjs:Add(body.combineAO)
+                    end
+                end
+            end
+        end
+    end
+    
+    local lp = nil
+    for i = 0, 1 do
+        --pos
+        lp = newAttachList[i].transform.localPosition
+        lp.z = offsetZ
+        newAttachList[i].transform.localPosition = lp
+        newAttachList[i].lineStartPoint = self.handleAttachLength
+        newAttachList[i].lineEndPoint = -body.handleAttachLength
+        newAttachList[i].indexLimit = CL.AttachLine.GrabRotLimitType.Both
+    end
+    
+    self.ib.attachList = newAttachList
+    
+    --print("connect---------")
+    self.handGrip = {}
+    local isPass = false
+    for i = 0, body.ib.attachList.Length - 1 do
+        --if body.ib.attachList[i]:IsBeingHeld() then
+        if not IsNullOrDestroyed(body.ib.attachList[i].attachedHand) then
+            if body.ib.attachList[i] == body.primaryAO or body.ib.attachList[i] == body.secondaryAO then
+                for j = 0, 1 do
+                    --if not self.ib.attachList[j]:IsBeingHeld() 
+                    if not self.ib.attachList[j].attachedHand then -- and self.ib.attachList[j]:CanGrab(handIdx)
+                        --print("hand idx :"  .. handIdx .. " attach to obj:" .. self.ib.attachList[j].name)
+                        self.handGrip[body.ib.attachList[i].attachedHand] = self.ib.attachList[j]
+                        isPass = true
+                        break
+                    end
+                end
+            end
+            
+            --if body attach cant found on ib attach, then ungrab it.
+            if not isPass then
+                if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+                    body.ib.attachList[i].attachedHand:Grab(nil)
+                    --print("hand grab :"  .. handIdx .. " attach to obj:" .. self.ib.attachList[j].name)
+                end
+            end
+        end
+        --end
+    end
+    
+    self:CopyReg(body.ib)
+    
+    self.ib:MarkRenderersDirty()
+    
+    if connectWeapon then
+        connectWeapon:OnConnect(body, true)
+    end
+    
+    if bodyConnectWeapon then
+        bodyConnectWeapon:OnConnect(self, false)
+    end
+    
+    --self.testPos:SetActive(true)
+    --body.testPos:SetActive(false)
+    
+    if not self.isShadowWeapon then
+        self.connectSound:PlaySound()
+        
+        if self.connectEffectName ~= nil then
+            local eo = CL.EffectMgr.Instance:PlayEffect(self.connectEffectName, self.modelTarget.position, self.modelTarget.rotation)
+        end
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        body.ib.networkIB.networkRB.enabled = false
+        body:StopDelayEnabledNetworkRB()
+    end
+    
+    --if CL.Network.VRNetworkManager.ClientOnline then
+    --    return
+    --end
+    
+    body.ib.beAbleToShowGrab = false
+    
+    self:EnchantOnConnect(self.ib, body.ib)
+    
+    self:RegripWeapon()
+    
+    self:UpdateHandPosition()
+    
+    CL.InteractMgr.Instance:UnregInteractDrop(body.ib)
+end
+
+function ConnectUnit:CopyReg(pu)
+    CL.PhysicsUnit.UnRegAll(pu)
+    local rbs = pu:GetRBs()
+    for i = 0, rbs.Length - 1 do
+        CL.PhysicsUnit.RegTrans(self.ib, rbs[i].transform)
+    end
+end
+
+function ConnectUnit:RemoveReg(pu)
+    local rbs = pu:GetRBs()
+    for i = 0, rbs.Length - 1 do
+        CL.PhysicsUnit.UnRegTrans(self.ib, rbs[i].transform)
+    end
+    CL.PhysicsUnit.RegAll(pu)
+end
+
+function ConnectUnit:IsLocalAttachObj(ao)
+    local list = self.isConnect and self.cacheAttachList or self.ib.attachList
+    for i = 0, list.Length - 1 do
+        if ao == list[i] then
+            --print("IsLocalAttachObj--------true " .. self.trans.name .. "  isConnect:" .. tostring(self.isConnect) .. "  "..list.Length .. "  idx:" .. i)
+            return true
+        end
+    end
+    --print("IsLocalAttachObj--------false " .. self.trans.name.. "  isConnect:" .. tostring(self.isConnect))
+    return false
+end
+
+function ConnectUnit:IsSharedAttachObj(ao)
+    if (not self.isConnect and not self.isConnecting) or not self.attachList then
+        return false
+    end
+    
+    if ao == self.attachList[0] or ao == self.attachList[1] then
+        return true
+    end
+    
+    return false
+end
+
+function ConnectUnit:BuildConnect(rb)
+    self.cJoint = self.ib.trans.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.cJoint.autoConfigureConnectedAnchor = false
+    self.cJoint.connectedBody = rb
+    self.cJoint.connectedAnchor = self.body:GetConnectPoint(self.connectName, 1).localPosition
+    self.cJoint.anchor = self.connectPoint1.localPosition
+    
+    self.lJoint = self.ib.trans.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.lJoint.autoConfigureConnectedAnchor = false
+    self.lJoint.connectedBody = rb
+    self.lJoint.connectedAnchor = self.body:GetConnectPoint(self.connectName, 3).localPosition
+    self.lJoint.anchor = self.connectPoint2.localPosition
+    
+    self.rJoint = self.ib.trans.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.rJoint.autoConfigureConnectedAnchor = false    
+    self.rJoint.connectedBody = rb
+    self.rJoint.connectedAnchor = self.body:GetConnectPoint(self.connectName, 2).localPosition
+    self.rJoint.anchor = self.connectPoint3.localPosition
+    
+    self.cJoint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.cJoint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.cJoint.zMotion = UE.ConfigurableJointMotion.Locked
+    self.cJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.cJoint.projectionDistance = 0.01
+    self.cJoint.projectionAngle = 0.01
+    
+    self.lJoint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.lJoint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.lJoint.zMotion = UE.ConfigurableJointMotion.Locked
+    self.lJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.lJoint.projectionDistance = 0.01
+    self.cJoint.projectionAngle = 0.01
+    
+    self.rJoint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.rJoint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.rJoint.zMotion = UE.ConfigurableJointMotion.Locked
+    self.rJoint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.rJoint.projectionDistance = 0.01
+    self.cJoint.projectionAngle = 0.01
+end
+
+
+function ConnectUnit:Disconnect()
+    if not self.isConnect then
+        return
+    end
+    
+    local connectWeapon = self.interactTrigger.script:GetSelf()
+    if connectWeapon then
+        connectWeapon:BeforeDisconnect()
+    end
+    
+    local bodyConnectWeapon = self.body.interactTrigger.script:GetSelf()
+    if bodyConnectWeapon then
+        bodyConnectWeapon:BeforeDisconnect()
+    end
+    
+    if not IsNullOrDestroyed(self.cJoint) then
+        self.cJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.cJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.cJoint.zMotion = UE.ConfigurableJointMotion.Free
+    end
+    if not IsNullOrDestroyed(self.lJoint) then
+        self.lJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.lJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.lJoint.zMotion = UE.ConfigurableJointMotion.Free
+    end
+    if not IsNullOrDestroyed(self.rJoint) then
+        self.rJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.rJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.rJoint.zMotion = UE.ConfigurableJointMotion.Free
+    end
+
+    if not IsNullOrDestroyed(self.cJoint) then
+        UE.Object.Destroy(self.cJoint)
+    end
+    if not IsNullOrDestroyed(self.lJoint) then
+        UE.Object.Destroy(self.lJoint)
+    end
+    if not IsNullOrDestroyed(self.rJoint) then
+        UE.Object.Destroy(self.rJoint)
+    end
+    self:IgnoreCollision(self.body, false)
+    
+    self:OnDisconnect()
+    
+    CL.Scheduler.RemoveSchedule(self.checkActId)
+    CL.Scheduler.RemoveSchedule(self.mergeActId)
+    
+    self.isConnect = false
+    self.body.isConnect = false
+    --print("set isconnect------------------:" .. tostring(self.isConnect) .. "  body:" .. tostring(self.body.isConnect))
+    
+    if connectWeapon then
+        connectWeapon:OnDisconnect(self.body, true)
+    end
+    
+    if bodyConnectWeapon then
+        bodyConnectWeapon:OnDisconnect(self, false)
+    end
+    
+    self.connectEndTime = UE.Time.time + self.coolTime
+    self.body.connectEndTime = UE.Time.time + self.coolTime
+    
+    
+    --self:RegripWeapon()
+    --self:UpdateHandPosition()
+    
+    self:EnchantOnDisconnect(self.ib, self.body.ib)
+    
+    
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        self.body:DelayToEnabledNetworkRB(true)
+        self.body.ib.networkIB.networkRB.physicsFollow = false
+    end
+end
+
+function ConnectUnit:StopDelayEnabledNetworkRB()
+    CL.Scheduler.RemoveSchedule(self.delayEnableId)
+end
+
+function ConnectUnit:DelayToEnabledNetworkRB(flag)
+    CL.Scheduler.RemoveSchedule(self.delayEnableId)
+    self.delayEnableId = CL.Scheduler.Create(self.trans.gameObject,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.ib) then return end
+            self.ib.networkIB.networkRB.enabled = flag
+        end
+    , 0, 0, 0.5).actionId
+end
+
+function ConnectUnit:RegripWeapon()
+    for k, v in pairs(self.handGrip) do
+        --if k.character.IsLocalPlayer then
+            --self.ib.networkIB.networkIBState:ServerRegripWeapon(k.character.networkPlayer.netId, k:GetHandIndex(), v.netId)
+            --print("regrip weapon--11------------::" .. k:GetHandIndex())
+            k:Grab(nil, true)
+            --print("regrip weapon---22-----------::" .. k:GetHandIndex())
+            k:Grab(v, true)
+            k.needCheckStretch = false
+        --end
+    end
+end
+
+function ConnectUnit:UpdateHandPosition()
+    for i = 0, self.ib.attachList.Length - 1 do
+        if self.ib.attachList[i].attachedHand then
+            self.ib.attachList[i]:UpdateHandPosition(self.ib.attachList[i].attachedHand)
+        end
+    end
+    
+    --if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+    --    self.ib.networkIB.networkIBState:ServerUpdateHandPosition()
+    --end
+end
+
+function ConnectUnit:NetworkRegripWeapon(hand, ib)
+    --print("network regirp weapon--------------")
+    hand:Grab(nil, true)
+    hand:Grab(ib, true)
+    hand.needCheckStretch = false
+end
+
+function ConnectUnit:EnchantOnConnect(ib1, ib2)
+    --copy enchant
+    for i = 0, ib2.enchantTriggerCols.Count - 1 do
+        ib1.enchantTriggerCols:Add(ib2.enchantTriggerCols[i])
+    end
+    for i = 0, ib2.enchantRenderers.Count - 1 do
+        ib1.enchantRenderers:Add(ib2.enchantRenderers[i])
+    end
+    
+    if ib1:IsOnEnchant() and ib2:IsOnEnchant() then
+        local enchanter1 = ib1:GetEnchanter()
+        local enchanter2 = ib2:GetEnchanter()
+        if enchanter1 and enchanter2 then
+            if enchanter1.enchantScript ~= enchanter2.enchantScript then
+                if CL.Network.VRNetworkManager.IsOnline then
+                    if CL.Network.VRNetworkManager.Instance.IsServer then
+                        local s1 = GetIBNetworkState(ib1)
+                        if s1 ~= nil then s1:ServerEnchantEnd() end
+                        local s2 = GetIBNetworkState(ib2)
+                        if s2 ~= nil then s2:ServerEnchantEnd() end
+                    end
+                end
+                ib1:EnchantEnd()
+                ib2:EnchantEnd()
+                
+                local eos = ib2.gameObject:GetComponentsInChildren(typeof(CL.EffectObj))
+                for i = 0, eos.Length - 1 do
+                    if string.find(eos[i].trans.name, "Enchant") then
+                        eos[i].trans:SetParent(self.modelTarget)
+                    end
+                end
+            else
+                if CL.Network.VRNetworkManager.IsOnline then
+                    if CL.Network.VRNetworkManager.Instance.IsServer then
+                        local s2 = GetIBNetworkState(ib2)
+                        if s2 ~= nil then s2:ServerEnchantEnd() end
+                    end
+                end
+                
+                ib2:EnchantEnd()
+            end
+        end
+        return
+    end
+    
+    if ib1:IsOnEnchant() and not ib2:IsOnEnchant() and ib2:IsEnchantble() then
+        local enchanter1 = ib1:GetEnchanter()
+        if enchanter1 then
+            --[[if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    ib1.networkIB.networkIBState:ServerEnchantOther(ib2, true)
+                    ib1:EnchantOther(ib2, true)
+                end
+            else
+                ib1:EnchantOther(ib2, true)
+            end
+            local eos = ib2.gameObject:GetComponentsInChildren(typeof(CL.EffectObj))
+            for i = 0, eos.Length - 1 do
+                eos[i].trans:SetParent(self.modelTarget)
+            end]]
+            
+            ib1:RefleshEnchantEffect()
+        end
+        return
+    end
+    
+    if ib2:IsOnEnchant() and not ib1:IsOnEnchant() and ib1:IsEnchantble() then
+        local enchanter2 = ib2:GetEnchanter()
+        if enchanter2 then
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    local s2 = GetIBNetworkState(ib2)
+                    if s2 ~= nil then
+                        s2:ServerEnchantOther(ib1, true)
+                        s2:ServerEnchantEnd()
+                    end
+                    
+                    ib2:EnchantOther(ib1, true)
+                    ib2:EnchantEnd()
+                end
+            else
+                ib2:EnchantOther(ib1, true)
+                ib2:EnchantEnd()
+            end
+        end
+        return
+    end
+end
+
+function ConnectUnit:EnchantOnDisconnect(ib1, ib2)
+    if IsNullOrDestroyed(ib1) or IsNullOrDestroyed(ib2) then
+        return
+    end
+    
+    --enchantment passing
+    if ib1:IsOnEnchant() then
+        local enchanter = ib1:GetEnchanter()
+        if enchanter then
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    local s1 = GetIBNetworkState(ib1)
+                    if s1 ~= nil then
+                        s1:ServerEnchantOther(ib2, true)
+                    end
+                    ib1:EnchantOther(ib2, true)
+                end
+            else
+                ib1:EnchantOther(ib2, true)
+            end
+            ib1:RefleshEnchantEffect()
+        end
+    else
+        if ib2:IsOnEnchant() then
+            if CL.Network.VRNetworkManager.IsOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    local s2 = GetIBNetworkState(ib2)
+                    if s2 ~= nil then s2:ServerEnchantEnd() end
+                end
+            else
+                ib2:EnchantEnd()
+            end
+        end
+    end
+    for i = ib1.enchantTriggerCols.Count - 1, 0, -1 do
+        if ib2.enchantTriggerCols:Contains(ib1.enchantTriggerCols[i]) then
+            ib1.enchantTriggerCols:Remove(ib1.enchantTriggerCols[i])
+        end
+    end
+    for i = ib1.enchantRenderers.Count - 1, 0, -1 do
+        if ib2.enchantRenderers:Contains(ib1.enchantRenderers[i]) then
+            ib1.enchantRenderers:Remove(ib1.enchantRenderers[i])
+        end
+    end
+end
+
+function ConnectUnit:GetConnectBody()
+    return self.body
+end
+
+function ConnectUnit:OnDisconnect()
+    --local ref = self.ib:GetRagdollHitInfoRef()
+    --if ref then
+    --    ref.refs = self.trans:GetComponentsInChildren(typeof(CL.RagdollHitInfoObj))
+    --end
+
+    self.boxTrigger.enabled = true
+    
+    local hasStrongEffect = self.interactTrigger:HasStrongEffect()
+    if hasStrongEffect then
+        self.interactTrigger:SetStrongEffect(false)
+        self.ib:ActivateTrail(false, CL.InteractTrigger.DangerColor, true)
+        
+        self.body.interactTrigger:SetStrongEffect(false)
+        self.body.ib:ActivateTrail(false, CL.InteractTrigger.DangerColor, true)
+    end
+
+    self.ib.rb.centerOfMass = self.cacheCenterMass
+    self.ib.rb.mass = self.cacheMass
+    
+    self.ib.combineIB = nil
+    self.body.ib.combiner = nil
+    
+    --renderers
+    self.interactTrigger:SetBrokenEffect(false)
+    self.interactTrigger.skillChangeColors = self.cacheRenderers
+    
+    self.body.ib.indestructible = false
+    if self.ib:IsBrokwnWarning() then
+        self.interactTrigger:SetBrokenEffect(true)
+        
+        self.body.ib:EnterBrokenReady()
+    else
+        local dura = self.ib.durability / self.ib.durailityMax * self.body.ib.durailityMax
+        if dura < self.body.ib.durability then
+            self.body.ib:CostDurability(self.body.ib.durability - dura)
+        end
+    end
+    
+    --stab
+    local so = self.ib:GetStabObject()
+    if so then
+        so.geos = self.cacheStabGeo
+        so:BreakAllStab()
+    end
+    
+    --grab 
+    local handPos = nil
+    --self.handGrip = {}
+    --attachlist
+    self.ib.attachList = self.cacheAttachList
+    
+    --pos
+    self.primaryAO.lineStartPoint = self.primaryAttachData["start"]
+    self.primaryAO.lineEndPoint = self.primaryAttachData["end"]
+    self.primaryAO.indexLimit = self.primaryAttachData["indexLimit"]
+    self.primaryAO.isIndependentGrab = self.primaryAttachData["isIndependentGrab"]
+    self.primaryAO.transform.localPosition = self.cacheAttachPos[self.primaryAO]
+    
+    if self.isOnline then
+        self.ib.networkIB.attachList:Clear()
+    end
+        
+    local handList = {}
+    for i = 0, self.attachList.Length - 1 do
+        if self.isOnline then
+            self.ib.networkIB.attachList:Add(self.attachList[i])
+        end
+        if self.attachList[i].attachedHand then
+            handPos = self.ib.trans:InverseTransformPoint(self.attachList[i].attachedHand.handPoseControl.transform.position)
+            --if self.ib.attachList[i].attachedHand:GetHandIndex() == 0 then
+            --    self.handright.transform:SetParent(nil)
+            --    self.handright.transform.position =  self.ib.attachList[i].attachedHand.handPoseControl.transform.position
+            --else
+            --    self.handleft.transform:SetParent(nil)
+            --    self.handleft.transform.position =  self.ib.attachList[i].attachedHand.transform.position
+            --end
+            handList[self.attachList[i].attachedHand] = handPos.z
+        end
+    end
+    
+    local curAttach = nil
+    local combineAO = self.body.combineAO
+    if self.isCombineAO == 1 then
+        for i = 0, self.ib.attachList.Length - 1 do
+            self.ib.attachList[i].dependAttachObjs:Remove(combineAO)
+        end
+    end
+    
+    if self.body.isCombineAO == 1 then
+        for i = 0, self.body.ib.attachList.Length - 1 do
+            curAttach = self.body.ib.attachList[i]
+            if curAttach.dependAttachObj == self.primaryAO then
+                curAttach.dependAttachObj = self.body.primaryAO
+                curAttach.dependAttachObjs:Remove(self.body.combineAO)
+            elseif curAttach.dependAttachObjs and curAttach.dependAttachObjs:Contains(self.primaryAO) then
+                curAttach.dependAttachObjs:Remove(self.primaryAO)
+                if not curAttach.dependAttachObjs:Contains(self.body.primaryAO) then
+                    curAttach.dependAttachObjs:Add(self.body.primaryAO)
+                end
+                curAttach.dependAttachObjs:Remove(self.body.combineAO)
+            end
+        end
+    end
+    
+    --reset model
+    self:ResetModel()
+    
+    if self.body.trans.parent == self.ib.trans then
+        self.body.trans:SetParent(nil)
+        self.body.trans.localScale = self.targetRootScale
+    end
+    
+    if self.body.bodyJoint ~= nil then
+        self.body.bodyJoint.connectedBody = self.body.ib.rb
+        self.body.bodyJoint.connectedAnchor = self.body.ib.trans:InverseTransformPoint(self.body.jointPos.position)
+    end
+    
+    if self.bodyLocalPos then
+        self.body.trans.position = self.ib.trans:TransformPoint(self.bodyLocalPos)
+    else
+        self.body.trans.position = self.modelTarget.position
+    end
+    self.body.trans.gameObject:SetActive(true)
+    
+    --regrab
+    local ph = self.ib:GetPrimaryHand()
+    local other = self.ib:GetSecondaryHand()
+    
+    local bodyHand = nil
+    local mainHand = nil
+    
+    if not IsNullOrDestroyed(other) then
+        if not IsNullOrDestroyed(other.attachTo) and other.attachTo.interact == self.ib and handList[ph] and handList[other] then
+            if handList[ph] > handList[other] then
+                bodyHand = other
+                mainHand = ph
+            else
+                bodyHand = ph
+                mainHand = other
+            end
+        end
+        other:Grab(nil, true)
+    end
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:Grab(nil, true)
+    end
+    
+    --if CL.Network.VRNetworkManager.ClientOnline then
+    --    self.ib.networkIB.networkRB.enabled = false
+    --end
+    self.body.trans.position = bodyHand and bodyHand.grabJoint.transform.position or self.body.trans.position
+    self.ib.trans.position = mainHand and mainHand.grabJoint.transform.position or self.ib.trans.position
+    if bodyHand and self.handDir[bodyHand] then
+        local dir = (bodyHand:GetIndexDir() + bodyHand:GetThumbDir()).normalized
+        if self.handDir[bodyHand] > 0 then
+            self.body.trans.forward = -dir
+            --CL.DebugDraw.DrawLine(bodyHand.trans.position, bodyHand.trans.position + dir, UE.Color.yellow, 5)
+            --CL.DebugDraw.DrawLine(bodyHand.trans.position, bodyHand.trans.position + UE.Vector3.up, UE.Color.blue, 5)  
+            --print("body hand forward ========  main ib forward:" ..bodyHand:GetHandIndex() .. "  main:" .. self.ib.trans.name)
+        else
+            self.body.trans.forward = dir
+            --CL.DebugDraw.DrawLine(bodyHand.trans.position, bodyHand.trans.position + dir, UE.Color.yellow, 5)
+            --CL.DebugDraw.DrawLine(bodyHand.trans.position, bodyHand.trans.position + UE.Vector3.up, UE.Color.blue, 5)
+            --print("---body hand forward ======== main ib backward:" ..bodyHand:GetHandIndex() .. " main:" .. self.ib.trans.name)
+        end
+    end
+    
+    if mainHand and self.handDir[mainHand] then
+        local dir = (mainHand:GetIndexDir() + mainHand:GetThumbDir()).normalized
+        if self.handDir[mainHand] > 0 then
+            self.ib.trans.forward = dir
+            --CL.DebugDraw.DrawLine(mainHand.trans.position, mainHand.trans.position + dir, UE.Color.red, 5)
+            --CL.DebugDraw.DrawLine(mainHand.trans.position, mainHand.trans.position + UE.Vector3.up, UE.Color.blue, 5)  
+        else
+            --CL.DebugDraw.DrawLine(mainHand.trans.position, mainHand.trans.position + dir, UE.Color.red, 5)
+            --CL.DebugDraw.DrawLine(mainHand.trans.position, mainHand.trans.position + UE.Vector3.up, UE.Color.blue, 5)
+            
+            self.ib.trans.forward = -dir
+        end
+    end
+    
+    
+    if bodyHand and bodyHand.character.IsLocalPlayer then
+        bodyHand:Grab(self.body.ib.attachList[0])
+        bodyHand.needCheckStretch = false
+        
+        mainHand:Grab(self.ib.attachList[0])
+        mainHand.needCheckStretch = false
+        
+        
+        if CL.Network.VRNetworkManager.ClientOnline then
+            --self.ib.networkIB.networkRB.enabled = true
+            self.ib.networkIB:LooseIBJoint(true)
+            self.body.ib.networkIB:LooseIBJoint(true)
+        end
+        
+        self.body.ib.attachList[0]:UpdateHandPosition(bodyHand)
+        self.ib.attachList[0]:UpdateHandPosition(mainHand)
+    end
+    
+    self.body.combineAO.trans:SetParent(self.body.trans)
+    self.body.combineAO.trans.localPosition = UE.Vector3.zero
+    self.body.combineAO.trans.localRotation = UE.Quaternion.identity
+    self.body.combineAO.gameObject:SetActive(false)
+    
+    --secondary Hand will regrip when primary hand leave
+    --if bodyHand and self.ib:GetPrimaryHand() == bodyHand then
+    --    self.ib:UpdateTwoHandOrder()
+    --end
+    
+    self.ib:MarkRenderersDirty()
+    
+    if not self.isShadowWeapon then
+        self.breakSound:PlaySound()
+    end
+
+    if self.ib.paintInstalled then
+        if not self.body.ib.paintInstalled and self.body.ib.canPaint then
+            self.body.ib.paintInstalled = true
+            local trigger = self.body.ib:GetInteractTrigger()
+            if not IsNullOrDestroyed(trigger) and trigger.skillChangeColors.Length == 1 then
+                local paint = trigger.skillChangeColors[0].gameObject:GetComponent(typeof(CS.PaintIn3D.P3dPaintable))
+                if not IsNullOrDestroyed(paint) then
+                    self.body.ib.paintable = paint
+                end
+            end
+        end
+    end
+    
+    self.body.ib.beAbleToShowGrab = true
+    
+    local attach = nil
+    for i = 0, self.body.ib.attachList.Length - 1 do
+        attach = self.body.ib.attachList[i]
+        if attach ~= self.body.primaryAO then
+            attach.interact = self.body.ib
+            attach.dependAttachObj = self.body.primaryAO
+            
+            if self.isOnline then
+                attach.netId = self.body.ib.netId
+                attach.index = i
+            end
+        end
+    end
+    
+    self:RemoveReg(self.body.ib)
+end
+
+function ConnectUnit:GetOtherName()
+    if self:IsConnected() then
+        return self.body and self.body.name or ""
+    else
+        return ""
+    end
+end
+--function ConnectUnit:OnDestroy()
+--    print("OnDestroy---------------------")
+--    if self.isConnect then
+--        if self.body and not IsNullOrDestroyed(self.body.ib) then
+--            self.body.ib:Dead()
+--        end
+--    end
+--end
+
+return Class(nil,nil,ConnectUnit)

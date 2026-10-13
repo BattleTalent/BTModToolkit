@@ -1,0 +1,479 @@
+
+local ManualRevolver = {
+    motionVel = 4,
+    bulletCount = 6,
+    
+    grabPose = {0.3, 0.05, 0.8, 0.8, 0.75},
+    drumAnimDuration = 0.5,
+    shootActionId = 0,
+    useNetworkShootData = false,
+    velFromNetwork = nil,
+    shootTargetPostionFromNetwork = nil,
+    networkUseLocalEstimate = true,
+}
+
+function ManualRevolver:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+
+function ManualRevolver:OnGrab(a, g)
+    self.aimWidget.gameObject:SetActive(g)
+    if g then
+        if not IsNullOrDestroyed(a.attachedHand) then
+            SetHandPose(a.attachedHand, self.grabPose)
+        end
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self.aimWidget.enabled = true
+        end
+    else
+        self.aimWidget.enabled = false
+    end
+end
+
+function ManualRevolver:RegisterLoadDetectSche()
+    CL.Scheduler.RemoveSchedule(self.openLoadDetectTimer)
+    self.openLoadDetectTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            self:OpenLoadDetect()
+        end
+    , 0, 0, 0.3)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ManualRevolver:UpdateSkill()
+    if not self.readyShoot then
+        self.triggerSound:PlaySound()
+        self.host:CloseSkill()
+        return
+    end
+    if not CostMana(self.host, self.shootManaCost * self.host.AppliedManaCostMultiplier * self.host.ManaCostPVPMlp) then
+        return
+    end
+    
+    local bullet = nil
+    local ph = self.host.interact:GetPrimaryHand()
+    if self.isOnline then
+        if ph.character.IsLocalPlayer then
+            bullet = self:PlayShootActionClient()
+        end
+    else
+        bullet = self:PlayShootAction()
+    end
+    
+    if self.isEnhance and bullet and bullet.script then
+        bullet.script:GetSelf():Enhance()
+    end
+
+    self:OnUpdateSkill()
+    
+    --self:HolderPushBack(5)
+        
+    self.useBulletCount = self.useBulletCount + 1
+
+    if self.useBulletCount >= self.bulletCount then
+        self:UnLockGunBarrel()
+        self.readyShoot = false
+
+        local ph = self.host.interact:GetPrimaryHand()
+        if ph.character.IsLocalPlayer then
+            self:RegisterLoadDetectSche()
+        end
+        if not self.isOnline then
+            self:RegisterLoadDetectSche()
+        end
+    else
+        self:PlayDrumAnim(self.drumAnimDuration)
+    end
+    self.host:CloseSkill()
+end
+
+function ManualRevolver:GetAimDir(shootPosition) 
+    local aimDir = shootPosition.forward
+    return aimDir
+end
+function ManualRevolver:PlayShootAction()
+    local ph = self.host.interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = self:GetAimDir(self.shootPosition)
+    local fo = nil
+
+    fo = self.host:CreateFlyObj(self.flyObjName,self.shootPosition.position,aimDir,self.shootVel)
+    
+    --if bulletScript and bulletScript:IsEnchantble() then
+    --    bulletScript:Enchant()
+    --end
+    if IsNullOrDestroyed(fo) then
+        return nil
+    end
+    
+    if not IsNullOrDestroyed(fo) then
+        TryAerialStay(ph)
+    end
+
+    self:OnShoot(fo)
+    
+    return fo
+end
+
+function ManualRevolver:DoLocalSyncShootResult(result)
+    local state = GetNetworkIBState(self)
+    if state == nil then return end
+    if result.collisionType == CL.FlyObjSimulateCollisionResult.IGNORE then
+        state:CmdOnShootLocal(self.shootActionId)
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.SCENE then
+        state:CmdOnShootLocalHitScene(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel)
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.PLAYER_HAND then
+        state:CmdOnShootLocalHitPlayerHand(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel,result.pu.logicHand.character.networkPlayer.netId,result.pu.logicHand:GetHandIndex())
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.INTERACT_ROLE then
+        local muscle = result.pu.ra:GetMuscleByCol(result.collider)
+        local muscleName = ""
+        if muscle ~= nil then
+            muscleName = muscle.muscleName
+        end
+        state:CmdOnShootLocalHitInteractRole(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.localPoint,result.localNormal,result.localRelaVel,result.pu.networkCharacter.netId,muscleName)
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.PLAYER then
+        state:CmdOnShootLocalHitPlayer(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel,result.pu.character.networkPlayer.netId)
+    elseif result.collisionType == CL.FlyObjSimulateCollisionResult.OTHER then
+        state:CmdOnShootLocalHitOther(self.shootActionId,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel)
+    else
+        state:CmdOnShootLocal(self.shootActionId)
+    end
+end
+
+function ManualRevolver:PlayShootActionClient()
+    local ph = self.host.interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = self:GetAimDir(self.shootPosition)
+    if self.useNetworkShootData then
+        aimDir = self.shootTargetPostionFromNetwork - self.shootPosition.position
+    end
+    local fo = nil
+
+    fo = self.host:CreateFlyObj(self.flyObjName,self.shootPosition.position,aimDir,self.shootVel)
+    fo.col.enabled = false;
+
+    self.shootActionId = self.shootActionId + 1;
+
+    if ph.character.IsLocalPlayer then
+        local simulateTime = 3
+        local result = CL.FlyObject.CmdSimulateCollisionEnterResult(fo,self.shootPosition.position,aimDir,simulateTime,self.shootVel)
+        
+        local flyVelocity = aimDir * fo:CalVelMagnitude(self.shootVel)
+        fo.rb.velocity = flyVelocity
+        fo:ManualSetMaxFlyTime(result.flytime)
+        -- print("IsLocalPlayer")
+        -- print(fo.maxFlyTime)
+        self:DoLocalSyncShootResult(result)
+    else 
+        if self.useNetworkShootData then
+            -- print("useNetworkShootData")
+            local maxFlyTime = UE.Vector3.Distance(self.shootTargetPostionFromNetwork,self.shootPosition.position) / self.velFromNetwork.magnitude
+            fo:ManualSetMaxFlyTime(maxFlyTime)
+            fo.rb.velocity = self.velFromNetwork
+        end
+    end
+    
+    --if bulletScript and bulletScript:IsEnchantble() then
+    --    bulletScript:Enchant()
+    --end
+    if IsNullOrDestroyed(fo) then
+        return nil
+    end
+    
+    if not IsNullOrDestroyed(fo) then
+        TryAerialStay(ph)
+    end
+    self:OnShoot(fo)
+
+    -- print("PlayShootActionClient end")
+    return fo
+end
+
+function ManualRevolver:isValidNetShootActionId(netShootActionId)
+    return netShootActionId > self.shootActionId
+end
+
+function ManualRevolver:RpcOnShootLocal(netShootActionId)
+    -- print("RpcOnShootLocal")
+    if not self:isValidNetShootActionId(netShootActionId) then
+        return
+    end
+    self:PlayShootActionClient()
+
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+    fo:DoFinish();
+end
+
+function ManualRevolver:RpcOnShootLocalHitScene(netShootActionId,rb,col,point,normal,relaVel)
+    -- print("RpcOnShootLocalHitScene")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.useNetworkShootData = false
+    end
+
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+
+    if self.isEnhance and fo.script then
+        fo.script:GetSelf():Enhance()
+    end
+
+    fo:RpcOnCollisionWithScene(rb,col,point,normal,relaVel);
+    fo:DoFinish();
+end
+
+function ManualRevolver:RpcOnShootLocalHitPlayerHand(netShootActionId,rb,col,point,normal,relaVel,hand)
+    -- print("RpcOnShootLocalHitPlayerHand")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.useNetworkShootData = false
+    end
+
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+
+    if self.isEnhance and fo.script then
+        fo.script:GetSelf():Enhance()
+    end
+    fo.ownerHolder = self.host.interact:GetLatestHolder()
+    fo:RpcOnCollisionWithPlayerHand(rb,col,point,normal,relaVel,hand);
+    fo:DoFinish();
+end
+
+function ManualRevolver:RpcOnShootLocalHitPlayer(netShootActionId,rb,col,point,normal,relaVel,player)
+    -- print("RpcOnShootLocalHitPlayer")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.useNetworkShootData = false
+    end
+
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+
+    if self.isEnhance and fo.script then
+        fo.script:GetSelf():Enhance()
+    end
+
+    fo.trans.position = point
+    local holder = self.host.interact:GetLatestHolder()
+    local camp = not IsNullOrDestroyed(holder) and holder:GetCamp() or CL.AIProxy.CampNone
+    local dmgMlp = 1
+    if camp == player.attr.camp then
+        dmgMlp = CL.Network.NetworkRoomMgr:GetTeammateDmgMlp()
+    end
+    fo.ownerHolder = holder
+    if dmgMlp > 0 then
+        CL.InteractTrigger.BeginScanDmg()
+        CL.InteractTrigger.ApplyHitScanDamage(col, fo, fo.rb, fo.col, relaVel.normalized, self.host.camp, false, dmgMlp, nil, relaVel)
+        CL.InteractTrigger.EndHitScan()
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        if not IsNullOrDestroyed(fo.ownerHolder) then
+            player.aiProxy:ProcessRangeAttackTalentsOnHit(fo.ownerHolder, col)
+        end
+    end
+    
+    fo:RpcOnCollisionWithPlayer(rb,col,point,normal,relaVel,player);
+    fo:DoFinish();
+end
+
+function ManualRevolver:RpcOnShootLocalHitInteractRole(netShootActionId,rb,col,point,normal,relaVel,fc,mu)
+    -- print("RpcOnShootLocalHitInteractRole")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.useNetworkShootData = false
+    end
+    
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+
+    if self.isEnhance and fo.script then
+        fo.script:GetSelf():Enhance()
+    end
+
+    if true then
+    -- if CL.Network.VRNetworkManager.Instance.IsServer then
+        fo.trans.position = point
+
+        CL.InteractTrigger.BeginScanDmg()
+        CL.InteractTrigger.ApplyHitScanDamage(col, fo, fo.rb, fo.col, relaVel.normalized, self.host.camp,false, 1, nil, relaVel)
+        CL.InteractTrigger.EndHitScan()
+        rb:AddForce(relaVel*fo.rb.mass,UE.ForceMode.Impulse)
+    end
+    fo:DoFinish();
+end
+
+function ManualRevolver:RpcOnShootLocalHitOther(netShootActionId,rb,col,point,normal,relaVel,pu)
+    -- print("RpcOnShootLocalHitOther")
+    if self:isValidNetShootActionId(netShootActionId) then
+        self.useNetworkShootData = true
+        self.shootTargetPostionFromNetwork = point
+        self.velFromNetwork = relaVel
+        self:PlayShootActionClient()
+        self.useNetworkShootData = false
+    end
+end
+
+function ManualRevolver:OpenLoadDetect()
+    CL.Scheduler.RemoveSchedule(self.loadDetectTimer)
+    self.loadDetectTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if self:CheckLoadCondition() then
+                local state = GetNetworkIBState(self)
+                if self.isOnline then
+                    if state ~= nil then state:CmdLockGunBarrel() end
+                end
+                self:LockGunBarrel()
+                self:PlayLoadSound()
+                
+                CL.Scheduler.RemoveSchedule(self.loadDetectTimer)
+                
+                if self.isOnline then
+                    if state ~= nil then state:CmdReLoad() end
+                else
+                    self:Reload()
+                end
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ManualRevolver:Reload()
+    self.useBulletCount = 0
+    self.readyShoot = true
+    CL.Scheduler.RemoveSchedule(self.loadDetectTimer)
+end
+
+
+function ManualRevolver:OnGunBarrelUpdate(isLock)
+    if isLock then
+        self:LockGunBarrel()
+    else
+        self:UnLockGunBarrel()
+    end
+end
+
+function ManualRevolver:HolderPushBack(intensity)
+    local holder = self.host.interact:GetHolder()
+    if holder then
+        --holder:GetControllerBase():AddPushbackByForce(-self.host.interact.trans.forward * intensity)
+        local dir = -self.host.interact.trans.forward
+        if dir.y < -0.5 then
+            dir.y = -0.5
+            dir:Normalize()
+        end
+        holder.character:AddForce(dir * intensity)
+        holder.character:SetDragForAWhile(0.3, 0.2)
+        holder.character:SetMovementForAWhile(false, 0.2)
+    end
+end
+
+function ManualRevolver:CheckLoadCondition()
+    return UE.Vector3.Dot(-self.barrelTrans.right, self.host.interact.trans.forward) > 0.95
+end
+
+function ManualRevolver:IgnoreCollisionOnWhile(cols, ignore, time)
+    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), cols, ignore)
+    CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), cols, not ignore)
+        end
+    , 0, 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function ManualRevolver:PlayLoadSound(isLoad)
+    self.loadSound:PlaySound()
+end
+
+function ManualRevolver:PlayDrumAnim(time)
+    local completefunc = function()
+        -- self.readyShoot = true
+    end
+    
+    local easingfunc = function(time, total)
+        return CL.EasingEquations.EaseInOutBack(0, 1, time/total)
+    end
+    
+    local qua =  UE.Quaternion.Euler(UE.Vector3(60 * self.useBulletCount, 0, 0))
+    self:RotateOnTime(self.drumTrans, qua, time, completefunc, easingfunc)
+    
+    self:PlayDrumSound()
+end
+
+function ManualRevolver:PlayDrumSound()
+    self.drumSound:PlaySound()
+end
+
+function ManualRevolver:RotateOnTime(trans, quaternion, time, completefunc, easingfunc)
+    local beginQua = trans and trans.localRotation or nil
+    local value = nil
+    local curQua = nil
+    self.rotateTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(trans) then
+                return
+            end
+            
+            if easingfunc then
+                value = easingfunc(t, time)
+            else
+                value = CL.EasingEquations.EaseOutExpo(0, 1, t/time)
+            end
+            
+            curQua = UE.Quaternion.Lerp(beginQua, quaternion, value)
+            trans.localRotation = curQua
+        end
+    , 0, time)
+    :SetOnStop(function()
+        if not IsNullOrDestroyed(trans) then
+            trans.localRotation = quaternion
+        end
+        
+        if completefunc then
+            completefunc()
+        end
+    end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ManualRevolver:OnEnhance()
+    self.isEnhance = true
+end
+
+function ManualRevolver:OnDestroy()
+    CL.Scheduler.RemoveSchedule(self.openLoadDetectTimer)
+    CL.Scheduler.RemoveSchedule(self.loadDetectTimer)
+    CL.Scheduler.RemoveSchedule(self.rotateTimeId)
+end
+
+function ManualRevolver:GetManaGazeInfo()
+    local manaCost = self.shootManaCost * self.host.AppliedManaCostMultiplier * self.host.ManaCostPVPMlp
+    return CL.LanguageMgr.FormatString(CL.LanguageMgr.GetText("UI_Weapon_ManaCost_Instant"), manaCost)
+end
+
+return Class(Require("Weapon/ManualLoadByJointScript"), nil, ManualRevolver)

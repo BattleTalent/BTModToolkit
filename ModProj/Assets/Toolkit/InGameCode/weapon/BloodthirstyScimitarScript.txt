@@ -1,0 +1,476 @@
+
+local BloodthirstyScimitar = {
+    buffList = {},
+    hitInfo ={},
+    maxBleedCount = 3,
+    
+    buffDura = 30,
+    
+    bloodEffectName = "SpurtBlood",
+    cnBloodEffectName = "SpurtBlood_CN",
+    buffName = "Role_Bleed_Mild",
+    isOnSkill = false,
+    
+    activeColor = UE.Color(3.7, 0.09, 0, 1),
+    disactiveColor = UE.Color(0.27, 0, 0, 1),
+}
+
+function BloodthirstyScimitar:Awake()
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    
+    
+	local isDeadBeforeHit = false
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if not self.host.interact:IsUsable() then
+            return
+        end
+        
+        if self.isOnSkill then
+            return
+        end
+        
+        if not fc.reactAnim:IsCutable() then
+            return
+        end
+        isDeadBeforeHit = fc.attr:IsDead()
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if not self.host.interact:IsUsable() then
+            return
+        end
+        
+        if self.isOnSkill then
+            return
+        end
+                
+        if isDeadBeforeHit then
+            return
+        end
+        
+        if not CS.PlatformAppState.IsPICOCNVERSION then
+            if not fc.reactAnim:IsCutable() then
+                return
+            end
+        end
+        
+        if CL.Network.VRNetworkManager.ClientOnline then
+            if CL.FullBodyMuscleState.dmgHitData.basicData.stabGeo ~= nil and CL.FullBodyMuscleState.dmgHitData.dmgFinalResult > 0 then
+                local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(thisCol)
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CmdOnHitPhase(fc.networkCharacter.netId, cid, key, point, normal, false) end
+            end
+            return
+        end
+        
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult > 0 then
+            self:AddBuffToPu(fc)
+            self:StartTickBuff()
+            self:recordHitInfo(fc, thisCol, point, normal)
+            self:RefleshDuraBlood(fc)
+        end
+        self.bladeCol.enabled = false
+        
+        if self:IsBuffExceed(fc) then
+            self.bladeCol.enabled = true
+            self:SpurtBlood()
+            
+            self.bladeCol.enabled = false
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    
+    
+    self.hitCharacterPhase = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        if not self.host.interact:IsUsable() then
+            return
+        end
+        
+        if not fromLocalPlayer then
+            return
+        end
+        
+        if self.isOnSkill then
+            return
+        end
+        
+        if IsNullOrDestroyed(beHitCol) then
+            return
+        end
+        
+        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(beHitCol)
+        if CL.Network.VRNetworkManager.ClientOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CmdOnHitPhase(character.networkPlayer.netId, cid, key, point, normal, true) end
+        else
+            self:OnHitCharacter(character.networkPlayer.netId, cid, key, point, normal)
+        end
+    end
+    if self.isOnline then
+        self.hitInfoObj.hitInfo:OnInteractCharacterHitPhase1Event("+", self.hitCharacterPhase) 
+    end
+end
+
+function BloodthirstyScimitar:NetworkOnHitPhase(netId, cid, key, point, normal, isPlayer)
+    if isPlayer then
+        self:OnHitCharacter(netId, cid, key, point, normal)
+    else
+        self:OnHitFc(netId, cid, key, point, normal)
+    end
+end
+
+function BloodthirstyScimitar:OnHitFc(fcNetId, cid, key, point, normal)
+    local netFc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(fcNetId)
+    if IsNullOrDestroyed(netFc) then
+        return
+    end
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(cid, key)
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    
+    self:AddBuffToPu(netFc.fc)
+    self:StartTickBuff()
+    self:recordHitInfo(netFc.fc, col, point, normal)
+    self:RefleshDuraBlood(netFc.fc)
+    self.bladeCol.enabled = false
+    
+    if self:IsBuffExceed(netFc.fc) then
+        self.bladeCol.enabled = true
+        self:SpurtBlood()
+        
+        self.bladeCol.enabled = false
+    end
+end
+
+function BloodthirstyScimitar:OnHitCharacter(netId, cid, key, point, normal)
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(netId)
+    if IsNullOrDestroyed(networkPlayer) then
+        return
+    end
+    
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(cid, key)
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    
+    local playerUnit = networkPlayer.interactCharacter:GetPlayerUnit()
+    self:AddBuffToPu(playerUnit)
+    self:StartTickBuff()
+    self:recordHitInfo(playerUnit, col, point, normal)
+    self:RefleshDuraBlood(playerUnit)
+    self.bladeCol.enabled = false
+    
+    if self:IsBuffExceed(playerUnit) then
+        self.bladeCol.enabled = true
+        self:SpurtBlood()
+        
+        self.bladeCol.enabled = false
+    end
+end
+
+function BloodthirstyScimitar:Start()
+    
+end
+
+function BloodthirstyScimitar:StartTickBuff()
+    CL.Scheduler.RemoveSchedule(self.buffTickId)
+    self.buffTickId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if not self.hitInfo then
+                sche:Stop()
+                return
+            end
+            
+            local count = 0
+            for k, v in pairs(self.hitInfo) do
+                if UE.Time.time > v.endTime then
+                    self:RemoveBuff(k)
+                    self:RemoveDuraBlood(k)
+                    self.hitInfo[k] = nil
+                else
+                    count = count + 1
+                end
+            end
+            
+            if count <= 0 then
+                sche:Stop()
+                return
+            end
+        end
+    , 0.5, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.Update).actionId
+end
+
+function BloodthirstyScimitar:OnGrab(a, g)
+    if g then
+        self.camp = a.attachedHand.character.attr.camp
+    end
+end
+
+function BloodthirstyScimitar:recordHitInfo(pu, col, point, normal)
+    if not self.hitInfo[pu] then
+        self.hitInfo[pu] = {}
+    end
+    self.hitInfo[pu].col = col
+    local cp = col:ClosestPoint(point)
+    self.hitInfo[pu].point = col.transform:InverseTransformPoint(cp)
+    self.hitInfo[pu].normal = normal
+    self.hitInfo[pu].endTime = UE.Time.time + self.buffDura
+end
+
+function BloodthirstyScimitar:AddBuffToPu(pu)
+    if not self.buffList[pu] then
+        self.buffList[pu] = {}
+    end
+    
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        local buff = CL.BuffMgr.Instance:AddBuff(pu.attr, self.buffName)
+        table.insert(self.buffList[pu], buff)
+    elseif pu.unitType == CL.Tagger.Tag.PlayerRole then 
+        local buff = CL.BuffMgr.Instance:AddBuff(pu.character.attr, self.playerBuffName)
+        table.insert(self.buffList[pu], buff)
+    end
+end
+
+function BloodthirstyScimitar:IsBuffExceed(pu)
+    if not self.buffList[pu] then
+        return false
+    end
+    
+    return #self.buffList[pu] > self.maxBleedCount
+end
+
+function BloodthirstyScimitar:RemoveBuff(pu)
+    if not self.buffList[pu] then
+        return
+    end
+    
+    for k, v in ipairs(self.buffList[pu]) do
+        if pu.unitType == CL.Tagger.Tag.InteractRole then
+            CL.BuffMgr.Instance:RemoveBuff(pu.attr, v)
+        elseif pu.unitType == CL.Tagger.Tag.PlayerRole then 
+            CL.BuffMgr.Instance:RemoveBuff(pu.character.attr, v)
+        end
+    end
+    self.buffList[pu] = nil
+end
+
+function BloodthirstyScimitar:SpurtBlood()
+    self.isOnSkill = true
+
+    xpcall(function()
+        for k, v in pairs(self.buffList) do
+            self:ApplyHitScan(k)
+            self:PlayEffect(k)
+            self:RemoveBuff(k)
+            self:RemoveDuraBlood(k)
+        end
+    end, function(err)
+        print("SpurtBlood:" .. tostring(err))
+    end)
+
+    self.hitInfo = {}
+    self.isOnSkill = false
+end
+
+function BloodthirstyScimitar:PlayEffect(pu)
+    if not self.hitInfo[pu] then
+        return
+    end
+    local nid = self.isOnline and CL.EffectMgr.GetEffectObjNetId() or -1
+    local effectName = CS.PlatformAppState.IsPICOCNVERSION and self.cnBloodEffectName or self.bloodEffectName
+    
+    local eo = CL.EffectMgr.Instance:PlayEffect(effectName, self.hitInfo[pu].col.transform:TransformPoint(self.hitInfo[pu].point), UE.Quaternion.LookRotation(self.hitInfo[pu].normal))
+    eo.trans:SetParent(self.hitInfo[pu].col.transform)
+    
+    if not CS.PlatformAppState.IsPICOCNVERSION then
+        local onfinish = function()
+            self:BloodEmission()
+        end
+        for i = 1, math.random(2, 3) do
+            local eo = CL.EffectMgr.Instance:PlayEffect(self.flyEffectName, self.hitInfo[pu].col.transform:TransformPoint(self.hitInfo[pu].point), UE.Quaternion.LookRotation(self.hitInfo[pu].normal))
+            
+            if not IsNullOrDestroyed(eo) then
+                local lb = eo.trans:GetComponent(typeof(CL.LuaBehaviour))
+                if not IsNullOrDestroyed(lb) then
+                    local tb = lb.script:GetSelf()
+                    tb:FlyTo(self.bladeCol.transform,  onfinish)
+                end
+            end
+        end
+    else
+        self:BloodEmission()
+    end
+
+    if self.isOnline then
+        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(self.hitInfo[pu].col)
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerPlaySpurtEffect(nid, cid, key, self.hitInfo[pu].point, self.hitInfo[pu].normal) end
+    end
+end
+
+function BloodthirstyScimitar:ClientPlaySpurtEffect(eid, cid, key, point, normal)
+    if CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(cid, key)
+    
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    
+    local effectName = CS.PlatformAppState.IsPICOCNVERSION and self.cnBloodEffectName or self.bloodEffectName
+    local eo = CL.EffectMgr.Instance:PlayEffect(effectName, col.transform:TransformPoint(point), UE.Quaternion.LookRotation(normal))
+    eo.trans:SetParent(col.transform)
+    
+    if not CS.PlatformAppState.IsPICOCNVERSION then
+        local onfinish = function()
+            self:BloodEmission()
+        end
+        for i = 1, math.random(2, 3) do
+            local eo = CL.EffectMgr.Instance:PlayEffect(self.flyEffectName, col.transform:TransformPoint(point), UE.Quaternion.LookRotation(normal))
+            
+            if not IsNullOrDestroyed(eo) then
+                local lb = eo.trans:GetComponent(typeof(CL.LuaBehaviour))
+                if not IsNullOrDestroyed(lb) then
+                    local tb = lb.script:GetSelf()
+                    tb:FlyTo(self.bladeCol.transform,  onfinish)
+                end
+            end
+        end
+    else
+        self:BloodEmission()
+    end
+end
+
+function BloodthirstyScimitar:BloodEmission()
+    SetMaterialEmission(self.bladeRenderer, self.activeColor)
+    SetMaterialEmission(self.handlerRenderer, self.activeColor)
+    RemoveSchedule(self.host.interact.trans.gameObject, self.emissionTimer)
+    self.emissionTimer = SetMaterialEmissionWithinTime(self.host.interact.trans.gameObject, {self.bladeRenderer, self.handlerRenderer}, self.disactiveColor, 0.5)
+end
+
+function BloodthirstyScimitar:RefleshDuraBlood(pu)
+    if not self.hitInfo[pu] then
+        return
+    end
+    if CS.PlatformAppState.IsPICOCNVERSION then
+        return
+    end
+
+    if IsNullOrDestroyed(self.hitInfo[pu].eo) then
+        local nid = self.isOnline and CL.EffectMgr.GetEffectObjNetId() or -1
+        local eo = CL.EffectMgr.Instance:PlayEffect(self.bloodDuraName, self.hitInfo[pu].col.transform:TransformPoint(self.hitInfo[pu].point), UE.Quaternion.LookRotation(self.hitInfo[pu].normal), nid)
+        self.hitInfo[pu].eo = eo
+        
+        if self.isOnline then
+            self.hitInfo[pu].enId = nid
+        end
+    end
+    self.hitInfo[pu].eo.trans:SetParent(self.hitInfo[pu].col.transform)
+    self.hitInfo[pu].eo.trans.position = self.hitInfo[pu].col.transform:TransformPoint(self.hitInfo[pu].point)
+    self.hitInfo[pu].eo.trans.rotation = UE.Quaternion.LookRotation(self.hitInfo[pu].normal)
+    
+    if self.isOnline then
+        local eid = self.hitInfo[pu].enId
+        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(self.hitInfo[pu].col)
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerReleshDuraBlood(eid, cid, key, self.hitInfo[pu].point, self.hitInfo[pu].normal) end
+    end
+end
+
+function BloodthirstyScimitar:ClientRefleshDuraBlood(eid, cid, key, pos, normal)
+    if CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local eo = CL.EffectMgr.GetNetEffectObj(eid)
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(cid, key)
+    
+    if IsNullOrDestroyed(eo) then
+        eo = CL.EffectMgr.Instance:PlayEffect(self.bloodDuraName, col.transform:TransformPoint(pos), UE.Quaternion.LookRotation(normal), eid)
+    end
+    
+    if not IsNullOrDestroyed(eo) and not IsNullOrDestroyed(col) then
+        eo.trans:SetParent(col.transform)
+        eo.trans.position = col.transform:TransformPoint(pos)
+        eo.trans.rotation = UE.Quaternion.LookRotation(normal)
+    end
+end
+
+
+function BloodthirstyScimitar:RemoveDuraBlood(pu)
+    if not self.hitInfo[pu] then
+        return
+    end
+
+	if CS.PlatformAppState.IsPICOCNVERSION then
+        return
+    end
+    
+    if self.isOnline then
+        local eid = self.hitInfo[pu].enId
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerRemoveDuraBlood(eid) end
+    else
+        if not IsNullOrDestroyed(self.hitInfo[pu].eo) then
+            CL.EffectMgr.Instance:GiveBack(self.hitInfo[pu].eo)
+        end
+    end
+end
+
+function BloodthirstyScimitar:ClientRemoveDuraBlood(eid)
+    local eo = CL.EffectMgr.GetNetEffectObj(eid)
+    if not IsNullOrDestroyed(eo) then
+         CL.EffectMgr.Instance:GiveBack(eo)
+    end
+end
+
+
+function BloodthirstyScimitar:ApplyHitScan(pu)
+    if not pu or IsNullOrDestroyed(pu) or not self.hitInfo[pu] then
+        return
+    end
+    
+    CL.InteractTrigger.doingHitScan = true
+    CL.InteractTrigger.hitScanProtect = false
+    local normal = nil
+    
+    local attr = nil
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        attr = pu.attr
+    elseif pu.unitType == CL.Tagger.Tag.PlayerRole then 
+        attr = pu.character.attr
+    end
+    
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.FullBodyMuscleState.TryStayStab = false
+    CL.FullBodyMuscleState.TryStaySlice = false
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ByPassHitScanProtect()
+    if not IsNullOrDestroyed(pu) then
+        if not attr:IsDead() then
+            if not IsNullOrDestroyed(self.hitInfo[pu].col) then
+                CL.InteractTrigger.ApplyHitScanDamage(self.hitInfo[pu].col, self.host.interact, self.host.interact.rb, self.bladeCol, self.hitInfo[pu].normal, self.camp)
+            end
+        end
+    end
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+    CL.InteractTrigger.doingHitScan = false
+    CL.InteractTrigger.hitScanProtect = true
+end
+
+function BloodthirstyScimitar:OnDestroy()
+    for k, v in pairs(self.buffList) do
+        self:RemoveBuff(k)
+        self:RemoveDuraBlood(k)
+    end
+    self.hitInfo = {}
+    self.buffList = {}
+end
+
+return Class(nil, nil, BloodthirstyScimitar)

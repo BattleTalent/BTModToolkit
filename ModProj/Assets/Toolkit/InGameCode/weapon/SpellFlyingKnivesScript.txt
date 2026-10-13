@@ -1,0 +1,29 @@
+local SpellFlyingKnives = {
+    flyingKnivesControl = nil,
+}
+
+function SpellFlyingKnives:OnAwake()
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+end
+
+function SpellFlyingKnives:SlotSpell(slot)
+    self.flyingKnivesControl:SpawnKnives(self:GetSlotHand())
+end
+
+function SpellFlyingKnives:UnSlotSpell(slot)
+    self.flyingKnivesControl:DespawnKnives()
+end
+
+function SpellFlyingKnives:OpenSkill()
+    self.flyingKnivesControl:OpenSkill()
+end
+
+function SpellFlyingKnives:UpdateSkill()
+    self.flyingKnivesControl:UpdateSkill()
+end
+
+function SpellFlyingKnives:CloseSkill()
+    self.flyingKnivesControl:CloseSkill()
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellFlyingKnives)

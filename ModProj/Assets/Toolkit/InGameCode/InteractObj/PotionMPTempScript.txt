@@ -1,0 +1,30 @@
+local PotionMPTemp = {
+}
+
+function PotionMPTemp:DoEffective(character)
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    
+    self:AddBuff(character)
+    self:AddEffect(character)
+end
+
+function PotionMPTemp:DoLoseEffective()
+    if not self.affectCharacter then
+        return
+    end
+    
+    self:RemoveBuff()
+    self:RemoveEffect()
+end
+
+function PotionMPTemp:AddBuff(character)    
+    self.buff = CL.BuffMgr.Instance:AddBuff(self.affectCharacter.attr, "Role_ManaCost_Zero_Short")
+end
+
+function PotionMPTemp:RemoveBuff()
+    --CL.BuffMgr.Instance:RemoveBuff(self.affectCharacter.attr, self.buff)
+end
+
+return Class(Require("InteractObj/PotionTempScript"), nil, PotionMPTemp)

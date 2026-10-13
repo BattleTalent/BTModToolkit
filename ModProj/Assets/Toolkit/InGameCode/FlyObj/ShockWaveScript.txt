@@ -1,0 +1,237 @@
+local ShockWave = {
+    checkGroundDis = 2.7,
+    hitGroundRadius = 2,
+    
+    hitPlayerMlp = 50,
+    hitFlyMlp = 50,
+    
+    azimuthalAngle = 30,
+    nextHitTime = 0,
+    
+    pushUpwardForce = 250,
+    pushBackForce = 100,
+    hitPu = {},
+}
+
+function ShockWave:FlyStart()
+    if self.isGround == 1 then
+        if not self:PullToGround() then
+            return
+        end
+    end
+        
+    --if self.duraTime and self.duraTime > 0 then
+    --    self.updateActId = CL.Scheduler.Create(self.trans,
+    --        function(sche, t, s)
+    --            if UE.Time.time < self.nextHitTime then
+    --                return
+    --            end
+    --            
+    --            self.nextHitTime = UE.Time.time + self.hitInterval
+    --            
+    --            self:ApplyShock()
+    --        end
+    --    , 0, self.duraTime)
+    --    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    --else
+    --    self:ApplyShock()
+    --end
+    
+    if self.effectName then
+        CL.EffectMgr.Instance:PlayEffect(self.effectName, self.trans.position, UE.Quaternion.LookRotation(UE.Vector3.up))
+    end
+end
+
+function ShockWave:PullToGround()
+    local isHit, raycastHit = UE.Physics.SphereCast(self.trans.position, 0.3, UE.Vector3.down, self.checkGroundDis, CL.LayerDefine.EnvLayerMask.value)
+    if isHit then
+        self.trans.position = raycastHit.point
+        self.trans.forward = UE.Vector3.up
+    else
+        self.host:OnFinish()
+    end
+    
+    return isHit
+end
+
+function ShockWave:OnTriggerWithPlayer(pu, col)
+    if CL.Network.VRNetworkManager.IsOnline then
+        if not pu.character.IsLocalPlayer then
+            return
+        end
+    end
+
+    if self.hitPu[pu] then
+        return
+    end
+    self.hitPu[pu] = true
+    
+    --print("OnTriggerWithPlayer:" .. pu.trans.name)
+    local dir = (pu.character.trans.position - self.trans.position)
+    dir.y = 0
+    dir = dir.normalized
+    --dir = UE.Vector3.RotateTowards(UE.Vector3.up, dir, self.azimuthalAngle * UE.Mathf.Deg2Rad, 0)
+    local force = (dir + (UE.Vector3.up * 0.5)) * self.pushBackForce
+    if CL.Network.VRNetworkManager.IsOnline then
+        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(self.host.col)
+        local cmd = CL.Network.NetworkPlayer.localNetworkPlayer.networkPlayerCommand
+        cmd:CommandApplyDamage(pu.character.networkPlayer.netId, self.trans.position, 1, force, cid, key)
+    else
+        pu.character.aiProxy:ApplyDamage(self.trans.position, self.host:GetRagdollHitInfo(), 1, force, self.host.col)
+    end
+
+    pu.character:SetDragForAWhile(0)
+    pu.character:AddForce(UE.Vector3.up * self.pushUpwardForce, UE.ForceMode.Impulse)
+    CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(pu) then
+                return
+            end
+            
+            pu.character:AddPushbackByForce(force)
+        end,
+    0, 0, 0.1)
+    
+    CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + dir, UE.Color.red, 5)
+end
+
+function ShockWave:OnTriggerWithRole(fc, col)
+    local ownerPu = not IsNullOrDestroyed(self.host.ownerHolder) and self.host.ownerHolder.fc or nil
+    local ownerRoot = ownerPu and ownerPu.trans
+    
+    if ownerPu and not IsNullOrDestroyed(ownerPu) then
+        if ownerPu == fc then
+            return
+        end
+        
+        if fc.root == ownerRoot then
+            return
+        end
+    end
+    
+    if self.hitPu[fc] then
+        return
+    end
+    
+    self.hitPu[fc] = true
+    
+    if not self.isGround or (self.isGround and fc.controller:IsGround()) then
+        --print("OnTriggerWithRole:" .. fc.trans.name)
+        if not fc:IsDead() then
+            fc.attr:AddHp(-self.hitInfoObj.hitInfo.damageMlp)
+        end
+        
+        fc.muscleState:ClearAllStab()
+        fc.motion:Knockout()
+        if fc.motion:IsKnockout() then
+            local dir = (fc.controller.capsuleRB.transform.position - self.trans.position)
+            dir.y = 0
+            dir = dir.normalized
+            dir = UE.Vector3.RotateTowards(UE.Vector3.up, dir, self.azimuthalAngle * UE.Mathf.Deg2Rad, 0)
+            local f = self.hitRoleMlp * dir
+            --f.y = f.y + math.random(-5, 5)
+            fc.ra:AddForce(f, UE.ForceMode.Impulse)
+            fc.ra:AddTorque(UE.Random.insideUnitSphere * 50, UE.ForceMode.Impulse)
+        end
+    end
+end
+
+function ShockWave:OnTrigger(pu, col)
+    if self.hitPu[pu] then
+        return
+    end
+    self.hitPu[pu] = true
+    
+    if not (pu.unitType == CL.Tagger.Tag.InteractObj and pu:IsBodyPart()) then
+        print("OnTrigger pu:" .. pu.trans.name)
+        local dir = (pu.trans.position - self.trans.position)
+        dir.y = 0
+        dir = dir.normalized
+        dir = UE.Vector3.RotateTowards(UE.Vector3.up, dir, self.azimuthalAngle * UE.Mathf.Deg2Rad, 0)
+        
+        local f = self.hitFlyMlp * dir
+        pu:AddForce(f, UE.ForceMode.Impulse)
+        pu:AddTorque(UE.Random.insideUnitSphere * 50, UE.ForceMode.Impulse)
+    end
+end
+
+function ShockWave:ApplyShock()
+    if self.effectName then
+        CL.EffectMgr.Instance:PlayEffect(self.effectName, self.trans.position, UE.Quaternion.LookRotation(UE.Vector3.up))
+    end
+
+    local pus = CL.PhysicsUnit.QueryLogicTargetInRadiusTemp(self.trans.position, self.hitGroundRadius)
+    local ownerPu = self.host.ownerHolder.fc
+    local ownerRoot = ownerPu and ownerPu.trans
+    local pass = true
+    local dir = nil
+    for i = 0, pus.Count - 1 do
+        pass = true
+        
+        if ownerPu and not IsNullOrDestroyed(ownerPu) then
+            if ownerPu == pus[i] then
+                pass = false
+            end
+            
+            if pus[i].root == ownerRoot then
+                pass = false
+            end
+        end
+        
+        if pass then
+            if pus[i].unitType == CL.Tagger.Tag.InteractRole then
+                if not self.isGround or (self.isGround and pus[i].controller:IsGround()) then
+                    --print("hit interactRole:" .. pus[i].trans.name)
+                    if not pus[i]:IsDead() then
+                        pus[i].attr:AddHp(-self.hitInfoObj.hitInfo.damageMlp)
+                    end
+                    
+                    pus[i].muscleState:ClearAllStab()
+                    pus[i].motion:Knockout()
+                    if pus[i].motion:IsKnockout() then
+                        dir = (pus[i].controller.capsuleRB.transform.position - self.trans.position)
+                        dir.y = 0
+                        dir = dir.normalized
+                        dir = UE.Vector3.RotateTowards(UE.Vector3.up, dir, self.azimuthalAngle * UE.Mathf.Deg2Rad, 0)
+                        local f = self.hitRoleMlp * dir
+                        --f.y = f.y + math.random(-5, 5)
+                        pus[i].ra:AddForce(f, UE.ForceMode.Impulse)
+                        pus[i].ra:AddTorque(UE.Random.insideUnitSphere * 50, UE.ForceMode.Impulse)
+                    end
+                end
+            elseif pus[i].unitType == CL.Tagger.Tag.PlayerRole then
+                --print("hit player:" .. pus[i].trans.name)
+                dir = (pus[i].character.trans.position - self.trans.position)
+                dir.y = 0
+                dir = dir.normalized
+                --dir = UE.Vector3.RotateTowards(UE.Vector3.up, dir, self.azimuthalAngle * UE.Mathf.Deg2Rad, 0)
+                pus[i].character:SetDragForAWhile()
+                pus[i].character:AddForce(UE.Vector3.up * self.pushUpwardForce, UE.ForceMode.Impulse)
+                pus[i].character:AddPushbackByForce(dir * self.pushBackForce)
+                pus[i].character.aiProxy:ApplyDamage(self.trans.position, self.host:GetRagdollHitInfo(), 1, dir, self.host.col)
+            else
+                if not (pus[i].unitType == CL.Tagger.Tag.InteractObj and pus[i]:IsBodyPart()) then
+                    --print("hit interact obj:" .. pus[i].trans.name)
+                    dir = (pus[i].trans.position - self.trans.position)
+                    dir.y = 0
+                    dir = dir.normalized
+                    dir = UE.Vector3.RotateTowards(UE.Vector3.up, dir, self.azimuthalAngle * UE.Mathf.Deg2Rad, 0)
+                    
+                    local f = self.hitFlyMlp * dir
+                    pus[i]:AddForce(f, UE.ForceMode.Impulse)
+                    pus[i]:AddTorque(UE.Random.insideUnitSphere * 50, UE.ForceMode.Impulse)
+                end
+            end
+        end
+    end
+    
+    CS.RayFire.RFDemolitionCluster.RayFireDemolishImpact(self.trans.position, 3.5, 50)
+end
+
+function ShockWave:ResetState()
+    self.hitPu = {}
+    
+    CL.Scheduler.RemoveSchedule(self.updateActId)
+end
+
+return Class(nil, nil, ShockWave)

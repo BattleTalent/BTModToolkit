@@ -1,0 +1,206 @@
+
+local ShieldRebound = {
+    list = {},
+    
+    cacheVec = nil,
+    
+    ignoreColList = {},
+    }
+
+function ShieldRebound:Awake()
+    self.onFlyEndFunc = function(fo)
+        --self:ResetIgnoreCol(fo)
+        self:RemoveReboundList(fo)
+    end
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.OnSimulateCollision = function(pu, rb, col, point, normal, relaVel)
+            --print("OnSimulateCollision----:" .. col.transform.name)
+            local fo = self:GetReboundFo(col.transform)
+            if not fo then
+                return
+            end
+            --print("OnSimulateCollision---- legal fo")
+            if self:IsAllowRebound(fo, point, true) then
+                --print("OnSimulateCollision--IsAllowRebound--")
+                local reboundFo = self:Rebound(fo, self.reboundCol, col, point, normal, true)
+                self:AddReboundList(reboundFo)
+            end
+        end
+        
+        self.ib:OnSimulateCollisionEvent("+", self.OnSimulateCollision)
+    end
+end
+
+function ShieldRebound:OnCollisionEnter(collision)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local fo = self:GetReboundFo(collision.transform)
+    if not fo then
+        return
+    end
+    
+    if not IsNullOrDestroyed(fo.rb) then
+        if fo.rb.isKinematic then
+            return
+        end
+    end
+    
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self.cacheVec = self.ib.trans:InverseTransformPoint(point)
+    --print("collision ---contactpoint.x------:" ..self.cacheVec.x)
+    if self.cacheVec.x < 0 then
+        return
+    end
+    
+    CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            local reboundFo = self:Rebound(fo, thisCol, otherCol, point, normal, false)
+            self:AddReboundList(reboundFo)
+        end
+    , 0, 0, 0)
+end
+
+function ShieldRebound:OnTriggerStay(collider)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local fo = self:GetReboundFo(collider.transform)
+    if IsNullOrDestroyed(fo) then
+        return
+    end
+    
+    if IsNullOrDestroyed(fo.col) then
+        return
+    end
+    
+    if not fo.col.isTrigger then
+        return
+    end
+    
+    if self:IsAllowRebound(fo, fo.trans.position, false) then
+        self:TriggerRebound(fo)
+        self:AddReboundList(fo)
+    end
+end
+
+function ShieldRebound:IsAllowRebound(fo, point, isSimulate)
+    if IsNullOrDestroyed(fo.col) then
+        return false
+    end
+    
+    if not IsNullOrDestroyed(fo.rb) then
+        if fo.rb.isKinematic then
+            return false
+        end
+    end
+    
+    self.cacheVec = (point - self.reboundTrans.position).normalized
+    --print("(fo pos - rebound pos) dot with reboundforward----------:" ..UE.Vector3.Dot(self.cacheVec, self.ib.trans.forward))
+    if UE.Vector3.Dot(self.cacheVec, self.reboundTrans.forward) < 0.3 then
+        return false
+    end
+    
+    if not isSimulate then
+        self.cacheVec = fo.rb.velocity.normalized
+        --print("fo vel dot with reboundforward ----------:" ..UE.Vector3.Dot(self.cacheVec, -self.ib.trans.forward))
+        if UE.Vector3.Dot(self.cacheVec, -self.reboundTrans.forward) < 0.7 then
+            return false
+        end
+    end
+    
+    return true
+end
+
+function ShieldRebound:AddReboundList(pu)    
+    if pu:IsFlyStopped() then
+        return
+    end
+    self.list[pu.col] = pu.col
+    
+    if pu.FlyStopEvent then
+        pu:FlyStopEvent("+", self.onFlyEndFunc)
+    end
+    if pu.TimeoutEvent then
+        pu:TimeoutEvent("+", self.onFlyEndFunc)
+    end
+    if pu.DespawnEvent then
+        pu:DespawnEvent("+", self.onFlyEndFunc)
+    end
+end
+
+function ShieldRebound:RemoveReboundList(fo)
+    self.list[fo.col] = nil
+    
+    if fo.FlyStopEvent then
+        fo:FlyStopEvent("-", self.onFlyEndFunc)
+    end
+    if fo.TimeoutEvent then
+        fo:TimeoutEvent("-", self.onFlyEndFunc)
+    end
+    if fo.DespawnEvent then
+        fo:DespawnEvent("-", self.onFlyEndFunc)
+    end
+end
+
+function ShieldRebound:ResetIgnoreCol(fo)
+    if self.ignoreColList[fo] then
+        CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.ib:GetCols(), false)
+    end
+end
+
+function ShieldRebound:IgnoreCol(fo)
+    self.ignoreColList[fo] = true
+    CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.ib:GetCols(), true)
+end
+
+function ShieldRebound:GetReboundFo(trans)
+    local fo = CL.FlyObject.GetFlyObj(trans)
+    if IsNullOrDestroyed(fo) or self.list[fo.col] then
+        return nil
+    end
+    
+    return fo
+end
+
+function ShieldRebound:Rebound(fo, hitCol, beHitCol, point, normal, isSimulate)
+    local speed = fo.force--collision.relativeVelocity.magnitude
+    
+    if not isSimulate then
+        if fo:IsFlying() then
+            --self:IgnoreCol(fo)
+            --print("rebound-------------------set velocity")
+            fo.rb.velocity = normal * speed
+            fo.trans.position = fo.trans.position + normal * speed * UE.Time.deltaTime
+            return fo
+        end
+    end
+    
+    print("rebound------------------create fly obj: " .. fo.flyObjName)
+    
+    local shootPoint = beHitCol:ClosestPoint(point) - normal * 
+    (hitCol.bounds.size.magnitude/2 + 0.15)
+    
+    local flyObj = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            flyObj = CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(fo.flyObjName, self.ib, shootPoint,
+        -normal, speed)
+        end
+    else
+        flyObj = CL.FlyObject.CreateFlyObj(fo.flyObjName, self.ib, shootPoint,
+        -normal, speed)
+    end
+    
+    return flyObj
+end
+
+function ShieldRebound:TriggerRebound(fo)
+    fo.rb.velocity = -fo.rb.velocity
+end
+
+return Class(nil,nil,ShieldRebound)

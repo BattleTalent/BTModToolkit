@@ -1,0 +1,282 @@
+local particleCurve = UE.ParticleSystem.MinMaxCurve(1)
+
+
+local FollowObj = {
+    flyDis = 0.04,
+    
+    maxSpeed = 50,
+    sqrHandSpeed = 5,
+    
+    brokenSpeed = 500,
+    brokenEffect = "RockBroken",
+    
+    impactEffect = "RockCollision",
+    effectInteval = 0.2,
+    lastEffectTime = 0,
+    
+    addForceIntensity = 7,
+    
+    
+    radius = 0.15,
+}
+
+function FollowObj:StartFollow(trans, height)
+    self:IgnoreCollisionWithObstacles(trans.position, height)
+    
+    if self.raiseSound then
+        self.raiseSound:PlaySound()
+    end
+    
+    local checkInterval = 0.2
+    local nextCheckTime = 0
+    self.followActId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.rb) then
+                self:StopFollow()
+                return
+            end
+           
+            self:TickFollow(trans, t)
+            
+            if UE.Time.time > nextCheckTime then
+                self:TryResetCollision(trans.position)
+                nextCheckTime = UE.Time.time + checkInterval
+            end
+        end
+    , 0, -1).actionId
+end
+
+function FollowObj:StopFollow()
+    CL.Scheduler.RemoveSchedule(self.followActId)
+end
+
+
+function FollowObj:TickFollow(trans, time)
+    if IsNullOrDestroyed(trans) then
+        return
+    end
+    
+    --local targetPos = trans.position
+    --local sqrDis = (self.trans.position - targetPos).sqrMagnitude
+    --targetPos = UE.Vector3.Lerp(self.trans.position, targetPos, (sqrDis > 0.01 and 1 or sqrDis)*0.1 + 0.1)
+    --if sqrDis > 0.01 then
+    --    self.host.rb:MovePosition(targetPos)
+    --    self.host.rb.velocity = UE.Vector3.Lerp(self.host.rb.velocity, UE.Vector3.zero, 0.2)
+    --else
+    --    CL.PhysicsFollow.TrackPosition(self.host.rb, targetPos, 0.5)
+    --end
+    
+    --CL.PhysicsFollow.TrackRotation(self.host.interact.rb, 
+    --    UE.Quaternion.LookRotation(self.character.trans.forward), 7)
+    
+    
+    local vec = nil
+    local dir = nil
+    local dis = nil
+    vec = trans.position - self.trans.position
+    dis = vec.magnitude
+    dir = vec.normalized
+    
+    local intensity = 0.25 * math.min(time * 2, 1)
+    
+    vec = dir * dis * intensity + self.trans.position
+    CL.PhysicsFollow.TrackPosition(self.host.rb, vec, 0.5, dis/10)
+end
+
+function FollowObj:StartFly(vel)
+    self.host:FlyStart(vel)
+end
+
+------------------------------------------Collision-------------------------------------------
+
+function FollowObj:IgnoreCollisionWithObstacles(pos, dis)
+    self.cols = self.host:GetCols(true)
+    if not self.cols then
+        return
+    end
+    
+    self.obstaclesCols = {}
+        
+    --find obstacles
+    local raycastHit  = UE.Physics.SphereCastAll(pos, self.radius, 
+        UE.Vector3.down, dis)
+    
+    local pu = nil
+    local col = nil
+    local pass = true
+    for i = 0, raycastHit.Length - 1 do
+        col = raycastHit[i].collider
+        for j = 0, self.cols.Length - 1 do
+            if self.cols[j] == col then
+                pass = false
+                break
+            end
+        end
+        
+        if pass then
+            if col.gameObject.layer == CL.LayerDefine.EnvLayer.value or 
+                col.gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value then
+                table.insert(self.obstaclesCols, col)
+                --print("insert collision :" .. col.gameObject.name)
+            end
+        end
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, true)
+        --print("ignore collision with:" .. v.gameObject.name)
+    end
+end
+
+function FollowObj:ResetCollisionWithObstacles()
+    if not self.obstaclesCols or not self.cols then
+        return
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, false)
+    end
+    
+    self.obstaclesCols = nil
+end
+
+function FollowObj:TryResetCollision(targetpos)
+    if not self.obstaclesCols or #self.obstaclesCols <= 0 then
+        return
+    end
+    
+    local point0 = self.host.trans.position
+    local point1 = targetpos
+    self.colNum = UE.Physics.OverlapCapsuleNonAlloc(point0, point1, self.radius, 
+                CL.PhysicsHelper.shareOverlapColArray)
+
+    if self.colNum <= 0 then
+        return
+    end
+    
+    local stillCols = {}
+    for i = 0, self.colNum - 1 do
+        for k, v in ipairs(self.obstaclesCols) do
+            if CL.PhysicsHelper.shareOverlapColArray[i] == v then
+                table.insert(stillCols, CL.PhysicsHelper.shareOverlapColArray[i])
+                table.remove(self.obstaclesCols, k)
+                break
+            end
+        end  
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, false)
+    end
+    
+    self.obstaclesCols = stillCols
+end
+
+function FollowObj:OnCollisionWithPlayerHand(collision, hand)
+    if self.addForce then
+        return
+    end
+    
+    if self:AttemptAddForce(collision, hand) then
+        --CL.EffectMgr.Instance:PlayEffect("CircleEffect", self.host.trans.position, 
+        --    UE.Quaternion.LookRotation(self.host.rb.velocity))
+        
+        self.addForce = true
+    end
+end
+
+function FollowObj:OnCollisionWithPlayer(collision, player)
+    --print("OnCollisionWithPlayer------------")
+end
+
+
+function FollowObj:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    --print("OnCollisionWithRole------------")
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal)
+end
+
+function FollowObj:OnCollisionWithScene(collision)
+    --print("OnCollisionWithScene------------")
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal)
+end
+
+function FollowObj:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal)
+end
+
+function FollowObj:AttemptAddForce(collision, hand)
+    local vel = hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+    --print("AttemptAddForce vel.sqrMagnitude:" .. vel.sqrMagnitude .. "sqrhandSpeed:" .. self.sqrHandSpeed)
+    if vel.sqrMagnitude < self.sqrHandSpeed then
+        return false
+    end
+    
+    self:BeforeAddForce()
+    
+    self.host:AddForce(vel * self.addForceIntensity, UE.ForceMode.VelocityChange)
+    return true
+end
+
+function FollowObj:BeforeAddForce()
+    self.host.rb.useGravity = true
+end
+
+function FollowObj:CheckBroken(point, normal, speed)
+    --print("CheckBroken speed:"..self.host.rb.velocity.sqrMagnitude)
+    if self.host.rb.velocity.sqrMagnitude > speed then
+        self:PlayImpact(point, normal)
+        self.host:OnFinish()
+    end
+end
+
+function FollowObj:PlayImpact(point, normal)
+    self.host:PlayImpact(point, normal)
+end
+
+function FollowObj:CollisionEffect(point, normal)
+    if UE.Time.time - self.lastEffectTime <= self.effectInteval then
+        return
+    end
+    
+    local speed = self.host.rb.velocity.magnitude
+
+    if speed < self.showEffectSpeed then
+        return
+    end
+    particleCurve.constant = self.maxEffectIntensity * speed/self.maxEffectSpeed
+    
+    local effect = CL.EffectMgr.Instance:PlayEffect(self.impactEffect, point, 
+        UE.Quaternion.LookRotation(normal))
+    
+    if not IsNullOrDestroyed(effect) then
+        for i = 0, effect.particles.Length - 1 do
+            effect.particles[i].main.startSpeed = particleCurve
+            effect.particles[i]:Play()
+        end
+    end
+    
+    self.lastEffectTime = UE.Time.time
+end
+
+function FollowObj:OnTimeOut()
+    self:PlayBrokenEffect()
+end
+
+function FollowObj:PlayBrokenEffect()
+    CL.EffectMgr.Instance:PlayEffect(self.brokenEffect, self.host.trans.position, self.host.trans.rotation)
+end
+
+function FollowObj:ResetState()
+    self:StopFollow()
+    self.addForce = false
+end
+
+return Class(nil,nil,FollowObj)

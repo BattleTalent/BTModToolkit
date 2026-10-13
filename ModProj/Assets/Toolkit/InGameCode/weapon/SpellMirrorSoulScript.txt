@@ -1,0 +1,199 @@
+
+local SpellMirrorSoul = {
+    dancingFc = {},
+    animName = "Dancing",
+}
+
+function SpellMirrorSoul:Awake()
+    self.__base.Awake(self)
+
+    self.grabFunc = function(attach)
+        if not IsNullOrDestroyed(attach) then
+            local ib = self:GetGrabHead()
+            if ib and not IsNullOrDestroyed(ib) then                
+                self:StartControlCharge(ib) 
+            end
+        end
+    end
+    
+    
+    self.danceAction = CL.ActionData()
+    self.danceAction.performRangeMin = 0
+    self.danceAction.performRangeMax = 100
+    self.danceAction.timeLen = 5
+    
+    local timelines = CS.System.Array.CreateInstance(typeof(CL.TimelineData), 1)
+    local timeline = CL.TimelineData()
+    timelines[0] = timeline
+    
+    timeline.endTime = 5
+    
+    local actionDatas = CS.System.Array.CreateInstance(typeof(CL.ActionSubData), 1)
+    timeline.actionDatas = actionDatas
+    
+    local actionData = CL.ActionAnimData()
+    actionDatas[0] = actionData
+    
+    actionData.animName = self.animName
+    actionData.trackPosTime = 0
+    actionData.trackRotTime = 0
+    
+    self.danceAction.timelines = timelines
+end
+
+
+function SpellMirrorSoul:SlotSpell(slot)
+    self.hand = self:GetSlotHand()
+    self.character = self.hand.character
+    self.hand:GrabEvent("+", self.grabFunc)
+end
+
+function SpellMirrorSoul:UnSlotSpell(slot)
+    if self.hand then
+        self.hand:GrabEvent("-", self.grabFunc)
+        self.hand = nil
+    end
+end
+
+function SpellMirrorSoul:MirrorControl(fc)
+    print("do mirror control-------")
+    fc.anim.fbik.enabled = true
+    --fc.anim.applyAnimator = false
+    --fc.anim.animator.enabled = true
+    
+    
+    local characterIK = self.character.ik
+    fc.anim.fbik.solver.leftHandEffector.target = characterIK.references.leftHand
+    fc.anim.fbik.solver.rightHandEffector.target = characterIK.references.rightHand
+    
+    fc.anim.fbik.solver.leftShoulderEffector.target = characterIK.references.leftShoulder
+    fc.anim.fbik.solver.rightShoulderEffector.target = characterIK.references.rightShoulder
+    
+    fc.anim.fbik.solver.leftFootEffector.target = characterIK.references.leftFoot
+    fc.anim.fbik.solver.rightFootEffector.target = characterIK.references.rightFoot
+    
+    fc.anim.fbik.solver.leftThighEffector.target = characterIK.references.leftThigh
+    fc.anim.fbik.solver.rightThighEffector.target = characterIK.references.rightThigh
+    
+    
+    fc.anim.fbik.solver.leftHandEffector.positionWeight = 1
+    fc.anim.fbik.solver.leftHandEffector.rotationWeight = 0
+    
+    fc.anim.fbik.solver.rightHandEffector.positionWeight = 1
+    fc.anim.fbik.solver.rightHandEffector.rotationWeight = 0
+    
+    
+    fc.anim.fbik.solver.leftShoulderEffector.positionWeight = 1
+    fc.anim.fbik.solver.leftShoulderEffector.rotationWeight = 1
+    
+    fc.anim.fbik.solver.rightShoulderEffector.positionWeight = 1
+    fc.anim.fbik.solver.rightShoulderEffector.rotationWeight = 1
+    
+    
+    fc.anim.fbik.solver.leftFootEffector.positionWeight = 1
+    fc.anim.fbik.solver.leftFootEffector.rotationWeight = 1
+    
+    fc.anim.fbik.solver.rightFootEffector.positionWeight = 1
+    fc.anim.fbik.solver.rightFootEffector.rotationWeight = 1
+    
+    
+    fc.anim.fbik.solver.leftThighEffector.positionWeight = 1
+    fc.anim.fbik.solver.leftThighEffector.rotationWeight = 1
+    
+    fc.anim.fbik.solver.rightThighEffector.positionWeight = 1
+    fc.anim.fbik.solver.rightThighEffector.rotationWeight = 1
+end
+
+
+function SpellMirrorSoul:StartDancing(fc)
+    if self.dancingFc[fc] then
+        --fc.anim.animator:Play("Actions.Dancing")
+        fc.ai:CancelAction()
+        fc.actor:PlayAction(self.danceAction)
+        print("Replay dancing---------------:" .. self.stateName)
+        return
+    end
+    
+    
+    local aiActions = fc.ai.aiActions
+    if aiActions.Length <= 0 then
+        return
+    end
+    
+    local controller = fc.anim.animator.runtimeAnimatorController
+    local layer = controller.layers[0]
+    local targetSubMachine = self:FindSubStateMachine(layer.stateMachine, "Actions")
+    
+    if targetSubMachine then
+        local state = targetSubMachine:AddState(self.stateName)
+        state.motion = self.dancingClip
+        
+        self.dancingFc[fc] = state
+
+    end
+
+    fc.ai:CancelAction()
+    fc.actor:PlayAction(self.danceAction)
+    print("Start dancing---------------:" .. self.stateName)
+end
+
+function SpellMirrorSoul:FindSubStateMachine(root, name)
+    if root.name == name then
+        return root
+    end
+
+    local stateMachines = root.stateMachines
+    for i = 0, stateMachines.Length - 1 do
+        local child = stateMachines[i]
+        local result = self:FindSubStateMachine(child.stateMachine, name)
+        if result ~= nil then
+            return result
+        end
+    end
+
+    return nil
+end
+
+function SpellMirrorSoul:StartControlCharge(ib)
+    local fc = CL.PhysicsUnit.GetPhysicsUnitTopDown(ib.trans)
+    if not fc then --or fc.attr.camp == self.hand.character.aiProxy:GetCamp() 
+        return
+    end
+    if IsNullOrDestroyed(fc) or fc.muscleState:IsPowerfulCharacter() or fc.attr:IsDead() then
+        return
+    end
+    
+    --self:MirrorControl(fc)
+    self:StartDancing(fc)
+end
+
+
+function SpellMirrorSoul:GetGrabHead()
+    local hand = self:GetSlotHand()
+    if not hand then
+        return nil
+    end
+    
+    if IsNullOrDestroyed(hand.attachTo) then
+        return nil
+    end
+    
+    local rmc = hand.attachTo.interact.gameObject:GetComponent(typeof(CL.RagdollMuscleCollision))
+    if not IsNullOrDestroyed(rmc) then
+        if rmc.muName == CL.RagdollBoneInfo.Head then
+            return hand.attachTo.interact
+        else
+            if rmc.muName == CL.RagdollBoneInfo.RWeapon or 
+            rmc.muName == CL.RagdollBoneInfo.LWeapon then
+                return nil
+            else
+                return nil
+            end
+        end
+    end
+    
+    return nil
+end
+
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellMirrorSoul)

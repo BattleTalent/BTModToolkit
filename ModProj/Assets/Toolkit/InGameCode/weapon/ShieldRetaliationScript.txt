@@ -1,0 +1,141 @@
+
+local ShieldRetaliation = {
+    totalDamage = 0,
+    cacheDmgFinalAdd = nil,
+    
+    color = UE.Color(2.63, 1.77, 0, 0),
+    maxColorValue = 200,
+    }
+
+function ShieldRetaliation:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    self.renderer.material:EnableKeyword("_EMISSION")
+
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    CL.FullBodyMuscleState.Phase2Modifier:Add(
+        function(fc, mu, thisCol,
+            otherRB, otherCol, point, normal, relaVel)
+            if not CL.FullBodyMuscleState.dmgHitData:IsIgnore() then
+                return
+            end
+            if not fc.actor:IsAttacking() then
+                return
+            end
+            if otherCol == self.col then
+                local hitInfo = CL.RagdollHitMgr.Instance:GetHitInfoByCol(otherCol)
+                if hitInfo then
+                    self:RecordDamage(hitInfo, relaVel)
+                    
+                    if self.isOnline then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerChangeColor(self.totalDamage) end
+                    else
+                        self:ChangeColor(self.totalDamage)
+                    end
+                end
+            end
+        end)
+    
+    --payback
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if not self.hand then
+            return
+        end
+    
+        if CL.FullBodyMuscleState.dmgEffectData.blockType ~= CL.BlockType.None then
+            return
+        end
+        
+        if CL.FullBodyMuscleState.dmgHitData:IsIgnore() then
+            return
+        end
+        
+        if self.totalDamage <= 0 then
+            return
+        end
+        
+        self.cacheDmgFinalAdd = CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd
+        CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd = CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd + self.totalDamage
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if self.cacheDmgFinalAdd == nil then
+            return
+        end
+        
+        CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd = self.cacheDmgFinalAdd
+        self.cacheDmgFinalAdd = nil
+        self:ClearDamageRecord()
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerResetColor()
+                state:ServerPlayReleaseEffect()
+            end
+        else
+            self:ResetColor()
+            self:PlayReleaseEffect()
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+end
+
+function ShieldRetaliation:ClearDamageRecord()
+    self.totalDamage = 0
+end
+
+function ShieldRetaliation:RecordDamage(hitInfo, relaVel)
+    local relaFactor = CL.FullBodyMuscleState.CalcRelaVelFactor(relaVel.magnitude)
+    local damage = hitInfo.damageMlp
+    damage = damage * hitInfo.damageCrit
+    damage = damage * relaFactor
+    self.totalDamage = self.totalDamage + damage
+end
+
+function ShieldRetaliation:ChangeColor(dmg)
+    local color = UE.Color.Lerp(UE.Color.black ,self.color, math.min(dmg/self.maxColorValue, 1))
+    SetMaterialEmission(self.renderer, color)
+end
+
+function ShieldRetaliation:ResetColor()
+    if self.emissionTimer then
+        RemoveSchedule(self, self.emissionTimer)
+    end
+    self.emissionTimer = SetMaterialEmissionWithinTime(self, {self.renderer}, UE.Color.black, 0.3)
+end
+
+function ShieldRetaliation:PlayReleaseEffect()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.effectName, self.effectTrans.position, self.effectTrans.rotation)
+    eo.trans:SetParent(self.effectTrans)
+    
+    
+    self.hand:HapticPulse(self.hand.character.skillOpenHapticCurve, 0.3, 0.5)
+end
+
+function ShieldRetaliation:OnGrab(a, g)
+    if g then
+        self.hand = a.attachedHand
+    else
+        self.hand = nil
+    end
+end
+
+function ShieldRetaliation:OnDestroy()
+--    if self.hitInfoObj.hitInfo.OnInteractRoleHitPhase1Event then
+--        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+--    end
+    
+--    if self.hitInfoObj.hitInfo.OnInteractRoleHitPhase2Event then
+--        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+--    end
+    
+    SetMaterialEmission(self.renderer, UE.Color.black)
+end
+
+return Class(nil,nil,ShieldRetaliation)

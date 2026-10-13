@@ -1,0 +1,174 @@
+
+local BrandingIron = {
+    hitScanInterval = 1,
+    
+    collisionCols = {},
+    hitInfos = {},
+}
+
+function BrandingIron:Start()
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        CL.FullBodyMuscleState.dmgEffectData.pushbackDir = UE.Vector3.zero
+        CL.FullBodyMuscleState.dmgEffectData.stiffSec = 0
+        CL.FullBodyMuscleState.dmgEffectData.decalRadius = 0.05
+        CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel = 0.0001 * CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel.normalized
+        CL.FullBodyMuscleState.dmgEffectData.hasDecal = false
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+end
+
+function BrandingIron:OnGrab(a, g)
+    if g then
+        self.hand = a.attachedHand
+    else
+        self.hand = nil
+    end
+end
+
+function BrandingIron:StartBrand(fc, col, normal)
+    if self.isBrand then
+        for k, v in ipairs(self.collisionCols) do
+            if v == col then
+                return
+            end
+        end
+        
+        table.insert(self.collisionCols, col)
+    end
+    self.isBrand = true
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.brandSoundInfo)
+    self.brandSoundInfo = self.brandSound:PlaySoundInfo()
+    if self.brandSoundInfo then
+        self.brandSoundInfo.ao.transform:SetParent(self.host.interact.trans)
+    end
+    --effect
+    self.smokeEffect:Play()
+    local decalUp = col.transform:InverseTransformDirection(self.host.interact.trans.right)
+
+    self.brandActId = CL.Scheduler.RemoveSchedule(self.brandActId)
+    self.brandActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact) or IsNullOrDestroyed(fc) then
+                sche:Stop()
+                return
+            end
+            
+            if not IsNullOrDestroyed(col) then
+                --if not fc.attr:IsImmune("Fire") then
+                --    self.hitInfos[fc] = UE.Time.time + self.brandTime
+                --    
+                --    CL.FullBodyMuscleState.StayDmg = true
+                --    CL.InteractTrigger.BeginScanDmg()
+                --    CL.InteractTrigger.ApplyHitScanDamage(col, self.host.interact, self.host.interact.rb, self.hitCol, normal, "None", false)
+                --    CL.InteractTrigger.EndHitScan()
+                --    CL.FullBodyMuscleState.StayDmg = false
+                --end
+                
+                self:FinishBrand(fc)
+            end
+        end
+    , 0, 0, self.brandTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function BrandingIron:FinishBrand(fc)
+    self.isBrand = false
+    self.collisionCols = {}
+    self.brandActId = CL.Scheduler.RemoveSchedule(self.brandActId)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.brandSoundInfo)
+    
+    if not IsNullOrDestroyed(self.smokeEffect) then
+        self.smokeEffect:Stop()
+    end
+    
+    self:ApplyBrandToMuscle(fc)
+end
+
+function BrandingIron:ApplyBrandToMuscle(fc)
+    if IsNullOrDestroyed(fc) or IsNullOrDestroyed(fc.reactAnim) then
+        return
+    end
+    fc.reactAnim:Paint(self.decalTex, self.decalSpec, self.decalNormal,
+            self.decalExtra, self.brandPoint.position, UE.Quaternion.LookRotation(self.brandPoint.forward, self.brandPoint.up), false, 1)
+end
+
+function BrandingIron:CancelBrand()
+    self.isBrand = false
+    self.collisionCols = {}
+    self.brandActId = CL.Scheduler.RemoveSchedule(self.brandActId)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.brandSoundInfo)
+    self.smokeEffect:Stop()
+end
+
+function BrandingIron:OnColliderEnter(collision)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collision.transform)
+    if pu and not IsNullOrDestroyed(pu) then
+        local unitType = pu.unitType
+        self:TryIgnite(pu, collision.collider)
+        --print("On collision with ----------- " .. collision.transform.name)
+        if self.hand and not IsNullOrDestroyed(self.hand) and self.hand.trans.root == pu.trans.root then
+            return
+        end
+        
+        if unitType == CL.Tagger.Tag.InteractRole
+            or unitType == CL.Tagger.Tag.PlayerRole then
+            
+            if self.hitInfos[pu] and self.hitInfos[pu] > UE.Time.time then
+                return
+            end
+            local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+            self:StartBrand(pu, collision.collider, normal)
+            
+            
+            
+            if unitType == CL.Tagger.Tag.PlayerRole then
+                if self.hand and self.hand.character == pu.character then
+                    return
+                end
+            end
+            self.hitInfos[pu] = UE.Time.time + self.hitScanInterval
+
+            CL.FullBodyMuscleState.StayDmg = true
+            CL.InteractTrigger.BeginScanDmg()
+            CL.InteractTrigger.ApplyHitScanDamage(otherCol, self.host.interact, self.host.interact.rb, self.flameCol, -normal, "None")
+            CL.InteractTrigger.EndHitScan()
+            CL.FullBodyMuscleState.StayDmg = false
+        end
+    end
+end
+
+function BrandingIron:OnColliderExit(collision)
+    local otherCol = collision.collider
+    
+    for k, v in ipairs(self.collisionCols) do
+        if v == otherCol then
+            table.remove(self.collisionCols, k)
+            if #self.collisionCols <= 0 then
+                self:CancelBrand()
+            end
+            return
+        end
+    end
+end
+
+function BrandingIron:TryIgnite(pu, col)
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+        
+    local trigger = pu:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+        
+    local tb = trigger.script:GetSelf()
+    if tb and tb.fuseCol and tb.Ignite then
+        tb:Ignite()
+    end
+end
+
+function BrandingIron:OnDead()
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+end
+
+return Class(nil, nil, BrandingIron)

@@ -1,0 +1,739 @@
+--luaBehaviour
+local ClawBlade = {
+    lifeTime = 10,
+    
+    
+    lightRadius = 2,
+    
+    lastEndTime = 0,
+    lastSearchTime = 0,
+    searchInterval = 0.1,
+    
+    infoList ={},
+    selectInfos = {},
+    ignoreCols = {},
+    spawnRadius = 0.1,
+    
+    lightningTime = 0,
+    stabLightningDura = 1,
+}
+
+function ClawBlade:IsLocalPvpBlade()
+    return self.isOnline and CL.Network.NetworkRoomMgr.IsInPvpMode
+        and IsNullOrDestroyed(self.ib.networkIB)
+end
+
+function ClawBlade:Awake()
+    --self.onStabEnterHandler = function(si)
+    --    CL.Scheduler.RemoveSchedule(self.delayTrailId)
+    --    if not IsNullOrDestroyed(self.trail) then
+    --        self.trail.enabled = false
+    --    end
+    --    
+    --    print("lightning time add stab--------------------")
+    --    self.lightningTime = UE.Time.time + self.stabLightningDura
+    --end
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    self.ignoreCols[self.col] = true
+    
+    --local so = self.ib:GetStabObject()
+    --if so then
+    --    print("stab event-------------------")
+    --    so:StabEnterEvent("+", self.onStabEnterHandler)
+    --end
+    
+    self.riginQua = self.trans.rotation
+end
+
+function ClawBlade:Reset()
+    self.trail = self.host.gameObject:GetComponent(UE.TrailRenderer)
+end
+
+function ClawBlade:StartLifeCircle()
+    self:StopLifeCircle()
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer and not self:IsLocalPvpBlade() then
+        return
+    end
+    local curVel = UE.Vector3.zero
+    self.lifeCircleId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:Update()
+            
+            self.lastVel = curVel
+            curVel = self.ib.rb.velocity
+            
+            if self.lightningTime > UE.Time.time then
+                self:TrySpawnLightning()
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ClawBlade:StopLifeCircle()
+    CL.Scheduler.RemoveSchedule(self.lifeCircleId)
+    self.lifeCircleId = nil
+end
+
+
+function ClawBlade:OnEnable()
+    self:StartLifeCircle()
+end
+
+function ClawBlade:OnDisable()
+    self:StopLifeCircle()
+    
+    --local so = self.ib:GetStabObject()
+    --if so then
+    --    print("remove stab event-------------------")
+    --    so:StabEnterEvent("-", self.onStabEnterHandler)
+    --end
+end
+
+
+function ClawBlade:Update()
+    self:AdjectRotation()
+end
+
+function ClawBlade:AdjectRotation()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer and not self:IsLocalPvpBlade() then
+        return
+    end
+    
+    if not self.disabled then
+       if self.ib.rb.velocity.sqrMagnitude > 0.01 then
+           CL.PhysicsFollow.TrackRotation(self.ib.rb, UE.Quaternion.LookRotation(self.ib.rb.velocity))
+        end
+    end
+end
+
+function ClawBlade:OnShoot(main, isLightning)
+    self.trail.enabled = true
+    
+    self.disabled = false
+    
+    self.hostPlayer = nil
+    local hand = main.host.interact:GetPrimaryHand()
+    if hand and not IsNullOrDestroyed(hand) then
+        self.hostPlayer = hand.character
+    end
+    
+    self.main = main
+    
+    if self.lightningEffect then
+        CL.EffectMgr.Instance:GiveBack(self.lightningEffect)
+    end
+    
+    self.lightningEffect = CL.EffectMgr.Instance:PlayEffect(self.lightningOnEffect, self.lightningTrans.position, self.lightningTrans.rotation)
+    self.lightningEffect.trans:SetParent(self.lightningTrans)
+    
+    
+    self.isLightning = isLightning
+    if isLightning then
+        self.lightningLoopEffect:Play()
+    else
+        self.lightningLoopEffect:Stop()
+    end
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer and not self:IsLocalPvpBlade() then
+        return
+    end
+    
+    --if self.isOnline then
+    --    self.ib.networkIB.networkIBState:ServerSetIsLightning(isLightning)
+    --end
+    
+    if isLightning then
+        self.lightningTime = UE.Time.time + self.lifeTime
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.givebackId)
+    
+    CL.FlyObject.CopyWeaponBuffToUnit(main.host.interact, self.ib)
+    self.givebackId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:GiveBack()
+        end,
+    0, 0, self.lifeTime).actionId
+end
+
+
+function ClawBlade:DelayToShowTrail()
+    CL.Scheduler.RemoveSchedule(self.delayTrailId)
+    self.delayTrailId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(self.trail) then
+                self.trail.enabled = true
+            end
+        end,
+    0, 0, 0.02).actionId
+end
+
+function ClawBlade:NetworkOnShoot()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        self:DelayToShowTrail()
+    else
+        self.trail.enabled = true
+    end
+    
+    self.disabled = false
+end
+
+function ClawBlade:CmdLockedStab(rb, point)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:CmdLockedStab(rb, point) end
+    end
+end
+
+function ClawBlade:OnColliderEnter(collision)
+    if CL.Network.VRNetworkManager.ClientOnline and not self:IsLocalPvpBlade() then
+        return
+    end
+    
+    if self.disabled then
+        return
+    end
+    
+    local hand = CL.InteractHand.GetHandByCollider(collision.collider)
+    if not IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(collision.transform.root)
+    if not IsNullOrDestroyed(pu) then
+        if pu.unitType == CL.Tagger.Tag.PlayerRole then
+            return
+        end
+        
+        if pu.unitType == CL.Tagger.Tag.FlyObject then
+            return
+        end
+    end
+    
+    
+    local thisCol, otherCol, ctPoint = collision:GetContactPoint(0)
+    local state = GetIBNetworkState(self.ib)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        if state ~= nil then state:ServerOnCollision(ctPoint) end
+    end
+    self:OnCollision(pu, ctPoint)
+    if self:AllowStab(collision.collider, true) then
+        local point = collision.collider:ClosestPoint(ctPoint)
+        point = collision.collider.attachedRigidbody.transform:InverseTransformPoint(point)
+        self:LockedStab(collision.collider.attachedRigidbody, point)
+        
+        if CL.Network.VRNetworkManager.ServerOnline then
+            if state ~= nil then state:ServerLockedStab(collision.collider.attachedRigidbody, point, true) end
+        end
+    end
+end
+
+function ClawBlade:OnCollision(pu, point)
+    self:DisableTrail()
+    self.disabled = true
+    self.lightningTime = 0
+    
+    CL.EffectMgr.Instance:PlayEffect(self.isLightning and self.lightningHitEffect or self.hitEffect, point, UE.Quaternion.identity)
+    
+    CL.EffectMgr.Instance:GiveBack(self.lightningEffect)
+    
+    if self.isLightning then
+        if pu and not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.InteractRole then
+            self.lightningTime = UE.Time.time + self.stabLightningDura
+        end
+    end
+end
+
+function ClawBlade:AllowStab(collider, checkSpeed)
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(collider)
+    if self.joint ~= nil then
+        return false
+    end
+    
+    if IsNullOrDestroyed(self.trans) then
+        return false
+    end
+    
+    if checkSpeed and UE.Vector3.Dot(self.lastVel, self.trans.forward) < 0.5 then
+        return false
+    end
+    
+    if IsNullOrDestroyed(collider.attachedRigidbody) and not IsNullOrDestroyed(pu) then
+        return false
+    end
+    local needStab = false
+    if not needStab then
+        if pu and not IsNullOrDestroyed(pu) then
+            if pu:GetType() == typeof(CL.StabableObj) then
+                needStab = true
+            elseif pu.unitType == CL.Tagger.Tag.InteractRole then
+                local muscleArmor = pu.muscleState:GetArmor(collider)
+                if muscleArmor ~= nil then
+                    needStab = false
+                else
+                    needStab = true
+                end
+            elseif pu.unitType == CL.Tagger.Tag.InteractObj then
+                if pu:IsBodyPart() and not pu:IsWeapon() then
+                    needStab = true
+                end
+            end
+        end
+    end
+        
+    if not needStab and CL.PhysicsUnit.IsStaticScene(collider.gameObject) then
+        if not IsNullOrDestroyed(collider.attachedRigidbody) then
+            needStab = true
+        end
+    end
+    
+    return needStab
+end
+
+function ClawBlade:DisableTrail()
+    CL.Scheduler.RemoveSchedule(self.delayTrailId)
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = false
+    end
+end
+
+function ClawBlade:GiveBack()
+    if self.isOnline then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                state:ServerGiveBack()
+            else
+                return
+            end
+        end
+    end
+    self:DoGiveBack()
+end
+
+function ClawBlade:DoGiveBack()
+    self.disabled = false
+    
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:SetRBCols(true)
+        self.ib:SetKinematic(false)
+        self.ib:Clear()
+    end
+    
+    self:StopLifeCircle()
+    CL.Scheduler.RemoveSchedule(self.givebackId)
+    CL.Scheduler.RemoveSchedule(self.delayTrailId)
+    
+    if self.main and not IsNullOrDestroyed(self.main.trans) then
+        self.main:OnBladeGiveBack(self)
+    end
+    self.main = nil
+    
+    self:OnResetState()
+    
+    if self.trail ~= nil and not IsNullOrDestroyed(self.trail) then
+        self.trail:Clear()
+        self.trail.enabled = false
+    end
+    if not IsNullOrDestroyed(self.ib) then
+        local hitInfoObj = self.ib:GetRagdollHitInfoObj()
+        if hitInfoObj then
+            hitInfoObj:ResetState()
+        end
+        if self.isOnline then
+            if not IsNullOrDestroyed(self.ib) then
+                if not IsNullOrDestroyed(self.ib.networkIB) then
+                    self.ib.networkIB:OnGiveBack()
+                end
+            end
+        end
+        CL.PrefabPool.GiveBack(self.ib.gameObject)
+    end
+end
+
+function ClawBlade:OnResetState()
+    self.infoList ={}
+    self.selectInfos = {}
+    self.ignoreCols = {}
+    self.ignoreCols[self.col] = true
+    
+    self.isLightning = false
+    
+    --if self.isOnline then
+    --    self.ib.networkIB.networkIBState:ServerSetIsLightning(false)
+    --end
+    
+    self.lightningLoopEffect:Stop()
+    self:UnlockStab()
+    
+    self.ib:ClearThrowAssist()
+end
+
+------------------------------------------------auto stab---------------------------------------------------
+
+function ClawBlade:ServerLockedStab(rb, point, isUpdateLightning)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:ServerLockedStab(rb, point, isUpdateLightning) end
+        
+        self:LockedStab(rb, point)
+        
+        if isUpdateLightning then
+            self:UpdateStabLightning()
+        end
+    end
+end
+
+function ClawBlade:UpdateStabLightning()
+    self.lightningTime = UE.Time.time + self.stabLightningDura
+    
+    self:DisableTrail()
+    self.disabled = true
+    
+    CL.EffectMgr.Instance:GiveBack(self.lightningEffect)
+end
+
+function ClawBlade:NetworkLockedStab(rb, connectAnchor, isUpdateLightning)
+    if isUpdateLightning then
+        self:UpdateStabLightning()
+    end
+    self:LockedStab(rb, connectAnchor)
+end
+
+function ClawBlade:LockedStab(rb, connectAnchor)
+    if not IsNullOrDestroyed(self.joint) or IsNullOrDestroyed(self.trans) then
+        return
+    end
+    
+    --print("locked stab-------------------:" .. rb.transform.name)
+    
+    self.joint = self.trans.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.joint.autoConfigureConnectedAnchor = false
+    
+    self.joint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.zMotion = UE.ConfigurableJointMotion.Locked
+    
+    if not self.isOnline or CL.Network.VRNetworkManager.ServerOnline or self:IsLocalPvpBlade() then
+        self.joint.angularXMotion = UE.ConfigurableJointMotion.Locked
+        self.joint.angularYMotion = UE.ConfigurableJointMotion.Locked
+        self.joint.angularZMotion = UE.ConfigurableJointMotion.Locked
+    end
+    --joint Contect
+    self.joint.connectedBody = rb
+    self.joint.anchor = self.center.localPosition
+    self.joint.connectedAnchor = connectAnchor
+    
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.joint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.joint.projectionAngle = 0
+    self.joint.projectionDistance = 0
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(rb.transform)
+    if not IsNullOrDestroyed(pu) then
+        if pu.unitType == CL.Tagger.Tag.InteractRole then
+            pu.ra:SetCollisionIgnoreWith(self.ib:GetCols(), true)
+            self.stabFc = pu
+        end
+    end
+end
+
+function ClawBlade:UnlockStab()
+    if not IsNullOrDestroyed(self.joint) then
+        self.joint.xMotion = UE.ConfigurableJointMotion.Free
+        self.joint.yMotion = UE.ConfigurableJointMotion.Free
+        self.joint.zMotion = UE.ConfigurableJointMotion.Free
+
+        UE.Object.DestroyImmediate(self.joint)
+    end
+    self.joint = nil
+    
+    if self.stabFc and not IsNullOrDestroyed(self.stabFc) then
+        self.stabFc.ra:SetCollisionIgnoreWith(self.ib:GetCols(), false)
+    end
+    self.stabFc = nil
+end
+
+------------------------------------------------Lightning-----------------------------------------------------
+
+function ClawBlade:ElectrificationEffect()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.spawnLightningEffect, self.lightningTrans.position, self.lightningTrans.rotation)
+    eo.trans:SetParent(self.lightningTrans)
+end
+
+function ClawBlade:LightningForAWhile()
+    if not self.isLightning then
+        return
+    end
+    self.lightningTime = UE.Time.time + self.trigLightningDura
+end
+
+function ClawBlade:TrySpawnLightning()
+    if not self.isLightning then
+        return
+    end
+    
+    if UE.Time.time < self.lastEndTime then
+        return false
+    end
+    
+    local fo = nil
+    
+    local recordEndTime = 0
+    local interval = 0
+    local count = 0
+    
+    local dir = nil
+    
+    if UE.Time.time >= self.lastSearchTime then
+        self.infoList = self:GetTarget(self.trans.position + self.trans.forward * self.ib.rb.velocity.magnitude * self.searchInterval, self.trans.forward, self.ignoreCols)
+        self.lastSearchTime = UE.Time.time + self.searchInterval
+    end
+    
+    
+    if #self.infoList > 0 then
+        self:FilteringByDistance(self.infoList)
+        
+        count = math.random(self.minCount, self.maxCount)
+        self.selectInfos = self:WeightedRandom(self.infoList, count)
+        for i = 1, count do
+            local pos = nil
+            if self.selectInfos[i] and self.selectInfos[i].col 
+                and not IsNullOrDestroyed(self.selectInfos[i].col) then
+                --print(" select target:" .. self.selectInfos[i].col.transform.name.. " root :"..self.selectInfos[i].col.transform.root.name)
+                dir = self.selectInfos[i].col.transform.position - self.trans.position
+                pos = self.selectInfos[i].col.transform.position
+                --print("spawn lightning-----------:" .. UE.Vector3.Distance(self.selectInfos[i].col.transform.position - self.trans.position))
+            else
+                return false
+            end
+            
+            fo = nil
+            if self.isOnline and not self:IsLocalPvpBlade() then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    fo = CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.summonObjName, self.ib, pos, dir, -1)
+                    local state = GetIBNetworkState(self.ib)
+                    if state ~= nil then state:ServerOnSummonLightning(fo) end
+                end
+            else
+                fo = CL.FlyObject.CreateFlyObj(self.summonObjName, self.ib, pos, dir)
+            end
+            if fo then
+                local tb = fo.script:GetSelf()
+                tb:SetInfo(self, false)
+                self.ignoreCols[fo.col] = true
+            end
+        end
+        recordEndTime = self.lastEndTime
+        
+        if self.disabled then
+            interval = UE.Random.Range(self.minInterval, self.maxInterval)
+        else
+            interval = UE.Random.Range(self.minIntervalOnFlying, self.maxIntervalOnFlying)
+        end
+        self.lastEndTime = UE.Time.time + interval
+        
+        self:ElectrificationEffect()
+        return true
+    end
+end
+
+function ClawBlade:NetworkOnSummonLightning(fo)
+    if not IsNullOrDestroyed(fo) then
+        local tb = fo.script:GetSelf()
+        tb:SetInfo(self, false)
+        self.ignoreCols[fo.col] = true
+    end
+    
+    self:ElectrificationEffect()
+end
+
+
+--[[
+    Electrically Conductive
+]]
+
+function ClawBlade:GetTarget(pos, dir, ignoreCols)
+    
+    self.colNum = UE.Physics.OverlapSphereNonAlloc(pos, self.lightRadius, 
+                CL.PhysicsHelper.shareOverlapColArray)
+
+    if self.colNum <= 0 then
+        return
+    end
+    
+    local infoList = {}
+    local pu = nil
+    local weight = 0 
+    local rb = nil
+    local pass = nil
+    local anchor = nil
+    local playerUnit = self.hostPlayer and self.hostPlayer:GetPlayerUnit() or nil
+    --print("raycastHitLength ::".. raycastHit.Length .. "  len---:"..UE.Vector3.Distance(pos, self["testpoint4"].position) .. " rad:" ..self.lightRadius)
+    for i = 0, self.colNum - 1 do
+        weight = 0
+        pass = true
+        --print("col:" .. raycastHit[i].collider.transform.name .. "  pos ::" .. raycastHit[i].point.x .. " y:" 
+        --    ..raycastHit[i].point.y .."  z:" .. raycastHit[i].point.z)
+
+        if not ignoreCols[CL.PhysicsHelper.shareOverlapColArray[i]] then
+            pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(CL.PhysicsHelper.shareOverlapColArray[i])
+            
+            if not IsNullOrDestroyed(pu) then
+                if pu.unitType == CL.Tagger.Tag.Env 
+                or pu.unitType == CL.Tagger.Tag.EnvGround then
+                    pass = false
+                end
+                
+                if pu.trans == self.main.trans then
+                    pass = false
+                end
+                
+                if pu == playerUnit then
+                    pass = false
+                end
+                
+                if pu.unitType == CL.Tagger.Tag.PlayerRole then
+                    if pu == playerUnit then
+                        pass = false
+                    end
+                end
+                
+                if pu.unitType == CL.Tagger.Tag.PlayerHand then
+                    if pu.logicHand.character == playerUnit.character then
+                        pass = false
+                    end
+                end
+                
+                if pu.unitType == CL.Tagger.Tag.InteractWeapon then
+                    if pu:IsShadow() then
+                        pass = false
+                    end
+                    
+                    if pu:IsGrabbed() then
+                        local ph = pu:GetPrimaryHand()
+                        if not IsNullOrDestroyed(ph) and ph.character == playerUnit.character then
+                            pass = false
+                        end
+                    end
+                end
+                
+                if pu.unitType == CL.Tagger.Tag.InteractBase then
+                    local ph = pu:GetPrimaryHand()
+                    if not IsNullOrDestroyed(ph) and ph.character == playerUnit.character then
+                        pass = false
+                    end
+                end
+                
+                if pu.unitType == CL.Tagger.Tag.FlyObject and pu.force >= 20 then
+                    pass = false
+                end
+                
+                if pass then
+                    if pu.unitType == CL.Tagger.Tag.InteractRole then
+                        weight = weight + 50 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.InteractWeapon then
+                        weight = weight + 4 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.FlyObject then
+                        weight = weight + 3 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.InteractObj then
+                        weight = weight + 2 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.SceneObject then
+                        weight = weight + 1 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.PlayerRole then
+                        weight = weight + 30 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.PlayerHand then
+                        weight = weight + 20 * self.weightIntensity
+                    end 
+                    
+                    
+                    rb = CL.PhysicsHelper.shareOverlapColArray[i].attachedRigidbody
+                    if rb then
+                        weight = weight + 1
+                        
+                        if not rb.isKinematic then
+                            weight = weight + 1
+                        end
+                    end
+                    --print("distance :: " .. raycastHit[i].collider.transform.root.name .." ::" .. raycastHit[i].distance .. " weight:" .. weight)
+                    
+                    
+                    table.insert(infoList, {
+                        ["weight"] = weight,
+                        ["col"] = CL.PhysicsHelper.shareOverlapColArray[i],
+                    })
+                end
+            end
+        end
+    end
+    
+    table.sort(infoList, 
+        function(a,b)
+            return a.weight > b.weight
+        end
+    )    
+    
+    return infoList
+end
+
+function ClawBlade:FilteringByDistance(infos)
+    local sqrDis = self.lightRadius * self.lightRadius
+    local pass = true
+    for i = #infos, 1, -1 do
+        pass = true
+        if IsNullOrDestroyed(infos[i].col) then
+            table.remove(infos, i)
+            pass = false
+        end
+        if pass then
+            if (infos[i].col.transform.position - self.trans.position).sqrMagnitude > sqrDis then
+                --print("remove by dis---------:" .. infos[i].col.transform.name)
+                table.remove(infos, i)
+                pass = false
+            end
+        end
+    end
+end
+
+function ClawBlade:WeightedRandom(infos, count)
+    local sum = 0
+    for _, v in ipairs(infos) do
+        sum = sum + v.weight
+    end
+    
+    local list = {}
+    local selects = {}
+    for i = 1, count do
+        list[i] = math.random(1, sum)
+    end
+    local n = 0
+    for idx, v in ipairs(infos) do
+        for i = count, 1, -1 do
+            if not list[i] then
+                break
+            end
+            
+            if list[i] <= v.weight then
+                table.insert(selects, infos[idx])
+                table.remove(list, i)
+            else
+                list[i] = list[i] - v.weight
+            end
+        end
+        
+        if #list <= 0 then
+            break
+        end
+    end
+    
+    return selects
+end
+
+
+
+return Class(nil, nil, ClawBlade)

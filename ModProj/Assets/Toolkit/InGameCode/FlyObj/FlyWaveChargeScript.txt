@@ -1,0 +1,53 @@
+
+local FlyWaveCharge = {
+}
+
+function FlyWaveCharge:OnTrigger(pu, other)
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+end
+
+function FlyWaveCharge:OnTriggerWithStaticScene(other)
+    if self.destoryWhenHitEnv ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlyWaveCharge:OnTriggerWithRole(fc, col)
+    if self.HitRoleCb then
+        self.HitRoleCb()
+    end
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+end
+
+function FlyWaveCharge:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlyWaveCharge:OnTriggerWithPlayerHand(col, hand)
+
+end
+
+function FlyWaveCharge:OnTriggerWithPlayer(collision, player)
+
+end
+
+function FlyWaveCharge:ResetState()
+    self.HitRoleCb = nil
+end
+
+return Class(Require("FlyObj/FlyWaveBaseScript"), nil, FlyWaveCharge)

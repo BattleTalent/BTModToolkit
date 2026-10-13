@@ -1,0 +1,185 @@
+
+local tt = {}
+function tt:Awake()
+    self.followSpeed = 700
+    self.cd = 1
+    self.root = self.host.transform.root
+    self.intensity = 30
+    self.minSpeed = 0.8
+    self.flyObjName = "TouchableIceBall"
+end
+
+function tt:OnGrab(a, g)
+    if (g) then
+        self.effect:Pause()
+        self.renders = a.attachedHand:GetHandIndex() == 0 and CL.InteractTrigger.GetHandRRenderer() or CL.InteractTrigger.GetHandLRenderer()
+        
+        local player = CL.InteractCharacter.PlayerInstance
+        if player == nil then
+            return
+        end
+        self.handPoseControl = player.hands[a.attachedHand:GetHandIndex()].handPoseControl
+        
+        local ai = self.host.interact:GetHolder()
+        self.character = ai.character
+        self.playerRb = self.character.capsuleRB
+
+    else
+        self.effect:Play()
+        self:OnChargeCancel()
+    end
+end
+
+function tt:OnChargeBegin()
+    if not self.onCharge then
+        self.onCharge = true
+        self:SetExpression(true)
+        self:SetChargeEffect(true)
+        self.lastRecordTime = 0
+        self.velocityList = {}
+        local lastSamplingTime = 0
+        
+        local pos = self.createPoint.position
+        local dir = self.root.forward
+        self.iceball = self.host:CreateFlyObj(self.flyObjName, pos, dir)
+        self.iceball.trans.localScale = UE.Vector3.one
+        local scp = self.iceball.gameObject:GetComponent("FlyObjectX").script
+        local lua = scp.self
+        lua:StartUpdate()
+
+
+        local rb = self.iceball.trans:GetComponent(typeof(UE.Rigidbody))
+        if self.timer ~= nil then
+            CL.Scheduler.RemoveSchedule(self.timer.actionId)
+            self.timer = nil
+        end
+        
+        self.timer = CL.Scheduler.Create(self,
+            function(sche, t, s)
+                if t >= self.cd and not self.isReady then
+                    self.isReady = true
+                    lua.isReady = true
+                    lua:PlaySmokeEffect()
+                    self:SetChargeEffect(false)
+                end
+                if self.iceball then
+                    local tarPos = self.createPoint.position
+                    CL.PhysicsFollow.TrackPosition(rb, tarPos, UE.Time.unscaledDeltaTime * self.followSpeed)
+
+                    local realVol = self.host.interact.rb.velocity - self.playerRb.velocity
+                    local realSpeed = realVol.magnitude
+                    
+                    if self.isReady then
+                        local curTime = UE.Time.time
+                        if curTime - lastSamplingTime > 0.007 then
+                            if #self.velocityList >= 15 then
+                                table.remove(self.velocityList, 1)
+                            end
+                            table.insert(self.velocityList, realVol)
+                            lastSamplingTime = curTime
+                        end
+                        
+                        --record if velocity bigger then minSpeed
+                        if realSpeed >= self.minSpeed then
+                            self.lastRecordTime = curTime
+                            self.lastMaxVol = realVol
+                        end
+                    end
+                end
+            end
+        , UE.Time.unscaledDeltaTime, -1)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+end
+
+function tt:OnChargeCancel()
+    --print("OnChargeCancel")
+    self:SetExpression(false)
+    self:SetChargeEffect(false)
+    if self.timer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+    if self.iceball then
+        local scp = self.iceball.gameObject:GetComponent("FlyObjectX").script
+        local lua = scp.self
+        lua:SetRecyle()
+    end
+    self.isReady = false
+    self.onCharge = false
+end
+
+function tt:OnChargeRelease()
+    --print("OnChargeRelease")
+    self:SetExpression(false)
+    if self.timer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+
+    --throw
+    if self.iceball then
+        if not(self.isReady and self:TryThrow()) then
+            local scp = self.iceball.gameObject:GetComponent("FlyObjectX").script
+            local lua = scp.self
+            lua:SetRecyle()
+        end
+    end
+    self.isReady = false
+    self.onCharge = false
+end
+
+function tt:RemoveIceBall()
+    if self.timer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+    self.iceball = nil
+end
+
+function tt:GetIsReady()
+    return self.isReady
+end
+
+function tt:SetChargeEffect(isPlay)
+    self.soundEffect.enabled = isPlay
+end
+
+function tt:SetExpression(isOnCharge)
+    local tarValue = isOnCharge and 0.2 or 0.5
+    CL.Scheduler.RemoveSchedule(self.expTimeId)
+    self.expTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            for i = 0, 4 do
+                local weight = UE.Mathf.Lerp(self.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
+                self.handPoseControl.fingers[i]:SetPose(weight)
+            end
+        end
+    , UE.Time.unscaledDeltaTime, 0.2)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function tt:TryThrow()
+    if not self.iceball then
+        return false
+    end
+    if UE.Time.time - self.lastRecordTime < 0.15 then
+        local realVol = self.host.interact.rb.velocity - self.playerRb.velocity
+        if realVol.magnitude < 0.4 then
+            return false
+        end
+        local dir;
+        for k, vol in ipairs(self.velocityList) do
+            dir = dir + vol
+        end
+        self.iceball:AddForce(dir.normalized * self.intensity, UE.ForceMode.VelocityChange)
+        CL.EffectMgr.Instance:PlayEffect("IceShootEffect", self.host.transform.position, UE.Quaternion.LookRotation(self.host.interact.rb.velocity))
+        local scp = self.iceball.gameObject:GetComponent("FlyObjectX").script
+        local lua = scp.self
+        lua:StartFly()
+        return true
+    end
+    return false
+end
+
+return Class(nil,nil,tt)

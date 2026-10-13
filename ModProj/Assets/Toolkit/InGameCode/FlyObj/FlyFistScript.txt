@@ -1,0 +1,69 @@
+
+local FlyFist = {
+    intensity = 5,
+}
+
+function FlyFist:OnTrigger(pu, col)
+    if not col or IsNullOrDestroyed(col) then
+        return
+    end
+    if not self.followRb then
+        return
+    end
+    
+    pu:AddForce(self.intensity/2 * self.host.rb.velocity, UE.ForceMode.Impulse)
+end
+
+function FlyFist:OnTriggerWithRole(fc, col)
+    if not self.followRb then
+        return
+    end
+    
+    local speed = self.host.rb.velocity.magnitude
+    --print(self.followRb.velocity.magnitude ..  "fist speed ::" .. speed)
+    if speed > 8 then
+        fc.motion:Knockout()
+        
+        CL.FullBodyMuscleState.dmgEffectData.hitAway = true
+        if speed > 17 then
+            if fc.attr:IsDead() then
+                CL.FullBodyMuscleState.dmgEffectData.ripApart = true
+            end
+        end
+    end
+    local dir = (self.effectTrans.forward + self.host.rb.velocity/speed).normalized
+    fc:AddForce(self.intensity * speed * dir, UE.ForceMode.Impulse)
+    
+    
+    if self.mainPart then
+        self.mainPart:OnHitRole(self.host)
+    end
+end
+
+function FlyFist:SetFollow(mainPart)
+    self.mainPart = mainPart
+    
+    local rb = mainPart.host.interact.rb
+    self.followRb = rb
+    self.joint.connectedBody = rb
+    self.joint.angularXMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularYMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularZMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.zMotion = UE.ConfigurableJointMotion.Locked
+end
+
+function FlyFist:ResetState()
+    self.joint.angularXMotion = UE.ConfigurableJointMotion.Free
+    self.joint.angularYMotion = UE.ConfigurableJointMotion.Free
+    self.joint.angularZMotion = UE.ConfigurableJointMotion.Free
+    self.joint.xMotion = UE.ConfigurableJointMotion.Free
+    self.joint.yMotion = UE.ConfigurableJointMotion.Free
+    self.joint.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint.connectedBody = nil
+    
+    self.mainPart = nil
+end
+
+return Class(nil, nil, FlyFist)

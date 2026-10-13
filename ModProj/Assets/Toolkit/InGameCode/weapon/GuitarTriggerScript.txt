@@ -1,0 +1,182 @@
+
+local GuitarTrigger = {
+    velocityList = {},
+    
+    isReadyRelease = false,
+    releaseSpeed = 2,
+    
+    enterCols = {},
+}
+
+function GuitarTrigger:SetTriggerActive(isActive)
+    self.isActive = isActive
+end
+
+function GuitarTrigger:SetPlayHand(playHand)
+    self.playHand = playHand
+    
+end
+
+function GuitarTrigger:OnTriggerEnter(col)
+    if not self:IsPlayHandCol(col) then
+        return
+    end
+
+    --print("triggerEnter")
+    
+    if not IsNullOrDestroyed(self.playHand) then
+        self.playHand:HapticPulse(self.playHand.character.skillOpenHapticCurve, 0.5, 2)
+    end
+    
+    if self.recordCol == col then
+        self:StopCondition()
+        self:StopSample()
+        self.recordCol = nil
+        self.isReadyRelease = false
+    end
+    
+    if not self.recordCol then
+        self.recordCol = col
+        self.cacheColPos =  self.relaTrans:InverseTransformPoint(self.recordCol.transform.position)
+        self:StartSample()
+    end
+    
+    --charge light effect
+end
+
+function GuitarTrigger:IsEnterColExist(col)
+    for k, v in pairs(self.enterCols) do
+        if v == col then
+            return k
+        end
+    end
+    return false
+end
+
+
+function GuitarTrigger:IsPlayHandCol(col)
+    if not self.playHand then
+        return false
+    end
+    local pass = false
+    for i = 0, self.playHand.physicsHand.colliders.Length - 1 do
+        if self.playHand.physicsHand.colliders[i] == col then
+            pass = true
+            break
+        end
+    end
+    return pass
+end
+
+function GuitarTrigger:OnTriggerExit(col)
+    if not self:IsPlayHandCol(col) then
+        return
+    end
+    --print("OnTriggerExit")
+    if self.recordCol == col then
+        self:StartCondition()
+    end
+end
+
+function GuitarTrigger:StartCondition()
+    --sample when exit trigger
+    self.conditionTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            --finger relative speed lass then releasespeed
+            if self.realSpeed <= self.releaseSpeed then
+                --shoot sound wave
+                if self.isReadyRelease then
+                    local pos = self.relaTrans:InverseTransformPoint(self.recordCol.transform.position)
+                    local sqrDis = (pos - self.cacheColPos).sqrMagnitude
+                    
+                    self:CallRelease(self.minSpeed, sqrDis)
+                    self.isReadyRelease = false
+                end
+                self:StopCondition()
+                self:StopSample()
+                
+                self.recordCol = nil
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function GuitarTrigger:StopCondition()
+    if IsNullOrOwnerChanged(self.conditionTimer, self) == false then
+        self.conditionTimer:Stop()
+        self.conditionTimer = nil
+    end
+end
+
+function GuitarTrigger:StopSample()
+    if IsNullOrOwnerChanged(self.velTimer, self) == false then
+        self.velTimer:Stop()
+        self.velTimer = nil
+    end
+end
+
+--finger relativeVelocity about guitar
+function GuitarTrigger:RecordRelativePos(col, trans)
+    self.lastRelaPos = col.transform.position - trans.position
+    self.lastTime = UE.Time.time
+end
+
+function GuitarTrigger:GetColRelativeVel(col, trans)
+    local curPos = col.transform.position - trans.position
+    return (curPos - self.lastRelaPos) / (UE.Time.time - self.lastTime)
+end
+
+function GuitarTrigger:StartSample()
+    self:StopSample()
+    
+    self.minSpeed = 1
+    for k,v in pairs(self.velocityList) do
+        self.velocityList[k] = nil
+    end
+    
+    self:RecordRelativePos(self.recordCol, self.relaTrans)
+    
+    self.velTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            --local realVol = self.host.interact:GetLocalVelocity()
+            local hand = self.playHand
+            if hand == nil or IsNullOrDestroyed(self.recordCol) then
+                sche:Stop()
+                return
+            end
+            
+            local realVol = self:GetColRelativeVel(self.recordCol, self.relaTrans)
+            self:RecordRelativePos(self.recordCol, self.relaTrans)
+            self.realSpeed = realVol.magnitude            
+            
+            if #self.velocityList >= 10 then
+                table.remove(self.velocityList, 1)
+            end
+            table.insert(self.velocityList, realVol)
+            
+            --record if velocity larger then minSpeed
+            if self.realSpeed >= self.minSpeed then
+                self.minSpeed = self.realSpeed
+                self.isReadyRelease = true
+            end        
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+
+function GuitarTrigger:CallRelease(maxSpeed, sqrDis)
+    local dir = UE.Vector3.zero
+    for k, vol in ipairs(self.velocityList) do
+        dir = dir + vol * (1 - k / 10)
+    end
+    self.mainPart.script.self:ReleaseSkill(dir, maxSpeed, sqrDis)
+end
+
+function GuitarTrigger:OnDestroy()
+    self:StopSample()
+    self:StopCondition()
+end
+
+return Class(nil, nil, GuitarTrigger)

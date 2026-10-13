@@ -1,0 +1,146 @@
+local crossBowPropeller = {
+    }
+
+function crossBowPropeller:OpenSkill()
+    if not self.isReady then
+        self.host:CloseSkill()
+        
+        self:PlayTriggerSound()
+        return
+    end
+    
+    local character = self.host:GetTriggeringCharacter()
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    
+    if not CostMana(self.host, self.host.manaCost, character) then
+        return
+    end
+    self.puller:SetFireSignal()
+    self.host:CloseSkill()
+end
+function crossBowPropeller:PlayShootActionServer()
+    if not IsNullOrDestroyed(self.arrowIb) then
+        if not CL.Network.NetworkRoomMgr.IsInPvpMode then
+            local position,rotation = self:GetSpawnArrowTransData(self.arrowIb)
+            self:ArrowIbDoGiveBack()
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(
+                self.flyObjName, 
+                position, rotation,
+                false, false, self.host.interact.netId, true, 
+                function(netIb, go)
+                    if IsNullOrDestroyed(go) then
+                        return
+                    end
+                    self:SetIBLastHolder(netIb.ib)
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerSpawnInteractBase(netIb.netId) end
+                    self.arrowIb = netIb.ib
+                    if self.host.interact:IsEnhance() then
+                        local lb = self.arrowIb.trans:GetComponent(typeof(CL.LuaBehaviour))
+                        if not IsNullOrDestroyed(lb) and lb.script ~= nil then
+                            local arrow = lb.script.self
+                            if arrow then
+                                arrow.intensity = self.enhanceIntensity
+                            end
+                        end
+                    end
+                    self:EnchantIB(self.arrowIb)
+                    self:Shoot(self.arrowIb)
+                    self.weaponListIndexFromNetwork = self.weaponListIndexFromNetwork + 1
+                    self.arrowIb = nil;
+                end
+            )
+            self.arrowIb = nil
+        else
+            self:SetIBLastHolder(self.arrowIb)
+            if self.host.interact:IsEnhance() then
+                local lb = self.arrowIb.trans:GetComponent(typeof(CL.LuaBehaviour))
+                if not IsNullOrDestroyed(lb) and lb.script ~= nil then
+                    local arrow = lb.script.self
+                    if arrow then
+                        arrow.intensity = self.enhanceIntensity
+                    end
+                end
+            end
+            self:EnchantIB(self.arrowIb)
+            self:Shoot(self.arrowIb)
+            self.arrowIb = nil
+        end
+        
+        if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state.putedWeapon = nil end
+        end
+        self.host.interact:CostDurability()
+    end
+    
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self:Shoot(self.putedWeapon)
+        self.putedWeapon = nil
+        if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state.putedWeapon = nil end
+        end
+        self.host.interact:CostDurability()
+    end
+    self:PullString(self.stringTrans, self.defaultPos, self.loadAnimSpeed /3, true)
+end
+
+
+function crossBowPropeller:PlayShootActionLocal()
+    if not IsNullOrDestroyed(self.arrowIb) then
+        if self.host.interact:IsEnhance() then
+            local lb = self.arrowIb.trans:GetComponent(typeof(CL.LuaBehaviour))
+            if not IsNullOrDestroyed(lb) and lb.script ~= nil then
+                local arrow = lb.script.self
+                if arrow then
+                    arrow.intensity = self.enhanceIntensity
+                end
+            end
+        end
+        
+        self:Shoot(self.arrowIb)
+        self.arrowIb = nil
+        
+        self.host.interact:CostDurability()
+    end
+    
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self:Shoot(self.putedWeapon)
+        self.putedWeapon = nil
+        
+        self.host.interact:CostDurability()
+    end
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state.putedWeapon = nil end
+    end
+    self.isReady = false
+    self:PullString(self.stringTrans, self.defaultPos, self.loadAnimSpeed /3, true)
+end
+
+function crossBowPropeller:SetArrowOnShootPos(arrow, trans)
+    if IsNullOrDestroyed(arrow) then
+        return
+    end
+
+    arrow.transform.parent = trans
+    arrow.transform.localPosition = UE.Vector3.zero + UE.Vector3(-0.0117, -0.0659, 0.0389)
+    
+    arrow.transform.forward = self.puller.trans.forward
+
+    local interactTrigger = arrow.gameObject:GetComponent(typeof(CL.InteractTriggerX))
+    if interactTrigger then
+        if interactTrigger.script:GetScriptName() == "Weapon/BowTransformScript" then
+            local script = interactTrigger.script:GetSelf()
+            if script and not script.isTransform then
+                arrow.transform.right = -self.puller.trans.forward
+            end
+        end
+    end
+end
+
+
+return Class(Require("Weapon/CrossbowBaseScript"), nil, crossBowPropeller)

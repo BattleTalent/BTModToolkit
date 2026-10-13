@@ -1,0 +1,251 @@
+
+local flyThunder = {
+    baseRadius = 5,
+    thunderRadius = 5,
+    
+    autoTrack = true,
+    thunderHz = CL.FramerateController(CL.PhysicsHelper.FPS10Sec),
+    lastCheckNextTime = 0,
+    offset = CL.Vector3.zero,
+    
+    defaultTime = 3,
+    
+    hitList = {},
+}
+
+function flyThunder:OnSpawn(ow, dir, vel)
+    self.defaultTime = self.host.maxFlyTime
+    CL.Scheduler.RemoveSchedule(self.lifeTimeId)
+
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        CL.FullBodyMuscleState.ApplyParalysisDamageEffect(fc)
+    end
+
+    self.hitInfoObj = self.host:GetRagdollHitInfoObj()
+    if self.hitInfoObj then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    end
+    
+    self.lifeTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            self:Update()
+        end,
+    0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function flyThunder:SetCamp(camp)
+    self.camp = camp
+end
+
+function flyThunder:OnCollisionWithScene(collision)
+    self.host:OnImpact(collision)
+    self.host:CollisionCountUpdate()
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self.host:PlaySceneImpactEffect(point, normal)
+    
+    --self.host:OnFinish()
+end
+
+function flyThunder:OnRelease()
+    if self.perpareEffect then
+        self.perpareEffect:Stop()
+        self.perpareEffect:Clear()
+    end
+    if self.loopEffect then
+        self.loopEffect:Play()
+    end
+    if self.coreTrans then
+        self.coreTrans.gameObject:SetActive(false)
+    end
+end
+
+function flyThunder:OnCollisionWithPlayer(collision, character)
+    self.host:CollisionCountUpdate()
+    
+    --self:TryDisarm(character)
+       
+    local pu = character:GetPlayerUnit()
+    self.hitList[pu] = true
+    self.lastHitTarget = pu
+    
+    local nextTarget = self:FindNextTarget(self.lastHitTarget)
+    if nextTarget == pu then
+        local hitInfo = self.host:GetRagdollHitInfo()
+        if hitInfo and not character.aiProxy:IsHitProtect(hitInfo) then
+            self.host:OnFinish()
+            return
+        end
+    end
+    self:SetNextTarget(nextTarget)
+end
+
+function flyThunder:OnCollisionWithRole(fc, mu, rb, col, point, normal,relaVel)
+    self.host:CollisionCountUpdate()
+    
+    self.hitList[fc] = true
+    self.lastHitTarget = fc
+    self:SetNextTarget(self:FindNextTarget(self.lastHitTarget))
+end
+
+function flyThunder:TryDisarm(character)
+    local isDisarm = UE.Random.value < self.disarmPob
+    if CL.DynamicModifierConfig.IsEnabledAndPullValueFromPlayer("Player_Disarm_Rate") then
+        isDisarm = CL.DynamicModifierConfig.PulledValue >= 1 or UE.Random.value < CL.DynamicModifierConfig.PulledValue
+    end
+
+    if not isDisarm then
+        return
+    end
+
+    if character.IsLocalPlayer then
+        local leftHand = character.hands[0]
+        local rightHand = character.hands[1]
+
+        if IsNullOrDestroyed(leftHand.attachTo) 
+            and IsNullOrDestroyed(rightHand.attachTo) then
+            return
+        end
+
+        leftHand:Grab(nil)
+        rightHand:Grab(nil)
+        leftHand:Grab(nil, true)
+        rightHand:Grab(nil, true)
+
+        CL.SoundTable.PlaySound("WeaponBroken", character.trans.position)
+    end
+end
+
+function flyThunder:SetNextTarget(target)
+    if not target or IsNullOrDestroyed(target) then
+        self.host:OnFinish()
+        return
+    end
+    self.nextTarget = target
+    self.lastCheckNextTime = UE.Time.time
+end
+
+function flyThunder:FindNextTarget(workingTarget)
+    local targets = CL.PhysicsUnit.QueryRolesInRadius(self.host.trans.position, self.thunderRadius)
+    local i = math.random(1, targets.Count - 1)
+    local count = targets.Count
+    local pass = false
+    while count > 0 do
+        count = count - 1
+        i = (i + 1) % targets.Count
+        if targets[i] ~= nil and not self.hitList[targets[i]] and targets[i] ~= workingTarget then
+            pass = false
+            
+            if targets[i].unitType == CL.Tagger.Tag.PlayerRole then
+                if targets[i].character.aiProxy:GetCamp() ~= self.camp then
+                    pass = true
+                end
+            end
+            if  targets[i].unitType == CL.Tagger.Tag.InteractRole then
+                if targets[i].ai:GetCamp() ~= self.camp then
+                    pass = true
+                end
+            end
+            if pass then
+                if not workingTarget or IsNullOrDestroyed(workingTarget) then
+                    return targets[i]
+                else
+                    if workingTarget ~= targets[i] then
+                        return targets[i]
+                    end
+                end
+            end
+        end
+    end
+    
+    return workingTarget
+end
+
+
+function flyThunder:Update()
+    if self.autoTrack then
+        local needCheck = UE.Time.time - self.lastCheckNextTime > 0.3 and IsNullOrDestroyed(self.nextTarget)
+        if needCheck then
+            self.lastCheckNextTime = UE.Time.time
+            self:SetNextTarget(self:FindNextTarget(self.nextTarget))
+        elseif not IsNullOrDestroyed(self.nextTarget) then
+            self.thunderHz:TickToZero(UE.Time.deltaTime)
+                        
+            if self.thunderHz.limitUpdateFrequency then
+                self.offset = UE.Random.insideUnitSphere * 0.25
+            end
+            
+            local targetPos = self.nextTarget.trans.position
+            if self.nextTarget.unitType == CL.Tagger.Tag.PlayerRole then
+                local mu = self.nextTarget.character.aiProxy.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+                targetPos = mu.rbTrans.position
+            elseif self.nextTarget.unitType == CL.Tagger.Tag.InteractRole then
+                local mu = self.nextTarget.ra:GetMuscle(CL.RagdollBoneInfo.Chest)
+                if mu then
+                    targetPos = mu.rbTrans.position
+                else
+                    targetPos = self.nextTarget.ra:GetRoot().rbTrans.position
+                end
+            end
+            
+            if self.lastHitTarget == self.nextTarget then
+                self.lastHitTarget = nil
+            end
+            
+            targetPos = targetPos + self.offset
+            local offset = targetPos - self.host.trans.position
+            self.host.rb.velocity = offset.normalized * self.host.force
+        end
+    end
+end
+
+function flyThunder:OnTriggerWithPlayer(pu, col)
+    self.host:CollisionCountUpdate()
+    
+    self.host.rb.isKinematic = false 
+    self.host.trans.parent = nil
+    
+    local dir = pu.trans.position - self.host.trans.position
+    self.host:FlyStart(dir.normalized)
+    self.host.col.isTrigger = false
+    
+    self:SetNextTarget(self:FindNextTarget(pu))
+    
+    self:OnRelease()
+    
+    if self.owner then        
+        self.owner.host:CloseSkill()
+    end
+end
+
+
+function flyThunder:EnhanceSpell()
+    self.thunderRadius = self.baseRadius * 1.5
+end
+
+--Used before FlyStart
+function flyThunder:SetFlyTime(time)
+    self.host.maxFlyTime = time
+end
+
+function flyThunder:ResetState()
+    if self.hitInfoObj and self.hitPhase1 and self.hitInfoObj.hitInfo and self.hitInfoObj.hitInfo.OnInteractRoleHitPhase1Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+    end
+
+    self.nextTarget = nil
+    self.thunderRadius = self.baseRadius
+    
+    self.camp = nil
+    self.hitInfoObj = nil
+    self.hitPhase1 = nil
+    
+    self.lifeTimeId = CL.Scheduler.RemoveSchedule(self.lifeTimeId)
+    self.host.maxFlyTime = self.defaultTime
+    
+    self.hitList = {}
+    
+    self.__base.ResetState(self)
+end
+
+return Class(Require("FlyObj/FlySpellBaseScript"),nil,flyThunder)

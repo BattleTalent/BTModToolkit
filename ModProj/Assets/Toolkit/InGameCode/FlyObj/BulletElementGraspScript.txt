@@ -1,0 +1,82 @@
+local BulletElementGrasp = {
+    isUsed = false,
+}
+
+spellForceGrasp = Require("Weapon/SpellForceGraspScript")
+
+function BulletElementGrasp:FlyStart()
+    if not IsNullOrDestroyed(self.host.owner) then
+        local aiPlayer = self.host.owner:GetHolder()
+        if aiPlayer then
+            self.character = aiPlayer.character
+        end
+        if not IsNullOrDestroyed(self.host.owner.mountedSlot) then
+            self.hand = self.host.owner.mountedSlot:GetAttachedHand()
+        end
+    end
+end
+
+function BulletElementGrasp:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    self.host:CollisionCountUpdate()
+    self.host:PlayImpact(point, normal)
+    --rb:AddForceAtPosition(rb.velocity, point, UE.ForceMode.Force)
+    
+    spellForceGrasp.StartPulling(fc, mu, point, false)
+end
+
+
+function BulletElementGrasp:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function BulletElementGrasp:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+end
+
+function BulletElementGrasp:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    spellForceGrasp.StartPulling(hand.character:GetPlayerUnit(), nil, point)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+function BulletElementGrasp:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function BulletElementGrasp:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function BulletElementGrasp:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    spellForceGrasp.StartPulling(player:GetPlayerUnit(), nil, point)
+end
+
+
+function BulletElementGrasp:ResetState()
+    self.isUsed = false
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, BulletElementGrasp)

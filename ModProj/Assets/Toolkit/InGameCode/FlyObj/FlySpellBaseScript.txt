@@ -1,0 +1,89 @@
+
+local flySpell = {
+    
+}
+
+
+function flySpell:FlyStart()
+    self.host.rb.isKinematic = false 
+    self.host.trans.parent = nil    
+    self.host.col.isTrigger = false
+    self.host.col.radius = 0.13
+    self.isFlying = true
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+
+
+function flySpell:OnFinish()
+    --print("OnFinish:" .. self.host.name)
+    -- delay finish    
+    CL.Scheduler.RemoveSchedule(self.delayActId)    
+
+    if self.isFlying then
+        self.host:DoFinish()
+    else
+        local lastScale = self.trans.localScale.x
+        local time = 0.03
+        self.delayActId = CL.Scheduler.Create(self.trans, 
+            function(sche, t, s)
+                local scale = UE.Mathf.Clamp01(lastScale-t/s)
+                if scale < 0 then
+                    scale = 0
+                end
+                self.trans.localScale = UE.Vector3(scale, scale, scale)
+                if t >= time then
+                    self.host:DoFinish()
+                end
+            end,
+        0, time).actionId
+    end
+
+    if self.owner then
+        self.owner:OnFoDestroyed(self)
+    end
+end
+
+function flySpell:ResetState()
+    self.delayActId = CL.Scheduler.RemoveSchedule(self.delayActId)
+    self.trans.localScale = UE.Vector3.one
+    self.host.col.radius = 0.04
+    
+    self.isFlying = false
+end
+
+
+-- play impact could create another flyobj, such as explode
+function flySpell:OnTrigger(pu, col)
+    if not col or IsNullOrDestroyed(col) then
+        return
+    end
+
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
+
+function flySpell:OnTriggerWithStaticScene(col)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
+
+function flySpell:OnTriggerWithPlayer(pu, col)
+    
+end
+
+function flySpell:OnTriggerWithRole(fc, col)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+end
+
+function flySpell:EnhanceSpell()
+end
+
+function flySpell:SetOwner(owner)
+    self.owner = owner
+end
+
+
+return Class(nil,nil,flySpell)

@@ -1,0 +1,44 @@
+local crossBowExplode = {
+    }
+
+
+function crossBowExplode:OpenSkill()
+    if not self.isReady then
+        self.host:CloseSkill()
+        
+        self:PlayTriggerSound()
+        return
+    end
+
+
+    if not IsNullOrDestroyed(self.arrowIb) then
+        if self.host.interact:IsEnhance() then
+            local arrow = self.arrowIb.trans:GetComponent(typeof(CL.ArrowExplode))
+        
+            arrow:SetExplodeIntensity(1.3)
+        end
+        
+        self:Shoot(self.arrowIb)
+        self.arrowIb = nil
+        
+        self.host.interact:CostDurability()
+    end
+    
+    if not IsNullOrDestroyed(self.putedWeapon) then
+        self:Shoot(self.putedWeapon)
+        self.putedWeapon = nil
+        
+        self.host.interact:CostDurability()
+    end
+    self.isReady = false
+    
+    self:PullString(self.stringTrans, self.defaultPos, self.loadAnimSpeed /3, true)
+    
+    self.puller:OnShoot()
+    
+    
+    self.host:CloseSkill()
+end
+
+
+return Class(Require("Weapon/CrossbowBaseScript"), nil, crossBowExplode)

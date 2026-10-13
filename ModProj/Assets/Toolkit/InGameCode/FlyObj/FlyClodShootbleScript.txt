@@ -1,0 +1,82 @@
+
+
+local FlyClodShootble = {
+    delayShootTime = 0,
+}
+
+
+function FlyClodShootble:OnSpawn()
+    self.__base.OnSpawn(self)
+    
+    local shootDir = self.host.trans.forward
+    
+    self:InitPosition()
+    self.actNode:SetActive(true)
+    
+    local onComplete = function()
+        self:DelayShoot(shootDir)
+    end
+    
+    --if CL.Network.VRNetworkManager.ClientOnline then
+    --    self.floatHeight = self.floatingDis
+    --    self:IgnoreCollisionWithObstacles(self.host.trans.position)
+    --end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        CL.Scheduler.Create(self,
+            function(sche, t, s)
+                self:StartFloat(self.floatingDis, nil, onComplete)
+            end
+        , 0, 0, 0.02)
+    else
+        self:StartFloat(self.floatingDis, nil, onComplete)
+    end
+end
+
+function FlyClodShootble:InitPosition()
+    self.host.trans.position = UE.Vector3(self.host.trans.position.x, 
+    self.host.trans.position.y - self.floatingDis, self.host.trans.position.z)
+end
+
+function FlyClodShootble:DelayShoot(dir)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.rb) then
+                sche:Stop()
+                return
+            end
+            
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                self.host.networkFO:ServerDoShoot()
+            end
+            
+            self.host.rb.useGravity = true
+            self:ShowFloatEffect(false)
+            self:StopFloat()
+            self:FloatEnd()
+            
+            if self.shootSound then
+                self.shootSound:PlaySound()
+            end
+            
+            self.host:AddForce(dir * self.forceIntensity)
+        end
+    , 0, 0, self.delayShootTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function FlyClodShootble:NetworkDoShoot()
+    self.host.rb.useGravity = true
+    self:ShowFloatEffect(false)
+    self:StopFloat()
+    self:FloatEnd()
+    
+    if self.shootSound then
+        self.shootSound:PlaySound()
+    end
+end
+
+return Class(Require("FlyObj/FlyClodScript"), nil, FlyClodShootble)
