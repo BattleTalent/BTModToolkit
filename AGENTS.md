@@ -15,8 +15,12 @@ This file applies to the entire repository. The Unity project is under `ModProj/
 Before exploring or editing for a task, compare the request with the triggers below. When a trigger matches, read the linked `SKILL.md` and follow it. Do not load all skills by default; load multiple skills only when the task crosses their boundaries.
 
 - [`battle-talent-mod-authoring`](.agents/skills/battle-talent-mod-authoring/SKILL.md): Load when creating or modifying a mod, prefab, scene, `ItemInfoConfig`, component setup, toolkit C#, or editor C#.
+- [`battle-talent-melee-weapon-authoring`](.agents/skills/battle-talent-melee-weapon-authoring/SKILL.md): Load when creating or modifying a melee weapon Mod such as a knife, sword, axe, hammer, mace, club, or staff, especially when collider, hit, grip, mount, icon, metadata, or `StabObject` setup is involved.
 - [`battle-talent-lua`](.agents/skills/battle-talent-lua/SKILL.md): Load when creating, changing, or debugging XLua `.txt` behavior, callbacks, injections, event lifetimes, `LuaBehaviour`, or `Require(...)` references.
 - [`battle-talent-build`](.agents/skills/battle-talent-build/SKILL.md): Load when refreshing or validating Addressables, migrating prefixes, checking shaders, building, installing, reading packaged/runtime output, or diagnosing `Player.log`.
+- [`projsao-avatar-mod-authoring`](.agents/skills/projsao-avatar-mod-authoring/SKILL.md): Load when creating or modifying a ProjSAO-targeted AvatarMod, including Humanoid setup, `RuntimeAvatarBuilder`, avatar hand poses, slots, or optional clothing physics.
+- [`projsao-role-mod-authoring`](.agents/skills/projsao-role-mod-authoring/SKILL.md): Load when creating or modifying a ProjSAO-targeted NPC RoleMod, including Humanoid role prefabs, `RoleModInfo`, weapon slots, armor, custom AI actions, dismemberment, or body grab points.
+- [`projsao-skin-mod-authoring`](.agents/skills/projsao-skin-mod-authoring/SKILL.md): Load when creating or modifying a legacy ProjSAO player SkinMod, including stock-rig mesh binding, `SkinInfo`, mesh-root layout, first-person head hiding, or Skin Addressables.
 
 For a task that spans authoring, Lua, and delivery, load only the involved skills. For a general repository question that does not match these workflows, do not load a BattleTalent skill.
 

@@ -473,6 +473,12 @@ namespace CrossLink
                 return;
             }
 
+            bool overwriteExistingPoses = EditorUtility.DisplayDialog(
+                "Generate Avatar Handposes",
+                "Overwrite existing handpose data?\n\nYes will replace handposes with names from HandPoseLib. No will only add missing handposes.",
+                "Yes, Overwrite",
+                "No, Add Missing");
+
             HashSet<string> existingPoseNames = new HashSet<string>();
             if (avatarInfo.handposes != null)
             {
@@ -496,7 +502,7 @@ namespace CrossLink
                     return;
                 }
 
-                if (existingPoseNames.Contains(poseDefine.poseName))
+                if (!overwriteExistingPoses && existingPoseNames.Contains(poseDefine.poseName))
                 {
                     continue;
                 }
@@ -521,17 +527,63 @@ namespace CrossLink
 
             Undo.RecordObject(itemInfoConfig, "Generate Avatar Handposes From Offset");
             List<HandPoseModifier> mergedPoses = new List<HandPoseModifier>();
-            if (avatarInfo.handposes != null)
+            int replacedPoseCount = 0;
+            HashSet<string> replacedPoseNames = new HashSet<string>();
+            Dictionary<string, HandPoseModifier> generatedPoseByName = new Dictionary<string, HandPoseModifier>();
+            for (int i = 0; i < generatedPoses.Count; i++)
             {
-                mergedPoses.AddRange(avatarInfo.handposes);
+                HandPoseModifier generatedPose = generatedPoses[i];
+                if (generatedPose != null && !string.IsNullOrEmpty(generatedPose.name))
+                {
+                    generatedPoseByName[generatedPose.name] = generatedPose;
+                }
             }
 
-            mergedPoses.AddRange(generatedPoses);
+            if (avatarInfo.handposes != null)
+            {
+                for (int i = 0; i < avatarInfo.handposes.Length; i++)
+                {
+                    HandPoseModifier existingPose = avatarInfo.handposes[i];
+                    if (overwriteExistingPoses
+                        && existingPose != null
+                        && !string.IsNullOrEmpty(existingPose.name)
+                        && generatedPoseByName.TryGetValue(existingPose.name, out HandPoseModifier replacement))
+                    {
+                        mergedPoses.Add(replacement);
+                        replacedPoseNames.Add(existingPose.name);
+                        replacedPoseCount++;
+                    }
+                    else
+                    {
+                        mergedPoses.Add(existingPose);
+                    }
+                }
+            }
+
+            for (int i = 0; i < generatedPoses.Count; i++)
+            {
+                HandPoseModifier generatedPose = generatedPoses[i];
+                if (!overwriteExistingPoses || !replacedPoseNames.Contains(generatedPose.name))
+                {
+                    mergedPoses.Add(generatedPose);
+                }
+            }
+
             avatarInfo.handposes = mergedPoses.ToArray();
             EditorUtility.SetDirty(itemInfoConfig);
             AssetDatabase.SaveAssets();
-            handPoseOffsetMessage = $"Added {generatedPoses.Count} handpose(s) for {avatarInfo.avatarName}; existing handposes were preserved.";
-            Debug.Log($"GenerateAvatarHandposesFromOffset succeeded: added {generatedPoses.Count} handpose(s) for {avatarInfo.avatarName}.", itemInfoConfig);
+            if (overwriteExistingPoses)
+            {
+                int addedPoseCount = generatedPoses.Count - replacedPoseCount;
+                handPoseOffsetMessage = $"Generated {generatedPoses.Count} handpose(s) for {avatarInfo.avatarName}; overwritten {replacedPoseCount}, added {addedPoseCount}.";
+                Debug.Log($"GenerateAvatarHandposesFromOffset succeeded: overwritten {replacedPoseCount} and added {addedPoseCount} handpose(s) for {avatarInfo.avatarName}.", itemInfoConfig);
+            }
+            else
+            {
+                handPoseOffsetMessage = $"Added {generatedPoses.Count} handpose(s) for {avatarInfo.avatarName}; existing handposes were preserved.";
+                Debug.Log($"GenerateAvatarHandposesFromOffset succeeded: added {generatedPoses.Count} handpose(s) for {avatarInfo.avatarName}.", itemInfoConfig);
+            }
+
             Repaint();
         }
 
