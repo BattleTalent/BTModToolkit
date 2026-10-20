@@ -85,21 +85,21 @@ namespace CrossLink
 
         private Mesh mesh;
         private Mesh weaponMesh;
-
+        private Color wireColor = new Color(1, 0, 0, 0.1f);
+        const float roleScale = 1.09f;
         private void OnDrawGizmos()
         {
-            Gizmos.color = Color.red;
-            
-            if(showExampleRoleGizmo) {
+            Gizmos.color = wireColor;
+
+            if (showExampleRoleGizmo) {
                 if (!mesh) {
                     mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/Avatar.fbx");
                 }
-
-                Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(1f,1f,1f));
+                Gizmos.DrawWireMesh(mesh, transform.position, new Quaternion(0,0,0,0).normalized, new Vector3(roleScale, roleScale, roleScale));
             }
 
 
-            if(showRoleSlotsGizmos) {
+            if (showRoleSlotsGizmos) {
                 if (handSlotLeft) {
 
                     if (showExampleWeaponGizmo)

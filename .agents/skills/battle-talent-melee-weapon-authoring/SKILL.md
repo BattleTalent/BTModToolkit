@@ -52,7 +52,7 @@ Prefer Unity batchmode plus editor C# APIs over mouse-driven Unity UI for melee 
 - Do not start a batch writer while another Unity process owns `ModProj`. Use the active Unity instance safely or ask the user to close it before batch execution.
 - The creator must refuse to overwrite an existing `Assets/Build/<ModName>` unless the user explicitly requested an update and the existing assets and update path were inspected.
 - The creator should automate deterministic work through `AssetDatabase`, `PrefabUtility`, importer APIs, `SerializedObject`, and repository APIs: Template Wizard generation, model/material setup, component creation, prefab references, ItemInfoConfig, icon generation, Addressables refresh, saving, reloading, and focused validation.
-- The creator must enforce the invariants in this skill, including the `StabObject` branch, root `RagdollHitInfoRef` plus refreshed `refs` when multiple hit objects exist, and linked `Assets/Toolkit/Prefabs/AttachLine.prefab` instances named `AttachLine`.
+- The creator must enforce the invariants in this skill, including the `StabObject` branch and per-Geo depth checks below, root `RagdollHitInfoRef` plus refreshed `refs` when multiple hit objects exist, and linked `Assets/Toolkit/Prefabs/AttachLine.prefab` instances named `AttachLine`.
 - Write a result file or an unambiguous log summary that separately reports created assets, validation counts, Addressables state, and `BUILD`, `INSTALL`, and `GAMEPLAY` status. Read both the Unity process result and log before claiming success.
 - Use the graphical Editor for visual judgment after the batch pass: confirm model axis/scale, collider coverage, stab geometry, grip and mount placement, material appearance, and icon framing. Make any correction through Unity, then rerun focused batch validation when practical.
 
@@ -79,7 +79,7 @@ For comparison, inspect only the closest working example:
 
 ## Configure The Prefab In Unity
 
-1. Open `Weapon/<ModName>.prefab` in Prefab Mode. Put the imported model under the prefab root, preserve the root's toolkit components, and align the weapon so local `+Z` is forward. Scale it against the template example, then hide the example mesh.
+1. Open `Weapon/<ModName>.prefab` in Prefab Mode. Put the imported model under the prefab root, preserve the root's toolkit components, and align the weapon so local `+Z` is forward. Keep the model's imported size and existing unit/scale settings; new wrappers use unit scale. Resize only for an explicit player size requirement, not to match a template. Then hide the example mesh and fit collision/grip geometry to this model.
 2. Assign every visible `MeshRenderer` or `SkinnedMeshRenderer` required by the template's color-change field so damage/color feedback can reach the rendered weapon.
 3. Add collision geometry to the damaging head/blade and handle as needed. For a Rigidbody weapon, use convex `MeshCollider` shapes or primitive compound colliders and set the collision objects to the `Interact` layer. Prefer multiple simple convex colliders when one convex hull is inaccurate.
 4. Configure `RagdollHitInfoObj` and `CollisionEffect` for each meaningful hit region. The damaging head/blade and handle may use separate objects so they do not deal the same hit. Copy field choices from the nearest comparable example; do not invent undocumented hit template names.
@@ -107,6 +107,17 @@ For comparison, inspect only the closest working example:
 - Set each Geo's `cols` to the intended blade colliders only, excluding guard and handle colliders. If a request for "one Geo" could mean one full-edge region rather than one entry total, preserve both thrust and cutting behavior; clarify the tradeoff before intentionally removing either direction.
 - After saving and reopening, inspect the rectangular Gizmos and their direction arrows, not just containment. Verify tip and edge directions separately, tip/side-cut classification and `sliceDir`, intended blade coverage, guard/handle exclusion, and blade-only collider references. Use the same fitting helper in creator/update paths and validate both roles, so a later repair neither restores unnecessary segmentation nor drops the edge-directed Geo.
 - The local `KatanaSlashWeaponCreator.cs` demonstrates one tip Geo plus one fitted full-edge Geo. When ProjSAO is available, compare `Assets/Resources/Weapon/Katana_Slash.prefab` and `Ninjato_Black.prefab` for separate tip/side-cut roles and rectangular-area placement; adapt their geometry to the current model instead of copying numerical values blindly.
+
+#### Penetration Depth And Retention
+
+Read [Stab depth configuration](references/stab-depth-configuration.md) before setting or repairing `stabMin`, `stabMax`, or `stabTie`. Geometry fitting and post-entry depth behavior are separate tasks.
+
+- Explicitly assign all three fields for every Geo, including side-cut entries. Do not let an object initializer silently inherit `StabGeometry` defaults or reuse one depth profile for both tip and edge.
+- Choose positive shallow, deep, and retention depths from the final physical scale and intended behavior, then store their negatives. For an active penetrating Geo, require finite values, `stabMax < stabMin < 0`, and `stabMax <= stabTie <= stabMin`. Prefer an interior retention threshold for new content; endpoint equality in existing examples is not itself a validation failure.
+- For a tip Geo, compare the deep limit with the usable distance from the tip toward the guard. For a side-cut Geo, reason along its edge-facing `geoForward`, not along the blade length covered by `geoWidth`. Neither `stabMax = -geoFwdDis` nor a fixed ratio of overall weapon length is a universal fitting rule.
+- Recompute the selected profile after changing scale, geometry role, or direction. If dimensions or the intended retention behavior are unknown, inspect the model or ask rather than inventing a preset.
+- Creator and update paths must use the same profile selection and validation. After saving, reload the prefab through Unity and validate every Geo's role, finite/nonzero normalized frame, depth ordering, physical rationale, and blade-only `cols`. A nonnegative `stabMax` is invalid when that Geo is intended to build a stab connection.
+- Inspect the depth Gizmos as well as the box. Record each Geo's direction, three signed values, positive depth interpretation, and reason for the chosen deep limit. Geometry/serialization validation is not gameplay verification: test shallow/deep entry, withdrawal, and release while embedded for tip and edge separately.
 
 ### Blunt Branch
 
@@ -143,7 +154,7 @@ Report:
 
 - the created or changed mod assets and whether the prefab is penetrating or blunt;
 - the batch creator entry point, Unity batch command/log/result, and any graphical follow-up that was required;
-- `StabObject` state and how its area was verified;
+- `StabObject` state, area verification, and each tip/side-cut Geo's depth profile, physical rationale, and saved-prefab validation results;
 - when multiple hit objects exist, the root `RagdollHitInfoRef` state and the verified contents of its `refs` array;
 - confirmation that every grip uses the linked `Assets/Toolkit/Prefabs/AttachLine.prefab` instance and retains the name `AttachLine`;
 - Unity import/compile and prefab-reference results;
