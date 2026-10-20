@@ -7,6 +7,31 @@ description: Create or modify Battle Talent NPC Role mods for ProjSAO, including
 
 Create the RoleMod in `ModProj` and keep the prefab name, active prefix, `RoleModInfo.roleName`, and generated Role address consistent. Use the Unity Editor for every imported or serialized asset; never hand-edit `.prefab`, `.asset`, `.controller`, `.unity`, or `.meta` YAML.
 
+Do not ask the player for a game version. Author against the current toolkit contract and keep runtime compatibility pending until observed. Missing deployment details must not block Tripo concepts, models, or source preparation.
+
+## Continue With Safe Defaults
+
+When NPC creation is requested and the player provides an accepted bound model,
+use it directly without a separate source/bone/weight audit, pose baking, or
+joint/deformation testing. Continue through the Wizard, Role prefab, metadata,
+slots, icon, and final save/reference checks. Investigate only an actual import
+or tool failure, not a speculative acceptance-testing stage.
+
+Preserve existing model importer units/scale, skeleton, bind poses, and internal
+transforms. New wrappers use unit scale. Do not normalize height or resize
+against a template unless the player explicitly requests a size/height change.
+
+Unless the player explicitly requests configuration approval, do not block on
+routine replacement or left/right weapon questions. Use `ReplaceAllCharacters`
+for the supported replacement list. Preserve a valid `defaultReplacement`
+when updating; for new content choose a supported ordinary role from the
+current replacement configuration and report the choice. Leave weapon override
+fields unset when no override was requested; do not copy the example's
+`WMD_Stick`/`WMD_Sword_Slash` dependencies into a new NPC. Use existing game AI
+and default attributes unless the request specifies otherwise. Only actual
+source failures, unresolved required references, or permission boundaries
+should interrupt this authoring pass.
+
 ## Authority And Scope
 
 - Use the current repository implementation as the mod contract: `ModProj/Assets/Toolkit/TemplateWizard`, `ModProj/Assets/Toolkit/Scripts/ItemInfoConfig.cs`, `ModProj/Assets/Toolkit/Scripts/Addressable/AddressableHelper.cs`, and the closest example under `ModProj/Assets/Build`.
@@ -23,16 +48,18 @@ Prefer Unity batchmode plus editor C# APIs over mouse-driven Unity UI for RoleMo
 - Invoke the entry point with the project's Unity 2020.3.48f1 editor using `-batchmode -nographics -quit -projectPath <ModProj> -executeMethod <Namespace.Type.Method> -logFile <log>`. Read the log and process result before claiming creation or validation succeeded.
 - The entry point must use `ModelImporter`, `AssetDatabase`, `PrefabUtility`, `SerializedObject` or the repository's public editor APIs. It must refuse to overwrite an existing `Assets/Build/<ModName>` unless the user explicitly requested an update and the update path has been inspected.
 - Create the scaffold by calling the actual Template Wizard implementation: get `TemplateWizardAsset`, select `ModType.Role`, assign the name and `RoleModInfo`, and call `GenerateTemplate()`. Do not imitate the wizard with shell-created folders, copied YAML, or a parallel scaffolder.
-- Automate deterministic work: Humanoid importer settings and bone validation, Wizard generation, model insertion, child/root Animator setup, `RoleSlots.GenerateSlots()`, basic `RoleModInfo`, the default `ItemInfoConfig.ReplaceAllCharacters()` call, Unity saves/reloads, Addressables refresh, and identifier validation.
+- Automate deterministic work: required Humanoid importer setup without resetting existing mapping/scale, Wizard generation, model insertion, child/root Animator setup, `RoleSlots.GenerateSlots()`, basic `RoleModInfo`, the default `ItemInfoConfig.ReplaceAllCharacters()` call, Unity saves/reloads, Addressables refresh, and identifier validation. Do not add a bone audit for player-declared rigged sources.
 - Do not bring Avatar-only work into this pipeline. RoleMod creation does not configure `RuntimeAvatarBuilder`, `HandPoseControl.numOfFinger`, `AvatarInfo.handposeOffset`, or avatar default grip poses.
 - If another Unity process owns the project, do not start a second writer. Resolve the active instance safely or ask the user to close it before running batchmode.
 - Use the graphical editor only for a step whose correctness requires visual judgment or when batch validation identifies a concrete problem: repairing Humanoid mapping/T-Pose, adjusting weapon slots, inspecting materials or scale, fitting armor/colliders, previewing actions, tuning dismemberment, or positioning body-grab lines. After a UI correction, resume batch reload and validation when practical.
 
 ## Establish The Baseline
 
-Before editing, state and test this local hypothesis: **the imported model can be configured as a valid Humanoid and the generated Role root can drive it without losing the template's `Animator` and `RoleSlots`.**
+For automatically generated unbound NPCs, follow [Character rig preparation](../tripo-battletalent-workflow/references/character-rigging.md). A player-provided source explicitly described as already rigged bypasses baseline/source checks and goes directly to NPC creation without another Tripo rig. Preserve normal builder error handling; investigate only actual import/configuration failures.
 
-Perform the cheap check in the batch entry point first: set the model's `ModelImporter.animationType` to `Human`, set `avatarSetup` to `CreateFromThisModel`, reimport it, instantiate it through Unity, and verify a valid Human Avatar with hips, spine/chest, head, both arms/hands, and both legs/feet. Stop before scaffolding if this fails. Open **Configure Avatar** only when Unity cannot produce the required mapping automatically; weapon slots, custom actions, grab points, and Humanoid bone helpers all depend on it.
+For sources not declared rigged by the player, test this local hypothesis: **the imported model can be configured as a valid Humanoid and the generated Role root can drive it without losing the template's `Animator` and `RoleSlots`.**
+
+For that automatic-source path, set required Humanoid importer options without changing size, instantiate it through Unity, and perform the focused required-bone check. For player-declared rigged sources, skip it, retain existing mapping, and configure only what normal Role tools need. Open **Configure Avatar** only for an actual mapping error that blocks creation, not routine preflight.
 
 ## Scaffold And Configure The Role Prefab
 
@@ -145,7 +172,7 @@ After the first substantive asset change, let the batch editor finish import and
    - optional `LuaScript/<prefix>AIPresetLoaderScript`
 
 4. Call `AddressableHelper.ValidateAddressables()`. Account for validator gaps: explicitly compare `roleName` with the prefab address, inspect `leftWeapon` and `rightWeapon`, and inspect Lua components on inactive children.
-5. Build only the requested Windows or Android target using the current repository build workflow. For ProjSAO delivery, inspect `ModProj/Assets/Editor/AddressabesBuilder.cs` and active `ProjectSettings` instead of hardcoding Battle Talent package or product names; output/install directories use `Application.productName`, and this branch's Android builder targets `com.CrossLink.SAO`.
+5. Build only the requested Windows or Android target using the current repository build workflow. Inspect active code in `ModProj/Assets/Editor/AddressabesBuilder.cs`, the installer it invokes, and active `ProjectSettings`; output directories use `Application.productName`. The current active Android entry point runs `ModProj/ADBTools/InstallModToQuest.bat`, which targets `com.CyDream.BattleTalent`. The `com.CrossLink.SAO` examples inside `#if false` are not the active destination. Recheck the invoked installer before delivery, and do not ask for a game version.
 6. Report separately: Unity import/Console state, Addressables validation, bundle creation, file installation, ProjSAO mod discovery, NPC replacement/spawn, animation/actions, weapons/slots, armor, dismemberment, grab points, and gameplay. Never infer later stages from an earlier success.
 
 Checks that require ProjSAO or a headset remain unverified until directly observed.
