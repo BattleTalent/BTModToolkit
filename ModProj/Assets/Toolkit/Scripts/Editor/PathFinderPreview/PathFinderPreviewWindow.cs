@@ -203,7 +203,7 @@ namespace CrossLink.EditorTools
                 if (parameters.cellSize > 0 && parameters.cellSize < 0.05f)
                     EditorGUILayout.HelpBox("A very small cellSize can make scans slow and memory-intensive. Start with 0.25 m and decrease only when needed.", MessageType.Warning);
                 if (session != null && session.IsStale(range, parameters))
-                    EditorGUILayout.HelpBox("Preview is out of date. Generate again to apply the new range or parameters.", MessageType.Warning);
+                    EditorGUILayout.HelpBox("Preview is out of date. Generate again to apply range, parameter or NavmeshCutSetup changes.", MessageType.Warning);
 
                 string validation = PathFinderPreviewSession.Validate(range, parameters);
                 if (validation != null)
@@ -228,14 +228,17 @@ namespace CrossLink.EditorTools
             }
 
             if (session != null && session.HasPreview)
-                EditorGUILayout.LabelField("Triangles: " + session.NodeCount + "   Scan: " + session.ScanSeconds.ToString("0.00") + " s");
+                EditorGUILayout.LabelField("Triangles: " + session.NodeCount + "   Cuts: " + session.CutCount +
+                    "   Scan: " + session.ScanSeconds.ToString("0.00") + " s");
             if (!string.IsNullOrEmpty(message) &&
                 (messageType == MessageType.Error || (session != null && session.HasPreview)))
                 EditorGUILayout.HelpBox(message, messageType);
             if (session != null && !string.IsNullOrEmpty(session.RenderError))
                 EditorGUILayout.HelpBox("Preview rendering stopped: " + session.RenderError, MessageType.Error);
             EditorGUILayout.Space();
-            EditorGUILayout.HelpBox("Enable Scene view Gizmos to see the original A* surface, outlines and bounds. Geometry edits require a manual rescan. Loaded scenes are scanned just as in ProjSAO.", MessageType.None);
+            EditorGUILayout.HelpBox("Enabled NavmeshCutSetup components in loaded scenes cut the actual preview mesh. " +
+                "The preview uses graph 0 for Affected Graphs. Enable Scene view Gizmos to see the surface, outlines and bounds. " +
+                "Geometry and cut edits require Regenerate Preview.", MessageType.None);
             EditorGUILayout.EndScrollView();
         }
 
@@ -274,7 +277,7 @@ namespace CrossLink.EditorTools
                 session.Generate(range, parameters);
                 message = session.NodeCount == 0
                     ? "No walkable triangles were generated. Check collection switches, CharacterObstacle layers, range, clearance and mesh Read/Write settings."
-                    : "Preview generated. Scene geometry changes are not tracked; regenerate after editing.";
+                    : "Preview generated with NavmeshCutSetup cuts. Geometry changes are not tracked; regenerate after editing. Cut changes mark the preview out of date.";
                 messageType = session.NodeCount == 0 ? MessageType.Warning : MessageType.Info;
             }
             catch (Exception exception)
