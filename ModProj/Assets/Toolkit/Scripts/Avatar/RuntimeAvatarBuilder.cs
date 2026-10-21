@@ -497,7 +497,8 @@ namespace CrossLink
 
         public bool showExampleAvatarGizmo = false;
         private Mesh mesh;
-
+        private Color wireColor = new Color(1, 0, 0, 0.1f);
+        const float roleScale = 1.09f;
         private void OnDrawGizmos()
         {
             if(!showExampleAvatarGizmo)
@@ -507,8 +508,8 @@ namespace CrossLink
                 mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/Avatar.fbx");
             }
 
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(1f,1f,1f));
+            Gizmos.color = wireColor;
+            Gizmos.DrawWireMesh(mesh, transform.position, new Quaternion(0,0,0,0).normalized, new Vector3(roleScale, roleScale, roleScale));
         }
 #endif
     }

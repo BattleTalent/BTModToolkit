@@ -9,12 +9,39 @@ Create a shippable AvatarMod whose rig, prefab name, `AvatarInfo`, and generated
 
 This repository's checked Avatar implementation is the contract for ProjSAO-targeted content: `RuntimeAvatarBuilder`, `CharacterBuilderTools`, `AvatarInfo`, and the folder mapping in `AddressableHelper`. No separate `ProjSAO`-named API exists in this checkout, so do not invent one or add game-side dependencies without source evidence.
 
+Do not ask the player for a game version. Proceed using the current toolkit contract; keep runtime compatibility pending until observed rather than promising universal support. Resolve deployment destinations only when delivery is requested, from active code and the invoked installer.
+
 ## Read First
 
 - Start from `ModProj/Assets/Build/SimpleAvatar` for the ordinary avatar layout. Use `SimpleAvatar_Huge` only when scale/audio behavior is relevant.
 - Check `ModProj/Assets/Toolkit/Scripts/Avatar/RuntimeAvatarBuilder.cs` for current builder behavior, `ModProj/Assets/Toolkit/HandPoseHelper/support/HandPoseControl.cs` for hand serialization/runtime fields, and `ModProj/Assets/Toolkit/Scripts/ItemInfoConfig.cs` for `AvatarInfo` fields.
 - Check `ModProj/Assets/Resources/AddressableConfig.asset` for the active prefix and registered mod roots. `WMD_` in examples and community documentation is an example, not a value to copy blindly.
 - When the work includes Addressables, packaging, installation, or runtime logs, also load `battle-talent-build`. When it adds a `LuaBehaviour` for clothing, also load `battle-talent-lua`.
+
+## Tripo Source Preparation
+
+For automatically generated unbound characters, follow [Character rig preparation](../tripo-battletalent-workflow/references/character-rigging.md). For a player-supplied model explicitly described as rigged, use the direct authoring path below instead of a preflight audit or another paid rig.
+
+## Direct Authoring And Original Size
+
+Accept a player-declared rigged source and proceed to the Wizard, builder,
+slots, hand-pose configuration, metadata, and final save/reference checks.
+This rule overrides the source-baseline checks below: do not audit bones or
+weights, parse the FBX, bake pose meshes, test joint deformation, or render
+multi-view/finger-close-up acceptance images before or after creation unless
+requested or necessary to diagnose an actual tool failure.
+
+Preserve existing importer scale/unit settings, internal model transforms,
+bind poses, and skeleton. New root/wrapper transforms use unit scale; do not
+normalize to a human/template height or add compensating parents. Only an
+explicit player height/size requirement authorizes scaling. Keep normal
+builder error handling and report actual missing references or bone/tool
+failures; do not fabricate mappings or claim that skipped audits passed.
+
+Required finger/hand-pose configuration is authoring, not permission for a
+separate motion-testing pipeline. Use toolkit configuration/save tools;
+additional pose previews and acceptance renders are opt-in. Keep the final
+verification to saved assignments, references, and identifiers.
 
 ## Identifier And Layout Contract
 
@@ -32,15 +59,15 @@ Assets/Build/<ModName>/
 - Set `AvatarInfo.avatarName` to exactly `<prefix><PrefabName>`; it is the runtime prefab identifier. Set its display `name` and `desc` deliberately.
 - Do not rename the prefab or change its prefix after configuration unless the matching `AvatarInfo` and Addressables entries are refreshed and inspected together.
 
-Before editing, state this local hypothesis and perform its cheapest check: **the model can become a valid Humanoid avatar with all mandatory body and hand bones.** Select the imported model in Unity, configure its Avatar in T-Pose if needed, and verify the Avatar is valid/Humanoid before building content around it.
+For sources not declared rigged by the player, perform the focused Humanoid baseline required by character rig preparation. For player-declared rigged sources, skip this preflight and let the normal importer/builder report actual failures during creation.
 
 ## Build The Avatar Prefab
 
-1. Import the custom model through Unity. In the model import settings, set **Animation Type** to **Humanoid** and **Avatar Definition** to **Create From This Model**, then Apply. A valid Animator/Avatar and these bones are required: hips, spine, chest, head, both upper/lower arms, both hands, both upper/lower legs, and both feet.
+1. Import the custom model through Unity, preserving existing units and scale. Retain an existing Humanoid Avatar/mapping; set **Humanoid / Create From This Model** only when needed for this builder, not as an excuse to reset a supplied mapping or change size. The builder needs body and hand bones; for player-declared rigged sources do not add an independent bone audit.
 2. Open the generated prefab in `Avatar/`, place the model beneath its root, and assign that model root to `RuntimeAvatarBuilder.fbxPrefab`.
 3. Run **Auto Config Builder**. It assigns hand transforms, creates slot transforms, enables off-screen skinned-mesh updates, and opens the character tool. Stop and correct Humanoid mapping if Unity reports missing bones or missing hand-pose controls.
-4. If the character needs a non-default scale, set and finalize the model's scale **before** configuring/applying slots. Then position the generated left/right hand slots over the corresponding hands and the back-slot group on the back. Run **Set Slot Tool** only after that scale is final; it temporarily reparents slots and resets their local scale before returning them to the hand/chest bones. Scaling the character after the slots are applied scales the attached slots as well.
-5. After **Set Slot Tool**, inspect the slot transforms in the Hierarchy and Scene view: they must be parented to the intended bones, have the expected world size, and still align with the hands/back. Reapply the tool after any deliberate character-scale change, then verify again.
+4. Preserve the imported model's size by default. Only if the player explicitly requests another height/size, finalize that authorized scale **before** configuring/applying slots. Position the generated hand/back slots on the unchanged model (or explicitly resized one), then run **Set Slot Tool**; it temporarily reparents slots and resets their local scale before returning them to hand/chest bones.
+5. After **Set Slot Tool**, verify the saved slot references and parents once. Reapply only after an explicitly requested scale/slot change or an actual tool error, not as a repeated visual acceptance loop.
 6. If the first-person camera sees the face, put only the face mesh on the `InvisibleFPS` layer. If head and body share a mesh, solve that in the source model rather than hiding the whole renderer.
 
 Save, close, and reopen the prefab before continuing. Verify no missing scripts or references, including inactive children.
@@ -52,8 +79,8 @@ For each hand, select the generated `HandPoseControl` from the builder:
 1. In **both** left and right `HandPoseControl` components, explicitly set **Num Of Finger** (`numOfFinger`) to the model's finger count—normally `5` for Thumb, Index, Middle, Ring, Pinky. Do this even for a normal five-finger Humanoid: the template serializes `0`, which overrides the C# default.
 2. Run **Auto Config Fingers**, entering the actual number of GameObjects/bones *within one finger* (usually 3 or 4). This depth parameter is not `Num Of Finger`; the current method fills `fingers` but does not update `numOfFinger`.
 3. Confirm that `fingers.Length` equals **Num Of Finger** and that the order is Thumb, Index, Middle, Ring, Pinky. Auto-configuration depends on that order; repair the rig/order instead of compensating with arbitrary finger weights.
-4. Use the matching left/right preview slider and **Preview hand pose** to visually check fully closed and fully open states. Save **Fingers Close Pose** and **Fingers Open Pose** respectively on that hand's control. Do not rely on a tutorial caption; judge the mesh state in the preview.
-5. Use the view buttons to confirm both saved states, repeat for the other hand, and save the prefab.
+4. Use the toolkit's hand-pose configuration workflow to save **Fingers Close Pose** and **Fingers Open Pose** on each control. When a preview is required to author a state, use it for that operation only; do not append joint tests, contact sheets, or close-up acceptance renders.
+5. Save both hands' controls and the prefab, and verify the serialized pose assignments once. Additional visual testing is opt-in or tied to an actual pose-tool failure.
 
 ## Configure AvatarInfo And Grip Hand Poses
 
@@ -63,7 +90,7 @@ For each hand, select the generated `HandPoseControl` from the builder:
 
 Use this exact workflow before manually entering offsets:
 
-1. Expand the imported FBX in Unity, select its Avatar asset, choose **Configure Avatar**, and make/fix the T-Pose.
+1. Use the imported character's existing configured T-Pose for offset calculation. Do not open **Configure Avatar** or alter a player-supplied rig as routine preparation; use it only when the pose/offset tool actually reports a mapping problem or the player requests repair.
 2. In the **Hierarchy**, identify the root GameObject of that configured T-Pose character. This root—not merely the FBX asset reference—is the value for **Character T-Pose**.
 3. Open `Tools > Character Builder Tools`; assign that Hierarchy root to **Character T-Pose** and this avatar mod's `ItemInfoConfig` to **Item Info Config**. Both fields are mandatory.
 4. Run **Calculate Avatar Hand Pose Offset**. The tool reads the default avatar and the target root's valid Humanoid Animator, then writes the root-relative rotation difference for each hand to `AvatarInfo.handposeOffset`: `inverse(defaultHandRootRotation) * targetHandRootRotation`.
