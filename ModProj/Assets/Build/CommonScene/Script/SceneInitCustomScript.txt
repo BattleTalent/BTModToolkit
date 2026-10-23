@@ -1,0 +1,96 @@
+
+local SceneInitCustom = {
+    -- Old BattleTalent versions do not expose SceneModController.rasterize*.
+    -- Keep this enabled to build the pathfinder graph in Lua and edit the
+    -- rasterize settings below for scenes that use Terrain or colliders.
+    rasterizeTerrain = true,
+    rasterizeMeshes = true,
+    rasterizeColliders = true,
+}
+
+local function InitPathFinderByLua(sceneCtl, center, size, rotation, config)
+    if not sceneCtl or not sceneCtl.astarPath then
+        return
+    end
+
+    if sceneCtl.astarPathObj then
+        local boxCol = sceneCtl.astarPathObj:GetComponent(typeof(UE.BoxCollider))
+        if boxCol then
+            local boxColTrans = boxCol.transform
+            local boxColScale = boxColTrans.lossyScale
+            center = boxColTrans:TransformPoint(boxCol.center)
+            size = UE.Vector3(
+                math.abs(boxCol.size.x * boxColScale.x),
+                math.abs(boxCol.size.y * boxColScale.y),
+                math.abs(boxCol.size.z * boxColScale.z)
+            )
+            rotation = boxColTrans.rotation.eulerAngles
+        end
+    end
+
+    local astarPath = sceneCtl.astarPath
+    if astarPath.data.graphTypes == nil then
+        astarPath.data:FindGraphTypes()
+    end
+
+    local graph = astarPath.data:AddGraph(astarPath.data.graphTypes[5])
+    graph.cellSize = 0.25
+    graph.useTiles = true
+    graph.editorTileSize = 128
+    graph.minRegionSize = 2
+    graph.walkableHeight = 2
+    graph.walkableClimb = 0.5 --> 1
+    graph.characterRadius = 0.5
+    graph.maxSlope = 30
+    graph.maxEdgeLength = 20
+    graph.contourMaxError = 2
+    graph.rasterizeTerrain = config.rasterizeTerrain
+    graph.rasterizeMeshes = config.rasterizeMeshes
+    graph.rasterizeColliders = config.rasterizeColliders
+    graph.forcedBoundsCenter = center
+    graph.forcedBoundsSize = size
+    graph.rotation = rotation
+    graph.mask = CL.LayerDefine.EnvLayerMask
+
+    astarPath.scanOnStartup = false
+    astarPath:Scan()
+end
+
+function SceneInitCustom:Awake()
+    --self.spawnPointMgr.pointList = {}
+
+    --character
+    self.characterObj = CL.ResourceMgr.Instantiate("Character/[VRTK_Scripts]")
+    self.characterObj.transform.position = self.characterPos.position
+
+    --HUD
+    self.coreEntryObj = CL.ResourceMgr.Instantiate("Config/CoreEntry")
+
+    --pathFinder
+    self.sceneCtl = CL.SceneModController()
+    self.sceneCtl:AddPathFinder(self.pathFinderNode)
+
+    local boxCol = self.pathFinderNode:GetComponent(typeof(UE.BoxCollider))
+    if boxCol then
+        local boxColTrans = boxCol.transform
+        local boxColScale = boxColTrans.lossyScale
+        local boundsCenter = boxColTrans:TransformPoint(boxCol.center)
+        local boundsSize = UE.Vector3(
+            math.abs(boxCol.size.x * boxColScale.x),
+            math.abs(boxCol.size.y * boxColScale.y),
+            math.abs(boxCol.size.z * boxColScale.z)
+        )
+
+        InitPathFinderByLua(self.sceneCtl, boundsCenter, boundsSize, boxColTrans.rotation.eulerAngles, self)
+
+        boxCol.enabled = false
+    end
+
+
+    --deadZone
+    self.sceneInfo = self.deadZone.gameObject:AddComponent(typeof(CL.SceneInfo))
+
+end
+
+
+return Class(nil, nil, SceneInitCustom)
