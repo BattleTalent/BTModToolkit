@@ -63,7 +63,6 @@ namespace CrossLink.EditorTools
                 SessionState.SetInt(ReloadErrorsKey, SessionState.GetInt(ReloadErrorsKey, 0) + 1);
         }
 
-        [MenuItem("Tools/Battle Talent/Validate Preview Domain Reload")]
         public static void ValidateDomainReload()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -87,7 +86,6 @@ namespace CrossLink.EditorTools
             return default(Scene);
         }
 
-        [MenuItem("Tools/Battle Talent/Validate PathFinder Preview Integration %#F7")]
         public static void Run()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode || !PathFinderPreviewIntegration.PluginsReady)
@@ -120,8 +118,11 @@ namespace CrossLink.EditorTools
                 Type[] graphTypes = typeof(AstarPath).Assembly.GetTypes()
                     .Where(type => !type.IsAbstract && typeof(NavGraph).IsAssignableFrom(type)).ToArray();
                 Require(graphTypes.Length == 1 && graphTypes[0] == typeof(RecastGraph), "Only Recast graph remains compiled");
-                Require(!typeof(AstarPath).Assembly.GetReferencedAssemblies().Any(reference =>
-                    reference.Name.StartsWith("Pathfinding.", StringComparison.Ordinal)), "No vendor DLL dependencies");
+                string[] cuttingDependencies = typeof(AstarPath).Assembly.GetReferencedAssemblies()
+                    .Where(reference => reference.Name.StartsWith("Pathfinding.", StringComparison.Ordinal))
+                    .Select(reference => reference.Name).OrderBy(name => name).ToArray();
+                Require(cuttingDependencies.SequenceEqual(new[] { "Pathfinding.ClipperLib", "Pathfinding.Poly2Tri" }),
+                    "Only the two editor-only cutting DLL dependencies");
                 bool unsupported = false;
                 try { AstarPath.active.data.AddGraph(typeof(NavGraph)); }
                 catch (NotSupportedException) { unsupported = true; }
@@ -130,7 +131,7 @@ namespace CrossLink.EditorTools
                 try { AstarPath.StartPath(null); }
                 catch (NotSupportedException) { unsupported = true; }
                 Require(unsupported, "Runtime path requests rejected");
-                report.AppendLine("PASS Recast-only registry, no vendor DLL references and unsupported runtime APIs.");
+                report.AppendLine("PASS Recast-only registry, only editor cutting DLL references and unsupported runtime APIs.");
                 PathFinderPreviewParameters fine = parameters.Copy();
                 fine.cellSize = 0.125f;
                 Require(session.IsStale(range, fine), "cellSize stale marker");
@@ -333,6 +334,10 @@ namespace CrossLink.EditorTools
                         continue;
                     Require(!importer.GetCompatibleWithAnyPlatform() && importer.GetCompatibleWithEditor(),
                         "Editor-only plugin: " + importer.assetPath);
+                    Require(!importer.GetCompatibleWithPlatform(BuildTarget.Android) &&
+                        !importer.GetCompatibleWithPlatform(BuildTarget.StandaloneWindows) &&
+                        !importer.GetCompatibleWithPlatform(BuildTarget.StandaloneWindows64),
+                        "Cutting DLL excluded from Android and Windows players: " + importer.assetPath);
                 }
                 Require(!AssetDatabase.IsValidFolder(PathFinderPreviewIntegration.PackageRoot + "/Resources"), "No player Resources folder");
                 report.AppendLine("PASS vendor player guards, DLL isolation and Resources isolation.");
@@ -463,7 +468,6 @@ namespace CrossLink.EditorTools
             return box;
         }
 
-        [MenuItem("Tools/Battle Talent/Show PathFinder Preview Test Scene")]
         public static void ShowDemo()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -473,6 +477,10 @@ namespace CrossLink.EditorTools
             demoScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
             CreateBox("Demo Floor", new Vector3(10000, -0.25f, 10000), new Vector3(12, 0.5f, 12));
             CreateBox("Demo Step", new Vector3(10003, 0.35f, 10000), new Vector3(4, 0.7f, 4));
+            NavmeshCutSetup demoCut = new GameObject("Demo Rectangle Navmesh Cut").AddComponent<NavmeshCutSetup>();
+            demoCut.transform.position = new Vector3(9997, 0, 10000);
+            demoCut.rectangleSize = new Vector2(2, 3);
+            demoCut.height = 2;
             demoRange = CreateRange(new Vector3(10000, 1, 10000), new Vector3(14, 6, 14));
             PathFinderPreviewWindow.Open();
             PathFinderPreviewWindow window = EditorWindow.GetWindow<PathFinderPreviewWindow>();
@@ -499,7 +507,6 @@ namespace CrossLink.EditorTools
                 CloseDemo();
         }
 
-        [MenuItem("Tools/Battle Talent/Close PathFinder Preview Test Scene")]
         public static void CloseDemo()
         {
             EditorApplication.playModeStateChanged -= CloseDemoForPlayMode;

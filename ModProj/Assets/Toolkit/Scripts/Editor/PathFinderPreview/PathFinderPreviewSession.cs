@@ -26,12 +26,14 @@ namespace CrossLink.EditorTools
         private Vector3 scannedCenter;
         private Vector3 scannedSize;
         private PathFinderPreviewRenderer renderer;
+        private PathFinderPreviewCuts cuts;
         private bool subscribed;
 
         public bool IsScanning { get; private set; }
         public bool HasPreview => host != null && range != null && renderer != null;
         public int NodeCount { get; private set; }
         public float ScanSeconds { get; private set; }
+        public int CutCount => cuts != null ? cuts.Count : 0;
         public int DrawCount => renderer != null ? renderer.DrawCount : 0;
         public string RenderError => renderer != null ? renderer.LastError : null;
         public RecastGraph Graph { get; private set; }
@@ -100,7 +102,7 @@ namespace CrossLink.EditorTools
         {
             return HasPreview && (candidate != range || !scannedParameters.Matches(parameters) ||
                 range.transform.localToWorldMatrix != scannedTransform ||
-                range.center != scannedCenter || range.size != scannedSize);
+                range.center != scannedCenter || range.size != scannedSize || (cuts != null && cuts.HasChanged()));
         }
 
         public void Generate(BoxCollider candidate, PathFinderPreviewParameters parameters)
@@ -154,8 +156,14 @@ namespace CrossLink.EditorTools
                     }
                 }
 
+                GameObject cutRoot = new GameObject("Navmesh Cuts (temporary)");
+                cutRoot.SetActive(false);
+                cutRoot.hideFlags = HideFlags.HideAndDontSave;
+                cutRoot.transform.SetParent(host.transform, false);
+                float cutStarted = Time.realtimeSinceStartup;
+                cuts = PathFinderPreviewCuts.Apply(astar, Graph, cutRoot.transform);
                 NodeCount = Graph.CountNodes();
-                ScanSeconds = astar.lastScanTime;
+                ScanSeconds = astar.lastScanTime + Time.realtimeSinceStartup - cutStarted;
                 scannedParameters = parameters.Copy();
                 scannedTransform = range.transform.localToWorldMatrix;
                 scannedCenter = range.center;
@@ -201,6 +209,7 @@ namespace CrossLink.EditorTools
             graph.showMeshSurface = true;
             graph.showMeshOutline = true;
             graph.showNodeConnections = false;
+            graph.enableNavmeshCutting = true;
         }
 
         private void Subscribe()
@@ -279,6 +288,7 @@ namespace CrossLink.EditorTools
                 range = null;
                 Graph = null;
                 renderer = null;
+                cuts = null;
                 scannedParameters = null;
                 NodeCount = 0;
                 ScanSeconds = 0;

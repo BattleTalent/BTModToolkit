@@ -29,11 +29,31 @@ namespace CrossLink.EditorTools
                 return;
             }
 
-            // The Recast-only subset has no external DLL or runtime Resources dependencies.
+            foreach (string name in new[] { "Pathfinding.ClipperLib.dll", "Pathfinding.Poly2Tri.dll" })
+            {
+                string path = PackageRoot + "/Plugins/Editor/" + name;
+                PluginImporter importer = AssetImporter.GetAtPath(path) as PluginImporter;
+                if (importer == null)
+                {
+                    Debug.LogError("PathFinder Preview cutting dependency is missing: " + path);
+                    return;
+                }
+                if (importer.GetCompatibleWithAnyPlatform() || !importer.GetCompatibleWithEditor() ||
+                    importer.GetCompatibleWithPlatform(BuildTarget.Android) ||
+                    importer.GetCompatibleWithPlatform(BuildTarget.StandaloneWindows) ||
+                    importer.GetCompatibleWithPlatform(BuildTarget.StandaloneWindows64))
+                {
+                    importer.SetCompatibleWithAnyPlatform(false);
+                    importer.SetCompatibleWithEditor(true);
+                    importer.SetCompatibleWithPlatform(BuildTarget.Android, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneWindows, false);
+                    importer.SetCompatibleWithPlatform(BuildTarget.StandaloneWindows64, false);
+                    importer.SaveAndReimport();
+                }
+            }
             PluginsReady = true;
         }
 
-        [MenuItem("Tools/Battle Talent/Validate PathFinder Preview")]
         public static void RunSmokeCheck()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode || !PluginsReady)
