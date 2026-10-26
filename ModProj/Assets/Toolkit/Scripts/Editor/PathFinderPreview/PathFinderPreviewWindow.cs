@@ -54,7 +54,7 @@ namespace CrossLink.EditorTools
         private string persistedKey;
         private Vector2 scroll;
 
-        [MenuItem("Tools/Battle Talent/PathFinder Preview")]
+        [MenuItem("Tools/PathFinder Preview")]
         public static void Open()
         {
             PathFinderPreviewWindow window = GetWindow<PathFinderPreviewWindow>("PathFinder Preview");
@@ -189,7 +189,7 @@ namespace CrossLink.EditorTools
                         StoreParameters();
                     EditorGUI.indentLevel--;
                 }
-                if (GUILayout.Button("Restore ProjSAO Defaults"))
+                if (GUILayout.Button("Restore Defaults"))
                 {
                     parameters = new PathFinderPreviewParameters();
                     StoreParameters();

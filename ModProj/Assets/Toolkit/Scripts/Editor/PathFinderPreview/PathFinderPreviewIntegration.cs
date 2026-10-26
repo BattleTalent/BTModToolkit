@@ -54,7 +54,6 @@ namespace CrossLink.EditorTools
             PluginsReady = true;
         }
 
-        [MenuItem("Tools/Battle Talent/Validate PathFinder Preview")]
         public static void RunSmokeCheck()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode || !PluginsReady)

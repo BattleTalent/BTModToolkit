@@ -49,7 +49,6 @@ namespace CrossLink.EditorTools
                 EditorApplication.delayCall += PathFinderPreviewValidation.ValidateDomainReload;
         }
 
-        [MenuItem("Tools/Battle Talent/Validate PathFinder Preview Cuts %#F6")]
         public static void Run()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling ||

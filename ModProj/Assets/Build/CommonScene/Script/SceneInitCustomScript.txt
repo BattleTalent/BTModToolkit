@@ -39,7 +39,7 @@ local function InitPathFinderByLua(sceneCtl, center, size, rotation, config)
     graph.editorTileSize = 128
     graph.minRegionSize = 2
     graph.walkableHeight = 2
-    graph.walkableClimb = 0.5 --> 1
+    graph.walkableClimb = 0.5
     graph.characterRadius = 0.5
     graph.maxSlope = 30
     graph.maxEdgeLength = 20

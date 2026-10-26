@@ -1,6 +1,6 @@
 # PathFinder Preview
 
-Open `Tools > Battle Talent > PathFinder Preview`, select a scene BoxCollider,
+Open `Tools > PathFinder Preview`, select a scene BoxCollider,
 and generate a preview. Enable Scene view Gizmos to see the original A* surface,
 outlines and bounds.
 
@@ -46,7 +46,7 @@ Unsaved scene ranges use in-memory settings. The scene and its range object
 must be saved before those settings can be persisted.
 Existing four-parameter settings are upgraded automatically: the original values
 are retained, and `minRegionSize = 2`, `cellSize = 0.25` and `maxSlope = 30`
-are added. Restore ProjSAO Defaults resets all seven editable parameters.
+are added. Restore Defaults resets all seven editable parameters.
 
 The temporary Astar object, graph nodes and drawing caches are never serialized
 into a scene. They are released when the window closes, the scene changes,
@@ -79,18 +79,21 @@ Confirm the vendor redistribution rights before distributing this prototype.
 
 ## Validation
 
-- `Tools > Battle Talent > Validate PathFinder Preview` runs a minimal plane
+Developer checks and demo helpers are retained as public static methods, but
+are not registered as menu items or keyboard shortcuts.
+
+- `PathFinderPreviewIntegration.RunSmokeCheck()` runs a minimal plane
   scan and checks original shader support.
-- `Tools > Battle Talent > Validate PathFinder Preview Integration` checks
+- `PathFinderPreviewValidation.Run()` checks
   collection switches, climb connectivity, ramp and narrow geometry, transformed
   bounds, stale detection, invalid inputs, settings disk reload, foreign singleton
   conflicts, new parameter effects, legacy settings migration and cleanup in an
-  unsaved additive scene. The diagnostic shortcut is Ctrl+Shift+F7.
-- `Show PathFinder Preview Test Scene` opens an unsaved visual fixture.
-  `Close PathFinder Preview Test Scene` closes only that generated scene.
-- `Validate Preview Domain Reload` opens that fixture, requests a live script
+  unsaved additive scene.
+- `PathFinderPreviewValidation.ShowDemo()` opens an unsaved visual fixture.
+  `PathFinderPreviewValidation.CloseDemo()` closes only that generated scene.
+- `PathFinderPreviewValidation.ValidateDomainReload()` opens that fixture, requests a live script
   reload, and checks scene cleanup and reload-time errors without editing source.
-- `Validate PathFinder Preview Cuts` (Ctrl+Shift+F6) checks actual removed
+- `PathFinderPreviewCutValidation.Run()` checks actual removed
   triangle area/coverage, three shapes, graph masks, activation, Dual, center,
   height, rotation/negative scale/shear, rotated graphs, stale detection and
   failure/repeated-clear cleanup in an unsaved additive scene.

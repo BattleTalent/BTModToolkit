@@ -48,7 +48,8 @@ The runtime bridge must handle enable/disable and cleanup itself.
 
 ## Validation
 
-Run `Tools > Battle Talent > Validate Navmesh Cut Setup` (Ctrl+Shift+F8).
+The developer check `CrossLink.NavmeshCutSetupValidation.Run()` is retained
+without a menu item or keyboard shortcut.
 The check uses temporary objects, saves no scenes or prefabs, and writes
 `Logs/NavmeshCutSetupValidation.txt`. It covers defaults, serialized properties,
 shape round trips, mesh references, graph-mask bits, multi-edit, Undo and Gizmo

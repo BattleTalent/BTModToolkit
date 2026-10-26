@@ -10,7 +10,6 @@ namespace CrossLink
 {
     public static class NavmeshCutSetupValidation
     {
-        [MenuItem("Tools/Battle Talent/Validate Navmesh Cut Setup %#F8")]
         public static void Run()
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating ||

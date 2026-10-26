@@ -63,7 +63,6 @@ namespace CrossLink.EditorTools
                 SessionState.SetInt(ReloadErrorsKey, SessionState.GetInt(ReloadErrorsKey, 0) + 1);
         }
 
-        [MenuItem("Tools/Battle Talent/Validate Preview Domain Reload")]
         public static void ValidateDomainReload()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -87,7 +86,6 @@ namespace CrossLink.EditorTools
             return default(Scene);
         }
 
-        [MenuItem("Tools/Battle Talent/Validate PathFinder Preview Integration %#F7")]
         public static void Run()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode || !PathFinderPreviewIntegration.PluginsReady)
@@ -470,7 +468,6 @@ namespace CrossLink.EditorTools
             return box;
         }
 
-        [MenuItem("Tools/Battle Talent/Show PathFinder Preview Test Scene")]
         public static void ShowDemo()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -510,7 +507,6 @@ namespace CrossLink.EditorTools
                 CloseDemo();
         }
 
-        [MenuItem("Tools/Battle Talent/Close PathFinder Preview Test Scene")]
         public static void CloseDemo()
         {
             EditorApplication.playModeStateChanged -= CloseDemoForPlayMode;
