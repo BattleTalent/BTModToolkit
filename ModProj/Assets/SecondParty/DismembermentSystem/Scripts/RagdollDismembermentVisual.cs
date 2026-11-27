@@ -414,7 +414,9 @@ public class RagdollDismembermentVisual : MonoBehaviour
 [System.Serializable]
 public class BodyFragment
 {
-    [Tooltip("Whether to draw this fragment's wireframe gizmo in the Scene view.")]
+    [Tooltip("Show this fragment's bounds, cut plane, effect previews, and mesh wireframe when their View settings toggles are enabled. Does not affect dismemberment.")]
+    public bool ShowGizmos = true;
+    [Tooltip("Show this fragment's selected mesh triangles when Show Gizmos and View settings > Draw wireframe are enabled. Does not control bounds or cut planes. Not used for the ROOT fragment.")]
     public bool ShowWireframe = true;
     public bool ShowProperties;
     [Tooltip("Fragment name. This is typically used at runtime to find and dismember the fragment.")]

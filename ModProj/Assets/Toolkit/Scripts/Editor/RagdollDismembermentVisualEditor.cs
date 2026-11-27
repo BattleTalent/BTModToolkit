@@ -524,7 +524,11 @@ public class RagdollDismembermentVisualEditor : Editor
             DrawHumanBodyBoneAutoConfig(fragment);
         }
 
-        EditorGUILayout.PropertyField(fragment.FindPropertyRelative("ShowWireframe"));
+        EditorGUILayout.PropertyField(fragment.FindPropertyRelative("ShowGizmos"));
+        using (new EditorGUI.DisabledScope(!fragment.FindPropertyRelative("ShowGizmos").boolValue || isRoot))
+        {
+            EditorGUILayout.PropertyField(fragment.FindPropertyRelative("ShowWireframe"));
+        }
         EditorGUILayout.PropertyField(fragment.FindPropertyRelative("SkinnedMeshes"));
         if (isRoot || fragment.FindPropertyRelative("bone").objectReferenceValue == null)
         {
@@ -812,6 +816,7 @@ public class RagdollDismembermentVisualEditor : Editor
         Color[] colors = { Color.blue, Color.cyan, Color.green, Color.magenta, Color.red, Color.yellow };
         fragments.InsertArrayElementAtIndex(fragments.arraySize);
         SerializedProperty newFragment = fragments.GetArrayElementAtIndex(fragments.arraySize - 1);
+        newFragment.FindPropertyRelative("ShowGizmos").boolValue = true;
         newFragment.FindPropertyRelative("Name").stringValue = "Fragment" + fragments.arraySize;
         newFragment.FindPropertyRelative("color").colorValue = colors[fragments.arraySize % colors.Length];
         newFragment.FindPropertyRelative("bone").objectReferenceValue = null;
@@ -859,7 +864,10 @@ public class RagdollDismembermentVisualEditor : Editor
             AddFragment(fragments);
         }
 
-        serializedObject.ApplyModifiedProperties();
+        if (serializedObject.ApplyModifiedProperties())
+        {
+            SceneView.RepaintAll();
+        }
     }
 
     public override void OnInspectorGUI()
@@ -1132,6 +1140,11 @@ public class RagdollDismembermentVisualEditor : Editor
                     continue;
                 }
 
+                if (!fragment.ShowGizmos)
+                {
+                    continue;
+                }
+
                 Gizmos.color = fragment.color;
                 Gizmos.matrix = fragment.bone.localToWorldMatrix *
                                 Matrix4x4.TRS(fragment.Position, Quaternion.Euler(fragment.Rotation), fragment.Size);
@@ -1154,6 +1167,11 @@ public class RagdollDismembermentVisualEditor : Editor
             foreach (BodyFragment fragment in script.Fragments)
             {
                 if (fragment == null || fragment.bone == null)
+                {
+                    continue;
+                }
+
+                if (!fragment.ShowGizmos)
                 {
                     continue;
                 }
@@ -1208,7 +1226,7 @@ public class RagdollDismembermentVisualEditor : Editor
 
                 foreach (BodyFragment fragment in sortedFragments)
                 {
-                    if (!fragment.ShowWireframe)
+                    if (!fragment.ShowGizmos || !fragment.ShowWireframe)
                     {
                         continue;
                     }
