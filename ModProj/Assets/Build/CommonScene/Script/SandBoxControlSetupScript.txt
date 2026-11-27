@@ -1,0 +1,239 @@
+local SandBoxControlSetup = {
+    dontNeedUpdate = true,
+}
+
+local configPath = "Config/SceneBlockConfig"
+local sandboxPath = "SceneObj/SandBox/SandBoxControl"
+local logPrefix = "SandBoxControlSetupScript: "
+local sourceNames = { Sandbox_Des = true, Sandbox_Dun = true, Sandbox_Tomb = true }
+
+-- Parents must be moved before their children. Names match LuaBehaviour injections,
+-- not the Transform fields added to newer versions of SandboxControl.
+local layout = {
+    { "weaponSpawnBoard", "WeaponSpawnBoard" },
+    { "fireplace", "WeaponSpawnBoard/Fireplace" },
+    { "weaponSpawnPoint", "WeaponSpawnBoard/SpawnWeaponPoint" },
+    { "enemyWall1", "Bad/Wall1" },
+    { "enemyWall2", "Bad/Wall2" },
+    { "enemyWall3", "Bad/Wall3" },
+    { "allyWall1", "Good/Wall1" },
+    { "allyWall2", "Good/Wall2" },
+    { "allyWall3", "Good/Wall3" },
+    { "playerTrigger", "SandboxPlayerAITrigger" },
+    { "campaignBoard", "CampaignBoard" },
+    { "album", "PhysicsAlbum" },
+    { "sceneObjSpawnPoint", "SceneObjSpawnPoint" },
+    { "startBtn", "Start/PhysicsBtn" },
+    { "nextSceneObjBtn", "Start/PhysicsBtnScene_Next" },
+    { "prevSceneObjBtn", "Start/PhysicsBtnScene_Prev" },
+    { "clearSceneObjBtn", "Start/PhysicsBtnScene_Clear" },
+}
+
+function SandBoxControlSetup:RegisterSceneBlocks()
+    local sourceName = self.sceneBlockDataName
+    if not sourceNames[sourceName] then
+        error("invalid sceneBlockDataName '" .. tostring(sourceName)
+            .. "'; expected Sandbox_Des, Sandbox_Dun or Sandbox_Tomb.", 0)
+    end
+
+    -- LoadAsync inside GetConfig completes immediately when ResourceMgr has cached
+    -- the asset. GetConfig owns the runtime clone; SceneBlockGroup.Instance is unset.
+    local asset = CL.ResourceMgr.Load(configPath)
+    if IsNullOrDestroyed(asset) then
+        error("cannot load " .. configPath .. ".", 0)
+    end
+    local config = CL.SceneBlockGroup.GetConfig()
+    if IsNullOrDestroyed(config) or config.sceneBlockData == nil then
+        error("SceneBlockGroup.GetConfig() did not provide sceneBlockData.", 0)
+    end
+
+    local sceneName = UE.SceneManagement.SceneManager.GetActiveScene().name
+    if sceneName == nil or sceneName == "" then
+        error("the active scene has no name.", 0)
+    end
+    local entries = config.sceneBlockData
+    local source = nil
+    local replaceIndex = nil
+    for i = 0, entries.Length - 1 do
+        local entry = entries[i]
+        if entry ~= nil then
+            if source == nil and entry.sceneName == sourceName then
+                source = entry
+            end
+            -- The game returns the first name match, so replace that same entry.
+            if replaceIndex == nil and entry.sceneName == sceneName then
+                replaceIndex = i
+            end
+        end
+    end
+    if source == nil or source.blocks == nil then
+        error("no blocks found for '" .. sourceName .. "' in " .. configPath .. ".", 0)
+    end
+
+    local stringList = CS.System.Collections.Generic.List(CS.System.String)
+    local registered = CL.SceneBlockData()
+    registered.sceneName = sceneName
+    registered.blocks = stringList()
+    for i = 0, source.blocks.Count - 1 do
+        registered.blocks:Add(source.blocks[i])
+    end
+
+    local count = entries.Length
+    local previous = nil
+    if replaceIndex == nil then
+        replaceIndex = count
+        count = count + 1
+    else
+        previous = entries[replaceIndex]
+    end
+    local updated = CS.System.Array.CreateInstance(typeof(CL.SceneBlockData), count)
+    for i = 0, entries.Length - 1 do
+        updated[i] = entries[i]
+    end
+    updated[replaceIndex] = registered
+    config.sceneBlockData = updated
+    self.sceneBlockRegistration = { config = config, entry = registered, previous = previous }
+end
+
+function SandBoxControlSetup:UnregisterSceneBlocks()
+    local registration = self.sceneBlockRegistration
+    if registration == nil then
+        return
+    end
+    local config = registration.config
+    if not IsNullOrDestroyed(config) and config.sceneBlockData ~= nil then
+        local entries = config.sceneBlockData
+        for i = 0, entries.Length - 1 do
+            -- Search by reference, not saved index/name: other code may reorder,
+            -- append or replace entries while this scene is loaded.
+            if CS.System.Object.ReferenceEquals(entries[i], registration.entry) then
+                if registration.previous ~= nil then
+                    entries[i] = registration.previous
+                else
+                    local updated = CS.System.Array.CreateInstance(typeof(CL.SceneBlockData), entries.Length - 1)
+                    local nextIndex = 0
+                    for j = 0, entries.Length - 1 do
+                        if j ~= i then
+                            updated[nextIndex] = entries[j]
+                            nextIndex = nextIndex + 1
+                        end
+                    end
+                    config.sceneBlockData = updated
+                end
+                break
+            end
+        end
+    end
+    self.sceneBlockRegistration = nil
+end
+
+function SandBoxControlSetup:CreateSandbox()
+    local prefab = CL.ResourceMgr.Load(sandboxPath)
+    if IsNullOrDestroyed(prefab) then
+        error("cannot load " .. sandboxPath .. ".", 0)
+    end
+    if IsNullOrDestroyed(prefab:GetComponent(typeof(CL.SandboxControl))) then
+        error(sandboxPath .. " is missing SandboxControl on its root.", 0)
+    end
+
+    local scale = self.trans.lossyScale
+    if math.abs(scale.x) < 0.000001 or math.abs(scale.y) < 0.000001 or math.abs(scale.z) < 0.000001 then
+        error("the setup or one of its parents has zero scale.", 0)
+    end
+
+    local container = UE.GameObject("SandBoxControlRuntime")
+    self.runtimeContainer = container
+    container:SetActive(false)
+    container.transform:SetPositionAndRotation(self.trans.position, self.trans.rotation)
+    -- Keep world unit scale when parenting, including the author's 0.5 root scale.
+    -- Instantiate below this inactive parent so SandboxControl.Awake runs last.
+    container.transform:SetParent(self.trans, true)
+    local instance = UE.Object.Instantiate(prefab, container.transform, false)
+    if IsNullOrDestroyed(instance) then
+        error("could not instantiate " .. sandboxPath .. ".", 0)
+    end
+    local root = instance.transform
+    root.localPosition = UE.Vector3.zero
+    root.localRotation = UE.Quaternion.identity
+    -- Do not assign localScale: preserve the built-in prefab's dimensions.
+    self.sandbox = instance:GetComponent(typeof(CL.SandboxControl))
+    if IsNullOrDestroyed(self.sandbox) then
+        error("the sandbox instance is missing SandboxControl.", 0)
+    end
+
+    for _, mapping in ipairs(layout) do
+        local marker = self[mapping[1]]
+        if not IsNullOrDestroyed(marker) then
+            local target = root:Find(mapping[2])
+            if IsNullOrDestroyed(target) then
+                UE.Debug.LogWarning(logPrefix .. "missing target '" .. mapping[2]
+                    .. "' for injection '" .. mapping[1] .. "'; skipped.")
+            else
+                target:SetPositionAndRotation(marker.position, marker.rotation)
+            end
+        end
+    end
+
+    local systemBoard = root:Find("System")
+    if not IsNullOrDestroyed(self.sandbox.sysBoard) then
+        systemBoard = self.sandbox.sysBoard.transform
+    end
+    if not IsNullOrDestroyed(systemBoard) then
+        systemBoard.gameObject:SetActive(false)
+    else
+        UE.Debug.LogWarning(logPrefix .. "system board not found; cannot hide it.")
+    end
+
+    self.hiddenPlaceholders = {}
+    for i = 0, self.trans.childCount - 1 do
+        local child = self.trans:GetChild(i).gameObject
+        if child ~= container and child.activeSelf then
+            table.insert(self.hiddenPlaceholders, child)
+            child:SetActive(false)
+        end
+    end
+
+    -- Legacy next/previous/clear handlers remain unchanged. They read spawn-point
+    -- position but do not apply its rotation to spawned scene-object groups.
+    instance:SetActive(true)
+    container:SetActive(true)
+end
+
+function SandBoxControlSetup:DestroyRuntime()
+    if not IsNullOrDestroyed(self.runtimeContainer) then
+        self.runtimeContainer:SetActive(false)
+        UE.Object.Destroy(self.runtimeContainer)
+    end
+    self.runtimeContainer = nil
+    self.sandbox = nil
+end
+
+function SandBoxControlSetup:Awake()
+    if self.awakeStarted then
+        return
+    end
+    self.awakeStarted = true
+    local ok, message = pcall(function()
+        self:RegisterSceneBlocks()
+        self:CreateSandbox()
+    end)
+    if not ok then
+        UE.Debug.LogError(logPrefix .. "initialization failed: " .. tostring(message))
+        self:DestroyRuntime()
+        for _, child in ipairs(self.hiddenPlaceholders or {}) do
+            if not IsNullOrDestroyed(child) then
+                child:SetActive(true)
+            end
+        end
+        self.hiddenPlaceholders = nil
+        self:UnregisterSceneBlocks()
+    end
+end
+
+function SandBoxControlSetup:OnDestroy()
+    self:DestroyRuntime()
+    self:UnregisterSceneBlocks()
+    self.hiddenPlaceholders = nil
+end
+
+return Class(nil, nil, SandBoxControlSetup)

@@ -1,0 +1,75 @@
+
+local BulletElementFire = {
+    isUsed = false,
+    freezeSec = 0.5,
+}
+
+
+function BulletElementFire:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    self.host:CollisionCountUpdate()
+    self.host:PlayImpact(point, normal)
+    --rb:AddForceAtPosition(rb.velocity, point, UE.ForceMode.Force)
+    
+    self:Freeze(fc)
+end
+
+function BulletElementFire:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function BulletElementFire:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+end
+
+function BulletElementFire:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    hand.character.aiProxy:FreezeForAWhile(0.5)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+function BulletElementFire:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function BulletElementFire:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function BulletElementFire:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.isUsed then
+        return
+    end
+
+    self.isUsed = true
+    
+    player.aiProxy:FreezeForAWhile(0.5)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+
+function BulletElementFire:Freeze(fc)
+    fc.muscleState:EnableFreeze(true, nil, false)
+    fc.muscleState:UnFreezeAgain(self.freezeSec)
+end
+
+function BulletElementFire:ResetState()
+    self.isUsed = false
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, BulletElementFire)

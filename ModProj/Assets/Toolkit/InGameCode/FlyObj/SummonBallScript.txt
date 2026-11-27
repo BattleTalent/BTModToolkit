@@ -1,0 +1,241 @@
+
+local SummonBall = {
+}
+
+function SummonBall:ServerOnSpawn()
+    local state = GetIBNetworkState(self.ib)
+    if state ~= nil then state:ServerOnSpawn() end
+    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+end
+
+function SummonBall:OnSpawn()
+    self:PlayLoopSound(true)
+end
+    
+function SummonBall:ShowSummonEffect(isShow)
+    if isShow then
+        self.effect:Start()
+    else
+        self.effect:Stop()
+    end
+end
+
+function SummonBall:TrySummon(character)
+    self.col.isTrigger = false
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.summonActTimer = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if self.ib:CheckGrounded() then
+                self:OnSummon(character)
+                self.host.gameObject:SetActive(false)
+                self:DestroySelf()
+                sche:Stop()
+            end
+        end
+    ,0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function SummonBall:OnSummon(character)
+    local name = self.isEnhance and self.enhanceSummon or self.defaultSummon
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.isOnline then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:ServerOnSummon() end
+    end
+    
+    self:SpawnMonster(name, self.ib.trans.position, character)
+    self:OnSummonEffect()
+end
+
+function SummonBall:OnSummonEffect()
+    CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, self.ib.trans.position, self.ib.trans.rotation)
+    
+    self:PlayLoopSound(false)
+    self.explodeSound:PlaySound()
+    
+    self:ShowSummonEffect(false)
+end
+
+function SummonBall:NetworkOnSummon()
+    self:OnSummonEffect()
+    self.ib.networkIB.gameObject:SetActive(false)
+    self.host.gameObject:SetActive(false)
+end
+
+function SummonBall:StopSummon()
+    RemoveSchedule(self.trans, self.summonActTimer)
+end
+
+function SummonBall:SpawnMonster(name, pos, character)
+    local rot = nil
+    if not IsNullOrDestroyed(character) then
+        self.camp = character.aiProxy:GetCamp()
+        rot = character.trans.rotation
+    end
+    CL.CharacterMgr.Instance:SpawnRoleAsync(name, 
+        function(fc)
+            if IsNullOrDestroyed(fc) then
+                return
+            end
+            
+            self.summonFc = fc
+            self.summonPos = pos
+            self.summonRot = rot
+            
+            if self.camp ~= nil then
+                fc.attr:ChangeCamp(self.camp)
+            end
+            fc.trans.rotation = rot
+            fc.trans.position = pos
+            self:PlayFcScaleAnim(fc)
+        end, CL.RoleEffector.None, false, false, pos, rot)
+    --CL.PrefabPool.SpawnPrefab(name, "CharacterGen/")
+    --local fc = capture:GetComponent(typeof(CL.FullCharacterControl))
+    
+    
+    --local meshRenderers = fc.gameObject:GetComponentsInChildren(typeof(UE.SkinnedMeshRenderer))
+    --for i = 0, meshRenderers.Length - 1 do
+    --    self.captureRenderer.materials[0] = meshRenderers[i].materials[0]
+    --    meshRenderers[i].materials = self.captureRenderer.materials
+    --    --setColor
+    --    SetMaterialEmissionWithinTime(self, {meshRenderers[i]}, self.captureColor, 0.25)
+    --end
+end
+
+function SummonBall:NetworkOnCharacterSpawn(netId)
+    local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(netId)
+    if IsNullOrDestroyed(nfc) then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.Instance.IsServer and nfc.fc == self.summonFc then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:ServerInitFc(nfc.fc.networkCharacter.netId, self.summonPos, self.summonRot, self.camp) end
+    else
+        if self.initNetId and self.initNetId == netId then
+            self.initNetId = nil
+            if self.camp ~= nil then
+                nfc.fc.attr:ChangeCamp(self.camp, false)
+            end
+            
+            self:PlayFcScaleAnim(nfc.fc)
+            self.ib.networkIB.gameObject:SetActive(true)
+            self:DestroySelf()
+        end
+    end
+end
+
+function SummonBall:NetworkInitFc(netId, pos, rot, camp)
+    local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(netId)
+    if IsNullOrDestroyed(nfc) then
+        self.initNetId = netId
+        self.summonPos = pos
+        self.summonRot = rot
+        self.camp = camp
+        return
+    end
+    if camp ~= nil then
+        nfc.fc.attr.camp = camp
+    end
+    --nfc.fc.trans.rotation = rot
+    --nfc.fc.trans.position = pos
+    self:PlayFcScaleAnim(nfc.fc)
+end
+
+function SummonBall:PlayFcScaleAnim(fc)
+    local orgScale = fc.trans.localScale.x
+    
+    if CL.Network.VRNetworkManager.ServerOnly then
+        fc.ai.enabled = false
+    else
+        fc.controller.gameObject:SetActive(false)
+        fc.bone.ragdollRoot.gameObject:SetActive(false)
+        
+        fc.trans.localScale = UE.Vector3.one * 0.2
+    end
+    
+    local ib = nil
+    local value = nil
+    local curScale = nil
+    self.increaseActTimeId = CL.Scheduler.Create(fc,
+        function(sche, t, s)
+            if CL.Network.VRNetworkManager.ServerOnly then
+                return
+            end
+            if not IsNullOrDestroyed(fc) then
+                value = CL.EasingEquations.EaseOutExpo(0.2, 1, t * 1.5)
+                curScale = orgScale * value
+                fc.trans.localScale = UE.Vector3(curScale, curScale, curScale)
+                
+                if not IsNullOrDestroyed(fc.reactAnim) and fc.reactAnim.pendants then
+                    for i = 0, fc.reactAnim.pendants.Count - 1 do
+                        if fc.reactAnim.pendants[i].ib then
+                            ib = fc.reactAnim.pendants[i].ib
+                            fc.reactAnim.pendants[i].ib.trans.gameObject:SetActive(false)
+                            fc.reactAnim.pendants[i]:DoRelease()
+                            UE.Object.Destroy(ib.gameObject)
+                        end
+                    end
+                end
+            end
+        end
+    ,0, 0.3)
+    :SetOnStop(
+        function()
+            if IsNullOrDestroyed(fc) then
+                return
+            end
+            
+            if CL.Network.VRNetworkManager.ServerOnly then
+                fc.ai.enabled = true
+            else
+                fc.bone.ragdollRoot.gameObject:SetActive(true)
+                fc.controller.gameObject:SetActive(true)
+            end
+            self.increaseActTimeId = nil
+        end
+        )
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SummonBall:PlayLoopSound(show)
+    if show then
+        if not self.loopSoundInfo then
+            self.loopSoundInfo = self.lightingSound:PlaySoundInfo()
+            if self.loopSoundInfo then
+                self.loopSoundInfo.ao.transform:SetParent(self.ib.trans)
+            end
+        end
+    else
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.loopSoundInfo)
+        self.loopSoundInfo = nil
+    end
+end
+
+function SummonBall:OnDisable()
+    self.col.isTrigger = false
+    
+    self.isEnhance = false
+    
+    self:StopSummon()
+end
+
+function SummonBall:Enhance()
+    self.isEnhance = true
+end
+
+function SummonBall:DestroySelf()
+    self.ib:Dead(true)
+end
+
+return Class(nil, nil, SummonBall)

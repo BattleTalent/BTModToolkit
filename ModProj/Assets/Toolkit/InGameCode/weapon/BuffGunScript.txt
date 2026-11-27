@@ -1,0 +1,167 @@
+
+local BuffGun = {
+    maxDis = 100,
+    color1 = UE.Color(1, 0.37, 0.37, 0),
+    color2 = UE.Color(0, 0, 0, 0),
+    
+    lerpRate = 0.2,
+    
+    DragSpeed = 0.2,
+}
+
+function BuffGun:OnGrab(a, g)
+    if g then
+        self.hand = a.attachedHand
+        
+        self:ShowBuffMenu()
+        
+        self.headset = a.attachedHand.character:GetHeadset()
+        self:StartAxisUpdate()
+    else
+       self.headset = nil
+       self:StopAxisUpdate()
+       self:HideBuffMenu()
+    end
+end
+
+function BuffGun:Awake()
+    self.lineRenderer = self.LaserPoint.gameObject:GetComponent(typeof(UE.LineRenderer))
+    
+    self.maxPos = UE.Vector3(0, 0, self.maxDis)
+end
+
+function BuffGun:OpenSkill()
+    self.lineRenderer.enabled = true
+end
+
+function BuffGun:UpdateSkill()
+    self:UpdateRay()
+end
+
+function BuffGun:CloseSkill()
+    if not IsNullOrDestroyed(self.selectTrans) then
+        print("select Obj:" .. self.selectTrans.name)
+        local pu = CL.PhysicsUnit.GetPhysicsUnit(self.selectTrans)
+        if not IsNullOrDestroyed(pu) and self.menu then
+            self.menu:AddBuff(pu)
+        end
+    end
+    
+    self.lineRenderer.enabled = false
+    self.TarPoint:SetActive(false)
+end
+
+function BuffGun:StartAxisUpdate()
+    self.updateAxisAct = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            self:AxisSelect()
+        end
+    , 0, -1)
+end
+
+function BuffGun:StopAxisUpdate()
+    RemoveSchedule(self.host, self.updateAxisAct)
+end
+
+
+function BuffGun:ShowBuffMenu()
+    if self.menu then
+        self.menu:Show(true)
+        return 
+    end
+    
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.effectName, self.menuPoint.position, UE.Quaternion.identity)
+    if not IsNullOrDestroyed(eo) then
+        eo.trans:SetParent(self.host.trans)
+        local lua = eo.trans:GetComponent(typeof(CL.LuaBehaviour))
+        if not IsNullOrDestroyed(lua) then
+            self.menu = lua:GetSelf()
+            if self.menu then
+                self.menu:MenuInit(self.menuPoint, self.hand)
+            end
+        end
+    end
+end
+
+function BuffGun:HideBuffMenu()
+    self.menu:Show(false)
+end
+
+function BuffGun:AxisSelect()
+    local v = self.hand.inputs[CL.VRTKInputButton.ButtonType.Touchpad].Axis
+    local point = nil
+    if v.y ~= 0 then
+        point = -v.y * self.DragSpeed * UE.Time.deltaTime
+    end
+    
+    v = UE.Input.GetAxis("Mouse ScrollWheel")
+    if v ~= 0 then
+        point = v * self.DragSpeed * UE.Time.deltaTime * 50
+    end
+    
+    if self.menu and point then
+        self.menu:RefleshMenu(point)
+    end
+end
+
+
+
+function BuffGun:UpdateRay()
+    --raycast
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.LaserPoint.position, 0.04, self.LaserPoint.forward, self.maxDis, CL.LayerDefine.InteractLayerMask.value)
+    if isHit then
+        self.TarPoint.transform.position = raycastHit.point
+        self.selectTrans = raycastHit.transform.root
+        
+        self.lineRenderer:SetPosition(1, self.LaserPoint:InverseTransformPoint(raycastHit.point))
+        self.TarPoint:SetActive(true)
+        
+        self:RefleshMenuConsole()
+    else
+        self.selectTrans = nil
+        self.TarPoint:SetActive(false)
+        self.lineRenderer:SetPosition(1, self.maxPos)
+        
+        self:RefleshMenuConsole()
+    end
+end
+
+function BuffGun:RefleshMenuConsole()
+    if not self.menu then
+        return
+    end
+    
+    
+    if not IsNullOrDestroyed(self.selectTrans) then
+        local pu = CL.PhysicsUnit.GetPhysicsUnit(self.selectTrans)
+        self.menu:ShowConsole(pu)
+    else
+        self.menu:ClearConsole()
+    end
+end
+
+function BuffGun:HighLightObj(obj)
+    self.renders = nil
+    self.renders = obj:GetComponentsInChildren(typeof(UE.Renderer))
+    if self.renders then
+        for i = 0, self.renders.Length - 1 do
+        --render.material.SetColor("_EmissionColor", UE.Color.Lerp(render.material:GetColor("_EmissionColor"), color, lerpRate));
+            self.renders[i].material:SetColor("_EmissionColor", self.color1);
+        end
+    end
+end
+
+function BuffGun:CancelHighLight()
+    if not self.renders then
+        return
+    end
+    for i = 0, self.renders.Length - 1 do
+        self.renders[i].material:SetColor("_EmissionColor", self.color2);
+    end
+end
+
+function BuffGun:ShowBuffList(trans)
+    
+end
+
+return Class(nil,nil,BuffGun)

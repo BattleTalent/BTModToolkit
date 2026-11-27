@@ -1,0 +1,409 @@
+local PotionBase = {
+    capacity = 100,
+    curValue = 0,
+    
+    effectInterval = 0.2,  --recover every xx seconds.
+    perValue = 10,  --recover hp each effectInterval.
+    
+    lastTime = 0,
+    
+    isOpen = false,
+    poseValue = {0.4, 0.7, 0.7, 0.6, 0.45},
+    --downPoseValue = {0.3, 0.4, 0.4, 0.7, 0.7},
+    
+    lastSoundTime = 0,
+}
+
+function PotionBase:Awake()
+    self.curValue = self.capacity
+    self.initPos = self.coverTrans.localPosition
+
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function PotionBase:OnSlot(slot, t)
+    if t then
+        RemoveSchedule(self, self.adjectTimer)
+        self.adjectTimer = CL.Scheduler.Create(self,
+            function(sche, t, s)
+                if IsNullOrDestroyed(self.coverTrans) then
+                    RemoveSchedule(self, self.adjectTimer)
+                    return
+                end
+                self.coverTrans.localPosition = self.initPos
+                self.coverTrans.localRotation = UE.Quaternion.identity
+            end
+        , 0, -1)
+    else
+        RemoveSchedule(self, self.adjectTimer)
+    end
+end
+
+function PotionBase:OnGrab(a, g)
+    if g then
+        self.character = a.attachedHand.character
+        if not self.isInit then
+            self:InitBottle()
+            self.isInit = true
+        end
+    else
+        self.character = nil
+        
+        if self.isOnline then
+            if self.isOpen then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state:ServerCloseBottle()
+                    end
+                end
+                self:CloseBottle()
+            end
+        end
+    end
+end
+
+function PotionBase:OpenSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    
+    if self.host.interact:IsUnsold() then
+        return
+    end
+
+    local state = self.isOnline and GetNetworkIBState(self) or nil
+    if not self.isOpen then
+        if state ~= nil then
+            state:ServerOpenBottle()
+        end
+        self:OpenBottle()
+    else
+        if state ~= nil then
+            state:ServerCloseBottle()
+        end
+        self:CloseBottle()
+    end
+end
+
+function PotionBase:InitBottle()
+    self.fakeCover:SetActive(false)
+    self.coverTrans.gameObject:SetActive(true)
+    self:ForceClose()
+end
+
+function PotionBase:OpenBottle()
+    self.isOpen = true
+    CL.Scheduler.RemoveSchedule(self, self.coverActTimeId)
+    
+    self:AddJoint(self.coverMaxAngle)
+    
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        self:CoverAddForce(true)
+    end
+    
+    if self.openCoverSound then
+        self.openCoverSound:PlaySound()
+    end
+    
+    self:StartMotionDetect()
+end
+
+function PotionBase:CoverAddForce(isOpen)
+    CL.Scheduler.RemoveSchedule(self.host, self.forceTimeId)
+    local time = 0.3
+    self.forceTimeId = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.coverRb) then
+                sche:Stop()
+                return
+            end
+            self.coverRb:AddForceAtPosition((isOpen and self.coverTrans.up or -self.coverTrans.up) * 50, 
+                self.coverTrans.position + self.coverTrans.right * -0.04, UE.ForceMode.Force)
+        end
+    , 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function PotionBase:StopCoverForce()
+    CL.Scheduler.RemoveSchedule(self.host, self.forceTimeId)
+end
+
+function PotionBase:AddJoint(limitAngle)
+    if not IsNullOrDestroyed(self.joint) then
+        UE.Object.Destroy(self.joint)
+    end
+    
+    if limitAngle then
+        self.coverTrans.localRotation = UE.Quaternion.Euler(UE.Vector3(0, 0, -limitAngle))
+    else
+        self.coverTrans.localRotation = UE.Quaternion.identity
+    end
+    
+    self.joint = self.host.interact.trans.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.joint.autoConfigureConnectedAnchor = false
+    self.joint.connectedBody = self.coverRb
+    self.joint.connectedAnchor = UE.Vector3.zero
+    self.joint.anchor = self.initPos
+    
+
+    self.joint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.zMotion = UE.ConfigurableJointMotion.Locked
+    
+    self.joint.angularXMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularYMotion = UE.ConfigurableJointMotion.Locked
+    
+    if limitAngle then
+        self.joint.angularZMotion = UE.ConfigurableJointMotion.Limited
+        
+        local al = self.joint.angularZLimit
+        al.limit = limitAngle
+        self.joint.angularZLimit = al
+        
+        self.coverTrans.localRotation = UE.Quaternion.identity
+    else
+        self.joint.angularZMotion = UE.ConfigurableJointMotion.Locked
+    end
+    
+    self.joint.projectionMode = UE.JointProjectionMode.PositionAndRotation
+    self.joint.projectionDistance = 0.01
+    self.joint.projectionAngle = 0.01
+end
+
+function PotionBase:NetworkLockJoint()
+    self:ForceClose()
+end
+
+function PotionBase:ForceClose()
+    if not IsNullOrDestroyed(self.joint) then
+        UE.Object.Destroy(self.joint)
+    end
+    
+    self.coverTrans.localPosition = self.initPos
+    self.coverTrans.localRotation = UE.Quaternion.identity
+    
+    self:AddJoint(nil)
+end
+
+function PotionBase:CloseBottle()
+    self.isOpen = false
+    self:ClosePourWater()
+    
+    self:CoverAddForce(false)
+    self:CloseMotionDetect()
+
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self, self.coverActTimeId)
+    local time = 2
+    self.coverActTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if UE.Vector3.Dot(self.coverTrans.up, self.host.interact.trans.up) > 0.98 or t >= time then
+                self:StopCoverForce()
+                
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state:ServerLockJoint()
+                    end
+                end
+                self:ForceClose()
+                if self.closeCoverSound then
+                    self.closeCoverSound:PlaySound()
+                end
+                sche:Stop()
+            end
+        end
+    , 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function PotionBase:StartMotionDetect()
+    if self:IsEmpty() then
+        return
+    end
+    
+    local onPour = false
+    local dot = 0
+    self.motionTimer = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if self:IsEmpty() then
+                self:ClosePourWater()
+                sche:Stop()
+                return
+            end
+            
+            dot = UE.Vector3.Dot(self.host.interact.trans.up, UE.Vector3.down)
+            if dot > 0.3 then
+                if not onPour then
+                    self:StartPourWater()
+                    onPour = true
+                else
+                    self:UpdatePourWater(dot)
+                end
+            else
+                if onPour then
+                    self:ClosePourWater()
+                    onPour = false
+                end
+            end
+        end,
+    0, -1)
+end
+
+function PotionBase:CloseMotionDetect()
+    RemoveSchedule(self, self.motionTimer)
+end
+
+function PotionBase:StartPourWater()
+    self:StartRecordValue()
+    
+    self.waterEffect:Play()
+    
+    if self.waterSound then
+        self.waterSoundInfo = self.waterSound:PlaySoundInfo()
+        if self.waterSoundInfo then
+            self.waterSoundInfo.ao.trans:SetParent(self.coverTrans)
+        end
+    end
+end
+
+function PotionBase:UpdatePourWater(value)
+    local count = self.maxParticles * (value - 0.3)/0.7
+    
+    local em = self.waterEffect.emission
+    local mmc = em.rateOverTime
+    mmc.constant = count
+    em.rateOverTime = mmc
+    self:RecordValue()
+end
+
+function PotionBase:ClosePourWater()
+    self:StopRecordValue()
+    
+    self.waterEffect:Stop()
+    
+    if self.waterSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.waterSoundInfo)
+        self.waterSoundInfo = nil
+    end
+end
+
+function PotionBase:StartRecordValue()
+    self.lastTime = UE.Time.time
+end
+
+function PotionBase:RecordValue()
+    if self.lastTime < 0 then
+        return
+    end
+    
+    if UE.Time.time - self.lastTime < self.effectInterval then
+        return
+    end
+    
+    self.lastTime = UE.Time.time
+    self.curValue = self.curValue - self.perValue
+    if self:IsEmpty() then
+        --Play Empty Sound
+        self:SetEmpty()
+        
+        self:ClosePourWater()
+        self:CloseMotionDetect()
+        return
+    end
+    
+    if not self.isOnline then
+        if IsNullOrDestroyed(self.character) then
+            return
+        end
+        
+        if self:IsAffectCharacter(self.character) then
+            self:DoAffectCharacter(self.character, self.perValue)
+        end
+    else
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local character = self:GetAffectCharacter()
+            if character and not IsNullOrDestroyed(character) then
+                self:DoAffectCharacter(character, self.perValue)
+            end
+        end
+    end
+end
+
+function PotionBase:GetAffectCharacter()
+    local players = CL.Network.NetworkRoomMgr.Instance.RoomInfo.roomPlayers
+    local minDis = 10
+    local curCharacter = nil
+    for i = 0, players.Count - 1 do
+        local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(players[i].netId)
+        if not IsNullOrDestroyed(networkPlayer) then
+            local character = networkPlayer.interactCharacter
+            if self:IsAffectCharacter(character) then
+                local dis = UE.Vector3.Distance(self.coverTrans.position, character.trans.position)
+                if dis < minDis then
+                    minDis = dis
+                    curCharacter = character
+                end
+            end
+        end
+    end
+    
+    return curCharacter
+end
+
+function PotionBase:SetEmpty()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerSetEmpty()
+            end
+            self.curValue = 0
+            self:SetEmptyEmission()
+        end
+    else
+        self.curValue = 0
+        self:SetEmptyEmission()
+    end    
+end
+
+function PotionBase:NetworkSetEmpty()
+    self:SetEmptyEmission()
+end
+
+function PotionBase:SetEmptyEmission()
+    SetMaterialEmissionWithinTime(self, {self.bodyRenderer}, UE.Color.clear, 0.5)
+end
+
+function PotionBase:StopRecordValue()
+    self.lastTime = -1
+end
+
+function PotionBase:IsAffectCharacter(character)
+    local dir = (character.trans.position - self.host.interact.trans.position).normalized
+    return UE.Vector3.Dot(dir, UE.Vector3.down) >= 0.977
+end
+
+function PotionBase:DoAffectCharacter(character, value)
+    if self.drinkSound and UE.Time.time - self.lastSoundTime > 0.8 then
+        self.drinkSound:PlaySound()
+        self.lastSoundTime = UE.Time.time
+    end
+    
+    self:AddCharacterAttr(character, value)
+end
+
+function PotionBase:AddCharacterAttr(character, value)
+    
+end
+
+function PotionBase:IsEmpty()
+    return self.curValue <= 0
+end
+
+return Class(nil, nil, PotionBase)

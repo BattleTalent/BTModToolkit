@@ -1,0 +1,382 @@
+
+local SwordFlaming = {
+    curIntensity = 0,
+    
+    burningSpeed = 2,
+    
+    hitScanInterval = 1,
+    hitEndTime = 0,
+    
+    activeColor = UE.Color(2.43, 0.86, 0, 1),
+    disactiveColor = UE.Color(0.54, 0.19, 0.1, 1),
+    
+    hitInfos = {},
+}
+
+function SwordFlaming:Start()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    SetMaterialEmission(self.renderer, self.disactiveColor)
+    
+    self.manaCost = self.host.manaCost
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    self.onStabEnterHandler = function(si)
+        local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+        if not IsNullOrDestroyed(fc) then
+            self.stabFc = fc
+        end
+        self.stabInfo = si
+    end
+    self.OnStabExitHandler = function(si)
+        if self.isBurning then
+            if self.stabInfo then
+                if self.stabFc then
+                    if not self.stabFc.attr:IsImmune("Fire") then
+                        local col = self.stabInfo.stabTargetRB.transform:GetComponent(typeof(UE.Collider))
+                        if not IsNullOrDestroyed(col) and self.stabFc.muscleState:CanIgnite(col) then
+                            local pos = self.stabInfo.stabTargetRB.transform:TransformPoint(self.stabInfo.stabLocalPos)
+                            
+                            if self.isOnline then
+                                if not IsNullOrDestroyed(col) then
+                                    local colKey, colId = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(col)
+                                    self:NetworkSetupFlame(colKey, colId, pos)
+                                end
+                            else
+                                self:SetupFlame(self.stabInfo.stabTargetRB.transform, pos)
+                            end
+                            self.stabFc.muscleState:RecordIgnite(col)
+                        end
+                    end
+                else
+                    local pos = self.stabInfo.stabTargetRB.transform:TransformPoint(self.stabInfo.stabLocalPos)
+                    if self.isOnline then
+                        self:NetworkSetupFlame(self.stabInfo.stabColNetKey, self.stabInfo.stabColNetId, pos)
+                    else
+                        self:SetupFlame(self.stabInfo.stabTargetRB.transform, pos)
+                    end
+                end
+            end
+        end
+    
+        self.stabFc = nil
+        self.stabInfo = nil
+    end
+    self.stabObj:StabEnterEvent("+", self.onStabEnterHandler)
+    self.stabObj:StabExitEvent("+", self.OnStabExitHandler)
+end
+
+function SwordFlaming:OnGrab(a, g)
+    if g then
+        self.host.manaCost = 0
+        self.hand = a.attachedHand
+    else
+        if not self.host.interact:IsGrabbed() then
+            self.host.manaCost = self.manaCost
+        end
+    end
+end
+
+function SwordFlaming:OpenSkill()
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if not self:CostStartMana() then
+        return
+    end
+            
+    self:StartBurning()
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerStartBurning()
+            else
+                local localPlayerId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                state:CmdStartBurning(localPlayerId)
+            end
+        end
+    end
+end
+
+function SwordFlaming:CostStartMana()
+    local hand = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(hand) then
+        return false
+    end
+    
+    local needMana = self.startMana * self.host.AppliedManaCostMultiplier
+    if not CostMana(self.host, needMana, hand.character) then
+        self.host:CloseSkill()
+        return false
+    end
+    return true
+end
+
+function SwordFlaming:CloseSkill()
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    self.delayToCloseId = CL.Scheduler.RemoveSchedule(self.delayToCloseId)
+    self.delayToCloseId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then return end
+            if CL.Network.VRNetworkManager.IsOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerStopBurning() end
+            end
+            
+            self:StopBurning()
+        end
+    , 0, 0, self.delayTime).actionId
+end
+
+function SwordFlaming:CheckStabBurning()
+    if not self.stabFc then
+        return
+    end
+    
+    if not self.isBurning then
+        return
+    end
+    
+    if self.hitInfos[self.stabFc] and UE.Time.time < self.hitInfos[self.stabFc] then
+        return
+    end
+    
+    local pos = self.stabInfo.stabTargetRB.transform:TransformPoint(self.stabInfo.stabLocalPos)
+    self:BurningTarget(pos, UE.Random.insideUnitSphere/5)
+    
+    self.hitInfos[self.stabFc] = UE.Time.time + self.hitScanInterval
+end
+
+function SwordFlaming:StartBurning()
+    self.isBurning = true
+    
+    self.host.manaCost = self.manaCost
+    CL.Scheduler.RemoveSchedule(self.delayToCloseId)
+    
+    local soundInfo = self.lunchSound:PlaySoundInfo()
+    if soundInfo then
+        soundInfo.ao.transform:SetParent(self.host.interact.trans)
+    end
+    --effect
+    self.flameEffect:Play()
+    local color = nil
+    local lastColor = self.renderer.material:GetColor("_EmissionColor")
+    
+    self.burningActId = CL.Scheduler.RemoveSchedule(self.burningActId)
+    self.burningActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then sche:Stop(); return end
+            if self.curIntensity < 1 then
+                self.curIntensity = math.min(self.curIntensity 
+                    + UE.Time.unscaledDeltaTime * self.burningSpeed, 1)
+                
+            
+                --update effect
+                color = UE.Color.Lerp(lastColor, self.activeColor, self.curIntensity)
+                SetMaterialEmission(self.renderer, color)
+            end
+            
+            
+            if not self.isOnline or (self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer) then
+                self:CheckStabBurning()
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SwordFlaming:StopBurning()
+    self.isBurning = true
+    
+    local endTime = self.curIntensity/self.burningSpeed
+    self.flameEffect:Stop()
+    
+    local color = nil
+    local lastColor = self.renderer.material:GetColor("_EmissionColor")
+    self.burningActId = CL.Scheduler.RemoveSchedule(self.burningActId)
+    self.burningActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then sche:Stop(); return end
+            self.curIntensity = self.curIntensity - UE.Time.unscaledDeltaTime * self.burningSpeed
+            if self.curIntensity > 0 then
+                --update effect
+                color = UE.Color.Lerp(lastColor, self.disactiveColor, 1 - self.curIntensity)
+                SetMaterialEmission(self.renderer, color)
+                
+                if not self.isOnline or (self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer) then
+                    self:CheckStabBurning()
+                end
+            end
+            
+            if t >= endTime or self.curIntensity <= 0 then
+                self.isBurning = false
+                
+                SetMaterialEmission(self.renderer, self.disactiveColor)
+                
+                sche:Stop()
+            end
+        end
+    , 0, endTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SwordFlaming:OnColliderStay(collision)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self.isBurning then
+        return
+    end
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collision.transform)
+    if pu then
+        local unitType = pu.unitType
+        if unitType == CL.Tagger.Tag.InteractRole then
+            if pu.attr:IsImmune("Fire") then
+                return
+            end
+            
+            if not pu.muscleState:CanIgnite(collision.collider) then
+                return
+            end
+        end
+        
+        self:TryIgnite(pu, collision.collider)
+
+        if self.hitInfos[pu] and self.hitInfos[pu] > UE.Time.time then
+            return
+        end
+        
+        if unitType == CL.Tagger.Tag.SceneObject
+            or unitType == CL.Tagger.Tag.InteractRole
+            or unitType == CL.Tagger.Tag.InteractObj
+            or unitType == CL.Tagger.Tag.PlayerRole
+            or unitType == CL.Tagger.Tag.InteractWeapon then
+            
+            if unitType == CL.Tagger.Tag.PlayerRole then
+                if self.hand and self.hand.character == pu.character then
+                    return
+                end
+            end
+            local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+            --self:BurningTarget(point, normal)
+            self.hitInfos[pu] = UE.Time.time + self.hitScanInterval
+            
+            if self.isOnline then
+                local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(collision.collider)
+                self:NetworkSetupFlame(key, cid, collision.collider:ClosestPoint(point))
+            else
+                self:SetupFlame(collision.transform, collision.collider:ClosestPoint(point))
+            end
+            
+            if unitType == CL.Tagger.Tag.InteractRole then
+                pu.muscleState:RecordIgnite(collision.collider)
+            end
+        end
+    end
+end
+
+function SwordFlaming:TryIgnite(pu, col)
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+        
+    local trigger = pu:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+        
+    local tb = trigger.script:GetSelf()
+    if tb.fuseCol and tb.Ignite then
+        tb:Ignite()
+    end
+end
+
+function SwordFlaming:BurningTarget(point, dir)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self.host:NetworkCreateFlyObj(self.flyObjName, point, -dir, 0)
+        end
+    else
+        self.host:CreateFlyObj(self.flyObjName, point, -dir, 0)
+    end
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerPlayBurningEffect(point, UE.Quaternion.LookRotation(dir)) end
+        end
+    else
+        CL.EffectMgr.Instance:PlayEffect(self.hitFireEffect, point, UE.Quaternion.LookRotation(dir))
+    end
+end
+
+function SwordFlaming:ClientPlayBurningEffect(point, dir)
+    CL.EffectMgr.Instance:PlayEffect(self.hitFireEffect, point, UE.Quaternion.LookRotation(dir))
+end
+
+function SwordFlaming:NetworkSetupFlame(key, netId, pos)
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(netId, key)
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    local fo = self:SetupFlame(col.transform, pos) 
+    local localPos = col.transform:InverseTransformPoint(pos)
+    --print("NetworkSetupFlame col name---------------:" .. col.transform.name .. " local pos x: " .. localPos.x .. " y:" .. localPos.y .. " z:" .. localPos.z)
+    
+    if not IsNullOrDestroyed(fo) then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerSetFlame(fo.netId, key, netId, localPos) end
+    end
+end
+
+function SwordFlaming:SetupFlame(trans, pos)
+    local fo = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = self.host:NetworkCreateFlyObj(self.zoneObjName, pos, UE.Vector3.up)
+        end
+    else
+        fo = self.host:CreateFlyObj(self.zoneObjName, pos, UE.Vector3.up)
+    end
+    
+    local follower = fo.trans:GetComponent(typeof(CL.FlyObjectFollower))
+    if not IsNullOrDestroyed(follower) then
+        local localPos = trans:InverseTransformPoint(pos)
+        follower:SetData(trans, localPos)
+    end
+    
+    return fo
+end
+
+function SwordFlaming:ClientSetFlame(foNetId, key, colNetId, pos)
+    local nfo = CL.Network.NetworkSpawnMgr.Instance:GetNetworkFlyObject(foNetId)
+    local fo = not IsNullOrDestroyed(nfo) and nfo.flyObject or nil
+    if IsNullOrDestroyed(fo) then
+        if self.lastSetFlameWarnNetId ~= foNetId then
+            self.lastSetFlameWarnNetId = foNetId
+            print("[NetReadyRisk] SwordFlaming ClientSetFlame flyObject not ready netId=" .. foNetId)
+        end
+        return
+    end
+    
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(colNetId, key)
+    if not IsNullOrDestroyed(col) then
+        local follower = fo.trans:GetComponent(typeof(CL.FlyObjectFollower))
+        if not IsNullOrDestroyed(follower) then
+            follower:SetData(col.transform, pos)
+        end
+        
+        --print("ClientSetFlame col name---------------:" .. col.transform.name .. " FO:" .. nfo.flyObject.trans.name.. " local pos x: " .. pos.x .. " y:" .. pos.y .. " z:" .. pos.z)
+    end
+end
+
+return Class(nil, nil, SwordFlaming)

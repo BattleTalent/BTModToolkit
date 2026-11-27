@@ -1,0 +1,80 @@
+local flyExplodeRandom = {
+    -- explodeRange
+    -- explodeEffect
+    
+    pushbackForce = 15,
+}
+
+
+function flyExplodeRandom:FlyStart(vel)
+    if self.explodeRange > 0 then
+        local count = 0
+        while self["explodeEffect" .. (count + 1)] do
+            count = count + 1
+        end
+        
+        local random = math.random(1, count)
+        local name = self["explodeEffect" .. random]
+        
+        CL.EffectMgr.Instance:PlayEffect(name, self.trans.position, self.trans.rotation)
+        
+        -- push player away
+        CL.InteractTrigger.HitScanAction = function(beHitPu, beHitCol, selfPu, rb, col, hitDir, hitterCamp)
+            if beHitPu:GetType() == typeof(CL.DungBall) then
+                beHitPu:DoExplode(18)
+            end
+            
+            local roleController = nil
+            if (beHitPu.unitType == CL.Tagger.Tag.PlayerRole) then
+                roleController = beHitPu.character
+--[[                
+            elseif (beHitPu.unitType == CL.Tagger.Tag.PlayerHand) then
+                player = beHitPu.logicHand.character
+]]                
+            elseif (beHitPu.unitType == CL.Tagger.Tag.InteractRole) then
+                roleController = beHitPu.controller
+            end
+            
+            if roleController then
+                --player:AddPushback()
+                local pushDir = roleController:GetCentrePos() - selfPu.trans.position
+                local force = pushDir.normalized * self.pushbackForce
+                -- this is for player only
+                if (beHitPu.unitType ~= CL.Tagger.Tag.InteractRole) then
+                    roleController:AddForce(force)
+                end
+                roleController:AddPushbackByForce(force, true)
+                --print("HitScanAction" .. tostring(roleController) .. " pushDir:" .. tostring(pushDir))
+            end
+            
+            if self.isIgnite == 1 then
+                self:TryIgnite(beHitPu, beHitCol)
+            end
+        end
+        
+        CL.InteractTrigger.ApplyExplode(
+            -- want to do exploding a bit closer
+            self.trans.position - vel.normalized * 0.25, 
+            self.explodeRange, self.host, self.host.rb, self.host.col, self.host.camp)
+        --CL.DebugDraw.DrawSphere(self.trans.position - vel.normalized * 0.25, self.explodeRange, UE.Color.red, 2)
+    end
+end
+
+
+function flyExplodeRandom:TryIgnite(pu, col)
+    if pu.unitType ~= CL.Tagger.Tag.InteractObj and pu.unitType ~= CL.Tagger.Tag.InteractWeapon then
+        return
+    end
+        
+    local trigger = pu:GetInteractTrigger()
+    if IsNullOrDestroyed(trigger) or not trigger.script then
+        return
+    end
+        
+    local tb = trigger.script:GetSelf()
+    if tb.fuseCol and tb.Ignite then
+        tb:Ignite()
+    end
+end
+
+return Class(nil, nil, flyExplodeRandom)

@@ -1,0 +1,571 @@
+local particleCurve = UE.ParticleSystem.MinMaxCurve(1)
+
+
+local FlyEarth = {
+    flyDis = 0.04,
+    
+    maxSpeed = 50,
+    sqrHandSpeed = 5,
+    
+    brokenSpeed = 500,
+    brokenEffect = "FlyEarthBroken",
+    
+    impactEffect = "FlyEarthImpact",
+    effectInteval = 0.2,
+    lastEffectTime = 0,
+    showEffectSpeed = 2,
+    maxEffectSpeed = 6,
+    maxEffectIntensity = 5,
+    addForceIntensity = 7,
+    
+    endPos = nil,
+    
+    lerpValue = 0.04,
+    
+    radius = 0.4,
+    
+    collisionList = {},
+    
+    activeColor = UE.Color(0.68, 0.61, 0.37),
+}
+
+function FlyEarth:StartFollow(character, startPos, owner)
+    SetMaterialEmission(self.renderer, UE.Color(0.1, 0.1, 0.1))
+    CL.Scheduler.RemoveSchedule(self.emissionActId)
+    
+    self.startTime = UE.Time.time
+    
+    self.character = character
+    local targetPos = self:GetTargetPos(character)
+    local targetRot = character.transform.rotation
+    self:IgnoreCollisionWithObstacles(targetPos, startPos)
+    
+    if self.raiseSound then
+        self.raiseSound:PlaySound()
+    end
+    
+    local checkInterval = 0.2
+    local nextCheckTime = 0
+    self.followActId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.rb) then
+                self:StopFollow()
+                return
+            end
+            
+            if IsNullOrDestroyed(character) then
+                return
+            end
+            
+            if self.endPos then
+                targetPos = self.endPos
+                
+                if t > self.leftTime then
+                    sche:Stop()
+                    --self:OnTimeOut()
+                    --self.host:OnFinish()
+                    self:SetGravity()
+                    return
+                end
+            else
+                targetPos = self:GetTargetPos(character)
+            end
+            if self.endRot then
+                targetRot = self.endRot
+            else
+                targetRot = character.transform.rotation
+            end
+            
+            if not self.isReached then
+                if (targetPos - self.host.trans.position).sqrMagnitude <= 0.01 then
+                    self:OnReach()
+                end
+            else
+                if UE.Time.time > nextCheckTime then
+                    self:TryResetCollision(targetPos)
+                    nextCheckTime = UE.Time.time + checkInterval
+                end
+            end
+            
+            if self.isOnline then
+                if self.host.networkFO and self.host.networkFO.isOwned then
+                    self.host.networkFO:CommandTickFollow(targetPos, targetRot, t)
+                    self:TickFollow(targetPos, targetRot, t)
+                end
+            else
+                self:TickFollow(targetPos, targetRot, t)
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function FlyEarth:OnReach()
+    self.isReached = true
+    self:ResetCollisionWithObstacles()
+    
+    SetMaterialEmission(self.renderer, self.activeColor)
+    CL.Scheduler.RemoveSchedule(self.emissionActId)
+    self.emissionActId = SetMaterialEmissionWithinTime(self.trans, {self.renderer}, UE.Color(0.1, 0.1, 0.1), 1).actionId
+    CL.EffectMgr.Instance:PlayEffect(self.reachEffect, self.host.trans.position, self.host.trans.rotation)
+end
+
+function FlyEarth:InitState(character, pos, owner)
+    self.owner = owner
+    self:StartFollow(character, pos)
+    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+end
+
+
+function FlyEarth:IsReachedTargetPos()
+    return self.isReached
+end
+
+function FlyEarth:ConfirmEndState()
+    self.endPos = self:GetTargetPos(self.character)
+    self.endRot = self.character.transform.rotation
+end
+
+function FlyEarth:GetTargetPos(character)
+    local height = character:GetPlayerHeight() / 2.7
+    height = math.max(height, 0.6)
+    local pos = character.transform.position + character.transform.forward * height + UE.Vector3.up * height
+    return pos
+end
+
+function FlyEarth:StopFollow()
+    CL.Scheduler.RemoveSchedule(self.followActId)
+end
+
+
+function FlyEarth:TickFollow(pos, rot, time)
+    --local vec = nil
+    --local dir = nil
+    --local dis = nil
+    --vec = pos - self.trans.position
+    --dis = vec.magnitude
+    --dir = vec.normalized
+    --local intensity = 0.25 * math.min(time * 2, 1)
+    --vec = dir * dis * intensity + self.trans.position
+    --CL.PhysicsFollow.TrackPosition(self.host.rb, vec, 0.5, dis/10)
+    
+    if self.host.rb.isKinematic then
+        self.host.trans.position = UE.Vector3.Lerp(self.host.trans.position, pos, time*self.timeMlp)
+        self.host.trans.rotation = UE.Quaternion.Lerp(self.host.trans.rotation, rot, time*self.timeMlp)
+    else
+        local vec = UE.Vector3.Lerp(self.host.trans.position, pos, time*self.timeMlp)
+        CL.PhysicsFollow.TrackPosition(self.host.rb, vec, vec.magnitude)
+        CL.PhysicsFollow.TrackRotation(self.host.rb, rot, 10)
+    end
+end
+
+function FlyEarth:StartFly(vel)
+    self.host:FlyStart(vel)
+end
+
+function FlyEarth:Suspension()
+    self.trigger.enabled = true
+    self.host.rb.isKinematic = true
+    self.host:FlyStart(UE.Vector3.zero)
+    
+    self.host.trans:SetLayerAll(CL.LayerDefine.EnvLayer.value)
+end
+
+function FlyEarth:SetGravity()
+    self.host.rb.useGravity = true
+    self.host.rb.isKinematic = false
+    self.host.trans:SetLayerAll(CL.LayerDefine.InteractLayer.value)
+end
+
+function FlyEarth:OnThrow()
+    self.isReached = true
+    self:ResetCollisionWithObstacles()
+    
+    
+    self.host.rb.useGravity = true
+end
+
+------------------------------------------Collision-------------------------------------------
+
+function FlyEarth:TriggerStay(collider)
+    if self.isOnline and not self.host.networkFO and not self.host.networkFO.isOwned then
+        return
+    end
+    
+    if not self.trigger.enabled or not self:IsReachedTargetPos() then
+        return
+    end
+    
+    --print("is ignore:" .. tostring(UE.Physics.GetIgnoreCollision(collider, self.col)))
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(collider)
+    if not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.FlyObject then
+        --print("trigger collision :" .. self.host.trans.name .. " " ..pu.trans.name ..  "  " .. tostring(self.trigger.enabled))
+        local interactTrigger = pu.owner.trans.gameObject:GetComponent(typeof(CL.InteractTriggerX))
+        if not IsNullOrDestroyed(interactTrigger) then
+            local script = interactTrigger.script:GetSelf()
+            if script.spellType == self.owner.spellType then
+                local script = pu.script:GetSelf()
+                local pass = false
+                if script then
+                    if script:IsReachedTargetPos() and script.startTime > self.startTime then
+                        pass = true
+                    end
+                    --print("trigger time pass :" ..  tostring(pass))
+                    
+                    if pass then
+                        if self.isOnline then
+                            if self.host.networkFO.isOwned then
+                                self.host.networkFO:CommandOnBroken(self.host.trans.position, self.host.trans.rotation)
+                            end
+                        end
+                        self.trigger.enabled = false
+                        self:PlayBrokenEffect()
+                        self.host:OnFinish()
+                        self.isBroken = true
+                    end
+                end
+            end
+        end
+    end
+end
+
+function FlyEarth:IgnoreCollisionWithObstacles(targetPos, startPos)
+    self.cols = self.host:GetCols(true)
+    if not self.cols then
+        return
+    end
+    
+    self.obstaclesCols = {}
+        
+    --find obstacles
+    local raycastHit  = UE.Physics.SphereCastAll(targetPos, self.radius, 
+        (startPos - targetPos).normalized, (startPos - targetPos).magnitude)
+    
+    local pu = nil
+    local col = nil
+    local pass = true
+    for i = 0, raycastHit.Length - 1 do
+        col = raycastHit[i].collider
+        for j = 0, self.cols.Length - 1 do
+            if self.cols[j] == col then
+                pass = false
+                break
+            end
+        end
+        
+        --print("check  col --------:" .. col.transform.name)
+        
+        if col.isTrigger then
+            pass = false
+        end
+        
+        pu = CL.PhysicsUnit.GetPhysicsUnit(col)
+        if not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.FlyObject then
+            if pu.owner == self.host.owner then
+                pass= true
+                --print("ignore two  pu-----:" .. self.host.trans.name .. " " .. pu.trans.name .. " col :" .. col.transform.name)
+            else
+                local other = pu.script:GetSelf()
+                if other.owner then
+                    if self.owner.spellType == other.owner.spellType then
+                        pass = true
+                    end
+                end
+            end
+        else
+            if col.gameObject.layer == CL.LayerDefine.EnvLayer.value or 
+                col.gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value then
+                pass = true
+            else
+                pass = false
+            end
+        end
+        
+        if pass then
+            table.insert(self.obstaclesCols, col)
+            --print("ignore two  col-----:" .. self.host.trans.name ..  " col :" .. col.transform.name)
+        end
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, true)
+    end
+end
+
+function FlyEarth:ResetCollisionWithObstacles()
+    if not self.obstaclesCols or not self.cols then
+        return
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, false)
+    end
+    
+    self.obstaclesCols = nil
+end
+
+function FlyEarth:TryResetCollision(targetpos)
+    if not self.obstaclesCols or #self.obstaclesCols <= 0 then
+        return
+    end
+    
+    local point0 = self.host.trans.position
+    local point1 = targetpos
+    self.colNum = UE.Physics.OverlapCapsuleNonAlloc(point0, point1, self.radius, 
+                CL.PhysicsHelper.shareOverlapColArray)
+
+    if self.colNum <= 0 then
+        return
+    end
+    
+    local stillCols = {}
+    for i = 0, self.colNum - 1 do
+        for j = #self.obstaclesCols, 1, -1 do
+            if CL.PhysicsHelper.shareOverlapColArray[i] == self.obstaclesCols[j] then
+                table.insert(stillCols, CL.PhysicsHelper.shareOverlapColArray[i])
+                table.remove(self.obstaclesCols, j)
+                break
+            end
+        end  
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, false)
+    end
+    
+    self.obstaclesCols = stillCols
+end
+
+
+function FlyEarth:OnCollisionWithPlayerHand(collision, hand)
+end
+
+function FlyEarth:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+end
+
+function FlyEarth:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function FlyEarth:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function FlyEarth:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.host.rb.isKinematic then
+        if player.capsuleRB.velocity.y < -1 then            
+            self.endPos = self.trans.position - UE.Vector3.up
+            self.endRot = self.trans.rotation
+            
+            --local vel = player.capsuleRB.velocity
+            --= UE.Vector3.zero
+            --vel.y = 1
+            --player.capsuleRB.velocity = vel
+            player:ResetMovement()
+            player:MovePosition(self.trans.position + UE.Vector3.up, true)
+            
+            --self:StopFollow()
+            --print("StopFollow")
+        end
+    end
+end
+
+function FlyEarth:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isBroken then
+        return
+    end
+    
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal, relaVel)
+end
+
+function FlyEarth:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithSceneHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity)
+end
+
+function FlyEarth:RpcOnCollisionWithScene(rb, col, point, normal, relaVel)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+end
+
+function FlyEarth:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+    if self.isBroken then
+        return
+    end
+    
+    if IsNullOrDestroyed(rb) 
+        or rb.transform.root == CL.EffectMgr.Instance:GetEffectRoot()
+        then
+        return
+    end
+    
+
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal, relaVel)
+end
+
+function FlyEarth:OnCollisionWithHitScan(rb, col, point, normal, relaVel)
+    if self.isBroken then
+        return
+    end
+    --print("OnCollisionWithHitScan------------" )
+    self:CheckBroken(point, normal, self.brokenSpeed)
+    
+    self:CollisionEffect(point, normal, relaVel)
+end
+
+function FlyEarth:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, pu)
+end
+
+function FlyEarth:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+end
+
+function FlyEarth:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    if self.isBroken then
+        return
+    end
+    if IsNullOrDestroyed(pu) or (not IsNullOrDestroyed(pu) and pu.trans.root == self.character.trans.root) then
+        return
+    end
+    
+    local force = false
+    if pu.unitType == CL.Tagger.Tag.FlyObject then
+        if pu.owner == self.host.owner and self.host.rb.isKinematic then
+            return
+        end
+        
+        if pu.script then
+            local other = pu.script:GetSelf()
+            if other.owner then
+                if self.owner.spellType == other.owner.spellType then
+                    if not self.host:IsFlying() and not other.host:IsFlying() then
+                        --print("collistion-----------isFlying, other IsFlying " .. self.host.trans.name .. " other:" .. other.host.trans.name .. " selfTime: " .. self.startTime .. " otherTime:" .. other.startTime)
+                        if self.startTime < other.startTime then
+                            force = true
+                        elseif self.startTime == other.startTime then
+                            if self.owner:GetSlotHand():GetHandIndex() == 0 then
+                                force = true
+                            end
+                        end
+                    elseif self.host:IsFlying() and not other.host:IsFlying() then
+                        force = true
+                    end
+                end
+            end
+        end
+    end
+    
+    self:CheckBroken(point, normal, self.brokenSpeed, force)
+
+    self:CollisionEffect(point, normal, relaVel)
+end
+
+function FlyEarth:CheckBroken(point, normal, speed, force)
+    self:PlayImpact(point, normal)
+    
+    --if self.host.rb.velocity.sqrMagnitude > speed then
+    local pass = false
+    if force then
+        pass = true
+    end
+    if not self.isBroken and self:IsReachedTargetPos() and self.host:IsFlying() then
+        pass = true
+    end
+    
+    if self.isOnline and not self.host.networkFO.isOwned then
+        return
+    end
+    
+    if pass then
+        if self.isOnline then
+            if self.host.networkFO.isOwned then
+                self.host.networkFO:CommandOnBroken(point, self.host.trans.rotation)
+            end
+        end
+        self:PlayBrokenEffect(point)
+        self.host:OnFinish()
+        self.isBroken = true
+    end
+end
+
+function FlyEarth:NetworkOnBroken(pos, rot)
+    self:PlayBrokenEffect(pos, rot)
+    self.host:OnFinish()
+    self.isBroken = true
+end
+
+function FlyEarth:PlayImpact(point, normal)
+    self.host:PlayImpact(point, normal)
+end
+
+function FlyEarth:CollisionEffect(point, normal, relaVel)
+    if UE.Time.time - self.lastEffectTime <= self.effectInteval then
+        return
+    end
+    
+    local speed = self.host.rb.velocity.magnitude
+
+    if speed < self.showEffectSpeed then
+        return
+    end
+    particleCurve.constant = self.maxEffectIntensity * speed/self.maxEffectSpeed
+    
+    local effect = CL.EffectMgr.Instance:PlayEffect(self.impactEffect, point, 
+        UE.Quaternion.LookRotation(normal))
+    
+    if self.host:IsFlying() then
+        local soundInfo = self.impactSound:PlaySoundInfo()
+        if soundInfo then
+            soundInfo.audio.volume = math.min(relaVel.magnitude / 50, 1)
+        end
+    end
+
+    self.lastEffectTime = UE.Time.time
+end
+
+function FlyEarth:OnTimeOut()
+    self:PlayBrokenEffect()
+end
+
+function FlyEarth:PlayBrokenEffect(pos, rot)
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.brokenEffect, pos or self.host.trans.position, rot or self.host.trans.rotation)
+    local rbs = eo.gameObject:GetComponentsInChildren(typeof(UE.Rigidbody))
+    for i = 0, rbs.Length - 1 do
+        rbs[i].velocity = self.host.rb.velocity/2
+    end
+end
+
+function FlyEarth:ResetState()
+    self:StopFollow()
+    
+    self:ResetCollisionWithObstacles()
+    
+    self.host.trans:SetLayerAll(CL.LayerDefine.InteractLayer.value)
+    
+    if self.owner then
+        self.owner:OnGoDead(self.host.gameObject)
+    end
+    self.character = nil
+    self.endPos = nil
+    self.endRot= nil
+    
+    self.isReached = false
+    self.isBroken = false
+    
+    self.trigger.enabled = false
+    self.startTime = nil
+    self.host.rb.isKinematic = false
+    self.collisionList = {}
+    
+    CL.Scheduler.RemoveSchedule(self.emissionActId)
+    SetMaterialEmission(self.renderer, UE.Color(0.1, 0.1, 0.1))
+end
+
+return Class(nil,nil,FlyEarth)

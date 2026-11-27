@@ -1,0 +1,257 @@
+
+local tt = {}
+local radius = 3
+local intensity = 8
+local force = 4
+
+local color1 = UE.Color(0.47, 1, 0.48, 0)
+local color2 = UE.Color(0, 0, 0, 0)
+local colorIntensity = 2
+
+function tt:Awake()
+    self.layer = UE.LayerMask.NameToLayer("CharacterObstacle")
+    self.cd = 0.5
+    self.maxDis = 13
+    self.minReleaseVol = 2.5
+    self.testlist = {}
+end
+
+function tt:OnGrab(a, g)
+    if (g) then
+        local isRight = a.attachedHand:GetHandIndex() == 0
+        
+        local player = CL.InteractCharacter.PlayerInstance
+        if player == nil then
+            return
+        end
+        local ikRef = player.ik.references;
+        self.armBone = isRight and ikRef.rightForearm or ikRef.leftForearm;
+        self.handBone = isRight and ikRef.rightHand or ikRef.leftHand;
+        self.handPoseControl = player.hands[a.attachedHand:GetHandIndex()].handPoseControl
+        
+        local ai = self.host.interact:GetHolder()
+        self.character = ai.character
+        self.playerRb = self.character.capsuleRB
+        self.renders = isRight and CL.InteractTrigger.GetHandRRenderer() or CL.InteractTrigger.GetHandLRenderer()
+        
+    else
+        self:Reset()
+    end
+end
+
+function tt:OnChargeBegin()
+    if self.isReady then
+        return
+    end
+    if self.timer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+    self:SetExpression(true)
+    self:SetChargeEffect(true)
+    self.timer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if t >= self.cd and not self.isReady then
+                self.isReady = true
+                self:SetChargeEffect(false)
+            end
+            --print("skill is ready!!!")
+            if self:AttemptToRelease() then
+                self.isReady = false
+                self:SetExpression(false)
+                CL.Scheduler.RemoveSchedule(self.timer.actionId)
+                self.timer = nil
+            end
+            --手套蓄力过程动画 颜色、大小、声音等
+        end
+    , UE.Time.unscaledDeltaTime, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function tt:OnChargeCancel()
+    if self.isReady then
+        return
+    end
+    
+    self:Reset()
+end
+
+function tt:AttemptToRelease()
+    local dir = self.createPoint.forward
+    local vol = self.host.interact.rb.velocity - self.playerRb.velocity
+    if vol.magnitude >= self.minReleaseVol then
+        local angle = UE.Vector3.Angle(vol, dir)
+        if angle < 30 then
+            self:SkillOn()
+            return true
+        end
+    end
+    return false
+end
+
+function tt:SkillOn()
+    self:RemoveTestPos()
+    --击退物体
+    self:AddImpact()
+    self:PlayEffect()
+    --击打环境获取反作用力
+    self:AddReactiveForce()
+end
+
+function tt:PlayEffect()
+    CL.EffectMgr.Instance:PlayEffect("Wind", self.host.transform.position, UE.Quaternion.LookRotation(self.createPoint.forward))
+end
+
+
+function tt:AddImpact()
+    local repeatRBDList = {}
+    local repeatPUDList = {}
+    
+    local pos = self.createPoint.position
+    --local cols = UE.Physics.OverlapSphere(pos, radius)
+    local raycastHits = UE.Physics.SphereCastAll(pos, radius, self.createPoint.forward)
+    if not raycastHits then
+        --print("no raycastHits------------------------")
+        return
+    end
+    for i = 0, raycastHits.Length - 1 do
+        local col = raycastHits[i].collider
+        
+        --圆锥范围
+        local vec = pos - col.transform.position
+        local angle = UE.Vector3.Angle(vec, -self.createPoint.forward)
+        --print(col.transform.name..angle)
+        if angle < 30 then
+            local crb = col.attachedRigidbody
+            if not crb then
+                break
+            end
+            local isHandler = false
+            
+            for m, n in ipairs (repeatRBDList) do
+                if n == crb then
+                    isHandler = true
+                    break
+                end
+            end
+            
+            if not isHandler then
+                table.insert(repeatRBDList,crb) 
+                local pu = CL.PhysicsUnit.GetPhysicsUnit(crb.transform.root)
+                
+                for m, n in ipairs (repeatPUDList) do
+                    if n == pu then
+                        isHandler = true
+                        break
+                    end
+                end        
+                if not isHandler then
+                    --local obj = self:GetTestPos()
+                    --obj.transform.position = col.transform.position
+                    
+                    if pu and (pu.unitType == CL.Tagger.Tag.PlayerRole or pu.unitType == CL.Tagger.Tag.PlayerHand or
+                        pu == self.host.interact) then
+                    elseif pu and pu.unitType == CL.Tagger.Tag.InteractRole then
+                        local dir = crb.transform.position - self.host.transform.position
+                        if dir.sqrMagnitude < 2 then
+                            --knock out
+                            pu.motion:Knockout()
+                            
+                            dir = dir.normalized * intensity + UE.Vector3(0, 1, 0)
+                            pu:AddForce(dir, UE.ForceMode.VelocityChange)
+                        else
+                            local mag = dir.magnitude
+                            local attenuation = radius > mag and (1 - mag/radius) * intensity or 0
+                            crb:AddForce(intensity * dir.normalized, UE.ForceMode.VelocityChange)
+                            pu.controller:AddPushback(self.host.transform.position, 5)
+                        end
+                        --break defensive
+                        --print(pu.reactAnim:IsDoingWeaponIK())
+                        if pu.reactAnim:IsDoingWeaponIK() then
+                            pu.reactAnim:AddWeaponHitOffset(CL.RagdollBoneInfo.RIGHT_HAND, 1000)
+                            pu.reactAnim:AddWeaponHitOffset(CL.RagdollBoneInfo.LEFT_HAND, 1000)	
+                        end
+                    elseif not col.isTrigger and not crb.isKinematic then
+                        local dir = crb.transform.position - self.host.transform.position
+                        local mag = dir.magnitude
+                        local attenuation = radius > mag and (1 - mag/radius) * intensity or 0
+                        crb:AddForce(intensity * dir.normalized, UE.ForceMode.VelocityChange)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function tt:GetTestPos()
+    local obj = UE.Object.Instantiate(self.forcePoint)
+    obj.name = "windpos"
+    table.insert(self.testlist, obj)
+    obj:SetActive(true)
+    return obj
+end
+
+function tt:RemoveTestPos()
+    for k, v in ipairs(self.testlist) do
+        UE.Object.Destroy(v)
+    end
+end
+
+function tt:AddReactiveForce()
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.host.transform.position, 0.04, self.createPoint.forward, self.maxDis)
+    --print(isHit)
+    if isHit then
+        if raycastHit.transform.root.gameObject.layer == self.layer then
+            local holder = self.host.interact:GetHolder()
+            --print(holder.character.transform.name)
+            if holder then
+                local rb = holder.character.capsuleRB
+                local headPos = rb.transform.position + UE.Vector3(0,1.7,0)
+                local dir = headPos - raycastHit.point
+                local mag = dir.magnitude
+                local attenuation = radius > mag and (1 - mag/radius) * force or 0
+                --print("AddReactiveForce")
+                --If the angle between the direction and the vertical direction is less than 30 degrees, then add vertical force
+                --self.pos1.transform.position = headPos
+                --self.pos2.transform.position = raycastHit.point
+                local angle = UE.Vector3.Angle(UE.Vector3.up, dir) 
+                --print(angle)
+                if angle < 30 then
+                    rb:AddForce(attenuation * UE.Vector3.up, UE.ForceMode.VelocityChange)
+                else
+                    rb:AddForce(attenuation * dir.normalized, UE.ForceMode.VelocityChange)
+                end
+            end
+        end
+    end
+end
+
+function tt:SetChargeEffect(isPlay)
+    self.soundEffect.enabled = isPlay
+end
+
+function tt:SetExpression(isOnCharge)
+    local tarValue = isOnCharge and 0.2 or 0.5
+    CL.Scheduler.RemoveSchedule(self.expTimeId)
+    self.expTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            for i = 0, 4 do
+                local weight = UE.Mathf.Lerp(self.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
+                self.handPoseControl.fingers[i]:SetPose(weight)
+            end
+        end
+    , UE.Time.unscaledDeltaTime, 0.2)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function tt:Reset()
+    self.isReady = false
+    if self.timer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+    self:SetChargeEffect(false)
+    self:SetExpression(false)
+end
+
+return Class(nil,nil,tt)

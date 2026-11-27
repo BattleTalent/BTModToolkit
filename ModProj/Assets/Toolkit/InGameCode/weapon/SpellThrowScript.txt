@@ -1,0 +1,179 @@
+local SpellBase = Require("Weapon/SpellBaseScript")
+
+local spellThrowScript = {
+    --flyObjName(string) = "FlyFireBallX"
+}
+
+function spellThrowScript:CleanupThrowRuntime()
+    self.localActId = SafeRemoveSchedule(self.localActId)
+end
+
+function spellThrowScript:OnDestroy()
+    self:CleanupThrowRuntime()
+    SpellBase.OnDestroy(self)
+end
+
+function spellThrowScript:UnSlotSpell(slot)
+    self:CleanupThrowRuntime()
+    SpellBase.UnSlotSpell(self, slot)
+end
+
+function spellThrowScript:CloseSkill()
+    self:CleanupThrowRuntime()
+    self:SetHandPose(false)
+    SpellBase.CloseSkill(self)
+end
+
+
+
+--[[
+function spellThrowScript:Awake()
+    self.__base.Awake(self)
+end
+]]
+
+
+
+
+ 
+function spellThrowScript:OnChargeBegin()
+    self:SetHandPose(true)
+
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.fo then
+        print("error: Charge begin before release-------------------------------" .. tostring(self.fo))
+        self:ReleaseSpell()
+    end
+    
+    --print("OnChargeBegin")
+    local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)
+
+    if self.host.interact:IsEnhance() and fo.script.self.EnhanceSpell then
+        fo.script.self:EnhanceSpell()
+    end
+    fo.script.self:SetOwner(self)
+    
+    self:SetHandPose(true)
+    -- you can access base function in this way:
+end
+
+function spellThrowScript:OnChargeReady()
+    self:PrepareSpellOnHand()
+
+    if self.isEnchantable >= 1 then
+        self:StartDetectingEnchant(self.createPoint)
+    end
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+        self.localActId = CL.Scheduler.Create(self.trans, 
+            function(sche, t, s)
+                if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                    or not self.slotHand or IsNullOrDestroyed(self.slotHand) then
+                    sche:Stop()
+                    return
+                end
+                if self.slotHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp then
+                    self:OnChargeRelease(true)
+                    sche:Stop()
+                end
+            end,
+        0, -1).actionId
+    end
+end
+
+
+
+
+function spellThrowScript:OnChargeCancel()
+    self:ReleaseSpell()
+    
+    self:SetHandPose(false)
+    
+
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+    
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+    end
+end
+
+
+
+ 
+function spellThrowScript:OnChargeRelease(isLocal)
+    --throw
+    self:SetHandPose(false)
+    
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if self.isOnline and not isLocal then
+        return
+    end
+    
+    if self.isOnline then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+    end
+    
+    --if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+    --    return
+    --end
+    
+    
+    if not self:TryThrow() then
+        --[[
+        local hand = self:GetSpellHand()
+        if not IsNullOrDestroyed(self.fo) and self.fo.trans.gameObject.activeSelf
+        and not IsNullOrDestroyed(hand) then
+            hand.character.attr:AddMp(self.host:GetLastManaCost())
+        end
+        ]]
+        if self.isOnline then
+            local hand = self:GetSpellHand()
+            if hand then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandReleaseFo() end
+            end
+        else
+            self:ReleaseSpell()
+        end
+    end
+    
+    if not self.isOnline then
+        self.fo = nil
+    end
+    
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+end
+
+--Handling triggers when charge on hand
+function spellThrowScript:OnFoDestroyed(fo)
+    if self.fo and self.fo.script.self == fo then
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+                self.host:CloseSkill()
+            else
+                return
+            end
+        else
+            self.host:CloseSkill()
+        end
+        self.fo = nil
+
+        if self.isEnchantable >= 1 then
+            self:StopDetectingEnchant()
+        end
+    end
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, spellThrowScript)

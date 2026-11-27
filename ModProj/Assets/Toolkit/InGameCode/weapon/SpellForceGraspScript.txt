@@ -1,0 +1,1108 @@
+
+local SpellThrow = Require("Weapon/SpellThrowScript")
+
+local spellForceGrasp = {
+    enchantingEffect = "GrabEnchanting",
+    enchantEffectFly = "GrabEnchantFly",
+    enchantEffectLoop = "GrabEnchantLoop",
+    enchantEffectEnd = "GrabEnchantEnd",
+    
+    
+    maxRange = 16,
+    
+    recordTime = 0.2,
+    recordEndTime = 0,
+    
+    throwLimit = 1,
+    deltaDis = 0.5,
+    
+    rayLayer = UE.LayerMask.GetMask(
+        UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value)
+    ),
+    
+    startGrabAnim = "Grab_Phantom_Hand_appear",
+    stopGrabAnim = "Grab_Phantom_Hand_disappear",
+
+    firstGrasp = true,
+}
+
+spellForceGrasp.GraspBallList = {}
+
+function spellForceGrasp:Awake()
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    
+    local hand = nil
+    local hitPu = nil
+    local attachHand = nil 
+    local lastHolder = nil
+    local sqrVel = 25
+    self.onHitFunc = function (fc)
+        if fc ~= self.target then
+            return
+        end
+        
+        hand = self:GetSlotHand()
+        if not hand then
+            return
+        end
+        
+        hitPu = CL.FullBodyMuscleState.dmgHitData.basicData.hitPu
+        
+        if IsNullOrDestroyed(hitPu) then
+            return
+        end
+        
+        --body part
+        --if hitPu.trans.root == hand.character:GetPlayerUnit().trans then
+        --    self:TargetStopMove(self.target)
+        --    self:ClearTarget()
+        --    self:StopGrab()
+        --    return
+        --end
+        
+        --InteractBase on attach
+        if hitPu.unitType == CL.Tagger.Tag.InteractWeapon or 
+        hitPu.unitType == CL.Tagger.Tag.InteractObj then
+            attachHand = hitPu:GetPrimaryHand() or hitPu:GetSecondaryHand()
+            if not IsNullOrDestroyed(attachHand) then
+                if attachHand.character == hand.character then
+                    self:TargetStopMove(self.target)
+                    self:ClearTarget()
+                    --print("ib on attach hit pu ::" .. hitPu.name)
+                    
+                    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerStopGrab() end
+                    end 
+                    
+                    self:StopGrab()
+                    return
+                end
+            else
+                --InteractBase on Throw  vel > value and lastAttach is Player
+                lastHolder = hitPu:GetLatestHolder()
+                if not IsNullOrDestroyed(lastHolder) and lastHolder == hand.character.aiProxy then
+                    if hitPu.rb.velocity.sqrMagnitude > sqrVel then
+                        self:TargetStopMove(self.target)
+                        --print("ib on throw hit pu ::" .. hitPu.name)
+                        self:ClearTarget()
+                        
+                        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                            local state = GetNetworkIBState(self)
+                            if state ~= nil then state:ServerStopGrab() end
+                        end 
+                        self:StopGrab()
+                    end
+                end
+            end
+        end
+    end
+    
+    
+    --Disable When Grab Other
+    self.disanableFunc = function(ao)
+        hand = self:GetSlotHand()
+        if not IsNullOrDestroyed(hand) and ao.attachedHand == hand then
+            self:StopAim()
+        end
+    end
+    
+    self.__base.Awake(self)
+end
+
+function spellForceGrasp:SlotSpell(slot)
+    self.isSlot = true
+    
+    self.hand = self:GetSlotHand()
+    if self.hand and not self.hand:IsTriggering() then
+        self:StartAim()
+    end
+end
+
+function spellForceGrasp:CleanupForceGraspRuntime()
+    self.localActId = SafeRemoveSchedule(self.localActId)
+    self.aimTimer = SafeStopSchedule(self.aimTimer, self.host)
+    self.grabTimeId = SafeRemoveSchedule(self.grabTimeId)
+    self.pullCharacterActId = SafeRemoveSchedule(self.pullCharacterActId)
+    self:StopGrabEffect()
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.forceSoundInfo)
+    self.forceSoundInfo = nil
+end
+
+function spellForceGrasp:OnDestroy()
+    self:StopGrab()
+    self:StopPullCharacter()
+    self:CleanupForceGraspRuntime()
+    SpellThrow.OnDestroy(self)
+end
+
+function spellForceGrasp:StopHoldingAndGrab(netId)
+    if not self.isSlot then
+        return
+    end
+    local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(netId)
+    if IsNullOrDestroyed(nfc) then
+        return
+    end
+    self.target = nfc.fc
+    self.isGrabFc = self:TryGrab()
+    spellForceGrasp.StopGraspBallHolding(self.target)
+end
+
+function spellForceGrasp:UnSlotSpell(slot)
+    self.isSlot = false
+    self:StopGrab()
+    if self.isPullCharacter then
+        self:StopPullCharacter()
+    end
+    self:ClearTarget()
+    self:StopAim()
+    SpellThrow.UnSlotSpell(self, slot)
+end
+
+function spellForceGrasp:OpenSkill()
+    self:StopAim()
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.isGrabFc = false
+    
+    if spellForceGrasp.IsGraspBallHolding(self.target) then
+        if self.isOnline then
+            local hand = self:GetSlotHand()
+            if hand and not IsNullOrDestroyed(hand) and not IsNullOrDestroyed(self.target) then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerPullCharacter(hand.character.networkPlayer.netId, self.target.networkCharacter.netId) end
+                self.isPullCharacter = true
+            end
+        else
+            self:PullCharacter()
+            self.isPullCharacter = true
+        end
+    else
+        self.isGrabFc = self:TryGrab()
+        --print("open skill try grab-------------:" .. tostring(self.isGrabFc))
+    end
+end
+
+function spellForceGrasp:CloseSkill()
+    if self.isGrabFc then
+        self:StopGrab()
+    end
+    if self.isPullCharacter then
+        self:StopPullCharacter()
+    end
+    self.isPullCharacter = false
+    
+    self.isGrabFc = false
+    
+    self:StartAim()
+    SpellThrow.CloseSkill(self)
+end
+
+function spellForceGrasp:OnChargeBegin()
+    --print("charage begin------:" .. tostring(self.isGrabFc) .. "  " .. tostring(self.isPullCharacter))
+    if self.isGrabFc or self.isPullCharacter then
+        return
+    end
+    
+    self.host.instantSkill = true
+    self.__base.OnChargeBegin(self)
+end
+
+function spellForceGrasp:OnChargeReady()
+    --print("charage ready------:" .. tostring(self.isGrabFc) .. "  " .. tostring(self.isPullCharacter))
+    if self.isGrabFc or self.isPullCharacter then
+        return
+    end
+    self.__base.OnChargeReady(self)
+end
+
+function spellForceGrasp:OnChargeCancel()
+    --print("charage cancel------:" .. tostring(self.isGrabFc) .. "  " .. tostring(self.isPullCharacter))
+    if self.isGrabFc or self.isPullCharacter then
+        return
+    end
+    
+    self.host.instantSkill = false
+    self.__base.OnChargeCancel(self)
+
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+    end
+end
+
+function spellForceGrasp:OnChargeRelease(isLocal)
+    --print("charage release------:" .. tostring(self.isGrabFc) .. "  " .. tostring(self.isPullCharacter))
+    if self.isGrabFc or self.isPullCharacter then
+        return
+    end
+    
+    if self.isOnline then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+    end
+
+    self.host.instantSkill = false
+    self.__base.OnChargeRelease(self, isLocal)
+end
+
+function spellForceGrasp:StartAim()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local hand = self:GetSlotHand()
+    local headset = hand.character:GetHeadset()
+    
+    local cacheList = {}
+    local results = {}
+    local list1 = {}
+    local list2 = {}
+    self:StopAim()
+    local curTarget = nil
+    
+    self.aimTimer = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or not hand or IsNullOrDestroyed(hand)
+                or IsNullOrDestroyed(headset) then
+                self.aimTimer = nil
+                sche:Stop()
+                return
+            end
+            if hand:IsGrabbing() or not self.isSlot then
+                self:ClearTarget()
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerShowHint(hand.character.networkPlayer.netId, -1, false) end
+                end
+                self:HideHint()
+                return
+            end
+            
+            curTarget = self:FindTarget(hand, headset, results, list1, list2)
+            if curTarget and not IsNullOrDestroyed(curTarget) then
+                self.target = curTarget
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerShowHint(hand.character.networkPlayer.netId, self.target.networkCharacter.netId, true) end
+                end
+                self:ShowHint(self.target)
+                self.recordEndTime = UE.Time.time + self.recordTime
+            elseif UE.Time.time <= self.recordEndTime and self.target and not IsNullOrDestroyed(self.target) then
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerShowHint(hand.character.networkPlayer.netId, self.target.networkCharacter.netId, true) end
+                end
+                self:ShowHint(self.target)
+            else
+                self:ClearTarget()
+                
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerShowHint(hand.character.networkPlayer.netId, -1, false) end
+                end
+                self:HideHint()
+            end
+        end
+    , 0.02, -1)
+end
+
+function spellForceGrasp:StopAim()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.aimTimer = SafeStopSchedule(self.aimTimer, self.host)
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerShowHint(-1, -1, false) end
+    end
+    self:HideHint()
+end
+
+
+function spellForceGrasp:FindTarget(hand, headset, results, list1, list2)
+    list1 = {}
+    list2 = {}
+    
+    local eyeDir = headset.forward
+    local headPos = headset.position
+    
+    local handPos = hand.trans.position
+    local headHandOffset = handPos - headPos
+    local headHandDis = headHandOffset.magnitude
+    local headHandDir = headHandOffset/headHandDis
+    local headHandDot = UE.Vector3.Dot(headHandDir, eyeDir)
+    
+    if headHandDot < 0.75 then
+        return nil
+    end
+    
+    headHandDot = UE.Mathf.Pow(headHandDot, 25)
+    
+    local fingerDir = hand.handDir.forward
+    local grabDir = UE.Vector3.Lerp(fingerDir, headHandDir, headHandDot)
+    local grabPos = handPos
+    
+    local origin = grabPos + grabDir * 0.2
+    results = UE.Physics.SphereCastAll(origin, 1.5,
+        grabDir, self.maxRange, CL.LayerDefine.BodyMask.value)
+    
+    if results.Length <= 0 then
+        return nil
+    end
+    
+    local count = 0
+    local fc = nil
+    local mu = nil
+    local dot = nil
+    while(count < results.Length - 1) do
+        fc = CL.CharacterMgr.Instance:GetFullCharacter(results[count].transform)
+        
+        if not list2[fc] then
+            if not IsNullOrDestroyed(fc) then            
+                mu = fc.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+                if mu then
+                    dot = UE.Vector3.Dot((mu.rbTrans.position - grabPos).normalized, grabDir)
+                    
+                    if not mu.IsBlownUp then
+                        table.insert(list1, {["idx"] = count, ["fc"] = fc, ["dot"] = dot})
+                        list2[fc] = true
+                    end
+                --else
+                --    dot = UE.Vector3.Dot((results[count].point - grabPos).normalized, grabDir)
+                end
+                --print("list add item:" .. fc.trans.name .. " dot::" .. dot)
+
+            end
+        end
+        count = count + 1
+    end
+    
+    table.sort(list1, 
+    function(a, b)
+        return a.dot > b.dot
+    end)
+    
+    count = 1
+    local isHit = true
+    local curCastHit = nil
+    while (count <= #list1) do
+        curCastHit = results[list1[count].idx]
+        isHit = UE.Physics.SphereCast(origin, 0.01,
+        curCastHit.point - origin, curCastHit.distance, self.rayLayer)
+        if not isHit then
+            --print(" find pu")
+            return list1[count].fc
+        end
+        count = count + 1
+    end
+    
+    return nil
+end
+
+function spellForceGrasp:NetworkShowHint(playerNetId, fcNetId, isShow)
+    if isShow and (not CL.Network.VRNetworkManager.ServerOnly and CS.Mirror.NetworkClient.localPlayer.netId ~= playerNetId) then
+        return
+    end
+    
+    if isShow then
+        local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(fcNetId)
+        if IsNullOrDestroyed(nfc) then
+            return
+        end
+        self.target = nfc.fc
+        self:ShowHint(self.target)
+    else
+        self:HideHint()
+    end
+end
+
+function spellForceGrasp:ShowHint(pu)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    local trans = nil
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        cast(pu, typeof(CL.FullCharacterControl))
+        local mu = pu.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+        if mu then
+            trans = mu.rbTrans
+        end
+    end
+    
+    if not trans then
+        return
+    end
+    
+    --if not self.hintPoint or IsNullOrDestroyed(self.hintPoint) then
+    --    self.hintPoint = CL.QuadUIMgr.Instance:CreateUI("AttachPointQuad")
+    --    self.hintHud = self.hintPoint:GetComponent(typeof(CL.HUDBillboard))
+    --else
+    --    self.hintPoint.gameObject:SetActive(true)
+    --end
+    --self.hintHud.followTarget = trans
+    
+    
+    if not self.hintEffect or IsNullOrDestroyed(self.hintEffect) then
+        self.hintEffect = CL.EffectMgr.Instance:PlayEffect(self.effectName, trans.position, UE.Quaternion.identity)
+        
+        local hand = self:GetSlotHand()
+        if hand then
+            local lb = self.hintEffect.trans:GetComponent(typeof(CL.LuaBehaviour))
+            if not IsNullOrDestroyed(lb) then
+                local scp = lb.script:GetSelf()
+                scp:SetTargetTrans(hand.character:GetHeadset())
+            end
+        end
+    end
+    self.hintEffect.trans:SetParent(trans)
+    self.hintEffect.trans.localPosition = UE.Vector3.zero
+    
+    local camPos = CL.HUDMgr.Instance:GetHudTracker()
+    local dir = camPos.position - self.hintEffect.trans.position
+    self.hintEffect.trans.forward = dir
+end
+
+function spellForceGrasp:HideHint()
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    --if self.hintPoint and not IsNullOrDestroyed(self.hintPoint) then
+    --    self.hintPoint.gameObject:SetActive(false)
+    --end
+    
+    
+    CL.EffectMgr.Instance:GiveBack(self.hintEffect)
+    self.hintEffect = nil
+end
+
+function spellForceGrasp:PlayGrabEffect(pos)
+    if self.grabEo and not IsNullOrDestroyed(self.grabEo) then
+        return
+    end
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    local dir = hand.character.trans.forward
+    self.grabEo = CL.EffectMgr.Instance:PlayEffect(self.grabEffectName, pos, UE.Quaternion.LookRotation(dir))
+    local isplay = self.grabEo:PlayAnimationClip(self.startGrabAnim)
+end
+
+function spellForceGrasp:UpdateGrabEffect(pos, hand)
+    if self.grabEo and not IsNullOrDestroyed(self.grabEo) then
+        local ctrans = hand.character.trans
+        --self.grabEo.trans.forward = hand:GetHandIndex() == 0 and ctrans.forward - ctrans.right or ctrans.forward + ctrans.right
+        self.grabEo.trans.forward = ctrans.forward
+        --self.grabEo.trans.up = hand:GetHandIndex() == 0 and UE.Quaternion.AngleAxis(30, ctrans.forward) * UE.Vector3.up or UE.Quaternion.AngleAxis(-30, ctrans.forward)* UE.Vector3.up
+        self.grabEo.trans:Rotate(UE.Vector3(0, 0, (hand:GetHandIndex() == 0 and 15 or -15)))
+        self.grabEo.trans.position = pos
+    end
+end
+
+function spellForceGrasp:NetworkStartGrab(netId)
+    local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(netId)
+    if IsNullOrDestroyed(nfc) then
+        return
+    end
+    self.target = nfc.fc
+    self.isGrabFc = true
+    local mu = self.target.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+    self.forceSoundInfo = self.forceSound:PlaySoundInfo()
+    if self.forceSoundInfo then
+        self.forceSoundInfo.audio.pitch = 0
+    end
+    --effect
+    self:PlayGrabEffect(mu.rbTrans.position)
+    
+    local hand = nil
+    self.grabTimeId = SafeRemoveSchedule(self.grabTimeId)
+    self.grabTimeId = CL.Scheduler.Create(self.createTrans,
+        function(sche, t, s)
+            hand = self:GetSlotHand()
+            if IsNullOrDestroyed(self.host) or not hand or IsNullOrDestroyed(hand) then
+                return
+            end
+            
+            if not mu or IsNullOrDestroyed(mu.rbTrans) then
+                return
+            end
+            
+            if self.forceSoundInfo then
+                self.forceSoundInfo.audio.pitch =  math.min(3, math.max(0.01, 2.8 * math.min(mu.rb.velocity.magnitude, 45)/45 ))
+            end
+            self:UpdateGrabEffect(mu.rbTrans.position, hand)
+        end
+    , 0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function spellForceGrasp:TryGrab()
+    if not self.target or IsNullOrDestroyed(self.target) then
+        return false
+    end
+    self.target.motion:Knockout()
+    
+    CL.Scheduler.RemoveSchedule(self.grabTimeId)
+    
+    local hand = self:GetSlotHand()
+    if not hand then
+        return false
+    end
+    -- cost mana when do grabbing
+    local needMana = 20 * self.host.AppliedManaCostMultiplier
+    if not CostMana(self.host, needMana, hand.character) then
+        return false
+    end
+       
+    if hand.character:IsMidAir() then
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_AirStay") then
+            hand.character:StartAerialStay(hand, self.target)
+        end
+    end
+    
+    local localBeginPos = hand.character.trans:InverseTransformPoint(hand.trans.position)
+    local handOffset = hand.trans.position - hand.character.trans:TransformPoint(localBeginPos)
+    local handOffsetDir = handOffset.normalized
+    local handOffsetLen = handOffset.magnitude
+    local intensity = 0
+    
+    local aimLen = hand.character:GetBodyHeight() * 0.55
+    local midHeight = self.target.controller.capsuleCollider.height * 7/9
+    local targetPos = hand.character.trans.position + hand.character.trans.forward * aimLen * 1.2 + 
+                    self.target.trans.up * midHeight + handOffsetDir * intensity * 0.3
+    local mu = self.target.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+    if IsNullOrDestroyed(self.rotTrans) then
+        self.rotTrans = UE.GameObject().transform
+    end
+    self.rotTrans.rotation = mu.rbTrans.rotation
+    self.rotTrans:SetParent(hand.character.trans)
+    
+    self.forceSoundInfo = self.forceSound:PlaySoundInfo()
+    if self.forceSoundInfo then
+        self.forceSoundInfo.audio.pitch = 0
+    end
+    
+    self.target:OnAttachBuild(hand.physicsHand, nil, mu.rb)
+    self.buildAttachHand = hand
+    
+    --effect
+    self:PlayGrabEffect(mu.rbTrans.position)
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerStartGrab(self.target.networkCharacter.netId) end
+    end 
+    
+    self.grabTime = UE.Time.time
+    
+    local pinPoint = targetPos
+    local lastTargetPos = hand.character.trans:InverseTransformPoint(targetPos)
+    local lastGbTargetPos = targetPos
+    local easingValue = 0
+    local curVel = nil
+    
+    --hand avg velocity
+    local character = hand.character
+    local localHandVelList = {}
+    local curHandPos = character.trans:InverseTransformPoint(hand.trans.position)
+    local lastHandPos =  curHandPos
+    local curHandVel = UE.Vector3.zero
+    
+    local powerfulGrabTime = 0.5
+    
+    self.firstGrasp = true
+
+    self.grabTimeId = CL.Scheduler.Create(self.createTrans,
+        function(sche, t, s)
+            hand = self:GetSlotHand()
+            if IsNullOrDestroyed(self.host) or not hand or IsNullOrDestroyed(hand) then
+                self:ClearTarget()
+                self:StopGrab()
+                if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerStopGrab() end
+                end 
+                
+                return
+            end
+            
+            if IsNullOrDestroyed(self.target) then
+                self:ClearTarget()
+                self:StopGrab()
+                if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerStopGrab() end
+                end 
+                
+                return
+            end
+            
+            if self.target.muscleState:IsPowerfulCharacter() and not self.target.attr:IsDead() and t > powerfulGrabTime then
+                self.host:CloseSkill()
+                if self.isOnline then
+                    if CL.Network.VRNetworkManager.Instance.IsServer then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerCloseSkill() end
+                    end
+                end
+                return
+            end
+            
+            if #localHandVelList > 8 then
+                table.remove(localHandVelList, 1)
+            end
+            
+            curHandPos = character.trans:InverseTransformPoint(hand.trans.position)
+            curHandVel = (curHandPos - lastHandPos) / UE.Time.deltaTime
+            lastHandPos = curHandPos
+            table.insert(localHandVelList, curHandVel)
+            
+            if not IsNullOrDestroyed(self.target.bone) then                
+                handOffset = hand.trans.position - hand.character.trans:TransformPoint(localBeginPos)
+                handOffsetDir = handOffset.normalized
+                handOffsetLen = handOffset.magnitude
+                intensity = handOffsetLen > 1 and 1 or CL.EasingEquations.EaseOutQuad(0, 1, handOffsetLen)
+                
+                
+                pinPoint = hand.character.trans.position + hand.character.trans.forward * aimLen * 1.2 + 
+                    self.target.trans.up * midHeight + handOffsetDir * intensity * 0.3
+                --lastGbTargetPos = hand.character.trans:TransformPoint(lastTargetPos)
+                --hand velocity
+                curVel = UE.Vector3.zero
+                for k, v in ipairs(localHandVelList) do
+                    curVel = curVel + v
+                end
+                curVel = curVel / #localHandVelList
+                curVel = hand.character.trans:TransformVector(curVel)
+                --print("cur Vel:" .. curVel.x .. "  y:" .. curVel.y .. " z:" .. curVel.z .. "  speed:" .. curVel.magnitude  .. "  estimator:" .. hand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.1).magnitude)
+                easingValue = CL.EasingEquations.EaseOutExpo(0, 1, curVel.magnitude/self.maxHandSpeed)
+                --print("easing value----------:".. easingValue .. " cut :" .. math.max(easingValue - self.cutMlpValue, 0) .. " mlp:" .. easingValue * self.targetVelMlp)
+                easingValue = math.max(easingValue - self.cutMlpValue, 0)
+                curVel = curVel * easingValue * self.targetVelMlp
+                --print("cur vel----------:".. hand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.1).magnitude .. " cur :" .. curVel.magnitude)
+                targetPos = pinPoint + curVel
+                --targetPos = UE.Vector3.Lerp(targetPos, pinPoint, self.targetLerpValue * UE.Time.deltaTime)
+                
+                lastTargetPos = hand.character.trans:InverseTransformPoint(targetPos)
+                
+                targetPos = UE.Vector3.Lerp(mu.rbTrans.position, targetPos, UE.Time.deltaTime * 10)
+                
+                if self.firstGrasp then
+                    self.firstGrasp = false
+                    self.firstGraspSound:PlaySoundInfo()
+                end
+
+                self.target.bone:MuscleFollow(CL.RagdollBoneInfo.Spine, targetPos, 
+                    self.rotTrans.rotation, 0.5, 0.08)
+                
+                if self.forceSoundInfo then
+                    self.forceSoundInfo.audio.pitch = math.min(3, math.max(0.01, 2.8 * math.min(mu.rb.velocity.magnitude, 45)/45 ))
+                end
+                self:UpdateGrabEffect(targetPos, hand)
+            end
+        end
+    , 0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+
+    self:AddCharacterListener(self.target)
+    
+    return true
+end
+
+function spellForceGrasp:NetworkPullCharacter(playerNetId, fcNetId)
+    if not CL.Network.VRNetworkManager.ServerOnly and CS.Mirror.NetworkClient.localPlayer.netId ~= playerNetId then
+        return
+    end
+    
+    local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(fcNetId)
+    if IsNullOrDestroyed(nfc) then
+        return
+    end
+    self.target = nfc.fc
+    self.isPullCharacter = true
+    
+    self:PullCharacter()
+end
+
+function spellForceGrasp:PullCharacter()
+    if not self.target or IsNullOrDestroyed(self.target) then
+        return false
+    end
+    
+    local hand = self:GetSlotHand()
+    if not hand then
+        return false
+    end
+    local needMana = 20 * self.host.AppliedManaCostMultiplier
+    if not CostMana(self.host, needMana, hand.character) then
+        return false
+    end
+    
+    self.pullcharacter = hand.character
+    self.pullcharacter:SetFootGliding(true)
+    
+    local bodyHeight = self.pullcharacter:GetBodyHeight()
+    local aimLen = bodyHeight * 0.55
+    
+    local mu = self.target.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+    local targetTrans = mu.rbTrans
+    
+    local dir = nil    
+    local vec = self.pullcharacter.trans.position - targetTrans.position
+    local bottomPoint = targetTrans.position
+    
+    
+    local isHit, rayCastHit = self:HitGroundPoint(bottomPoint)
+    if isHit then
+        if self.target.controller:IsMidAir() then
+            if math.abs(bottomPoint.y - rayCastHit.point.y) < bodyHeight/2  then
+                bottomPoint = rayCastHit.point
+            else
+                bottomPoint = bottomPoint - UE.Vector3.up * bodyHeight/2
+            end
+        else
+            bottomPoint = rayCastHit.point
+        end
+    else
+        bottomPoint = bottomPoint - UE.Vector3.up * bodyHeight/2
+    end
+    local targetPoint = nil
+    self.pullcharacter:SetDragPower(0)
+    local dis = -1
+    local deltaDis = self.deltaDis
+    local curDrag = 0
+    local lastDrag = 0
+    local oriDrag = self.pullcharacter:GetOriginalDragPower()
+    local value = 0
+    
+    targetPoint = bottomPoint + vec.normalized * aimLen * self.lenMlp
+    vec = self.pullcharacter.trans.position - targetPoint
+    local maxDis = vec.magnitude
+    local easingValue = 0
+    
+    local delay = nil
+    self.pullCharacterActId = CL.Scheduler.Create(self.createTrans,
+        function(sche, t, s)
+            hand = self:GetSlotHand()
+            if IsNullOrDestroyed(self.host) or not hand or IsNullOrDestroyed(hand) then
+                self:StopPullCharacter()
+                return
+            end
+            
+            if IsNullOrDestroyed(self.target) then
+                self:StopPullCharacter()
+                return
+            end
+            
+            vec = self.pullcharacter.trans.position - bottomPoint
+
+            targetPoint = self.pullcharacter.trans.position - vec.normalized * deltaDis * UE.Time.deltaTime
+
+            
+            dis = vec.magnitude > aimLen * self.lenMlp and vec.magnitude - (aimLen * self.lenMlp) or 0
+            value = math.min(dis/maxDis, 1)
+            easingValue = math.min(CL.EasingEquations.EaseOutExpo(0, 1, value) * 2, 1)
+            
+            deltaDis = self.deltaDis * easingValue
+            
+            if vec.magnitude < aimLen * self.lenMlp + 0.2 then
+                self.pullcharacter:SetDragPower(oriDrag)
+                --if not delay then
+                --    delay = t + 0.03
+                --else
+                    self.pullcharacter.capsuleRB.velocity = UE.Vector3.zero
+                    self.pullcharacter:AddForce(vec.normalized * 0.5)
+                --    if t >= delay then
+                        self:StopPullCharacter()
+                --    end
+                    if self.isOnline then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:CommandStopHoldingAndGrab(self.target.networkCharacter.netId) end
+                    else
+                        self.isGrabFc = self:TryGrab()
+                    end
+                    spellForceGrasp.StopGraspBallHolding(self.target)
+                    sche:Stop()
+                    return
+                --end
+            else
+                curDrag = (1 - easingValue) * oriDrag
+                self.pullcharacter:SetDragPower(curDrag)
+                CL.PhysicsFollow.TrackPosition(self.pullcharacter.capsuleRB, targetPoint, deltaDis, self.deltaDis)
+            end
+            
+            --self.forceSoundInfo.audio.pitch = 2.8 * math.min(mu.rb.velocity.magnitude, 45)/45
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function spellForceGrasp:HitGroundPoint(pos)
+    local isHit, raycastHit  = UE.Physics.SphereCast(pos + UE.Vector3.up * 1, 0.2, UE.Vector3.down, 3, CL.LayerDefine.EnvLayerMask.value)
+    
+    return isHit, raycastHit
+end
+
+function spellForceGrasp:AddCharacterListener(fc)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+        
+    if not IsNullOrDestroyed(fc) and fc.muscleState.BeHittedEvent then
+        fc.muscleState:BeHittedEvent("+", self.onHitFunc)
+    end
+end
+
+function spellForceGrasp:RemoveCharacterListener(fc)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+        
+    if not IsNullOrDestroyed(fc) and fc.muscleState.BeHittedEvent then
+        fc.muscleState:BeHittedEvent("-", self.onHitFunc)
+    end
+end
+
+function spellForceGrasp:NetworkOnThrowFc(netId, force)
+    local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(netId)
+    if IsNullOrDestroyed(nfc) then
+        return
+    end
+    
+    self:Throw(nfc.fc, force)
+end
+
+function spellForceGrasp:Throw(fc, vel)
+    if not fc or IsNullOrDestroyed(fc) then
+        return
+    end
+    
+    local mu = fc.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+    local speed = vel.magnitude
+    if speed > self.throwLimit then
+        spellForceGrasp.StopGraspBallHolding(fc)
+        fc.muscleState:DoThrowing()
+        local forceFactor = 6
+        local limitVel = 30 -- 30 is already very large, since npc have multiple rigidbodies
+        --vel = hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+        local force = CL.PhysicsHelper.LimitVelocityForce(vel * (speed - self.throwLimit) * forceFactor, limitVel)
+        fc:AddForceOnPart(mu.rb, force, UE.ForceMode.VelocityChange)
+    else
+        ---fc.bone:ChangeVelocityWithMusclePart(CL.RagdollBoneInfo.Spine, UE.Vector3.zero)
+        self:TargetStopMove(fc)
+    end
+end
+
+function spellForceGrasp:TargetStopMove(fc)
+    if not fc or IsNullOrDestroyed(fc) then
+        return
+    end
+    CL.Scheduler.Create(self.createTrans,
+        function(sche, t, s)
+            if not fc or IsNullOrDestroyed(fc) then
+                return
+            end        
+            
+            local mus = fc.bone:GetTemporaryListMuscleChain(CL.RagdollBoneInfo.Spine)
+            local mu = nil
+            for i = 0, mus.Count - 1 do
+                mu = fc.bone.ragdoll:GetMuscle(mus[i])
+                if mu then
+                    if not IsNullOrDestroyed(mu.rb) then
+                        mu.rb.velocity = UE.Vector3.zero
+                        mu.rb.angularVelocity = UE.Vector3.zero
+                        if not mu.rb:IsSleeping() then
+                            mu.rb:Sleep()
+                            mu.rb:WakeUp()
+                        end
+                    end
+                end
+            end
+        end
+    , 0, 0, 0.01):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function spellForceGrasp:ClearTarget()
+    if self.buildAttachHand then
+        if self.target and not IsNullOrDestroyed(self.target) then
+            local mu = self.target.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+            self.target:OnAttachBreak(self.buildAttachHand.physicsHand, nil, mu.rb)
+        end
+        
+        self.buildAttachHand = nil
+    end
+    
+    self.target = nil
+end
+
+function spellForceGrasp:StopPullCharacter()
+     self.pullCharacterActId = SafeRemoveSchedule(self.pullCharacterActId)
+     
+     if self.pullcharacter then
+        self.pullcharacter:SetFootGliding(false)
+        self.pullcharacter:SetDragPower(self.pullcharacter:GetOriginalDragPower())
+     end
+     self.pullcharacter = nil
+end
+
+function spellForceGrasp:StopGrab()
+    self.grabTimeId = SafeRemoveSchedule(self.grabTimeId)
+    
+    if self.target and not IsNullOrDestroyed(self.target) then
+        if self.hand and not IsNullOrDestroyed(self.hand) then
+            local mu = self.target.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+            self.target:OnAttachBreak(self.hand.physicsHand, nil, mu.rb)
+            
+            local vel = self.hand.velocityEstimator:GetAvgVelocityLocal(0.1)
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.ServerOnly or CS.Mirror.NetworkClient.localPlayer.netId == self.hand.character.networkPlayer.netId then
+                    if CL.Network.VRNetworkManager.Instance.IsServer then
+                        self:Throw(self.target, vel)
+                    else
+                        --print("client cmd to throw----------------------------")
+                        if CL.MixedRealityMgr.NeedAlign then
+                            vel = CL.MixedRealityMgr.GetLocalVec(vel)
+                        end
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:CommandThrowFc(self.target.networkCharacter.netId, vel) end
+                    end
+                end
+            else
+                self:Throw(self.target, vel)
+            end
+        end
+    
+        self:RemoveCharacterListener(self.target)
+    end
+    self:ClearTarget()
+    self:StopGrabEffect()
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.forceSoundInfo)
+    self.forceSoundInfo = nil
+end
+
+function spellForceGrasp:StopGrabEffect()
+    if self.grabEo and not IsNullOrDestroyed(self.grabEo) then
+        self.grabEo:PlayAnimationClipThenGiveBack(self.stopGrabAnim)
+    end
+    self.grabEo = nil
+end
+------------------------------------------------------------------------------------------------
+
+function spellForceGrasp.OnEnchantSkillWithRole(ib, fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+    ib:EnchantSkillCountUpdate()
+    local targetMu = mu
+    local targetRb = mu.rb
+    if mu.muscleName == "RightEar" or mu.muscleName == "LeftEar" then
+        targetMu = fc.ra:GetMuscle(CL.RagdollBoneInfo.Head)
+        targetRb = targetMu.rb
+    end
+    
+    spellForceGrasp.StartPulling(fc, targetMu, point)
+end
+
+function spellForceGrasp.OnEnchantSkillByStab(ib, si)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+    
+    if IsNullOrDestroyed(pu) or pu.unitType ~= CL.Tagger.Tag.InteractRole then
+        return
+    end
+    ib:EnchantSkillCountUpdate()
+    
+    local targetMu = pu.ra:GetMuscle(si.stabTarget)
+    local targetRb = si.stabTargetRB
+    if targetMu.muscleName == "RightEar" or targetMu.muscleName == "LeftEar" then
+        targetMu = pu.ra:GetMuscle(CL.RagdollBoneInfo.Head)
+        targetRb = targetMu.rb
+    end
+    
+    spellForceGrasp.StartPulling(pu, targetMu, si.stabTarget:TransformPoint(si.stabLocalPos))
+end
+
+
+function spellForceGrasp.OnEnchantSkillWithPlayer(ib, rb, thisCol, otherCol, point, normal, relaVel, character)
+    ib:EnchantSkillCountUpdate()
+    
+    local pos = point
+    if thisCol.sharedMesh and not thisCol.convex then
+        pos = point
+    else
+        pos = thisCol:ClosestPoint(point)
+    end
+    
+    spellForceGrasp.StartPulling(character:GetPlayerUnit(), nil, pos)
+end
+
+function spellForceGrasp.StartPulling(pu, mu, point, isGraspBall)
+    local fo = nil
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            fo =  CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj("FlyGraspObj", nil, point, UE.Vector3.up, -1, nil, function(netFo, go)
+                if IsNullOrDestroyed(netFo) then
+                    return
+                end
+                
+                local tb = netFo.flyObject.script:GetSelf()
+                if pu.unitType == CL.Tagger.Tag.PlayerRole then
+                    tb:StartPullingPlayer(pu, point)
+                else
+                    tb:StartPulling(pu, mu, point)
+                end
+                if isGraspBall then
+                    spellForceGrasp.AddGraspBallHoldInfo(pu, fo)
+                end
+            end)
+        else
+            return
+        end
+    else
+        fo = CL.FlyObject.CreateFlyObj("FlyGraspObj", nil, point, UE.Vector3.up)
+        local tb = fo.script:GetSelf()
+        if pu.unitType == CL.Tagger.Tag.PlayerRole then
+            tb:StartPullingPlayer(pu, point)
+        else
+            tb:StartPulling(pu, mu, point)
+        end
+        if isGraspBall then
+            spellForceGrasp.AddGraspBallHoldInfo(pu, fo)
+        end
+    end
+end
+
+function spellForceGrasp.AddGraspBallHoldInfo(pu, fo)
+    spellForceGrasp.GraspBallList[fo] = pu
+end
+
+function spellForceGrasp.RemoveGraspBallHoldInfo(fo)
+    spellForceGrasp.GraspBallList[fo] = nil
+end
+
+function spellForceGrasp.StopGraspBallHolding(pu)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    for k, v in pairs(spellForceGrasp.GraspBallList) do
+        if pu == v then
+            if not IsNullOrDestroyed(k) then
+                local tb = k.script:GetSelf()
+                tb:StopPulling()
+            end
+        end
+    end
+end
+
+function spellForceGrasp.IsGraspBallHolding(pu)
+    for k, v in pairs(spellForceGrasp.GraspBallList) do
+        if pu == v and not IsNullOrDestroyed(k) then
+            return true
+        end
+    end
+    return false
+end
+
+return Class(Require("Weapon/SpellThrowScript"), nil, spellForceGrasp)

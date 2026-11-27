@@ -1,0 +1,158 @@
+
+local GemForce = {}
+
+function GemForce:Awake()
+    self.maxDis = 10
+    self.perForce = 3000
+    self.particleSpeed = 0.5
+    self.dragSpeed = 0.5
+    self.layer = UE.LayerMask.NameToLayer("Interact")
+    self.curveMaker = CL.Bezier(30)
+end
+
+
+function GemForce:GrabSpell(a)
+    local player = CL.InteractCharacter.PlayerInstance
+    if player == nil then
+        return
+    end
+    self.hand = player.hands[a.attachedHand:GetHandIndex()]
+    self.joint = self.hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.joint.autoConfigureConnectedAnchor = false
+end
+
+function GemForce:OnRelease(a)
+    if self.joint then
+        UE.Object.Destroy(self.joint)
+        self.pathFlow:Stop()
+    end
+end
+
+function GemForce:OpenSkill()
+    self.pathFlow:Play()
+    self:SetHandPose(true)
+end
+
+function GemForce:UpdateSkill()
+    --self.lineRenderer:SetPosition(0, self.createPoint.position)
+
+    if not self.connectRb then
+        local targetPos = self.createPoint.up * self.maxDis + self.createPoint.position
+        --self.lineRenderer:SetPosition(1, targetPos)
+        self:UpdateParticle(targetPos)
+        --射线检测
+        self:RayDetect()
+    else
+        self:AxisPush()
+        --self.lineRenderer:SetPosition(1, self.connectRb.position)
+        self:UpdateParticle(self.connectRb.position)
+        if self.fc then
+            self.fc.motion:Knockout()
+        end
+    end
+end
+
+function GemForce:AxisPush()
+    local v = self.hand.inputs[CL.VRTKInputButton.ButtonType.Touchpad].Axis
+    if v.y ~= 0 then
+        local curAnchor = self.joint.anchor
+        local point = curAnchor + v.y * curAnchor.normalized * self.dragSpeed
+        if (self.grabPoint.x > 0 and (point.x > self.grabPoint.x or point.x < 0)) or (self.grabPoint.x < 0 and (point.x < self.grabPoint.x or point.x > 0)) then
+            return
+        elseif (self.grabPoint.y > 0 and (point.y > self.grabPoint.y or point.y < 0)) or (self.grabPoint.y < 0 and (point.y < self.grabPoint.y or point.y > 0)) then
+            return
+        elseif (self.grabPoint.z > 0 and (point.z > self.grabPoint.z or point.z < 0)) or (self.grabPoint.z < 0 and (point.z < self.grabPoint.z or point.z > 0)) then
+        end
+        self.joint.anchor = self.joint.anchor + v.y * self.joint.anchor.normalized * self.dragSpeed
+    end
+end
+
+function GemForce:CloseSkill()
+    self.connectRb = nil
+    --self.lineRenderer.enabled = false
+    
+    self.joint.connectedBody = nil
+    local ld = self.joint.xDrive
+    ld.positionSpring = 0
+    ld.positionDamper = 0
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = 0
+    sd.positionDamper = 0
+    self.joint.slerpDrive = sd
+    
+    self.pathFlow:Stop()
+    self:SetHandPose(false)
+end
+
+function GemForce:RayDetect()
+    local mask = UE.LayerMask.GetMask("Interact", "Ragdoll")
+        
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.createPoint.position, 0.04, self.createPoint.up, self.maxDis, mask)
+    if isHit then
+        local obj = raycastHit.transform.root.gameObject
+        print("hit obj ----------------:"..raycastHit.transform.name .."root:"..obj.name)
+        local mass = raycastHit.rigidbody.mass
+        --需要
+        local fc = obj:GetComponent("FullCharacterControl")
+        if fc then
+            local hasBeenRipped = fc.ra:HasBeenRipped()
+            local rootName = "Pelvis"
+            if hasBeenRipped then
+                local collider = raycastHit.collider
+                local mc = collider.gameObject:GetComponent(typeof(CL.RagdollMuscleCollision)) or collider.gameObject.parent:GetComponent(typeof(CL.RagdollMuscleCollision))
+                if mc then
+                    rootName = fc.bone:GetRootOfRippedMuscleChain(mc.muName)
+                end
+            else
+                self.fc = fc
+            end
+            
+            
+            --获取总重量
+            mass = 0
+            local boneList = CL.RagdollBoneInfo.GetBoneHierarchy(rootName)
+            print("rootName:"..rootName.." length:"..boneList.Length)
+            for i = 0, boneList.Length - 1 do
+                local rm = fc.ra:GetMuscle(boneList[i])
+                if rm then
+                    mass = mass + rm.rb.mass
+                    print("name:"..boneList[i].. " mass:"..rm.rb.mass)                
+                end
+            end
+        end
+        print("total mass--------------", mass)
+        self:BuildConnect(raycastHit.rigidbody, mass, raycastHit.point)
+    end
+end
+
+function GemForce:BuildConnect(rb, totalMass, point)
+    self.connectRb = rb
+    self.grabPoint = self.joint.gameObject.transform:InverseTransformPoint(rb.transform.position)
+    --joint Contect
+    self.joint.connectedBody = rb
+    self.joint.anchor = self.grabPoint
+    self.joint.connectedAnchor = UE.Vector3.zero
+    local ld = self.joint.xDrive
+    ld.positionSpring = 100 * totalMass
+    ld.positionDamper = 50 * totalMass
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = 100 * rb.mass
+    sd.positionDamper = 50 * rb.mass
+    self.joint.slerpDrive = sd
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+end
+
+function GemForce:UpdateParticle(target)
+    local time = UE.Vector3.Distance(self.createPoint.position, target)/self.particleSpeed
+    local middle = UE.Vector3.Lerp(time/2 * self.createPoint.up * self.particleSpeed + self.createPoint.position, target, 0.5)
+    self.particlePath:SetPath(self.curveMaker:GetQuadraticCurvePoints(self.createPoint.position, middle, target), UE.Vector3.up)
+    self.pathFlow:DoEmitAtPath()
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, GemForce)

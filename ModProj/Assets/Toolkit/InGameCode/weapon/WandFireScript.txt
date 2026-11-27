@@ -1,0 +1,352 @@
+local WandFire = {
+    chargeValue = {0, 0.6, 1.3},
+    readyValue = {1.5, 1.4, 1.4},
+    releaseValue = {40, 1.4, 1.4},    
+}
+
+function WandFire:IsValidSoundInfo(soundInfo)
+    return soundInfo and not IsNullOrDestroyed(soundInfo.audio)
+end
+
+function WandFire:OnGrab(a, g)
+    if not g then
+        self:SetHandTrackerSpeed(1)
+        self.slowHand = nil
+    end
+    
+    if self.cacheAttachData then
+        if not IsNullOrDestroyed(self.host) and not IsNullOrDestroyed(self.host.interact) then
+            for i = 0, self.host.interact.attachList.Length - 1 do
+                if not IsNullOrDestroyed(self.host.interact.attachList[i]) then
+                    if self.cacheAttachData[self.host.interact.attachList[i]] then
+                        self.host.interact.attachList[i].indexLimit = self.cacheAttachData[self.host.interact.attachList[i]].indexLimit
+                        self.host.interact.attachList[i].thumbLimit = self.cacheAttachData[self.host.interact.attachList[i]].thumbLimit
+                        self.host.interact.attachList[i].palmLimit = self.cacheAttachData[self.host.interact.attachList[i]].palmLimit
+                    end
+                end
+            end
+        end
+        self.cacheAttachData = nil
+    end
+end
+
+function WandFire:OnSlot(slot, t)
+    if t then
+        self.cacheAttachData = {}
+        if not IsNullOrDestroyed(self.host) and not IsNullOrDestroyed(self.host.interact) then
+            local GrabRotLimitType = CL.AttachLine.GrabRotLimitType
+            local GrabThumbLimitType = CL.AttachLine.GrabThumbLimitType
+            local GrabPalmLimitType = CL.AttachLine.GrabPalmLimitType
+
+            for i = 0, self.host.interact.attachList.Length - 1 do
+                if not IsNullOrDestroyed(self.host.interact.attachList[i]) then
+                    self.cacheAttachData[self.host.interact.attachList[i]] = {}
+                    
+                    self.cacheAttachData[self.host.interact.attachList[i]].indexLimit = self.host.interact.attachList[i].indexLimit
+                    self.cacheAttachData[self.host.interact.attachList[i]].thumbLimit = self.host.interact.attachList[i].thumbLimit
+                    self.cacheAttachData[self.host.interact.attachList[i]].palmLimit = self.host.interact.attachList[i].palmLimit
+                    
+                    self.host.interact.attachList[i].indexLimit = GrabRotLimitType.Right
+                    self.host.interact.attachList[i].thumbLimit = GrabThumbLimitType.Forward
+                    self.host.interact.attachList[i].palmLimit = GrabPalmLimitType.None
+                end
+            end
+        end
+    end
+end
+
+function WandFire:OnChargeBegin()   
+    if self.onSpit then
+        self.host:CloseSkill()
+        return
+    end
+    
+    self:ShowChargeEffect(true)
+    --self:SetEffectToState(self.chargeValue)
+end
+
+function WandFire:OnChargeCancel()
+    self:ShowChargeEffect(false)
+end
+
+function WandFire:OnChargeReady()
+    --self:SetEffectToState(self.readyValue)
+    self.readySound:PlaySound()
+end
+
+function WandFire:OnChargeRelease()
+    self:PlaySpitEffectAnim(0.3)
+    
+    local name = self.flyObjName
+    local time = self.time
+    if self.host.interact:IsEnhance() then
+        name = self.enhanceObjName
+        time = self.enhanceTime
+    end
+    
+    --handLerpspeed
+    self:SetHandTrackerSpeed(0.03)
+    
+    self.onSpit = true
+    self:SpitFire(name, time)
+    
+    self.host.interact:CostDurability()
+end
+
+function WandFire:ShowChargeEffect(show)
+    if show then
+        if self.fireEffect.gameObject.activeSelf then
+            self.fireEffect:Play()
+        elseif self.fireEffect_quest.gameObject.activeSelf then
+            self.fireEffect_quest:Play()
+        end
+        
+        if not self.fireballSoundInfo then
+            if self.fireballSound and not IsNullOrDestroyed(self.fireballSound) then
+                self.fireballSoundInfo = self.fireballSound:PlaySoundInfo()
+                if self:IsValidSoundInfo(self.fireballSoundInfo) and not IsNullOrDestroyed(self.fireballSoundInfo.ao) then
+                    self.fireballSoundInfo.ao.transform:SetParent(self.shootPosition)
+                else
+                    self.fireballSoundInfo = nil
+                end
+            end
+        end
+    else
+        if self.fireEffect.gameObject.activeSelf then
+            self.fireEffect:Stop()
+        elseif self.fireEffect_quest.gameObject.activeSelf then
+            self.fireEffect_quest:Stop()
+        end
+        
+        if self:IsValidSoundInfo(self.fireballSoundInfo) then
+            CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.fireballSoundInfo)
+        end
+        self.fireballSoundInfo = nil
+    end
+end
+
+function WandFire:PlaySpitEffectAnim(time)
+    --self:SetEffectToState(self.releaseValue)
+    
+    --local main1 = self.effectGlow.main    
+    --local main2 = self.effectSmoke.main
+    CL.Scheduler.Create(self,
+        function(sche, t, s)
+            --main1.maxParticles = 150 * (1 - t/s)
+            --main2.maxParticles = 150 * (1 - t/s)
+            if t >= s then
+                --self.effectGlow:Stop()
+                --self.effectSmoke:Stop()
+                --main1.maxParticles = 300
+                --main2.maxParticles = 300
+                self:ShowChargeEffect(false)
+            end
+        end
+    ,0, time)
+end
+
+function WandFire:SetEffectToState(values)
+    local minMaxCurve = self.effectGlow.main.startSpeed
+    
+    minMaxCurve.constant = values[1]
+    self.effectGlow.main.startSpeed = minMaxCurve
+    
+    minMaxCurve.constant = values[2]
+    self.effectGlow.main.startSize = minMaxCurve
+    
+    minMaxCurve.constant = values[3]
+    self.effectSmoke.main.startSize = minMaxCurve
+end
+
+
+function WandFire:SetHandTrackerSpeed(value)
+    if self.slowHand and not IsNullOrDestroyed(self.slowHand) then
+        self.slowHand.handTracker.trackSpeedState = value
+    end
+end
+
+function WandFire:SpitFire(name, time)
+    local fire = nil
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.NetworkPlayer.IsLocalHostPlayer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CommandSpitFire(name, time) end
+        end
+    else
+        fire = CL.FlyObject.SpawnFlyObj(name)
+        self.shootEffect = fire.shootEffect
+        self:PlayFire(fire, time)
+    end
+end
+
+function WandFire:NetworkSpitFire(name, time)
+    if CL.Network.VRNetworkManager.Instance.IsServer then
+        local spawnStates = CL.Network.FoSpawnStates()
+        spawnStates.dontPlayShootEffect = true
+        local fire = CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnFlyObj(name, nil, nil, nil, nil, nil, nil, spawnStates)
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerPlayFire(fire.netId, time) end
+    end
+end
+
+function WandFire:ClientPlayFire(netId, time)
+    local nfo = CL.Network.NetworkSpawnMgr.Instance:GetNetworkFlyObject(netId)
+    local fo = not IsNullOrDestroyed(nfo) and nfo.flyObject or nil
+    if IsNullOrDestroyed(fo) then
+        if self.lastPlayFireWarnNetId ~= netId then
+            self.lastPlayFireWarnNetId = netId
+            print("[NetReadyRisk] WandFire ClientPlayFire flyObject not ready netId=" .. netId)
+        end
+        return
+    end
+    self.shootEffect = fo.shootEffect
+    fo.shootEffect = nil
+    self:PlayFire(fo, time)
+end
+
+function WandFire:PlayFire(fire, time)
+    if not self:IsPlayFireContextValid(fire) then
+        self:ResetState()
+        return
+    end
+
+    local as = fire.trans:GetComponent(typeof(UE.AudioSource))
+    if as then
+        as:Stop()
+    end
+    
+    local trans = self.shootPosition
+    fire.trans.position = trans.position
+    fire.trans.rotation = trans.rotation
+    fire.trans:SetParent(trans)
+    
+    CL.FlyObject.CopyWeaponBuffToUnit(self.host.interact, fire)
+    
+    local shootEffect = self.shootEffect
+    
+    local soundInfo = self.fireSound:PlaySoundInfo()
+    if self:IsValidSoundInfo(soundInfo) and not IsNullOrDestroyed(soundInfo.ao) then
+        soundInfo.ao.transform:SetParent(trans)
+    else
+        soundInfo = nil
+    end
+    
+    local flyTime = fire.maxFlyTime
+    --fire.maxFlyTime = time
+    local eff = CL.EffectMgr.Instance:PlayEffect(shootEffect, self.shootPosition.position, self.shootPosition.rotation)
+
+    if IsNullOrDestroyed(eff) or IsNullOrDestroyed(eff.trans) then
+        self:ResetState()
+        return
+    end
+
+    eff.trans:SetParent(trans)
+    local particles = self:GetParticles(eff)
+    local particlesValue = {}
+    for i = 0, particles.Length - 1 do
+        particlesValue[i] = self:GetParticleMaxParticles(particles[i])
+    end
+    
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and 
+        not CL.Network.VRNetworkManager.Instance.IsOffline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fire:OnSpawn(self.host.interact, trans.forward, 0)
+        end
+    else
+        fire:OnSpawn(self.host.interact, trans.forward, 0)
+    end
+    --fire.maxFlyTime = flyTime
+        
+    local slowTime = 2
+    local r = nil
+    self.slowHand = self.host.interact:GetPrimaryHand()
+    CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if not self:IsPlayFireContextValid(fire) then
+                self:ResetState()
+                sche:Stop()
+                return
+            end
+            
+            r = t/s
+            self:SetHandTrackerSpeed(0.03 + 0.97 * r)
+            
+            --for i = 0, particles.Length - 1 do
+            --    main = particles[i].main
+            --    main.maxParticles = particlesValue[i]/5 * (1 - r)
+            --end
+            if self:IsValidSoundInfo(soundInfo) then
+                soundInfo.audio.volume = 0.1 + 0.4 * (1 - r)
+            else
+                soundInfo = nil
+            end
+            --sound.audio.pitch = 0.95 + f * 0.3
+            
+            if t >= s then
+                self:RestoreParticles(particles, particlesValue)
+                fire.shootEffect = shootEffect
+                fire.trans:SetParent(nil)
+                
+                if self:IsValidSoundInfo(soundInfo) then
+                    CL.AudioMgr.Instance:GiveBackAndLerpToZero(soundInfo)
+                end
+                soundInfo = nil
+                --eff.trans:SetParent(nil)
+                --CL.EffectMgr.Instance:GiveBack(eff)
+                self:SetHandTrackerSpeed(1)
+                
+                self:ResetState()
+            end
+        end
+    ,0, slowTime, flyTime - slowTime)
+end
+
+function WandFire:IsPlayFireContextValid(fire)
+    return not IsNullOrDestroyed(self.host)
+        and not IsNullOrDestroyed(self.host.interact)
+        and not IsNullOrDestroyed(self.shootPosition)
+        and not IsNullOrDestroyed(fire)
+        and not IsNullOrDestroyed(fire.trans)
+end
+
+function WandFire:RestoreParticles(particles, particlesValue)
+    if particles == nil then
+        return
+    end
+
+    for i = 0, particles.Length - 1 do
+        local particle = particles[i]
+        if not IsNullOrDestroyed(particle) then
+            local maxParticles = particlesValue ~= nil and particlesValue[i] or nil
+            pcall(function()
+                if maxParticles ~= nil then
+                    local main = particle.main
+                    main.maxParticles = maxParticles
+                end
+                particle:Stop()
+            end)
+        end
+    end
+end
+
+function WandFire:GetParticleMaxParticles(particle)
+    if IsNullOrDestroyed(particle) then
+        return nil
+    end
+
+    local success, maxParticles = pcall(function()
+        return particle.main.maxParticles
+    end)
+
+    return success and maxParticles or nil
+end
+
+function WandFire:ResetState()
+    self.onSpit = false
+end
+
+function WandFire:GetParticles(effectNode)
+    return effectNode.trans:GetComponentsInChildren(typeof(UE.ParticleSystem))
+end
+
+return Class(nil, nil, WandFire)

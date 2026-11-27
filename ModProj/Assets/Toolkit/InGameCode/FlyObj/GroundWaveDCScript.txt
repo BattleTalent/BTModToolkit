@@ -1,0 +1,154 @@
+local GroundWaveDC = {
+    -- explodeRange
+    -- explodeEffect
+    
+    pushbackForce = 100,
+}
+
+
+function GroundWaveDC:SetInfo(dir, interval, childList)
+    self.dir = dir
+    self.interval = interval
+    self.childList = childList
+end
+
+function GroundWaveDC:CalcNextPosition()
+    return self.trans.position + self.dir * self.explodeRange * 2
+end
+
+function GroundWaveDC:CheckNextCondition(position)
+    local isHit, raycastHit  = UE.Physics.SphereCast(position + UE.Vector3.up * 0.5, 0.05, UE.Vector3.down, 1, CL.LayerDefine.EnvLayerMask.value)
+    --if isHit and UE.Vector3.Angle(raycastHit.normal, UE.Vector3.up) < 10 then
+    if isHit then
+        return raycastHit.point
+    else
+        return nil
+    end
+end
+
+function GroundWaveDC:FlyStart(vel)
+    self:Explode()
+end
+
+function GroundWaveDC:Explode()
+    self.pushPu = {}
+    
+    local isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+            and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    if self.explodeRange > 0 then
+        local eo = CL.EffectMgr.Instance:PlayEffect(self.explodeEffect, self.trans.position, self.trans.rotation)
+        eo.trans.localScale = UE.Vector3.one * self.explodeRange
+        
+        -- push player away
+        CL.InteractTrigger.HitScanAction = function(beHitPu, beHitCol, selfPu, rb, col, hitDir, hitterCamp)
+            local roleController = nil
+            local rootPu = beHitPu.trans.parent and CL.PhysicsUnit.GetPhysicsUnitTopDown(beHitPu.trans) or beHitPu
+            if self.pushPu[rootPu] then
+                return
+            end
+            
+            if (rootPu.unitType == CL.Tagger.Tag.PlayerRole) then
+                roleController = rootPu.character
+--[[                
+            elseif (beHitPu.unitType == CL.Tagger.Tag.PlayerHand) then
+                player = beHitPu.logicHand.character
+]]                
+            elseif (rootPu.unitType == CL.Tagger.Tag.InteractRole) then
+                roleController = rootPu.controller
+            end
+            
+            if roleController then
+                --player:AddPushback()
+                if rootPu.unitType == CL.Tagger.Tag.InteractRole and
+                        not rootPu.muscleState:IsPowerfulCharacter() then
+                    rootPu.motion:Knockout()
+                end
+                --CL.DebugDraw.DrawLine(selfPu.trans.position, roleController:GetCentrePos(), UE.Color.yellow, 2)
+                --local pushDir = UE.Vector3.up
+                local force = UE.Vector3.up * self.pushbackForce
+                -- this is for player only
+                
+                if rootPu.unitType == CL.Tagger.Tag.PlayerRole then
+                    if isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                        selfPu.networkFO:ServerOnPushPlayer(roleController, force)
+                    end
+                    
+                    rootPu:AddForce(force * 2, UE.ForceMode.Impulse)
+                end
+                if rootPu.unitType == CL.Tagger.Tag.InteractRole then
+                    rootPu:AddForce(hitDir * 5, UE.ForceMode.VelocityChange)
+                end
+                self.pushPu[rootPu] = true
+                --print("HitScanAction" .. tostring(roleController) .. " pushDir:" .. tostring(pushDir))
+            end
+        end
+        
+        if isOnline then
+            if not CL.Network.VRNetworkManager.Instance.IsServer then
+                return
+            end
+        end
+        CL.InteractTrigger.ignoreForceToRagdoll = true
+        CL.InteractTrigger.ApplyExplode(
+            -- want to do exploding a bit closer
+            self.trans.position - UE.Vector3.up * 0.3, 
+            self.explodeRange + 0.2, self.host, self.host.rb, self.host.col, self.host.camp)
+    end
+end
+
+function GroundWaveDC:NetworkOnPushPlayer(character, force)
+    --character:AddPushbackByForce(force, true)
+    character:AddForce(force * 2, UE.ForceMode.Impulse)
+end
+
+function GroundWaveDC:OnTimeOut()
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline then
+        if not CL.Network.VRNetworkManager.Instance.IsServer then
+            return
+        end
+    end
+    
+    if #self.childList > 0 then
+        local position = self:CalcNextPosition()
+        position = self:CheckNextCondition(position)
+        if position then
+            self:SpawnNext(position)
+        end
+    end
+end
+
+function GroundWaveDC:SpawnNext(position)
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline then
+        if not CL.Network.VRNetworkManager.Instance.IsServer then
+            return
+        end
+    end
+    
+    local fo = nil
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.childList[1], self.host.owner, position + UE.Vector3.up * 0.005, self.dir, -1)
+        end
+    else
+        fo = CL.FlyObject.CreateFlyObj(self.childList[1], self.host.owner, position + UE.Vector3.up * 0.005, self.dir)
+    end
+    
+    table.remove(self.childList, 1)
+    
+    cast(fo, typeof(CL.FlyObjectX))
+    if fo then
+        fo.script.self:SetInfo(self.dir, self.interval, self.childList)
+    end
+end
+
+function GroundWaveDC:ResetState()
+    self.spawnDir = nil
+    self.idx = nil
+end
+
+
+return Class(nil, nil, GroundWaveDC)

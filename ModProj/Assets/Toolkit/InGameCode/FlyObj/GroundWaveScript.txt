@@ -1,0 +1,51 @@
+local GroundWave = {
+    pullDis = 0.02,
+}
+
+function GroundWave:FlyStart()
+    self:CacheHorizontalDir()
+    
+    self:PullToGround()
+end
+
+function GroundWave:CacheHorizontalDir()
+    self.dir = self.host.rb.velocity
+    self.dir = UE.Vector3(self.dir.x, 0, self.dir.z).normalized
+end
+
+function GroundWave:PullToGround()
+    RemoveSchedule(self, self.pullActTimer)
+    self.pullActTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            CL.PhysicsFollow.TrackPosition(self.host.rb, self.host.trans.position + (self.dir + UE.Vector3.down) * self.pullDis, 3)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+
+function GroundWave:OnCollision(col, pu)
+    self:Explode()
+    self.host:OnFinish()
+end
+
+function GroundWave:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    self:Explode()
+    self.host:OnFinish()
+end
+
+function GroundWave:OnTimeOut()
+    if self.explodeOnTimeOut == 1 then
+        self:Explode()
+    end
+end
+
+function GroundWave:Explode()
+    CL.FlyObject.CreateFlyObj(self.explodeObjName, self.host.owner, self.host.trans.position, self.host.trans.forward)
+end
+
+function GroundWave:ResetState()
+    RemoveSchedule(self, self.pullActTimer)
+end
+
+return Class(nil, nil, GroundWave)

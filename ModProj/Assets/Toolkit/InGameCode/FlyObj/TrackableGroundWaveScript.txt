@@ -1,0 +1,213 @@
+local TrackableGroundWave = {
+    pullDis = 0.02,
+    
+    searchDot = 0.5,
+    
+    maxRange = 100,
+    aliveWeight = 0.1,
+    groundWeight = 1,
+    dotWeightMlp = 20,
+}
+
+function TrackableGroundWave:FlyStart()
+    self:CacheHorizontalDir()
+    
+    self:PullToTarget()
+end
+
+function TrackableGroundWave:CacheHorizontalDir()
+    self.dir = self.host.rb.velocity
+    self.dir.y = 0
+    self.dir = self.dir.normalized
+    self.trans.forward = self.dir
+    self.originForward = self.dir
+end
+
+function TrackableGroundWave:PullToTarget()
+    local target = self:FindTarget()
+    local targetPos = nil
+    local lerpDir = nil
+    local dir = self.dir
+    CL.Scheduler.RemoveSchedule(self.pullActId)
+    
+    self.pullActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if not IsNullOrDestroyed(target) then
+                lerpDir = (target.position - self.trans.position).normalized
+                lerpDir = UE.Vector3.Slerp(self.trans.forward, lerpDir, UE.Time.deltaTime * self.degreesPerSecond)
+                if UE.Vector3.Dot(lerpDir, self.originForward) > self.maxRotDot then
+                    dir = lerpDir
+                end
+            end
+            dir.y = 0
+            dir = dir.normalized
+            self.trans.forward = dir
+            
+            self.host.rb.velocity = (self.trans.forward + UE.Vector3.down).normalized * self.host.force
+            self.host.rb.angularVelocity = UE.Vector3.zero
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+function TrackableGroundWave:FindTarget()
+    local pus = CL.PhysicsUnit.QueryRolesInRadius(self.trans.position, self.maxRange)
+    local targetPu = nil
+    local fcValue = 0
+    local centerPos = nil
+    local curDot = -1
+    local curAng = -1
+    local pPoint = nil
+    local curValue = 0
+    local maxDis = self.maxRange * self.maxRange
+    
+    local isPlayerOwner = false
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        isPlayerOwner = not IsNullOrDestroyed(self.host.ownerHolder.character)
+    end
+    local camp = self.host.camp
+    
+    --print("FindTarget::" .. pus.Count)
+    for i = 0, pus.Count - 1 do
+        if pus[i].unitType == CL.Tagger.Tag.InteractRole then
+            if camp ~= pus[i].attr.camp then
+                centerPos = pus[i].ra:GetMuscle(CL.RagdollBoneInfo.Spine).rbTrans.position
+                CL.DebugDraw.DrawLine(centerPos, self.trans.position, UE.Color.green, 5)
+                pPoint = self:GetPerpendicularPoint(centerPos)
+                curDot = UE.Vector3.Dot(self.trans.forward, (centerPos - self.trans.position).normalized)
+                curAng = (centerPos - pPoint).sqrMagnitude
+                curValue = (1 - curAng/maxDis) * self.dotWeightMlp + (not pus[i].attr:IsDead() and self.aliveWeight or 0) 
+                    + (pus[i].controller:IsGround() and self.groundWeight or 0)
+                    print("search fc:" .. pus[i].trans.name .. "  pos Weight:" .. (1 - curAng/self.maxRange) * self.dotWeightMlp .. "  aliveWeight:" ..
+                        (not pus[i].attr:IsDead() and self.aliveWeight or 0) ..
+                        "  groundWeight:" .. (pus[i].controller:IsGround() and self.groundWeight or 0) .. " total:" .. curValue .."  forwardDot:" .. curDot)
+                if curDot > self.searchDot and curValue > fcValue then
+                    targetPu = pus[i]
+                    fcValue = curValue
+                end
+            end
+        elseif pus[i].unitType == CL.Tagger.Tag.PlayerRole then
+            if camp ~= pus[i].character.attr.camp then
+                centerPos = pus[i].character:GetCentrePos()
+                CL.DebugDraw.DrawLine(centerPos, self.trans.position, UE.Color.green, 5)
+                pPoint = self:GetPerpendicularPoint(centerPos)
+                curDot = UE.Vector3.Dot(self.trans.forward, (centerPos - self.trans.position).normalized)
+                curAng = (centerPos - pPoint).sqrMagnitude
+                curValue = (1 - curAng/maxDis) * self.dotWeightMlp + (not pus[i].character.attr:IsDead() and self.aliveWeight or 0) 
+                    + (pus[i].character:IsGround() and self.groundWeight or 0)
+                    print("search player:" .. pus[i].trans.name .. "  pos Weight:" .. (1 - curAng/self.maxRange) * self.dotWeightMlp .. "  aliveWeight:" ..
+                        (not pus[i].character.attr:IsDead() and self.aliveWeight or 0) ..
+                        "  groundWeight:" .. (pus[i].character:IsGround() and self.groundWeight or 0) .. " total:" .. curValue .."  forwardDot:" .. curDot)
+                if curDot > self.searchDot and curValue > fcValue then
+                    targetPu = pus[i]
+                    fcValue = curValue
+                end
+            end
+        end
+    end
+    if targetPu then
+        if targetPu.unitType == CL.Tagger.Tag.InteractRole then
+            print("locked target fc:" .. targetPu.trans.name)
+            local ite = targetPu.ra:GetAllMuscles():GetEnumerator()
+            local mu = nil
+            local maxDot = -1
+            local curDot = -1
+            while ite:MoveNext() do
+                if ite.Current.Value.rbTrans.gameObject.activeInHierarchy then
+                    curDot = UE.Vector3.Dot(self.trans.forward, (ite.Current.Value.rbTrans.position - self.trans.position).normalized)
+                    if curDot > maxDot then
+                        mu = ite.Current.Value
+                        maxDot = curDot
+                    end
+                end
+            end
+            
+            return mu.rbTrans
+        else
+            print("locked target player:" .. targetPu.trans.name)
+            return targetPu.character.trans
+        end
+    end
+    
+    return nil
+end
+
+function TrackableGroundWave:GetPerpendicularPoint(target)
+    local ba = target - self.trans.position
+    local nbc = self.trans.forward
+    local dbp = UE.Vector3.Dot(ba, nbc)
+    return self.trans.position + dbp * nbc
+end
+
+
+function TrackableGroundWave:OnCollision(col, pu)
+    if not IsNullOrDestroyed(self.host.owner) and pu == self.host.owner then
+        return
+    end
+    
+    if pu.unitType == CL.Tagger.Tag.InteractObj and pu:IsBodyPart() then
+        local rootPu = CL.PhysicsUnit.GetPhysicsUnitTopDown(pu.trans)
+        if not IsNullOrDestroyed(rootPu) then
+            if rootPu.unitType == CL.Tagger.Tag.PlayerRole then
+                if not IsNullOrDestroyed(self.host.ownerHolder) and rootPu.character.aiProxy == self.host.ownerHolder then
+                    return
+                end
+            end
+        end
+    end
+    
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self:Explode()
+    self.host:OnFinish()
+end
+
+function TrackableGroundWave:OnCollisionWithPlayer(col, player)
+    if not IsNullOrDestroyed(self.host.ownerHolder) and player.aiProxy == self.host.ownerHolder then
+        return
+    end
+    
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self:Explode()
+    self.host:OnFinish()
+end
+
+function TrackableGroundWave:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self:Explode()
+    self.host:OnFinish()
+end
+
+function TrackableGroundWave:OnTimeOut()
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    if self.explodeOnTimeOut == 1 then
+        self:Explode()
+    end
+end
+
+function TrackableGroundWave:Explode()
+    CL.FlyObject.CreateFlyObj(self.explodeObjName, self.host.owner, self.host.trans.position, self.host.trans.forward)
+end
+
+function TrackableGroundWave:ResetState()
+    CL.Scheduler.RemoveSchedule(self.pullActId)
+    self.isUsed = false
+end
+
+return Class(nil, nil, TrackableGroundWave)

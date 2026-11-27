@@ -1,0 +1,211 @@
+
+local FlySlashSlalom = {
+    isHit = false,
+    intensity = 1,
+    
+    hitPuList = {},
+}
+
+function FlySlashSlalom:FlyStart()
+    if not self.host.owner then
+        return
+    end
+    local targetDir = nil
+    local dir = nil
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if not self.host.networkFO:LocalTrackPhysics() then
+            return
+        end
+    end
+    
+    self.slalomActId = CL.Scheduler.RemoveSchedule(self.slalomActId)
+    self.slalomActId = CL.Scheduler.Create(self.host.trans,
+        function(sche, t, s)
+            dir = UE.Vector3.Lerp(self.host.rb.velocity.normalized, self.host.trans.right, UE.Time.unscaledDeltaTime * self.intensity)
+            self.host.rb.velocity = self.host.rb.velocity.magnitude * dir.normalized
+            
+            if self.host.rb.velocity.sqrMagnitude > 0.01 then
+                self.host.rb:MoveRotation(UE.Quaternion.LookRotation(self.host.rb.velocity, self.host.trans.up))
+            end
+        end
+    , 0, -1).actionId
+
+
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.FullBodyMuscleState.dmgEffectData.stab then
+            return
+        end
+        
+        if CL.FullBodyMuscleState.dmgBasicData.relaVel.sqrMagnitude < 16 then
+            return
+        end
+        
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu:GetProxyMuscleName(), point)
+        
+        if not fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+            return
+        end
+        
+        if frag then
+            CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+end
+
+function FlySlashSlalom:StopSlalom()
+    self.slalomActId = CL.Scheduler.RemoveSchedule(self.slalomActId)
+end
+
+function FlySlashSlalom:OnTrigger(pu, other)
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+    
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    self.isHit = true
+    
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashSlalom:OnTriggerWithStaticScene(other)
+    -- PvP安全检查：确保other有效
+    if other == nil or other:IsNull() or other.transform == nil then
+        return
+    end
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+
+    CS.RayFire.RFDemolitionCluster.RayFireDemolishImpact(other.transform.position, 0.3, 10)
+    
+    self.isHit = true
+    
+    if self.destoryWhenHitEnv ~= 0 or self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashSlalom:OnTriggerWithRole(fc, col)
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    if self.hitPuList[fc] then
+        return
+    end
+    self.hitPuList[fc] = true
+
+    self.isHit = true
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = false
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+    
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashSlalom:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlySlashSlalom:OnTriggerWithPlayerHand(col, hand)
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        local owner = self.host.ownerHolder.character and self.host.ownerHolder.character or nil
+        if owner == hand.character then
+            return
+        end
+    end
+    
+    local pu = hand.character:GetPlayerUnit()
+    if self.hitPuList[pu] then
+        return
+    end
+    self.hitPuList[pu] = true
+    
+    self.isHit = true
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = false
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+    
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashSlalom:OnTriggerWithPlayer(pu, col)
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    if self.hitPuList[pu] then
+        return
+    end
+    self.hitPuList[pu] = true
+    
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        local owner = self.host.ownerHolder.character and self.host.ownerHolder.character or nil
+        if owner == pu.character then
+            return
+        end
+    end
+    
+    self.isHit = true
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = false
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+    
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlashSlalom:ResetState()
+    self.isHit = false
+    
+    self.hitPuList = {}
+    
+    self:StopSlalom()
+end
+
+return Class(nil, nil, FlySlashSlalom)

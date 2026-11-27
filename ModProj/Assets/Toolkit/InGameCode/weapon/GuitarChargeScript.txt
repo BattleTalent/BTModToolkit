@@ -1,0 +1,47 @@
+local GuitarCharge = {
+    hitCount = 0,
+    maxCount = 5,
+    
+    baseSpeed = 3,
+    chargeSpeed = 15,
+    
+    skillColor =  UE.Color(0.87, 0.2, 0.2, 0),
+}
+
+function GuitarCharge:OnHitRole()
+    self.hitCount = self.hitCount + 1
+    
+    if self.hitCount >= self.maxCount then
+        SetMaterialEmissionWithinTime(self, self.renderers, self.skillColor, 0.15)
+    end
+end
+
+function GuitarCharge:ReleaseSkill(vel)
+    if not CostMana(self.host, self.manaCost * 2 , self.character) then
+        return
+    end
+    
+    if self.hitCount >= self.maxCount then
+    self.hitCount = self.hitCount - self.maxCount
+    
+    self:ReleaseChargeSkill(vel)
+    
+    else
+        local flyScript = self:ShootObj(self.flyObjName, vel, self.baseSpeed)
+        
+        flyScript.script.self.HitRoleCb = 
+        function()
+            self:OnHitRole()
+        end
+        
+        self:Recoil(self.recoilRotate, self.recoilRandomBias, self.recoilVector, self.recoilCurve)
+    end
+end
+
+function GuitarCharge:ReleaseChargeSkill(vel)
+    self:PlayMuzzleEff(self.skillColor)
+    self:ShootObj(self.chargeObjName, vel, self.chargeSpeed, self.skillColor)
+    self:Recoil(self.recoilRotate, self.recoilRandomBias, self.recoilVector, self.recoilCurve)
+end
+
+return Class(Require("Weapon/GuitarBaseScript"),nil, GuitarCharge)

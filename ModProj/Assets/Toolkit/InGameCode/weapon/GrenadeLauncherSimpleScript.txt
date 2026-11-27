@@ -1,0 +1,269 @@
+
+local GrenadeLauncherSimple = {
+    motionVel = 4,
+    bulletCount = 1,
+    enhanceBulletCount = 1,--2,
+    
+    fuzeTime = 2,
+    
+    grabPose = {0.3, 0.05, 0.8, 0.8, 0.75},
+    
+    --Since the mana is deducted before UpdateSkill is called, 
+    --the manaCost of the InteractTrigger only does the display of the mana.
+    manaCost = 20,
+}
+
+function GrenadeLauncherSimple:Awake()
+    self.manaCost = self.host.manaCost
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function GrenadeLauncherSimple:Start()
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:GunBarrelState(true) end
+    end
+    
+end
+
+function GrenadeLauncherSimple:OnGrab(a, g)
+    self.aimWidget.gameObject:SetActive(g)
+    if g then
+        if not IsNullOrDestroyed(a.attachedHand) then
+            SetHandPose(a.attachedHand, self.grabPose)
+        end
+        
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self.aimWidget.enabled = true
+        end
+        
+        self.host.manaCost = 0
+    else
+        self.aimWidget.enabled = false
+        self.host.manaCost = self.manaCost
+    end
+end
+
+function GrenadeLauncherSimple:UpdateSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self.readyShoot then
+        self.triggerSound:PlaySound()
+        self.host:CloseSkill()
+        return
+    end
+    
+    if not CostMana(self.host, self.manaCost or 0) then
+        return
+    end
+    
+    self:PlayShootAction()
+    
+    self:OnUpdateSkill()
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerShowMuzzleEffect() end
+    else
+        self:ShowMuzzleEffect()
+    end
+    
+    self.useBulletCount = self.useBulletCount + 1
+
+    
+    local count = self.host.interact:IsEnhance() and self.enhanceBulletCount or self.bulletCount
+    if self.useBulletCount >= count then
+        self.readyShoot = false
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:GunBarrelState(false)
+                state:ServerSetReadyState(false)
+            end
+        end
+        self:UnLockGunBarrel()
+        
+        CL.Scheduler.Create(self,
+            function(sche, t, s)
+                self:OpenLoadDetect()
+            end
+        , 0, 0, 0.3)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+    self.host:CloseSkill()
+end
+
+function GrenadeLauncherSimple:ShowMuzzleEffect()
+    CL.EffectMgr.Instance:PlayEffect(self.muzzleEffect, self.shootPosition.position, self.shootPosition.rotation)
+end
+
+function GrenadeLauncherSimple:HolderPushBack(intensity)
+    local holder = self.host.interact:GetHolder()
+    if holder then
+        --holder:GetControllerBase():AddPushbackByForce(-self.host.interact.trans.forward * intensity)
+        local dir = -self.host.interact.trans.forward
+        if dir.y < -0.5 then
+            dir.y = -0.5
+            dir:Normalize()
+        end
+        holder.character:AddForce(dir * intensity)
+        holder.character:SetDragForAWhile(0.3, 0.2)
+        holder.character:SetMovementForAWhile(false, 0.2)
+    end
+end
+
+function GrenadeLauncherSimple:PlayShootAction()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local ph = self.host.interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = self.shootPosition.forward
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self:NetworkSpawnBullet(self.flyObjName, self.shootPosition.position,
+            aimDir, self.shootVel)
+        end
+    else
+        local bulletScript = self:SpawnBullet(self.flyObjName, self.shootPosition.position,
+            aimDir, self.shootVel)
+        self:InitBullet(bulletScript)
+    end
+
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerOnShoot() end
+    end
+    self:OnShoot()
+end
+
+
+function GrenadeLauncherSimple:SpawnBullet(flyObjName, position, rotation, vel)
+    local go = CL.PrefabPool.SpawnPrefab(flyObjName, CL.InteractTrigger.WeaponPath)
+    
+    local bomb = go:GetComponent(typeof(CL.BombBase))
+    if bomb then
+        bomb.fuzeTimeLen = self.fuzeTime
+    end
+    bomb:OnShoot(self.host.interact)
+    
+    local ib = go:GetComponent(typeof(CL.InteractBase))
+    ib.trans.position = position
+    
+    ib:AddForce(self.shootPosition.forward * vel, UE.ForceMode.VelocityChange)
+    
+    TryAerialStayByInteract(self.host.interact)
+    
+    self:IgnoreCollisionOnWhile(ib:GetCols(), true, 0.3)
+    
+    return ib
+end
+
+function GrenadeLauncherSimple:NetworkSpawnBullet(flyObjName, position, dir, vel)
+    local ph = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+    
+    CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(flyObjName, position, UE.Quaternion.LookRotation(dir), false, false, 0, true, 
+        function(nib, go)
+            if IsNullOrDestroyed(go) then
+                return
+            end
+            
+            local bomb = go:GetComponent(typeof(CL.BombBase))
+            if bomb then
+                bomb.fuzeTimeLen = self.fuzeTime
+            end
+            bomb:OnShoot(self.host.interact)
+            
+            local ib = go:GetComponent(typeof(CL.InteractBase))
+            ib:AddForce(self.shootPosition.forward * vel, UE.ForceMode.VelocityChange)
+            
+            TryAerialStayByInteract(self.host.interact)
+            self:IgnoreCollisionOnWhile(ib:GetCols(), true, 0.3)
+            self:InitBullet(ib)
+        end, false)
+end
+
+function GrenadeLauncherSimple:InitBullet(ib)
+    local ph = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(ib) then
+        TryAerialStay(ph)
+    end
+    
+    if self.autoSetupBulletIgnore or self.autoSetupBulletIgnore == 1 then
+        CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), self.host.interact:GetCols(), true)
+        
+        CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(ib) and not IsNullOrDestroyed(self.host.interact) then
+                CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), self.host.interact:GetCols(), false)
+            end
+        end
+        ,0, 0, 0.2)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+end
+
+function GrenadeLauncherSimple:IgnoreCollisionOnWhile(cols, ignore, time)
+    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), cols, ignore)
+    CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), cols, not ignore)
+        end
+    , 0, 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function GrenadeLauncherSimple:OpenLoadDetect()
+    RemoveSchedule(self, self.loadDetectTimer)
+    self.loadDetectTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if self:CheckLoadCondition() then
+                local state = GetNetworkIBState(self)
+                if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                    if state ~= nil then state:GunBarrelState(true) end
+                end
+                self:LockGunBarrel()
+                self:PlayLoadSound()
+                
+                RemoveSchedule(self, self.loadDetectTimer)
+                
+                if self.isOnline then
+                    if state ~= nil then state:ServerReLoad() end
+                end
+                self:Reload()
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function GrenadeLauncherSimple:OnShoot()
+    self:AddRecoil()
+    self:HolderPushBack(5)
+end
+
+function GrenadeLauncherSimple:OnGunBarrelUpdate(isLock)
+    if isLock then
+        self:LockGunBarrel()
+    else
+        self:UnLockGunBarrel()
+    end
+end
+
+function GrenadeLauncherSimple:PlayLoadSound(isLoad)
+    self.loadSound:PlaySound()
+end
+
+return Class(Require("Weapon/ManualLoadByJointScript"), nil, GrenadeLauncherSimple)

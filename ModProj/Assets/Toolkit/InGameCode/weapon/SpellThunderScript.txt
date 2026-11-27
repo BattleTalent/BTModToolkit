@@ -1,0 +1,765 @@
+local SpellThrowAndSummon = Require("Weapon/SpellThrowAndSummonScript")
+
+local CL = CL
+local UE = UE
+local IsNullOrDestroyed = IsNullOrDestroyed
+
+local PhysicsUnit = CL.PhysicsUnit
+local TaggerTag = CL.Tagger.Tag
+local VRNetworkManager = CL.Network.VRNetworkManager
+local NetworkSpawnMgr = CL.Network.NetworkSpawnMgr
+local NetworkEffectMgr = CL.Network.NetworkEffectMgr
+local EffectMgr = CL.EffectMgr
+local FlyObject = CL.FlyObject
+local DynamicModifierConfig = CL.DynamicModifierConfig
+local SoundTable = CL.SoundTable
+
+local Vector3 = UE.Vector3
+local Quaternion = UE.Quaternion
+local Random = UE.Random
+
+local Vector3Up = Vector3.up
+local QuaternionIdentity = Quaternion.identity
+local ColliderType = typeof(UE.Collider)
+
+local ThunderHitEffect = "ThunderHit"
+local FlyThunderAimPlayer = "FlyThunderX_AimPlayer"
+local FlyThunderShootable = "FlyThunderX_Shootable"
+local PlayerDisarmRateKey = "Player_Disarm_Rate"
+local WeaponBrokenSound = "WeaponBroken"
+
+local DefaultScaleSize = 0.05
+
+local spellThunder = {
+    
+    minInterval = 0.05,
+    maxInterval = 0.1,
+    minCount = 1,
+    maxCount = 3,
+    spawnRadius = 0.1,
+    spreadValue = 1,
+    
+    weightIntensity = 5,
+    
+    lightRadius = 2,
+    distance = 3,
+    
+    lastEndTime = 0,
+    lastSearchTime = 0,
+    searchInterval = 0.1,
+    
+    infoList ={},
+    selectInfos = {},
+    ignoreCols = {},
+    
+    lightningMana = 5,
+
+    disarmPob = 0.5,
+    
+    enchantingEffect = "ThunderEnchanting",
+    enchantEffectFly = "ThunderEnchantFly",
+    enchantEffectLoop = "ThunderEnchantLoop",
+    enchantEffectEnd = "ThunderEnchantEnd",
+    
+    chargeEffectRadius = 2,
+}
+
+function spellThunder:SpawnSpellOnHand(flyObjName, createTrans)
+    local fo = self.__base.SpawnSpellOnHand(self, flyObjName, createTrans)
+    
+    self.scp = self.fo.script:GetSelf()
+    if self.scp then
+        self.scp.loopEffect:Stop()
+        self.scp.coreTrans.gameObject:SetActive(true)
+    end
+    return fo
+end
+
+function spellThunder:InitSpellOnSpawn(fo, createTrans)
+    self.__base.InitSpellOnSpawn(self, fo, createTrans)
+    
+    self.scp = self.fo.script:GetSelf()
+    if self.scp then
+        self.scp.loopEffect:Stop()
+        self.scp.coreTrans.gameObject:SetActive(true)
+    end
+end
+
+function spellThunder:OnChargeRelease(isLocal)    
+    self.onSkill = false
+    self:SetHandPose(false)
+    --throw
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+
+    if self.isOnline and not isLocal then
+        return
+    end
+
+    if not self:TryThrow() then
+        --[[
+        local hand = self:GetSpellHand()
+        if not IsNullOrDestroyed(self.fo) and self.fo.trans.gameObject.activeSelf
+        and not IsNullOrDestroyed(hand) then
+            hand.character.attr:AddMp(self.host:GetLastManaCost())
+        end
+        ]]
+        
+        self:ReleaseSpell()
+    else
+        if self.scp then
+            self.scp.perpareEffect:Stop()
+            self.scp.perpareEffect:Clear()
+            
+            self.scp.loopEffect:Play()
+            self.scp.coreTrans.gameObject:SetActive(false)
+        end
+    end
+    
+    
+    if not self.isOnline then
+        self.fo = nil
+    end
+    
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+end
+
+
+function spellThunder:NetworkThrowSuc(fo)
+    if fo and not IsNullOrDestroyed(fo) then
+        if fo.networkFO and not IsNullOrDestroyed(fo.networkFO) and fo.networkFO.networkRB then
+            fo.networkFO.networkRB.enabled = true
+        end
+    end
+    self:PrepareThrow(fo)
+    local scp = self.fo.script:GetSelf()
+    if scp then
+        scp.perpareEffect:Stop()
+        scp.perpareEffect:Clear()
+        
+        scp.loopEffect:Play()
+        scp.coreTrans.gameObject:SetActive(false)
+    end
+end
+
+--[[
+    enchant
+]]
+function spellThunder.OnEnchantSkillWithRole(ib, fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+    ib:EnchantSkillCountUpdate()
+    spellThunder.SpawnThunder(ib, point, normal, 1)
+end
+
+function spellThunder.OnEnchantSkillByStab(ib, si)
+    --print("OnEnchantSkillByStab---------")
+    local stabTarget = si.stabTarget
+    local pu = PhysicsUnit.GetPhysicsUnitTopDown(stabTarget)
+    if pu.unitType ~= TaggerTag.InteractRole then
+        return
+    end
+    
+    local ra = pu.ra
+    local mu = ra:GetMuscle(stabTarget)
+    if mu then
+        local state = pu.muscleState.stateRecord[mu.muscleName]
+        
+        local cols = stabTarget:GetComponents(ColliderType)
+        for i = 0, cols.Length - 1 do
+            if pu.muscleState:IsArmor(state, cols[i]) then
+                return
+            end
+        end
+    end
+    
+    ib:EnchantSkillCountUpdate()
+    spellThunder.SpawnThunder(ib, stabTarget:TransformPoint(si.stabLocalPos), stabTarget:TransformDirection(si.stabLocalDir), 1)
+end
+
+function spellThunder.OnEnchantSkillWithPlayer(ib, rb, thisCol, otherCol, point, normal, relaVel, character)
+    ib:EnchantSkillCountUpdate()
+
+    --During PVP, there is a chance to trigger
+    if ib:IsGrabbed() then
+        if math.random(0, 100) > 50 then
+            return
+        end
+    end
+    
+    local pos = point
+    if thisCol.sharedMesh and not thisCol.convex then
+        pos = point
+    else
+        pos = thisCol:ClosestPoint(point)
+    end
+    
+    spellThunder.TryDisarm(character)
+    spellThunder.SpawnThunder(ib, pos, normal, 1)
+
+    if not VRNetworkManager.IsOnline then
+        local effectMgr = EffectMgr.Instance
+        if effectMgr then
+            effectMgr:PlayEffect(ThunderHitEffect, pos, QuaternionIdentity)
+        end
+    elseif VRNetworkManager.ServerOnline then
+        local networkEffectMgr = NetworkEffectMgr.Instance
+        if networkEffectMgr then
+            networkEffectMgr:NetworkPlayEffect(ThunderHitEffect, pos, QuaternionIdentity)
+        end
+    end
+end
+
+function spellThunder.TryDisarm(character)
+    local isDisarm = Random.value < spellThunder.disarmPob
+    if DynamicModifierConfig.IsEnabledAndPullValueFromPlayer(PlayerDisarmRateKey) then
+        local pulledValue = DynamicModifierConfig.PulledValue
+        isDisarm = pulledValue >= 1 or Random.value < pulledValue
+    end
+
+    if not isDisarm then
+        return
+    end
+
+    if character.IsLocalPlayer then
+        local leftHand = character.hands[0]
+        local rightHand = character.hands[1]
+
+        if IsNullOrDestroyed(leftHand.attachTo) 
+            and IsNullOrDestroyed(rightHand.attachTo) then
+            return
+        end
+
+        leftHand:Grab(nil)
+        rightHand:Grab(nil)
+        leftHand:Grab(nil, true)
+        rightHand:Grab(nil, true)
+
+        SoundTable.PlaySound(WeaponBrokenSound, character.trans.position)
+    end
+end
+
+function spellThunder.SpawnThunder(ib, pos, dir, flytime)
+    local fo = nil
+    local flyObjName = ib:IsHeldByNpc() and FlyThunderAimPlayer or FlyThunderShootable
+    local vrNetworkMgr = VRNetworkManager.Instance
+    if not IsNullOrDestroyed(vrNetworkMgr)
+        and not vrNetworkMgr.IsOffline then
+        if vrNetworkMgr.IsServer then
+            local spawnMgr = NetworkSpawnMgr.Instance
+            if not spawnMgr then
+                return
+            end
+
+            fo =  spawnMgr:NetworkCreateFlyObj(flyObjName, ib, pos, Vector3Up)
+        else
+            return
+        end
+    else 
+        fo = FlyObject.CreateFlyObj(flyObjName, ib, pos, Vector3Up)
+    end
+
+    if not fo then
+        return
+    end
+    
+    local flyObjScript = fo.script:GetSelf()
+    local ai = ib:GetHolder()
+    if not IsNullOrDestroyed(ai) then
+        flyObjScript:SetCamp(ai:GetCamp())
+    end
+    flyObjScript:SetFlyTime(flytime)
+    fo:FlyStart(dir)
+end
+
+--[[
+    Summon
+]]
+
+
+function spellThunder:OpenSkill()
+    self:SetHandPose(true)
+
+    if not self.host.interact:IsEnhance() then
+        return
+    end
+    
+    self:StartCharge()
+end
+
+function spellThunder:StartCharge()
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    local slotHand = self:GetSlotHand()
+    if not slotHand then
+        return
+    end
+    
+    if self.eo and not IsNullOrDestroyed(self.eo) then
+        --print("server closeEffect on startcharge:" .. self.eo.netId)
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    state:ServerCloseChargeEffect(slotHand.character.networkPlayer.netId)
+                else
+                    state:CommandCloseChargeEffect(slotHand.character.networkPlayer.netId)
+                end
+            end
+        end
+        self:CloseChargeEffect(self.eo)
+    end
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.chargeSoundInfo)
+    
+    local hIdx = slotHand:GetHandIndex()
+    local curScale = DefaultScaleSize
+    self:CloseCharge()
+    
+    local otherHand = slotHand:GetAnotherHand()
+    if not otherHand then
+        return
+    end
+    local onCondition = false
+    local value = nil
+    local actualValue = 0
+    local time = self.summonChargeTime
+    local chargeSpeed = 1/time
+    
+    local hangPos = self:GetHangPos(slotHand, otherHand)
+    local minScale = 0.3
+    self.chargeSoundInfo = nil
+    self.chargeTimerId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or IsNullOrDestroyed(slotHand) or IsNullOrDestroyed(otherHand)
+                or IsNullOrDestroyed(slotHand.character) then
+                sche:Stop()
+                return
+            end
+            --check hand.
+            local needMana = self.lightningMana
+            if not slotHand.character:HasEnoughMana(needMana) then
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.ServerOnline then
+                            state:ServerCloseSkill()
+                        else
+                            state:CommandCloseSkill(slotHand.character.networkPlayer.netId)
+                        end
+                    end
+                end
+                self.host:CloseSkill()
+                return
+            end
+        
+            if not onCondition then
+                if not self:IsAllowSkill(slotHand, otherHand) then
+                    self:CloseCharge()
+                    return
+                end
+                
+                if self:CheckHandCondition(slotHand, otherHand, self.checkDis, self.dotValue) then
+                    onCondition = true
+                    
+                    self.eo = self:OnChargeEffect(slotHand, otherHand)
+                    if self.isOnline then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then
+                            if CL.Network.VRNetworkManager.ServerOnline then
+                                state:ServerPlayChargeEffect(slotHand.character.networkPlayer.netId)
+                            else
+                                state:CommandPlayChargeEffect(slotHand.character.networkPlayer.netId)
+                            end
+                        end
+                    else
+                        if self.eo and not IsNullOrDestroyed(self.eo) then
+                            self.eo.trans.localScale = UE.Vector3.zero
+                        end
+                    end
+                    
+                    self.chargeSoundInfo = self.chargeSound:PlaySoundInfo()
+                    if self.chargeSoundInfo and self.eo and not IsNullOrDestroyed(self.eo) then
+                        self.chargeSoundInfo.ao.trans:SetParent(self.eo.trans)
+                        self.chargeSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+                    end
+                    self:OnCondition()
+                end
+            else
+                if not self:IsFaceToFace(slotHand, otherHand, self.dotValue) then
+                    if CL.Network.VRNetworkManager.IsOnline then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then
+                            if CL.Network.VRNetworkManager.ServerOnline then
+                                state:ServerCloseSkill()
+                            else
+                                state:CommandCloseSkill(slotHand.character.networkPlayer.netId)
+                            end
+                        end
+                    end
+                    self.host:CloseSkill()
+                    return
+                end
+                
+                
+                value = math.min(1, (slotHand.trans.position - otherHand.trans.position).sqrMagnitude 
+                    / (self.maxDis * self.maxDis))
+                
+                if time > 0 then
+                    time = time - UE.Time.unscaledDeltaTime
+                    if time <= 0 then
+                        if self.summonReadySound then
+                            self.summonReadySound:PlaySound()
+                        end
+                    end
+                    
+                    actualValue = value > actualValue and
+                    math.min(actualValue + UE.Time.unscaledDeltaTime * chargeSpeed, value) or
+                    UE.Mathf.Lerp(actualValue, value, 0.3)
+                else
+                    actualValue = value
+                end
+                
+                hangPos = self:GetHangPos(slotHand, otherHand)
+                
+                self:UpdateChargeEffect(self.eo, hIdx, hangPos, actualValue)
+                
+                if actualValue >= 1 then
+                    self.host:CloseSkill()
+                    if self.isOnline then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then
+                            if CL.Network.VRNetworkManager.ServerOnline then
+                                state:ServerCloseSkill()
+                                state:ServerReadySpawn(slotHand.character.networkPlayer.netId)
+                            else
+                                state:CommandCloseSkill(slotHand.character.networkPlayer.netId)
+                                state:CommandReadySpawn(slotHand.character.networkPlayer.netId)
+                            end
+                        end
+                    end
+                    if not self.isOnline then
+                        self:SpawnLightningBall(slotHand, otherHand, hangPos)
+                    end
+                elseif actualValue > minScale then
+                    if not CL.Network.VRNetworkManager.ClientOnline then
+                        if self:SpawnLightning(self.eo, slotHand, otherHand, hangPos, value - minScale) then
+                            local needMana = self.lightningMana * self.host.AppliedManaCostMultiplier
+                            slotHand.character:CostMana(self.host, needMana)
+                        end
+                    end
+                end
+            end
+            
+        end
+    , 0, -1).actionId
+end
+
+
+function spellThunder:OnNetworkPlayChargeEffect(eo, slotHand, otherHand, hangPos, value, actualValue)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    local minScale = 0.3
+    if actualValue > minScale then
+        if self:SpawnLightning(eo, slotHand, otherHand, hangPos, value - minScale) then
+            local needMana = self.lightningMana * self.host.AppliedManaCostMultiplier
+            slotHand.character:CostMana(self.host, needMana)
+        end
+    end
+end
+
+function spellThunder:CloseSkill()
+    self:CloseCharge()
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerCloseChargeEffect(self.eo) end
+    end
+    self:CloseChargeEffect(self.eo)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.chargeSoundInfo)
+    
+    self.chargeSoundInfo = nil
+    self.eo = nil
+    self:SetHandPose(false)
+end
+
+function spellThunder:CloseChargeEffect(eo)
+    if IsNullOrDestroyed(eo) then
+        return
+    end
+    CL.EffectMgr.Instance:GiveBack(eo)
+end
+
+function spellThunder:SpawnLightning(eo, hand, otherHand, hangPos, intensity)
+    if UE.Time.time < self.lastEndTime then
+        return false
+    end
+    local headset = hand.character:GetHeadset()
+    
+    local hangDir = hand:GetIndexDir() + otherHand:GetIndexDir() + headset.forward
+    local fo = nil
+    
+    local recordEndTime = 0
+    local interval = 0
+    local count = 0
+    
+    local aimDir = nil
+    local createPos = nil
+    
+    --reflesh Beam Position and Rotation
+    hangPos = self:GetHangPos(hand, otherHand)
+    hangDir = (hand:GetIndexDir() + otherHand:GetIndexDir() + headset.forward).normalized
+    
+    if UE.Time.time >= self.lastSearchTime then
+        self.infoList = self:GetTarget(hangPos, hangDir, self.ignoreCols)
+        self.lastSearchTime = UE.Time.time + self.searchInterval
+    end
+    
+    
+    if #self.infoList > 0 then
+        count = UE.Mathf.Clamp(math.random(self.minCount, self.maxCount) * intensity, 1, self.maxCount)
+        self.selectInfos = self:WeightedRandom(self.infoList, count)
+        for i = 1, count do
+            createPos = hangPos + self.spawnRadius * UE.Random.insideUnitSphere
+            if self.selectInfos[i] and self.selectInfos[i].col 
+                and not IsNullOrDestroyed(self.selectInfos[i].col) then
+                --print(" select target:" .. self.selectInfos[i].col.transform.root.name)
+                aimDir = self.selectInfos[i].col.transform:TransformPoint(self.selectInfos[i].anchor)
+                    - createPos
+            else
+                aimDir = hangDir + UE.Random.insideUnitSphere * 0.5
+            end
+
+            
+            fo = nil
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    fo = self.host:NetworkCreateFlyObj(self.summonObjName, createPos, aimDir)
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerOnSummonLightning(fo, eo) end
+                end
+            else
+                fo = self.host:CreateFlyObj(self.summonObjName, createPos, aimDir)
+            end
+            
+            if fo then
+                local tb = fo.script:GetSelf()
+                tb:SetOrigin(eo)
+                self.ignoreCols[fo.col] = true
+            end
+        end
+        recordEndTime = self.lastEndTime
+        interval = UE.Random.Range(self.minInterval, self.maxInterval)
+        self.lastEndTime = UE.Time.time + interval
+        
+        return true
+    end
+end
+
+function spellThunder:NetworkOnSummonLightning(fo)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if fo then
+        local tb = fo.script:GetSelf()
+        if self.eo and not IsNullOrDestroyed(self.eo) then
+            tb:SetOrigin(self.eo)
+        else
+            tb:SetOrigin(self.host.interact)
+        end
+        self.ignoreCols[fo.col] = true
+    end
+end
+
+--[[
+    Thunder ball
+]]
+
+function spellThunder:NetworkReadySpawn()
+    local slotHand = self:GetSlotHand()
+    if not slotHand then
+        return
+    end
+    
+    local hIdx = slotHand:GetHandIndex()
+    local curScale = DefaultScaleSize
+    self:CloseCharge()
+    
+    local otherHand = slotHand:GetAnotherHand()
+    if not otherHand then
+        return
+    end
+    
+    local hangPos = self:GetHangPos(slotHand, otherHand)
+    self:SpawnLightningBall(slotHand, otherHand, hangPos)
+end
+
+function spellThunder:SpawnLightningBall(hand, otherHand, pos)
+    local headset = hand.character:GetHeadset()
+    
+    local hangDir = hand:GetIndexDir() + otherHand:GetIndexDir() + headset.forward
+    
+    local fo = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = self.host:NetworkCreateFlyObj(self.summonBall, pos, hangDir.normalized, self:CalVel(hand, otherHand))
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnSummonFo(fo) end
+        end
+    else
+        fo = self.host:CreateFlyObj(self.summonBall, pos, hangDir.normalized, self:CalVel(hand, otherHand))
+    end
+    
+    
+    if fo then
+        fo.trans.localScale = UE.Vector3.one
+        self.ignoreCols[fo.col] = true
+    end
+end
+
+function spellThunder:NetworkOnSummonFo(fo)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if fo then
+        fo.trans.localScale = UE.Vector3.one
+        self.ignoreCols[fo.col] = true
+    end
+end
+
+
+--[[
+    Electrically Conductive
+]]
+
+function spellThunder:GetTarget(pos, dir, ignoreCols)
+    local raycastHit  = UE.Physics.SphereCastAll(pos + dir * self.lightRadius, self.lightRadius, dir, self.distance)
+    local infoList = {}
+    local pu = nil
+    local weight = 0 
+    local rb = nil
+    local pass = nil
+    local anchor = nil
+    
+    local hand = self:GetSlotHand()
+    local player = IsNullOrDestroyed(hand) and nil or hand.character:GetPlayerUnit()
+    --print("raycastHitLength ::".. raycastHit.Length .. "  len---:"..UE.Vector3.Distance(pos, self["testpoint4"].position) .. " rad:" ..self.lightRadius)
+    for i = 0, raycastHit.Length - 1 do
+        weight = 0
+        pass = true
+        --print("GetTarget  col:" .. raycastHit[i].collider.transform.name .. "  pos ::" .. raycastHit[i].point.x .. " y:" 
+        --    ..raycastHit[i].point.y .."  z:" .. raycastHit[i].point.z)
+
+        if not ignoreCols[raycastHit[i].collider] then
+            pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(raycastHit[i].collider)
+            if not IsNullOrDestroyed(pu) then
+                if pu == player then
+                    pass = false
+                end
+                
+                --pu.unitType == CL.Tagger.Tag.PlayerRole 
+                --or pu.unitType == CL.Tagger.Tag.PlayerHand or 
+                if pu.unitType == CL.Tagger.Tag.Env 
+                or pu.unitType == CL.Tagger.Tag.EnvGround then
+                    pass = false
+                end
+                
+                if pass then
+                    if pu.unitType == CL.Tagger.Tag.InteractRole then
+                        weight = weight + 50 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.InteractWeapon then
+                        weight = weight + 4 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.FlyObject then
+                        weight = weight + 3 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.InteractObj then
+                        weight = weight + 2 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.SceneObject then
+                        weight = weight + 1 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.PlayerRole then
+                        weight = weight + 30 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.PlayerHand then
+                        weight = weight + 20 * self.weightIntensity
+                    end 
+                    
+                    
+                    rb = raycastHit[i].collider.attachedRigidbody
+                    if rb then
+                        weight = weight + 1
+                        
+                        if not rb.isKinematic then
+                            weight = weight + 1
+                        end
+                    end
+                    --print("GetTarget  distance :: " .. raycastHit[i].collider.transform.root.name .." ::" .. raycastHit[i].distance .. " weight:" .. weight)
+                    
+                    weight = weight + raycastHit[i].distance
+                    
+                    if raycastHit[i].point == UE.Vector3.zero then
+                        anchor = UE.Vector3.zero
+                    else
+                        anchor = raycastHit[i].collider.transform:InverseTransformPoint(raycastHit[i].point)
+                    end
+                
+                    table.insert(infoList, {
+                        ["weight"] = weight,
+                        ["col"] = raycastHit[i].collider,
+                        ["anchor"] = anchor,
+                    })
+                end
+            end
+        end
+    end
+    
+    table.sort(infoList, 
+        function(a,b)
+            return a.weight > b.weight
+        end
+    )    
+    
+    return infoList
+end
+
+
+function spellThunder:WeightedRandom(infos, count)
+    local sum = 0
+    for _, v in ipairs(infos) do
+        sum = sum + v.weight
+    end
+    
+    local list = {}
+    local selects = {}
+    for i = 1, count do
+        list[i] = math.random(1, sum)
+    end
+    local n = 0
+    for idx, v in ipairs(infos) do
+        for i = count, 1, -1 do
+            if not list[i] then
+                break
+            end
+            
+            if list[i] <= v.weight then
+                table.insert(selects, infos[idx])
+                table.remove(list, i)
+            else
+                list[i] = list[i] - v.weight
+            end
+        end
+        
+        if #list <= 0 then
+            break
+        end
+    end
+    
+    return selects
+end
+
+
+return Class(Require("Weapon/SpellThrowAndSummonScript"), nil, spellThunder)

@@ -1,0 +1,67 @@
+
+local RevolverSimple = {
+    motionVel = 2,
+    bulletCount = 6,
+    
+    grabPose = {0.4, 0, 0.8, 0.8, 0.75},
+}
+
+
+function RevolverSimple:OnGrab(a, g)
+    if g then
+        if not IsNullOrDestroyed(a.attachedHand) then
+            SetHandPose(a.attachedHand, self.grabPose)
+        end
+    end
+end
+
+function RevolverSimple:UpdateSkill()
+    if not self.readyShoot then
+        --play emptysound
+        self.host:CloseSkill()
+        return
+    end
+    
+    if not CostMana(self.host, self.manaCost or 0) then
+        return
+    end
+    
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        local bullet = self:PlayShootAction()
+        
+        if self.host.interact:IsEnhance() then
+            local fo = bullet.trans:GetComponent(typeof(CL.FlyObjectX))
+            if fo then
+                local fox = bullet.trans:GetComponent(typeof(CL.FlyObjectX)).script.self
+                fox:Enhance()
+            end
+        end
+    end
+    self:OnUpdateSkill()
+    
+    self.useBulletCount = self.useBulletCount + 1
+    self.readyShoot = false
+
+    if self.useBulletCount >= self.bulletCount then
+        self:PlayLoadAnim(false, 0.3)
+        
+        self:OpenLoadDetect()
+    else
+        self:PlayDrumAnim(0.5)
+    end
+    self.host:CloseSkill()
+end
+
+function RevolverSimple:PlayLoadSound(isLoad)
+    if isLoad then
+        self.barrelOnSound:PlaySound()
+    else
+        self.barrelOffSound:PlaySound()
+    end
+end
+
+function RevolverSimple:PlayDrumSound()
+    self.drumSound:PlaySound()
+end
+
+return Class(Require("Weapon/ManualLoadGunScript"), nil, RevolverSimple)

@@ -1,0 +1,67 @@
+
+local GuitarFingerboard = {
+    curFret = 0,
+}
+
+function GuitarFingerboard:OnGrab(a, g)
+    if g then
+        local hand = self.interact:GetPrimaryHand()
+        if not IsNullOrDestroyed(hand) then
+            local hpc = self.interact:GetPrimaryHand().handPoseControl
+            self.idxFingerTrans = hpc.fingers[CL.HandPoseControl.IndexFinger].fingerTip
+        end
+    else
+        self.idxFingerTrans = nil
+    end
+end
+
+function GuitarFingerboard:Awake()
+    self:InitFret()
+    
+    self.grabHandler = function(a, g)
+        self:OnGrab(a, g)
+    end
+    self.interact:GrabEvent("+", self.grabHandler)
+    --self.lifeCircleTimer = CL.Scheduler.Create(self,
+    --    function(sche, t, s)
+    --        self:CheckButtonPush()
+    --    end
+    --, 0.02, -1)
+    --:SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function GuitarFingerboard:InitFret()
+    self.fretList = {}
+    for i = 0, 16 do
+        self.fretList[i+1] = self.fingerboard:GetChild(i).transform
+    end
+end
+
+--function GuitarFingerboard:CheckButtonPush()
+--    local isPress = self.hand.inputs[CL.VRTKInputButton.ButtonType.ButtonOne].PressDown or UE.Input.GetKeyDown(UE.KeyCode.C)
+--    if isPress then
+--        self:RefreshFret()
+--    end
+--end
+
+function GuitarFingerboard:GetFret()
+    --acording hand's position to calculate cur fret.
+    if not self.idxFingerTrans then
+        return nil
+    end
+    
+    local idxPos = self.fingerboard:InverseTransformPoint(self.idxFingerTrans.position)
+    for i = 1, 17 do
+        if self.fretList[i].localPosition.y <= idxPos.y then
+            return i
+        end
+    end
+    return nil
+end
+
+function GuitarFingerboard:OnDestroy()
+    self.interact:GrabEvent("-", self.grabHandler)
+end
+
+
+return Class(nil, nil, GuitarFingerboard)

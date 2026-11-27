@@ -1,0 +1,165 @@
+
+local spellFireBall = {
+    enchantingEffect = "FireEnchanting",
+    enchantEffectFly = "FireEnchantFly",
+    enchantEffectLoop = "FireEnchantLoop",
+    enchantEffectEnd = "FireEnchantEnd",
+}
+
+function spellFireBall.OnEnchantSkillWithRole(ib, fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+    --print("OnEnchantSkillWithRole-----------------")
+    if mu then
+        local state = fc.muscleState.stateRecord[mu.muscleName]
+        if fc.muscleState:IsArmor(state, thisCol) then
+            return
+        end
+    end
+    
+    ib:EnchantSkillCountUpdate()
+    
+    local pos = point
+    if thisCol.sharedMesh and not thisCol.convex then
+        pos = point
+    else
+        pos = thisCol:ClosestPoint(point)
+    end
+    
+    spellFireBall.SpawnFire(ib, thisCol.transform, pos, normal)
+end
+
+function spellFireBall.OnEnchantSkillByStab(ib, si)
+    --print("OnEnchantSkillByStab")
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        local mu = pu.ra:GetMuscle(si.stabTarget)
+        if mu then
+            local state = pu.muscleState.stateRecord[mu.muscleName]
+            
+            local cols = si.stabTarget:GetComponents(typeof(UE.Collider))
+            for i = 0, cols.Length - 1 do
+                if pu.muscleState:IsArmor(state, cols[i]) then
+                    return
+                end
+            end
+        end
+    end
+    
+    spellFireBall.SpawnFire(ib, si.stabTarget, si.stabTarget:TransformPoint(si.stabLocalPos), si.stabTarget:TransformDirection(si.stabLocalDir))
+    ib:EnchantSkillCountUpdate()
+end
+
+function spellFireBall.OnEnchantSkillWithPlayer(ib, rb, thisCol, otherCol, point, normal, relaVel, character)
+    ib:EnchantSkillCountUpdate()
+    
+    local pos = point
+    if thisCol.sharedMesh and not thisCol.convex then
+        pos = point
+    else
+        pos = thisCol:ClosestPoint(point)
+    end
+    
+    spellFireBall.SpawnFire(ib, thisCol.transform, pos, normal, true)
+end
+
+--[[
+function spellFireBall.EnchantFlyObjOnCollisionWithRole(fo, fc, mu, rb, col, point, normal, relaVel)
+    if not IsNullOrDestroyed(fo.owner) then
+        fo.owner:EnchantSkillCountUpdate()
+    end
+    
+    spellFireBall.SpawnFire(fo.owner, mu.col.transform, point, normal)
+end
+
+function spellFireBall.EnchantFlyObjOnCollisionWithScene(fo, collision)
+    if not IsNullOrDestroyed(fo.owner) then
+        fo.owner:EnchantSkillCountUpdate()
+    end
+    
+    local thisCol, otherCol, ctPoint, normal = collision:GetContactPoint(0)
+    local point = ct.otherCollider:ClosestPoint(ctPoint)
+    
+    spellFireBall.SpawnFire(ib, otherCol.transform, point, normal)
+end
+
+function spellFireBall.EnchantFlyObjOnCollision(fo, collision, pu)
+    if not IsNullOrDestroyed(fo.owner) then
+        fo.owner:EnchantSkillCountUpdate()
+    end
+    
+    local thisCol, otherCol, ctPoint, normal = collision:GetContactPoint(0)
+    local point = ct.otherCollider:ClosestPoint(ctPoint)
+    
+    spellFireBall.SpawnFire(ib, otherCol.transform, point, normal)
+end
+]]
+
+function spellFireBall.SpawnFire(ib, trans, pos, normal, player)
+    local fo = nil
+    local objName = player and "Zone_Fire_Small_Short_ToPlayer" or "Zone_Fire_Small_Short"
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo =  CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(objName, ib, pos, UE.Vector3.up)
+        else
+            return
+        end
+    else
+        fo = CL.FlyObject.CreateFlyObj(objName, ib, pos, UE.Vector3.up)
+    end
+    
+    local col = trans:GetComponent(typeof(UE.Collider))
+    local closestPos = pos
+    if not IsNullOrDestroyed(col) then
+        if col.sharedMesh and not col.convex then
+            closestPos = pos
+        else
+            closestPos = col:ClosestPoint(pos)
+        end
+    end
+    
+    local follower = fo.trans:GetComponent(typeof(CL.FlyObjectFollower))
+    if not IsNullOrDestroyed(follower) then
+        local localPos = trans:InverseTransformPoint(closestPos)
+        follower:SetData(trans, localPos)
+    end
+    --fire effect
+end
+
+function spellFireBall:SpawnFo()
+    local hand = self:GetSlotHand()
+    if hand == nil then
+        return
+    end
+    
+    local character = self:GetSlotHand().character
+    local headset = character:GetHeadset()
+    local otherHand = hand:GetAnotherHand()
+    if otherHand == nil then
+        return
+    end
+    
+    local spawnPos = self:GetHangPos(hand, otherHand)
+    local spawnDir = hand:GetIndexDir() + otherHand:GetIndexDir() + headset.forward
+    spawnDir.y = 0
+    if spawnDir.sqrMagnitude > 0 then
+        spawnDir = spawnDir.normalized
+    end
+
+    local hitGround, groundPoint = CL.ElementalStaffFirePath.GetGroundPoint(spawnPos, spawnPos.y + 0.5, 20)
+    if hitGround then
+        spawnPos = groundPoint
+    end
+
+    local firePath = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            firePath = self.host:NetworkCreateFlyObj(self.summonObjName, spawnPos, spawnDir, self.summonFoVel)
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnSummonFo(firePath, spawnDir, spawnPos) end
+        end
+    else
+        firePath = self.host:CreateFlyObj(self.summonObjName, spawnPos, spawnDir, self.summonFoVel)
+    end
+end
+
+return Class(Require("Weapon/SpellThrowAndSummonScript"), nil, spellFireBall)

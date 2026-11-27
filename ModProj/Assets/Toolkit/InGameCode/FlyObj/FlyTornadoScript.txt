@@ -1,0 +1,186 @@
+
+local FlyTornado = {
+    pullList = {},
+    damageInterval = 0.3,
+}
+
+function FlyTornado:FlyStart()
+    --self:Open
+    
+    --self:StartCheckGround()
+    --self.host.rb.constraints = UE.RigidbodyConstraints.FreezePositionY
+    
+    self:StartUpdate()
+end
+
+function FlyTornado:OnTrigger(pu, other)
+    self:AddToPullList(other, pu)
+end
+
+function FlyTornado:OnTriggerWithRole(fc, col)
+    self:AddToPullList(col, fc)
+    
+    if not fc.muscleState:IsPowerfulCharacter() and math.random(1,10) < 8 then
+        fc.motion:AtkToAir(CL.MotionDetector.UpAirVec)
+    end
+end
+
+function FlyTornado:OnTriggerWithStaticScene(other)
+    if self.destoryWhenHitEnv ~= 0 then
+        self.host:OnFinish()
+    end
+end
+
+function FlyTornado:AddToPullList(col, pu)
+    if IsNullOrDestroyed(col) or IsNullOrDestroyed(col.attachedRigidbody) then
+        return
+    end
+    
+    if self.pullList[col.attachedRigidbody] then
+        return
+    end
+    
+    self.pullList[col.attachedRigidbody] = {}
+    self.pullList[col.attachedRigidbody]["rb"] = col.attachedRigidbody
+    
+    if pu.unitType == CL.Tagger.Tag.SceneObject then
+        if pu.dropCoinPob then
+            self.pullList[col.attachedRigidbody]["pu"] = pu
+            self.pullList[col.attachedRigidbody]["col"] = col
+            self.pullList[col.attachedRigidbody]["time"] = UE.Time.time
+        end
+    end
+    
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        self.pullList[col.attachedRigidbody]["pu"] = pu
+        self.pullList[col.attachedRigidbody]["col"] = col
+        self.pullList[col.attachedRigidbody]["time"] = UE.Time.time
+    end
+    
+    if pu.unitType == CL.Tagger.Tag.PlayerRole then
+        self.pullList[col.attachedRigidbody]["pu"] = pu
+        self.pullList[col.attachedRigidbody]["col"] = col
+        self.pullList[col.attachedRigidbody]["time"] = UE.Time.time
+    end
+end
+
+function FlyTornado:RemoveFromPullList(rb)
+    self.pullList[rb] = nil
+end
+
+function FlyTornado:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlyTornado:OnTriggerWithPlayerHand(col, hand)
+--    if self.host.ownerHolder and self.host.ownerHolder.character == hand.character then
+--        return
+--    end
+    
+--    if IsNullOrDestroyed(col.attachedRigidbody) then
+--        return
+--    end
+    
+--    self:AddToPullList(col, hand.physicsHand)
+end
+
+function FlyTornado:OnTriggerWithPlayer(pu, col)
+    if self.host.ownerHolder and self.host.ownerHolder.character == pu.character then
+        return
+    end
+    
+    if IsNullOrDestroyed(col.attachedRigidbody) then
+        return
+    end
+    
+    self:AddToPullList(col, pu)
+end
+
+
+function FlyTornado:StartUpdate()
+    local vec = nil
+    local value = 0
+    local intensity = 0
+    local totalForce = 0
+    local puList = {}
+    local sqrRadius = self.radius * self.radius
+    self.updateActId = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            puList = {}
+            
+            for k, v in pairs(self.pullList) do
+                if v == nil then
+                    break
+                end
+                if IsNullOrDestroyed(v["rb"]) then
+                    self:RemoveFromPullList(v["rb"])
+                    break
+                end
+
+                vec = self.host.trans.position - v["rb"].worldCenterOfMass
+                if vec.sqrMagnitude > sqrRadius then
+                    self:RemoveFromPullList(v["rb"])
+                    break
+                end
+
+                vec = vec.normalized
+                value = vec.magnitude/self.radius
+                intensity = 1 - value
+                totalForce = vec * v["rb"].mass * self.centerForce * value + 
+                UE.Vector3.Cross(vec, UE.Vector3.up) * v["rb"].mass * self.bypassForce * value +
+                UE.Vector3.up * v["rb"].mass * self.floatForce * intensity
+                
+                totalForce = totalForce * (1 + v["rb"].drag)
+                if v["pu"] and v["pu"].unitType == CL.Tagger.Tag.PlayerRole then
+                    v["pu"].character.capsuleRB:AddForce(totalForce)
+                else
+                    v["rb"]:AddForce(totalForce)
+                end
+                
+                --apply damage
+                if (not v["pu"] or puList[v["pu"]]) then
+                    break
+                end                
+                
+                if UE.Time.time < v["time"] then
+                    break
+                end
+                
+                if IsNullOrDestroyed(v["col"]) then
+                    break
+                end
+                
+                puList[v["pu"]] = true
+                CL.InteractTrigger.BeginScanDmg()
+                CL.InteractTrigger.ApplyHitScanDamage(v["col"], self.host, self.host.rb, self.host.col, self.host.trans.forward, CL.AIProxy.CampNone)
+                CL.InteractTrigger.EndHitScan()
+                
+                v["time"] = UE.Time.time + self.damageInterval
+            end
+        end
+    , 0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function FlyTornado:StartCheckGround()
+    local isHit, raycastHit  = nil, nil
+    
+    self.checkTimerId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            isHit, raycastHit  = UE.Physics.SphereCast(self.host.trans.position + UE.Vector3.up * 0.5, 0.1, UE.Vector3.down, 2, 
+                CL.LayerDefine.EnvLayerMask.value)
+            if not isHit then
+                self.host:OnFinish()
+            end
+        end
+    , 0.3, -1).actionId
+end
+
+function FlyTornado:ResetState()
+    CL.Scheduler.RemoveSchedule(self.checkTimerId)
+    CL.Scheduler.RemoveSchedule(self.updateActId)
+    
+    self.pullList = {}
+end
+
+
+return Class(nil, nil, FlyTornado)

@@ -1,0 +1,91 @@
+local FlyObjSpawner = {
+    foFlySpeed = 1,
+    maxCount = -1,
+    maxAngle = 0,
+    minAngle = 0,
+}
+
+
+function FlyObjSpawner:FlyStart(vel)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    self:StartSpawnFo()
+end
+
+function FlyObjSpawner:StartSpawnFo()
+    local count = 0
+    CL.Scheduler.RemoveSchedule(self.spawnActId)
+    self.spawnActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            count = count + 1
+            self:SpawnFo()
+            
+            if self.maxCount > 0 and count >= self.maxCount then
+                sche:Stop()
+                return
+            end
+        end
+    , self.interval, -1).actionId
+end
+
+function FlyObjSpawner:StopSpawnFo()
+    CL.Scheduler.RemoveSchedule(self.spawnActId)
+end
+
+function FlyObjSpawner:SpawnFo()
+    local dir = self.parentRotation == 1 and self.trans.forward or self:GetRandomDirectionWithinAngle(self.trans.forward, self.trans, self.minAngle, self.maxAngle)
+    CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + dir * 1, UE.Color.red, 1)
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            local fo = CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.flyObjName, self.host.owner, self.trans.position, dir, self.foFlySpeed)
+            fo.shootTarget = self.host.shootTarget
+            fo.ownerHolder = self.host.ownerHolder
+            if self.parentRotation then
+                fo.trans.rotation = self.trans.rotation
+            end
+        end
+    else
+        local fo = CL.FlyObject.CreateFlyObj(self.flyObjName, nil, self.trans.position, dir, self.foFlySpeed)
+        --fo:SetOwnerRole(self.host.ownerHolder.fc)
+        fo.shootTarget = self.host.shootTarget
+        fo.ownerHolder = self.host.ownerHolder
+        if self.parentRotation then
+            fo.trans.rotation = self.trans.rotation
+        end
+    end
+end
+
+
+function FlyObjSpawner:ResetState()
+    self:StopSpawnFo()
+end
+
+function FlyObjSpawner:GetRandomDirectionWithinAngle(baseDirection, spawnTransform, minAngle, maxAngle)
+    minAngle = minAngle < 0 and 0 or minAngle
+    minAngle = minAngle > maxAngle and maxAngle or minAngle
+    
+    baseDirection = baseDirection.normalized
+    local horizontalAngle = UE.Random.Range(-maxAngle, maxAngle)
+    local verticalAngle = UE.Random.Range(-maxAngle, maxAngle)
+    
+    if horizontalAngle > 0 and horizontalAngle < minAngle then
+        horizontalAngle = minAngle
+    elseif horizontalAngle < 0 and horizontalAngle > -minAngle then
+        horizontalAngle = -minAngle
+    end
+    
+    if verticalAngle > 0 and verticalAngle < minAngle then
+        verticalAngle = minAngle
+    elseif verticalAngle < 0 and verticalAngle > -minAngle then
+        verticalAngle = -minAngle
+    end
+    
+    local horizontalRot = UE.Quaternion.AngleAxis(horizontalAngle, spawnTransform.up)
+    local verticalRot = UE.Quaternion.AngleAxis(verticalAngle, spawnTransform.right)
+    local randomDirection = horizontalRot * verticalRot * baseDirection
+    return randomDirection.normalized
+end
+
+return Class(nil, nil, FlyObjSpawner)

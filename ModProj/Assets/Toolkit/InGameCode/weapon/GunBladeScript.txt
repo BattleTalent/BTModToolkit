@@ -1,0 +1,305 @@
+
+local GunBlade = {
+    recoilVector = UE.Vector3(0, 0, -1),
+    
+    bulletInterval = 0.1,
+    muzzleCount = 0,
+    
+    bulletList = {},
+    
+    bulletOffset = 0.03,
+    
+    pushback = 4,
+    midAirIntensity = 0.3,
+    onDragIntensity = 0.25,
+    axisYValue = 3,
+}
+
+function GunBlade:Awake()
+    local i = 0
+    while self["shootPosition" .. (i+1)] do
+        i = i + 1
+    end
+    
+    self.muzzleCount = i
+    
+    --stab
+    self.onStabEnterHandler = function(si)
+        self.isStab = true
+    end
+    
+    self.OnStabExitHandler = function(si)
+        self.isStab = false
+    end
+    self.stab:StabEnterEvent("+", self.onStabEnterHandler)
+    self.stab:StabExitEvent("+", self.OnStabExitHandler)
+    
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function GunBlade:OnGrab(attach, t)
+    local i = 1
+    while(self["shootPosition" .. i]) do
+        self["aimWidget" .. i].gameObject:SetActive(t)
+        if t and CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self["aimWidget" .. i].enabled = true
+        else
+            self["aimWidget" .. i].enabled = false
+        end
+        
+        i = i + 1
+    end
+end
+
+function GunBlade:UpdateSkill()
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        local i = 1
+        --self:StopTimer(self.shootActTimer)
+        --self.shootActTimer = CL.Scheduler.Create(self, 
+        --    function(sche, t, s)
+        
+            while(self["shootPosition" .. i]) do
+                if i <= self.muzzleCount then
+                    local bullet = self:PlayShootAction(self["shootPosition" .. i],i, self.isStab and self.isEnhance)
+                    if self.isStab then
+                        cast(bullet, typeof(CL.FlyObjectX))
+                        bullet.script.self:AddHitAway(self.isEnhance)
+                    end
+                end
+                i = i + 1
+            end
+        --, self.bulletInterval, self.muzzleCount * (self.bulletInterval + 0.5))
+        --:SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+    
+    local pushback = self.isStab and self.pushback * 1.5 or self.pushback
+    if self.isStab then
+        self.stab:BreakAllStab()
+    end
+    
+    -- if self.isOnline then
+    --     self.host.interact.networkIB.networkIBState:ServerPushBack(pushback)
+    -- end
+    self:HolderPushBack(pushback)
+    self:OnUpdateSkill()
+end
+
+function GunBlade:OnCoolDownBegin()
+    CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            self.reloadSound:PlaySound()
+        end,
+    0, 0, 0.1)
+end
+
+function GunBlade:TriggerOnCoolDown()
+    if self.triggerSound ~= nil then
+        self.triggerSound:PlaySound()
+    end
+end
+
+function GunBlade:HolderPushBack(intensity)
+    local holder = self.host.interact:GetHolder()
+    if holder then
+        --holder:GetControllerBase():AddPushbackByForce(-self.host.interact.trans.forward * intensity)
+        local dir = -self.host.interact.trans.forward
+        
+        if holder.character.dragPower ~= holder.character:GetOriginalDragPower() then
+            intensity = intensity * self.onDragIntensity
+        end
+        
+        if holder.character:IsMidAir() then
+            intensity = intensity*self.midAirIntensity
+        end
+        dir.y = dir.y/self.axisYValue
+        dir:Normalize()
+        
+        holder.character:AddForce(dir * intensity)
+        holder.character:SetDragForAWhile(0.2)
+        holder.character:SetMovementForAWhile(false, 0.2)
+    end
+end
+
+function GunBlade:StopTimer(timer)
+    if IsNullOrOwnerChanged(timer, self) == false then
+        timer:Stop()
+        timer = nil
+    end
+end
+
+function GunBlade:OnDestroy()
+    self:StopTimer(self.shootActTimer)
+    
+    self.stab:StabEnterEvent("-", self.onStabEnterHandler)
+    self.stab:StabExitEvent("-", self.OnStabExitHandler)
+end
+
+function GunBlade:OnEnhance()
+    self.shootVel = 70
+    self.isEnhance = true
+end
+
+function GunBlade:GetAimDir(shootPosition) 
+    local aimDir = shootPosition.forward
+    if self.bulletOffset ~= 0 then
+        aimDir = aimDir + UE.Random.insideUnitSphere * self.bulletOffset
+    end
+    return aimDir
+end
+
+function GunBlade:PlayShootAction(shootPosition,bulletIndex, hitAway)
+    local ph = self.host.interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = self:GetAimDir(shootPosition)
+
+    local bulletScript = nil
+    
+    if self.isOnline then 
+        -- if CL.Network.VRNetworkManager.Instance.IsServer then
+        --     bulletScript = self.host:NetworkCreateFlyObj(self.flyObjName, shootPosition.position,
+        --     aimDir, self.shootVel)
+        --     self.host.interact.networkIB.networkIBState:ServerOnShoot(bulletScript)
+        -- else
+        bulletScript = self.host:CreateFlyObj(self.flyObjName, shootPosition.position,
+        aimDir, self.shootVel)
+        bulletScript.col.enabled = false;
+
+        local state = GetNetworkIBState(self)
+        if ph.character.IsLocalPlayer and state ~= nil then
+            local simulateTime = 0.1
+            
+            local result = CL.FlyObject.CmdSimulateCollisionEnterResult(bulletScript,shootPosition.position,aimDir,simulateTime,self.shootVel)
+
+            if result.collisionType == CL.FlyObjSimulateCollisionResult.IGNORE then
+                state:CmdOnShootLocal(bulletIndex)
+            elseif result.collisionType == CL.FlyObjSimulateCollisionResult.SCENE then
+                state:CmdOnShootLocalHitScene(bulletIndex,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel)
+            elseif result.collisionType == CL.FlyObjSimulateCollisionResult.PLAYER_HAND then
+                state:CmdOnShootLocalHitPlayerHand(bulletIndex,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel,result.pu.logicHand.character.networkPlayer.netId,result.pu.logicHand:GetHandIndex())
+            elseif result.collisionType == CL.FlyObjSimulateCollisionResult.INTERACT_ROLE then
+                local muscle = result.pu.ra:GetMuscleByCol(result.collider)
+                local muscleName = ""
+                if muscle ~= nil then
+                    muscleName = muscle.muscleName
+                end
+                state:CmdOnShootLocalHitInteractRole(bulletIndex,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.localPoint,result.localNormal,result.localRelaVel,result.pu.networkCharacter.netId,muscleName, hitAway)
+            elseif result.collisionType == CL.FlyObjSimulateCollisionResult.PLAYER then
+                state:CmdOnShootLocalHitPlayer(bulletIndex,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel,result.pu.character.networkPlayer.netId)
+            elseif result.collisionType == CL.FlyObjSimulateCollisionResult.OTHER then
+                state:CmdOnShootLocalHitOther(bulletIndex,result.rbNetId,result.rbKey,result.colNetId,result.colKey,result.point,result.normal,result.relaVel)
+            else
+                state:CmdOnShootLocal(bulletIndex)
+            end
+        end
+        -- end
+    else
+        bulletScript = self.host:CreateFlyObj(self.flyObjName, shootPosition.position,
+        aimDir, self.shootVel)
+    end
+    
+    self:OnShoot(bulletScript)
+    
+    return bulletScript
+end
+
+function GunBlade:RpcOnShootLocal(bulletIndex)
+    local shootPosition = self["shootPosition"..bulletIndex]
+    local aimDir = self:GetAimDir(shootPosition)
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+    fo:DoFinish();
+end
+
+function GunBlade:RpcOnShootLocalHitScene(bulletIndex,rb,col,point,normal,relaVel)
+    local shootPosition = self["shootPosition"..bulletIndex]
+    local aimDir = self:GetAimDir(shootPosition)
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+
+    fo:RpcOnCollisionWithScene(rb,col,point,normal,relaVel);
+    fo:DoFinish();
+end
+
+function GunBlade:RpcOnShootLocalHitPlayerHand(bulletIndex,rb,col,point,normal,relaVel,hand)
+    local shootPosition = self["shootPosition"..bulletIndex]
+    local aimDir = self:GetAimDir(shootPosition)
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false;
+    fo.ownerHolder = self.host.interact:GetLatestHolder()
+    fo:RpcOnCollisionWithPlayerHand(rb,col,point,normal,relaVel,hand);
+    fo:DoFinish();
+end
+
+function GunBlade:RpcOnShootLocalHitPlayer(bulletIndex,rb,col,point,normal,relaVel,player)
+    local shootPosition = self["shootPosition"..bulletIndex]
+    local aimDir = self:GetAimDir(shootPosition)
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false
+
+    local holder = self.host.interact:GetLatestHolder()
+    local camp = not IsNullOrDestroyed(holder) and holder:GetCamp() or CL.AIProxy.CampNone
+    local dmgMlp = 1
+    if camp == player.attr.camp then
+        dmgMlp = CL.Network.NetworkRoomMgr:GetTeammateDmgMlp()
+    end
+    fo.ownerHolder = holder
+    fo.trans.position = point
+    
+    if dmgMlp > 0 then
+        CL.InteractTrigger.BeginScanDmg()
+        CL.InteractTrigger.ApplyHitScanDamage(col, fo, fo.rb, fo.col, relaVel.normalized, self.host.camp, false, dmgMlp, nil, relaVel)
+        CL.InteractTrigger.EndHitScan()
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        if not IsNullOrDestroyed(fo.ownerHolder) then
+            player.aiProxy:ProcessRangeAttackTalentsOnHit(fo.ownerHolder, col)
+        end
+    end
+    
+    fo:RpcOnCollisionWithPlayer(rb,col,point,normal,relaVel,player)
+    fo:DoFinish()
+end
+
+function GunBlade:RpcOnShootLocalHitInteractRole(bulletIndex,rb,col,point,normal,relaVel,fc,mu, hitAway)
+    local shootPosition = self["shootPosition"..bulletIndex]
+    local aimDir = self:GetAimDir(shootPosition)
+    local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    fo.col.enabled = false
+    if hitAway then
+        fo.script.self:AddHitAway(true)
+    end
+    
+    fo.trans.position = shootPosition.position
+    fo.script.self:FlyStart(relaVel)
+    fo.trans.position = point
+    
+    if CL.Network.VRNetworkManager.Instance.IsServer then
+        fc.muscleState:ClearAllStab()
+        rb:AddForce(relaVel*fo.rb.mass,UE.ForceMode.Impulse)
+        fo.script.self:TryAddPushBack(fc)
+    end
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, fo, fo.rb, fo.col, relaVel.normalized, self.host.camp,false, 1, nil, relaVel)
+    CL.InteractTrigger.EndHitScan()
+    fo:OnCollisionUpdate(rb, col, point, normal, relaVel)
+end
+
+function GunBlade:RpcOnShootLocalHitOther(bulletIndex,rb,col,point,normal,relaVel,pu)
+    --local shootPosition = self["shootPosition"..bulletIndex]
+    --local aimDir = self:GetAimDir(shootPosition)
+    --local fo = CL.FlyObject.SpawnFlyObj(self.flyObjName)
+    --fo.col.enabled = false
+
+    --fo:RpcOnCollision(rb,col,point,normal,relaVel,pu)
+    --fo:DoFinish()
+end
+
+
+return Class(Require("Weapon/ShotgunBaseScript"), nil, GunBlade)

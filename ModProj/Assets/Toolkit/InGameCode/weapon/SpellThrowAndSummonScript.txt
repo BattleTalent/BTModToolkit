@@ -1,0 +1,264 @@
+local SpellSummonFo = Require("Weapon/SpellSummonFoScript")
+
+local spellThrowAndSummon = {
+    summonFoVel = 1,
+}
+
+function spellThrowAndSummon:CleanupThrowAndSummonRuntime()
+    self.localActId = SafeRemoveSchedule(self.localActId)
+    self.onSkill = false
+end
+
+function spellThrowAndSummon:OnDestroy()
+    self:CleanupThrowAndSummonRuntime()
+    SpellSummonFo.OnDestroy(self)
+end
+
+function spellThrowAndSummon:UnSlotSpell(slot)
+    self:CleanupThrowAndSummonRuntime()
+    SpellSummonFo.UnSlotSpell(self, slot)
+end
+
+function spellThrowAndSummon:OnChargeBegin()
+    if self.onSkill then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if SafeIsOwnerLocalPlayer(self.host.interact) then
+            if CL.Network.VRNetworkManager.ClientOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandChargeBegin() end
+                self.onSkill = true
+                return
+            end
+        else
+            return
+        end
+    end
+    
+    self:DoChargeBegin()
+end
+
+function spellThrowAndSummon:DoChargeBegin()
+    --print("OnChargeBegin")
+    local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)
+    if self.host.interact:IsEnhance() and fo.script.self.EnhanceSpell then
+        fo.script.self:EnhanceSpell()
+    end
+    fo.script.self:SetOwner(self)
+    
+    self:SetHandPose(true)
+    
+    self.onSkill = true
+end
+
+function spellThrowAndSummon:NetworkOnSpawnSpell(fo)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self:InitSpellOnSpawn(fo, self.createPoint)
+    
+    if self.host.interact:IsEnhance() then
+        fo.script.self:EnhanceSpell()
+    end
+    fo.script.self:SetOwner(self)
+end
+
+function spellThrowAndSummon:OnChargeReady()
+    if IsNullOrDestroyed(self.fo) then
+        return
+    end
+    
+    self:PrepareSpellOnHand()
+    
+    if self.isEnchantable >= 1 then
+        self:StartDetectingEnchant(self.createPoint)
+    end
+
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+        self.localActId = CL.Scheduler.Create(self.trans, 
+            function(sche, t, s)
+                if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                    or not self.slotHand or IsNullOrDestroyed(self.slotHand) then
+                    sche:Stop()
+                    return
+                end
+                if self.slotHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp then
+                    self:OnChargeRelease(true)
+                    sche:Stop()
+                end
+            end,
+        0, -1).actionId
+    end
+end
+
+
+function spellThrowAndSummon:OnChargeCancel()
+    --print("OnChargeCancel")
+    self:ReleaseSpell()
+    
+    self:SetHandPose(false)
+    
+    self.onSkill = false
+    
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+    end
+end
+
+function spellThrowAndSummon:OnChargeRelease(isLocal)
+    self.onSkill = false
+    self:SetHandPose(false)
+    --throw
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if self.isOnline and not isLocal then
+        return
+    end
+
+    if self.isOnline then
+        self.localActId = SafeRemoveSchedule(self.localActId)
+    end
+
+    if not self:TryThrow() then
+        self:ReleaseSpell()
+    end
+    
+    if not self.isOnline then
+        self.fo = nil
+    end
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+end
+
+function spellThrowAndSummon:OnFoDestroyed(fo)
+    if self.fo and self.fo.script.self == fo then
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+            end
+        end
+        self.host:CloseSkill()
+        
+        if self.isEnchantable >= 1 then
+            self:StopDetectingEnchant()
+        end
+    end
+end
+
+function spellThrowAndSummon:NetworkThrowFail(fo)
+    if fo and not IsNullOrDestroyed(fo) and not IsNullOrDestroyed(fo.networkFO) then
+        fo.networkFO.networkRB.enabled = true
+    end
+    self:ReleaseSpell(nil, true)
+    
+    self.fo = nil
+    
+    self.onSkill = false
+end
+
+function spellThrowAndSummon:NetworkThrowSuc(fo)
+    if fo and not IsNullOrDestroyed(fo) then
+        fo.networkFO.networkRB.enabled = true
+    end
+    self:PrepareThrow(fo)
+    
+    self.onSkill = false
+end
+
+
+
+-----------------------------------------------------------------------------------------------------
+
+
+--[[
+    summon
+]]
+
+function spellThrowAndSummon:OnCondition()
+    self.onSkill = true
+    
+    local slotHand = self:GetSlotHand()
+    if not slotHand then
+        return
+    end
+
+    local otherHand = slotHand:GetAnotherHand()
+    if not otherHand then
+        return
+    end
+    slotHand:HapticPulse(0.5)
+    otherHand:HapticPulse(0.5)
+end
+
+function spellThrowAndSummon:SpawnFo()
+    local hand = self:GetSlotHand()
+    if hand == nil then
+        return
+    end
+    
+    local character = self:GetSlotHand().character
+    local headset = character:GetHeadset()
+    local otherHand = hand:GetAnotherHand()
+    if otherHand == nil then
+        return
+    end
+    
+    local slashPos = self:GetHangPos(hand, otherHand)
+        
+    local slashDir = hand:GetIndexDir() + otherHand:GetIndexDir() + headset.forward
+
+    local slash = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            slash = self.host:NetworkCreateFlyObj(self.summonObjName, slashPos, slashDir, self.summonFoVel)
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnSummonFo(slash, slashDir, slashPos) end
+        end
+    else
+        slash = self.host:CreateFlyObj(self.summonObjName, slashPos, slashDir, self.summonFoVel)
+    end
+    slash.trans.rotation = UE.Quaternion.LookRotation(slashDir)
+end
+
+function spellThrowAndSummon:NetworkOnSummonFo(fo, dir, pos)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    fo.trans.rotation = UE.Quaternion.LookRotation(dir)
+end
+
+function spellThrowAndSummon:IsAllowSkill(h, ah)
+    if self.onSkill then
+        return false
+    end
+    
+    --Both hands must be free
+    if not h or IsNullOrDestroyed(h) then
+        return false
+    end
+    
+    if h.attachTo then
+        return false
+    end
+    
+    if ah.attachTo then
+        return false
+    end
+    
+    return true
+end
+
+
+return Class(Require("Weapon/SpellSummonFoScript"), nil, spellThrowAndSummon)

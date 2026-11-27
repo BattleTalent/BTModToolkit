@@ -1,0 +1,442 @@
+--luaBehaviour
+local ArrowEnergy = {
+    prOfMuscleBursting = 50,
+    lastCol = nil,
+    
+    lastReboundTime = 0,
+    reboundCount = 0,
+    onReboundCheck = false,
+    
+    -- Cache for GC optimization
+    reboundLayerMask = nil,
+}
+
+
+function ArrowEnergy:Awake()
+    -- Cache LayerMask to reduce GC
+    self.reboundLayerMask = UE.LayerMask.GetMask(
+        UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value), 
+        UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value))
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    self.Phase1EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        --print("Phase1EventHandler reboundCount-------------------------: " ..self.reboundCount)
+        if self.reboundCount > 0 then
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp + self.reboundCount
+        end
+    end
+    if not IsNullOrDestroyed(self.hitInfoObj) then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.Phase1EventHandler)
+    end
+    
+    
+    self.Phase2EventHandler = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult <= 0 then
+            return
+        end
+        
+        if fc.muscleState:IsPowerfulCharacter() then
+            return
+        end
+        
+        local hpFactor = fc.attr:GetHpFactor()
+        if hpFactor > 0.5 then
+            return
+        end
+        
+        if math.random(0, 100) < self.prOfMuscleBursting then
+            return
+        end
+        
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu:GetProxyMuscleName(), point)
+        if frag then
+            CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag
+        end
+    end
+    if not IsNullOrDestroyed(self.hitInfoObj) then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.Phase2EventHandler)
+    end
+    
+    self.onStabEnterHandler = function(si)
+        self:StopFly()
+        
+        if not IsNullOrDestroyed(self.trail) then
+            self.trail.enabled = false
+        end
+    end
+    
+    self.onGrab = function(ao, t)
+        if t then
+            if self.disabled then
+                return
+            end
+            
+            if self.isOnline then
+                local state = GetIBNetworkState(self.ib)
+                if state ~= nil then
+                    if CL.Network.VRNetworkManager.ServerOnly then
+                        state:ServerOnCollision()
+                    else
+                        state:CommandOnCollision()
+                    end
+                end
+            end
+            
+            if not IsNullOrDestroyed(self.trail) then
+                self.trail.enabled = false
+            end
+            
+            self:StopFly()
+        end
+    end
+end
+
+
+function ArrowEnergy:OnShoot(bow)
+    if self.isOnline then
+        if SafeLocalTrackPhysics(self.ib) then
+            local state = GetIBNetworkState(self.ib)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ServerOnly then
+                    state:ServerOnShoot()
+                else
+                    state:CommandOnShoot()
+                end
+            end
+        end
+    end
+    
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = true
+    end
+    self.effectNode:SetActive(true)
+    
+    self.ib:SetLatestHolder(nil)
+    
+    
+    self:UseGravity(false)
+    
+    self.disabled = false
+    
+    self.bow = bow
+    if not IsNullOrDestroyed(self.ib) and not IsNullOrDestroyed(self.ib.rb) then
+        self.shootSpeed = self.ib.rb.velocity.magnitude
+    else
+        self.shootSpeed = 0
+    end
+    
+    self.ib:GrabEvent("+", self.onGrab)
+    
+    if self.isOnline and not SafeLocalTrackPhysics(self.ib) then
+        return
+    end
+
+    if not IsNullOrDestroyed(bow.host) and not IsNullOrDestroyed(bow.host.interact) then
+        CL.FlyObject.CopyWeaponBuffToUnit(bow.host.interact, self.ib)
+    end
+    CL.Scheduler.RemoveSchedule(self.givebackId)
+    self.givebackId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:GiveBack()
+        end,
+    0, 0, self.lifeTime).actionId
+
+    self:CheckIllegal()
+end
+
+function ArrowEnergy:OnNpcShoot()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            local state = GetIBNetworkState(self.ib)
+            if state ~= nil then state:ServerOnShoot() end
+        end
+    end
+    
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = true
+    end
+
+    self.effectNode:SetActive(true)
+    self.ib:SetLatestHolder(nil)
+    self:UseGravity(false)
+    self.disabled = false
+    
+    if not IsNullOrDestroyed(self.ib) and not IsNullOrDestroyed(self.ib.rb) then
+        self.shootSpeed = self.ib.rb.velocity.magnitude
+    else
+        self.shootSpeed = 0
+    end
+    
+    self.ib:GrabEvent("+", self.onGrab)
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.ServerOnline then
+        return
+    end
+    CL.Scheduler.RemoveSchedule(self.givebackId)
+    self.givebackId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:GiveBack()
+        end,
+    0, 0, self.lifeTime).actionId
+
+    self:CheckIllegal()
+end
+
+function ArrowEnergy:CheckIllegal()
+    CL.Scheduler.RemoveSchedule(self.legalActId)
+    if IsNullOrDestroyed(self.ib) or IsNullOrDestroyed(self.ib.rb) then
+        return
+    end
+    self.lastVelocity = self.ib.rb.velocity
+    self.curVelocity = self.ib.rb.velocity
+    self.legalActId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.ib) or IsNullOrDestroyed(self.ib.rb) then
+                sche:Stop()
+                return
+            end
+            self.lastVelocity = self.curVelocity
+            self.curVelocity = self.ib.rb.velocity
+            --if self.ib.rb.velocity.sqrMagnitude < 4 then
+            --    self:StopFly()
+            --    sche:Stop()
+            --end
+        end,
+    0, self.lifeTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ArrowEnergy:CloseIllegalCheck()
+    CL.Scheduler.RemoveSchedule(self.legalActId)
+end
+
+function ArrowEnergy:OnColliderEnter(collision)
+    --if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+    --    return
+    --end
+    if self.isOnline and not SafeLocalTrackPhysics(self.ib) then
+        return
+    end
+    
+    if self.disabled then
+        return
+    end
+    
+    if self.onReboundCheck then
+        return
+    end
+    
+    
+    local hand = CL.InteractHand.GetHandByCollider(collision.collider)
+    if not IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    if self.bow and not IsNullOrDestroyed(self.bow.trans) then
+        if collision.transform.root == self.bow.trans then
+            return
+        end
+    else
+        if self.isOnline then
+            local state = GetIBNetworkState(self.ib)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ServerOnly then
+                    state:ServerOnCollision()
+                else
+                    state:CommandOnCollision()
+                end
+            end
+        end
+        if not IsNullOrDestroyed(self.trail) then
+            self.trail.enabled = false
+        end
+        self.hitSound:PlaySound()
+        self:StopFly()
+    end
+    
+    self.onReboundCheck = true
+
+
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(otherCol, true)
+    local needStab = false
+    
+    if not IsNullOrDestroyed(pu) then
+        if pu.unitType == CL.Tagger.Tag.InteractRole then
+            needStab = true
+        elseif pu:GetType() == typeof(CL.StabableObj) then
+            needStab = true
+        end
+    end
+    
+    if not needStab and (self.maxReboundCount > 0 and self.reboundCount < self.maxReboundCount) then
+        if self.lastCol ~= nil and self.lastCol == otherCol and UE.Time.time - self.lastReboundTime < 0.02 then
+            self.onReboundCheck = false
+            return
+        end
+        
+        if UE.Vector3.Dot(normal, self.lastVelocity) < 0 then
+            self.ib:MarkThrowAssistByNpc()
+            self.bounceSound:PlaySound()
+            self:EnableCols(false)
+            self:Rebound(point, normal, otherCol, self.shootSpeed, 1)
+            self:EnableCols(true)
+            self.lastCol = otherCol
+            self.lastReboundTime = UE.Time.time
+            self.reboundCount = self.reboundCount + 1
+        end
+    else
+        if self.isOnline then
+            local state = GetIBNetworkState(self.ib)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ServerOnly then
+                    state:ServerOnCollision()
+                else
+                    state:CommandOnCollision()
+                end
+            end
+        end
+        
+        if not IsNullOrDestroyed(self.trail) then
+            self.trail.enabled = false
+        end
+        
+        self.hitSound:PlaySound()
+        
+        self:StopFly()
+    end
+    self.onReboundCheck = false
+end
+
+function ArrowEnergy:OnCollision()
+    self:DisableTrail()
+    
+    self.hitSound:PlaySound()
+    self:StopFly()
+end
+
+function ArrowEnergy:StopFly()
+    self:UseGravity(true)
+    self.effectNode:SetActive(false)
+    self:CloseIllegalCheck()
+    self.disabled = true
+end
+
+function ArrowEnergy:UseGravity(use)
+    if IsNullOrDestroyed(self.ib) or IsNullOrDestroyed(self.ib.rb) then
+        return
+    end
+    self.ib.rb.useGravity = use
+    self.ib.rb.drag = use and 0.2 or 0
+    self.ib.rb.angularDrag = use and 0.2 or 0
+end
+
+function ArrowEnergy:EnableCols(enable)
+    local cols = self.ib:GetCols()
+    for i = 0, cols.Length - 1 do
+        cols[i].enabled = enable
+    end
+end
+
+function ArrowEnergy:Rebound(point, normal, col, speed, count)
+    if IsNullOrDestroyed(self.ib) or IsNullOrDestroyed(self.ib.rb) then
+        return
+    end
+    local isHit, raycastHit  = UE.Physics.SphereCast(point - self.lastVelocity * UE.Time.deltaTime * 2, 0.02, self.lastVelocity, 1,
+        self.reboundLayerMask)
+
+    local realPoint = nil
+    if isHit and raycastHit.collider == col then
+        realPoint = raycastHit.point
+    else
+        realPoint = SafeColliderClosestPoint(col, point)
+    end
+    --self.inPos.position = point - self.lastVelocity * UE.Time.deltaTime
+    --self.inPos.forward = self.lastVelocity
+    --self.outPos.position = realPoint
+    --self.outPos.forward = normal
+    --self.inPos.position = realPoint
+    --local pPoint = self:GetPerpendicularPoint(realPoint)
+    --if (realPoint - pPoint).sqrMagnitude <= 0.0036 then
+    --    realPoint = realPoint + (realPoint - pPoint).normalized * 0.06
+    --end
+    --self.outPos.position = realPoint
+    raycastHit = nil
+    local reflect = UE.Vector3.Reflect(self.lastVelocity, normal).normalized
+    isHit, raycastHit  = UE.Physics.SphereCast(realPoint, 0.02, reflect, 0.8,
+        self.reboundLayerMask)
+    
+    --if count == 1 then
+    --    self.inPos.gameObject.name = self.ib.gameObject.name .. "_In-0"
+    --    self.outPos.gameObject.name = self.ib.gameObject.name .. "_Out-0"
+    --    self.inPos:SetParent(nil)
+    --    --self.inPos.position = realPoint
+    --    --self.inPos.forward = self.lastVelocity
+    --    self.outPos:SetParent(nil)
+    --    --self.outPos.position = realPoint + reflect
+    --    --self.outPos.forward = normal
+    --end
+    --if count == 0 then
+    --    self.inPos1.gameObject.name = self.ib.gameObject.name .. "_In-1"
+    --    self.outPos1.gameObject.name = self.ib.gameObject.name .. "_Out-1"
+    --    self.inPos1:SetParent(nil)
+    --    self.inPos1.position = realPoint
+    --    self.inPos1.forward = self.lastVelocity
+    --    self.outPos1:SetParent(nil)
+    --    self.outPos1.position = realPoint + reflect
+    --    self.outPos1.forward = normal
+    --end
+    
+    --CL.DebugDraw.DrawLine(realPoint, realPoint + reflect, UE.Color.red, 5)
+    --CL.DebugDraw.DrawLine(realPoint, realPoint + normal, UE.Color.yellow, 5)
+    
+    --dot:Handling of spliced floors
+    if isHit and (not IsNullOrDestroyed(raycastHit.rigidbody) and raycastHit.rigidbody.isKinematic) then
+        --print("reflect---------------------:::  origin path-------------".. self.trans.name .. " col:" .. col.transform.name .. "  root:" .. col.transform.root.name ..   "  ----:" .. raycastHit.collider.transform.name .."  root: " .. raycastHit.collider.transform.root.name.. "  " .. count) 
+        if count > 0 then
+            self:Rebound(raycastHit.point, raycastHit.normal, raycastHit.collider, speed, count - 1)
+            return
+        else
+            self.ib.trans.forward = -self.lastVelocity.normalized
+            self.ib.rb.velocity = self.ib.trans.forward * speed
+            self.ib.trans.position = realPoint + self.ib.trans.forward * 0.2
+        end
+        
+    else
+        self.ib.rb.velocity = reflect * speed
+        self.ib.trans.forward = reflect
+        self.ib.trans.position = realPoint + self.ib.trans.forward * 0.2
+        --if isHit then
+        --    print("reflect---------hit------------:::  reflect path-------------".. self.trans.name .. " col:" .. col.transform.name .. "  root:" .. col.transform.root.name ..   "  ----:" .. raycastHit.collider.transform.name .."  root: " .. raycastHit.collider.transform.root.name.. "  " .. UE.Time.time)
+        --else
+        --    print("reflect---------------------:::  reflect path-------------" .. self.trans.name.. " col:" .. col.transform.name .. "  root:" .. col.transform.root.name.. "  " .. UE.Time.time)
+        --end
+    end
+end
+
+function ArrowEnergy:GetPerpendicularPoint(target)
+    local ba = target - self.trans.position
+    local nbc = self.trans.forward
+    local dbp = UE.Vector3.Dot(ba, nbc)
+    return self.trans.position + dbp * nbc
+end
+
+function ArrowEnergy:OnResetState()
+    self:CloseIllegalCheck()
+    if not IsNullOrDestroyed(self.effectNode) then
+        self.effectNode:SetActive(false)
+    end
+    
+    self.ib:GrabEvent("-", self.onGrab)
+    
+    self.bow = nil
+    
+    self.lastCol = nil
+    self.lastReboundTime = 0
+    self.reboundCount = 0
+    self.onReboundCheck = false
+end
+
+return Class(Require("Weapon/ArrowBaseScript"), nil, ArrowEnergy)

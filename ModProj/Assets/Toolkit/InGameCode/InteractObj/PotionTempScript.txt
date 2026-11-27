@@ -1,0 +1,172 @@
+local PotionTemp = {
+    
+}
+
+function PotionTemp:Start()
+    if CL.Network.VRNetworkManager.IsOnline then
+        self.onResetState = function()
+            self:LoseEffective()
+            self:RemoveEffectImmediate()
+        end
+    end
+end
+
+function PotionTemp:AddCharacterAttr(character, value)
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    
+    self:StartTimer(character)
+    self:SetEmpty()
+end
+
+function PotionTemp:StartTimer(character)
+    --if CL.Network.VRNetworkManager.ClientOnline then
+    --    return
+    --end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.effectiveNetId = character.networkPlayer.netId
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerEffective(character)
+        end
+    else
+        self:Effective(character)
+    end
+    local endTime = UE.Time.time + self.effectDuration
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local np = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(self.effectiveNetId)
+        local state = GetNetworkIBState(self)
+        if state ~= nil and np ~= nil then
+            state:ServerDelayToLoseEffective(np.interactCharacter, self.effectDuration)
+        end
+    end
+    CL.Scheduler.RemoveSchedule(self.timerId)
+    self.timerId = CL.Scheduler.Create(character.trans,
+        function(sche, t, s)
+            if UE.Time.time >= endTime then
+                --if the potion is destroyed in multiplayer mode, the effect cannot be removed. Therefore, remove the effect locally.
+                --if CL.Network.VRNetworkManager.ServerOnline then
+                --    local np = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(self.effectiveNetId)
+                --    self.host.interact.networkIB.networkIBState:ServerLoseEffective(np.interactCharacter)
+                --else
+                    self:LoseEffective(character)
+                --end
+                sche:Stop()
+            end
+        end
+    , 1, -1).actionId
+end
+
+function PotionTemp:NetworkDelayToLoseEffective(character, time)
+    CL.Scheduler.RemoveSchedule(self.timerId)
+    self.timerId = CL.Scheduler.Create(character.trans,
+        function(sche, t, s)
+            self:LoseEffective(character)
+        end
+    , 0, 0, time).actionId
+end
+
+function PotionTemp:NetworkEffective(character)
+    self:Effective(character)
+end
+
+function PotionTemp:NetworkLoseEffective(character)
+    self:LoseEffective(character)
+end
+
+function PotionTemp:Effective(character)
+    self.affectCharacter = character
+
+    if CL.Network.VRNetworkManager.IsOnline then
+        character.networkPlayer:OnResetState("+", self.onResetState)
+    end
+    
+    self:DoEffective(character)
+end
+
+function PotionTemp:DoEffective(character)
+end
+
+function PotionTemp:LoseEffective(character)
+    if CL.Network.VRNetworkManager.IsOnline then
+        if not IsNullOrDestroyed(self.affectCharacter) then
+            self.affectCharacter.networkPlayer:OnResetState("-", self.onResetState)
+        end
+    end
+    
+    self:DoLoseEffective(character)
+    self.affectCharacter = nil
+end
+
+function PotionTemp:DoLoseEffective(character)
+end
+
+
+function PotionTemp:RemoveTimer()
+    CL.Scheduler.RemoveSchedule(self.timerId)
+end
+
+function PotionTemp:AddEffect(character)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerAddEffect(character)
+            end
+        end
+    else
+        self:ShowEffect(character)
+    end
+end
+
+function PotionTemp:ShowEffect(character)
+    local trans = character.hands[1].trans
+    self.effect_l = CL.EffectMgr.Instance:PlayEffect(self.effectName, trans.position, trans.rotation)
+    self.effect_l.trans:SetParent(trans.parent)
+    self.effect_l:OnResetToPlay()
+    
+    trans = character.hands[0].trans
+    self.effect_r = CL.EffectMgr.Instance:PlayEffect(self.effectName, trans.position, trans.rotation)
+    self.effect_r.trans:SetParent(trans.parent)
+    self.effect_r:OnResetToPlay()
+end
+
+function PotionTemp:RemoveEffect()
+    --if self.isOnline then
+    --    if CL.Network.VRNetworkManager.Instance.IsServer then
+    --        self.host.interact.networkIB.networkIBState:ServerRemoveEffect()
+    --    end
+    --else
+        self:DelayToRemoveEffect()
+    --end
+end
+
+function PotionTemp:RemoveEffectImmediate()
+    CL.EffectMgr.Instance:GiveBack(self.effect_l)
+    CL.EffectMgr.Instance:GiveBack(self.effect_r)
+end
+
+function PotionTemp:DelayToRemoveEffect()
+    local time = 2
+    local intensity = 1
+    if self.effect_l then
+        self.effect_l:Stop()
+    end
+    if self.effect_r then
+        self.effect_r:Stop()
+    end
+    CL.Scheduler.Create(self.effect_l,
+        function(sche, t, s)
+            if t >= time then
+                CL.EffectMgr.Instance:GiveBack(self.effect_l)
+                CL.EffectMgr.Instance:GiveBack(self.effect_r)
+                sche:Stop()
+            end
+        end
+    , 0, time)
+end
+
+
+return Class(Require("InteractObj/PotionBaseScript"), nil, PotionTemp)

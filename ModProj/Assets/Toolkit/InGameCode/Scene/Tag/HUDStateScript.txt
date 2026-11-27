@@ -1,0 +1,22 @@
+
+local HUDState = {
+}
+
+function HUDState:SetTime(value)
+    self.text.text = value
+end
+
+function HUDState:SetType(isHunter)
+    self.hunterNode:SetActive(isHunter)
+    self.hiderNode:SetActive(not isHunter)
+end
+
+function HUDState:SetChampion(isChampion)
+    self.champion:SetActive(isChampion)
+end
+
+function HUDState:GetPanel()
+    self.trans:GetComponent(typeof(CL.PanelBase))
+end
+
+return Class(nil, nil, HUDState)

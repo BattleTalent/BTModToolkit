@@ -1,0 +1,203 @@
+
+local flyGraspBall = {
+    freezeSec = 3,
+    
+    protectTime = 0.3,
+    
+    isUsed = false,
+}
+
+local spellForceGrasp = Require("Weapon/SpellForceGraspScript")
+
+function flyGraspBall:FlyStart()
+    self.isUsed = false
+    self.__base.FlyStart(self)
+    
+    if not IsNullOrDestroyed(self.host.owner) then
+        local aiPlayer = self.host.owner:GetHolder()
+        self.character = aiPlayer.character
+        
+        if not IsNullOrDestroyed(self.host.owner.mountedSlot) then
+            self.hand = self.host.owner.mountedSlot:GetAttachedHand()
+        end
+    end
+
+    self.protectEndTime = UE.Time.time + self.protectTime
+end
+
+function flyGraspBall:OnTriggerWithRole(fc, col)
+    if self.isUsed then
+        return
+    end
+    
+    local rb = nil
+    local mu = fc.ra:GetMuscleByCol(col)
+    if not mu then
+        return
+    end
+    
+    if mu.muscleName == "RightEar" or mu.muscleName == "LeftEar" then
+        mu = fc.ra:GetMuscle(CL.RagdollBoneInfo.Head)
+    end
+    
+    rb = mu.rb
+    if rb then
+        
+        spellForceGrasp.StartPulling(fc, mu, col.transform.position, true)
+        self.__base.OnTriggerWithRole(self, fc, col)
+        self.isUsed = true
+    end
+end
+
+function flyGraspBall:OnTrigger(pu, col)
+    if self.isUsed then
+        return
+    end
+    
+    if not col or IsNullOrDestroyed(col) then
+        return
+    end
+
+    if pu.unitType == CL.Tagger.Tag.InteractWeapon or pu.unitType == CL.Tagger.Tag.InteractObj then
+        if pu:IsEnchantble() then --need to enchant
+            return
+        end
+    end
+    
+    --spellForceGrasp.StartPulling(pu, pu.rb, col.transform.position)
+    --
+    self.host:CollisionCountUpdate()
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    local rootPu = CL.PhysicsUnit.GetPhysicsUnitTopDown(col)
+    if not IsNullOrDestroyed(rootPu) and rootPu.unitType == CL.Tagger.Tag.InteractRole then
+        local mu = rootPu.ra:GetMuscleByCol(col)
+        if mu ~= nil then
+            self:PullingMuscle(rootPu, mu, mu.rbTrans.position)
+            self.isUsed = true
+        end
+    end
+end
+
+
+function flyGraspBall:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    if self.isUsed then
+        return
+    end
+    self.isUsed = true
+    
+    self:PullingMuscle(fc, mu, point)
+    self.host:CollisionCountUpdate()
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+end
+
+function flyGraspBall:PullingMuscle(fc, mu, point)
+    local targetMu = mu
+    local targetRb = mu.rb
+    if mu.muscleName == "RightEar" or mu.muscleName == "LeftEar" then
+        targetMu = fc.ra:GetMuscle(CL.RagdollBoneInfo.Head)
+        targetRb = targetMu.rb
+    end
+    
+    spellForceGrasp.StartPulling(fc, targetMu, point, true)
+end
+
+
+function flyGraspBall:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function flyGraspBall:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+end
+
+function flyGraspBall:OnCollisionWithPlayerHandHandler(rb, col, point, normal, relaVel, hand)
+    if self.isUsed then
+        return
+    end
+    
+    local holder = nil
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        holder = self.host.ownerHolder.character
+    end
+    if holder == hand.character then
+        if UE.Time.time < self.protectEndTime then
+            return
+        end
+    end
+
+    self.isUsed = true
+    
+    spellForceGrasp.StartPulling(hand.character:GetPlayerUnit(), nil, point)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+function flyGraspBall:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function flyGraspBall:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function flyGraspBall:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.isUsed then
+        return
+    end
+    
+    local holder = nil
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        holder = self.host.ownerHolder.character
+    end
+    if holder == player then
+        if UE.Time.time < self.protectEndTime then
+            return
+        end
+    end
+
+    self.isUsed = true
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    spellForceGrasp.StartPulling(player:GetPlayerUnit(), nil, point)
+end
+
+
+function flyGraspBall:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, pu)
+end
+
+function flyGraspBall:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+end
+
+function flyGraspBall:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    if self.isUsed then
+        return
+    end
+        
+    local rootPu = CL.PhysicsUnit.GetPhysicsUnitTopDown(col)
+    if not IsNullOrDestroyed(rootPu) and rootPu.unitType == CL.Tagger.Tag.InteractRole then
+        local mu = rootPu.ra:GetMuscleByCol(col)
+        if mu ~= nil then
+            self.isUsed = true
+            self:PullingMuscle(rootPu, mu, mu.rbTrans.position)
+        end
+    end
+end
+
+
+function flyGraspBall:ResetState()
+    self.__base.ResetState(self)
+    
+    self.isUsed = false
+        
+    self.hand = nil
+end
+
+return Class(Require("FlyObj/FlySpellBaseScript"),nil,flyGraspBall)

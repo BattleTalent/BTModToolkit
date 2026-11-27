@@ -1,0 +1,59 @@
+
+local FractureObj = {
+    forceIntansity = 350,
+    maxDistance = 1,
+    throwOnAwake = 0,
+}
+
+function FractureObj:Awake()
+    print("Start-------------")
+    local transList = self.feactureRoot:GetComponentsInChildren(typeof(UE.Transform))
+    
+    for i = 0, transList.Length - 1 do
+        if transList[i] ~= self.feactureRoot then
+            table.insert(self.list, {
+                ["trans"] = transList[i],
+                ["position"] = transList[i].localPosition,
+                ["rb"] = transList[i]:GetComponent(typeof(UE.Rigidbody))
+            })           
+        end
+    end
+end
+
+function FractureObj:ResetTransform()
+    for i = 1, #self.list do
+        self.list[i].trans.localPosition = self.list[i].position
+        self.list[i].trans.localRotation = UE.Quaternion.identity
+    end
+end
+
+function FractureObj:OnDisable()
+    self:ResetTransform()
+end
+
+
+function FractureObj:OnEnable()
+    print("explode-------------")
+    if self.throwOnAwake == 1 then
+        self:ExplodeObj()
+    end
+end
+
+function FractureObj:SetBrokenPoint(pos)
+    self.brokenPoint.position = pos
+end
+
+function FractureObj:ExplodeObj()
+    local dis = 0
+    local dir = nil
+    for i = 1, #self.list do
+        dis = UE.Vector3.Distance(self.list[i]["trans"].position, self.brokenPoint.position)
+        dis = math.min(dis, self.maxDistance)
+        
+        dir = (self.list[i]["trans"].position - self.brokenPoint.position).normalized
+        
+        self.list[i]["rb"]:AddForce(dir * self.forceIntansity * (1-dis/self.maxDistance), UE.ForceMode.Impulse)
+    end
+end
+
+return Class(Require("Tools/fractureRootObj"), nil, FractureObj)

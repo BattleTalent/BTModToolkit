@@ -1,0 +1,65 @@
+
+local ShotgunBullet = {
+    minRange = 2,
+    pushForce = 15,
+    
+    isAddHitAway = false,
+}
+
+function ShotgunBullet:FlyStart(vel)
+    self.cachePos = self.trans.position
+end
+
+function ShotgunBullet:AddHitAway(isEnhance)
+    self.isAddHitAway = true
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        --if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult <= 0 then
+        --    return
+        --end
+        fc.motion:Knockout()
+        if isEnhance then
+            CL.FullBodyMuscleState.dmgEffectData.hitAway = true
+            CL.FullBodyMuscleState.dmgEffectData.beThrown = true
+        else
+            CL.FullBodyMuscleState.dmgEffectData.beThrown = true
+            fc:AddForce(self.host.owner.trans.forward *  math.random(4, 6), UE.ForceMode.VelocityChange)
+        end
+        
+        fc.muscleState:ClearAllStab()
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+end
+
+function ShotgunBullet:RemoveHitAway()
+    self.isAddHitAway = false
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+end
+
+function ShotgunBullet:TryAddPushBack(fc)
+    -- CL.DebugDraw.DrawLine(self.trans.position, self.cachePos, UE.Color.red, 0.5)
+    if UE.Vector3.Distance(self.trans.position, self.cachePos) < self.minRange then
+        fc.controller:AddPushback(self.cachePos, self.pushForce)
+    end
+end
+
+function ShotgunBullet:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    self:TryAddPushBack(fc)
+    self:CollisionUpdate(rb, col, point, normal, relaVel)
+end
+
+function ShotgunBullet:CollisionUpdate(rb, col, point, normal, relaVel)
+    self.host:PlayImpact(point, normal)
+    if rb then
+        rb:AddForceAtPosition(rb.velocity, point, UE.ForceMode.Force)
+    end
+    self.host:CollisionCountUpdate()
+end
+
+
+function ShotgunBullet:ResetState()
+    if self.isAddHitAway then
+        self:RemoveHitAway()
+    end
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, ShotgunBullet)

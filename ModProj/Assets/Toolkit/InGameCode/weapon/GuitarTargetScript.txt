@@ -1,0 +1,355 @@
+local GuitarTarget = {
+    baseSpeed = 3,
+    
+    skillSpeed = 4,
+    
+    chargeSpeed = 35,
+    maxFloatSpeed = 4,
+    
+    trackingBallList = {},
+    maxCount = 5,
+    
+    manaCost = 10,
+    
+    skillColor =  UE.Color(0.87, 0.2, 0.2, 0),
+    
+    minRecoilCurve = UE.AnimationCurve(UE.Keyframe(0, 100), UE.Keyframe(0.1, 0)),
+    
+    netIdList = {},
+}
+
+function GuitarTarget:Awake()
+    self.onHit = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult <= 0 then
+            return
+        end
+        self:OnCollisionWithTarget(thisCol)
+        
+        SetMaterialEmissionWithinTime(self, {self.renderer7}, UE.Color(0.6, 0, 0, 0), 0.1, 
+        function ()
+            if not IsNullOrDestroyed(self.host) then
+                self.colorTimer = SetMaterialEmissionWithinTime(self, {self.renderer7}, self.awakeColor, 0.15)
+            end
+        end)
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.onHit)
+    
+    self.hitCharacterPhase = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        if character.aiProxy.finalDmg <= 0 then
+            return
+        end
+        self:OnCollisionWithTarget(beHitCol)
+        
+        SetMaterialEmissionWithinTime(self, {self.renderer7}, UE.Color(0.6, 0, 0, 0), 0.1, 
+        function ()
+            if not IsNullOrDestroyed(self.host) then
+                self.colorTimer = SetMaterialEmissionWithinTime(self, {self.renderer7}, self.awakeColor, 0.15)
+            end
+        end)
+    end
+    self.hitInfoObj.hitInfo:OnInteractCharacterHitPhase2Event("+", self.hitCharacterPhase) 
+    
+    --stabevent
+    self.onStabEnterHandler = function(si)
+        self:OnStabEnter(si)
+    end
+    
+    self.OnStabExitHandler = function(si)
+        self:OnStabExit(si)
+    end
+    self.stab:StabEnterEvent("+", self.onStabEnterHandler)
+    self.stab:StabExitEvent("+", self.OnStabExitHandler)
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+
+function GuitarTarget:OnStabEnter(si)
+    local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+    if not IsNullOrDestroyed(fc) then
+        self.stabTargetRB = si.stabTargetRB
+    end
+end
+
+function GuitarTarget:OnStabExit(si)
+    self.stabTargetRB = nil
+end
+
+function GuitarTarget:OnHitTarget(col)
+    if #self.trackingBallList <= 0 then
+        return
+    end
+    
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    
+    for k, v in ipairs(self.trackingBallList) do
+        if self.isOnline then
+            v:CommandStartTracking(col, 0)
+        else
+            v:StartTracking(col.transform)
+        end
+    end
+    self.trackingBallList = {}
+end
+
+function GuitarTarget:OnCollisionWithTarget(col)
+    --print("OnCollisionWithTarget--------:" .. #self.trackingBallList)
+    if #self.trackingBallList <= 0 then
+        return
+    end
+    
+    local tb = self.trackingBallList[1]
+    if not IsNullOrDestroyed(col) then
+        if self.isOnline then
+            tb:CommandStartTracking(col, 0)
+        else
+            tb:StartTracking(col.transform)
+        end
+        
+        table.remove(self.trackingBallList, 1)
+    end
+end
+
+function GuitarTarget:ReleaseSkill(vel, speed, sqrDis)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    if not CostMana(self.host, self.manaCost or 0, self.character) then
+        return
+    end
+    
+    if not self.host.interact:IsUsable() then
+        return
+    end
+    
+    local isEnhance = (speed >= self.skillSpeed or sqrDis >= 0.03) and self.host.interact:IsEnhance()
+    if CL.Network.VRNetworkManager.ClientOnline then
+        local randomColor = self:RamdomColor()
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:CommandOnRleaseSkill(vel, randomColor, isEnhance, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+        end
+        if isEnhance then
+            self:OnShootEffect(self.chargeSpeed, self.skillColor)
+            self:Recoil(self.recoilRotate, self.recoilRandomBias, self.recoilVector, self.minRecoilCurve)
+        else
+            self:OnShootEffect(self.baseSpeed, randomColor)
+            self:Recoil(self.recoilRotate/4, self.recoilRandomBias/4, self.recoilVector/4, self.minRecoilCurve)
+        end
+        return
+    end
+    self:DoRleaseSkill(vel, self:RamdomColor(), isEnhance)
+end
+
+function GuitarTarget:DoRleaseSkill(vel, color, isEnhance, ignoreId, isNetCmd)
+    if not self.host.interact:IsUsable() then
+        return
+    end
+
+    -- cmd from client, server need to cost mana
+    if isNetCmd then
+        if not CostMana(self.host, self.manaCost or 0, self.character) then
+            return
+        end
+    end
+    
+    if isEnhance then
+        --enhance skill
+        self:ReleaseChargeSkill(vel, ignoreId)
+    else
+        self:ShootTrackingBall(vel, color, ignoreId)
+    end
+end
+
+function GuitarTarget:ShootTrackingBall(vel, randomColor, ignoreId)
+    local ball = self:ShootObj(self.flyObjName, vel, self.baseSpeed, randomColor)
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerOnShootObj(ball, randomColor, ignoreId)
+        end
+    end
+    
+    self:OnShootObj(ball, self.baseSpeed, randomColor)
+    
+    local lua = ball.script.self
+    lua.destroyCb = 
+    function(ball)
+        self:OnTrackingBallDestroy(ball)
+    end
+    
+    ball:AddForce(vel.normalized * UE.Random.Range(1  , self.maxFloatSpeed))
+    
+    --onStab
+    if self.stabTargetRB then
+        if self.isOnline then
+            lua:CommandStartTrackingRB(self.stabTargetRB, 0.3)
+        else
+            lua:StartTracking(self.stabTargetRB.transform)
+        end
+    end
+    
+    table.insert(self.trackingBallList, lua)
+    
+    if #self.trackingBallList >= self.maxCount then
+        self:TrackingCloset()
+        self.trackingBallList = {}
+    end
+    
+    self:Recoil(self.recoilRotate/4, self.recoilRandomBias/4, self.recoilVector/4, self.minRecoilCurve)
+end
+
+function GuitarTarget:OnSpawnTrackingBall(fo, color)
+    local lua = fo.script.self
+    lua.destroyCb = 
+    function(ball)
+        self:OnTrackingBallDestroy(ball)
+    end
+    
+    --onStab
+    if self.stabTargetRB then
+        if self.isOnline then
+            lua:CommandStartTrackingRB(self.stabTargetRB, 0.3)
+        else
+            lua:StartTracking(self.stabTargetRB.transform)
+        end
+    end
+    fo.script.self:SetStartColor(color)
+    
+    local vel = self.trans.forward
+    local ph = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(ph) then
+        local oh = ph:GetAnotherHand()
+        vel = oh.velocityEstimator:GetAvgVelocityLocal(0.2)
+    end
+    fo:AddForce(vel.normalized * UE.Random.Range(1  , self.maxFloatSpeed))
+    
+    table.insert(self.trackingBallList, lua)
+    
+    --print("OnSpawnTrackingBall #self.trackingBallList:" ..  #self.trackingBallList)
+    if #self.trackingBallList >= self.maxCount then
+        self:TrackingCloset()
+        self.trackingBallList = {}
+    end
+end
+
+function GuitarTarget:NetworkOnShootObj(netId, color, playerId)
+    if CL.InteractCharacter.PlayerInstance.networkPlayer.netId ~= playerId then
+        self:OnShootEffect(self.baseSpeed, color)
+    end
+    
+    local nfo = CL.Network.NetworkSpawnMgr.Instance:GetNetworkFlyObject(netId)
+    local fo = not IsNullOrDestroyed(nfo) and nfo.flyObject or nil
+    if IsNullOrDestroyed(fo) then
+        self.netIdList[netId] = color
+        if self.lastShootObjWarnNetId ~= netId then
+            self.lastShootObjWarnNetId = netId
+            print("[NetReadyRisk] GuitarTarget NetworkOnShootObj flyObject not ready netId=" .. netId)
+        end
+        return
+    end
+    self.netIdList[netId] = nil
+    self:OnSpawnTrackingBall(fo, color)
+end
+
+
+function GuitarTarget:TrackingCloset()
+    if CL.Network.VRNetworkManager.IsOnline and not SafeLocalTrackPhysics(self.host.interact) then
+        return
+    end
+    
+    local ball = nil
+    local ai = nil
+    local mu = nil
+    for k, v in ipairs(self.trackingBallList) do
+        if v and not IsNullOrDestroyed(v.host.trans) then
+            ai = CL.AIProxy.GetCloestTarget(v.host.trans, v.host.camp, false)
+            
+            if ai then
+                if ai.fc and not IsNullOrDestroyed(ai.fc) then
+                    mu = ai.fc.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+                elseif ai.character and not IsNullOrDestroyed(ai.character) then
+                    mu = ai.character.aiProxy.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+                end
+                
+                if mu then
+                    if self.isOnline then
+                        v:CommandStartTrackingRB(mu.rb, 0.3)
+                    else
+                        v:StartTracking(mu.rbTrans, 0.3)
+                    end
+                end
+            else
+                if self.isOnline then
+                    v:CommandFloatUp()
+                else
+                    v:FloatUp()
+                end
+            end
+        end
+    end
+end
+
+
+function GuitarTarget:ReleaseChargeSkill(vel, ignoreId)
+    if not CostMana(self.host, self.manaCost * 2 or 0, self.character) then
+        return
+    end
+    
+    self:PlayMuzzleEff(self.skillColor)
+    
+    local flyScript = self:ShootObj(self.chargeObjName, vel, self.chargeSpeed, self.skillColor)
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerReleaseChargeSkill(flyScript, ignoreId)
+        end
+    end
+    flyScript.script.self.HitObjCb = 
+    function(col)
+        self:OnHitTarget(col)
+    end
+    
+    if flyScript then
+        TryAerialStayByInteract(self.host.interact)
+    end
+    
+    self:Recoil(self.recoilRotate, self.recoilRandomBias, self.recoilVector, self.recoilCurve)
+end
+
+function GuitarTarget:NetworkReleaseChargeSkill(fo, playerId)
+    if CL.InteractCharacter.PlayerInstance.networkPlayer.netId ~= playerId then
+        self:OnShootEffect(self.chargeSpeed, self.skillColor)
+    end
+    
+    local randomColor = self.skillColor or self:RamdomColor()
+    fo.script.self:SetStartColor(randomColor)
+    self:PlayMuzzleEff(self.skillColor)
+    
+    fo.script.self.HitObjCb = 
+    function(col)
+        self:OnHitTarget(col)
+    end
+    
+    if fo then
+        TryAerialStayByInteract(self.host.interact)
+    end
+end
+
+function GuitarTarget:OnTrackingBallDestroy(ball)
+    for k, v in ipairs(self.trackingBallList) do
+        if v == ball then
+            table.remove(self.trackingBallList, k)
+            break
+        end
+    end
+end
+
+function GuitarTarget:OnDestroy()
+    self.stab:StabEnterEvent("-", self.onStabEnterHandler)
+    self.stab:StabExitEvent("-", self.OnStabExitHandler)
+end
+
+return Class(Require("Weapon/GuitarBaseScript"),nil, GuitarTarget)

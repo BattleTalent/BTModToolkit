@@ -1,0 +1,75 @@
+
+local Fademoon = {
+    lastSpeedRecord = 0,
+    
+    disconnectVecSqrt = 0.35 * 0.35,
+}
+
+function Fademoon:Start()
+    self.unitTb = self.connectUnit.script:GetSelf()
+    
+    self.__base.Start(self)
+end
+
+function Fademoon:OnGrabThisPart(ao)
+    self.character = ao.attachedHand.character
+    
+    if not self.unitTb then
+        self.unitTb = self.connectUnit.script:GetSelf()
+    end
+    
+    if self.unitTb.isConnect then
+        if not self.isUnsole then
+            self:DetectingDisconnect()
+        end
+    end
+    
+    self.host:OnGrabThisPart(self.character, ao)
+end
+
+function Fademoon:OnGrabThisPartAttachObj(ao)
+    self.host:OnGrabThisPartAttachObj(ao)
+end
+
+function Fademoon:OnUngrabThisPartAttachObj(ao)
+    self.host:OnUngrabThisPartAttachObj(ao)
+end
+
+function Fademoon:RefleshGrabThisPartAttachObj()
+    self.host:ClearAllAttachedHand()
+    
+    local list = self.host.interact.attachList
+    for i = 0, list.Length - 1 do
+        if list[i].attachedHand then
+            self:OnGrabThisPartAttachObj(list[i])
+        end
+    end
+end
+
+function Fademoon:OnUngrabThisPart(ao)
+    CL.Scheduler.RemoveSchedule(self.detectActId)
+    --print("Ungrab this part: need closeSkill")
+    self:DoCloseSkill()
+    
+    self.host:OnUngrabThisPart(self.character, ao)
+end
+
+
+function Fademoon:DoOpenSkill()
+    --print("DoOpenSkill:" .. self.trans.name)
+    self.host:DoOpenSkill()
+end
+
+function Fademoon:DoCloseSkill()
+    self.host:DoCloseSkill()
+end
+
+function Fademoon:OnConnect(other, isHolder)
+    self.__base.OnConnect(self, other, isHolder)
+end
+
+function Fademoon:OnDisconnect(other, isHolder)
+    self.__base.OnDisconnect(self, other, isHolder)
+end
+
+return Class(Require("Weapon/ConnectWeaponScript"), nil, Fademoon)

@@ -712,12 +712,16 @@ namespace CrossLink
                     continue;
                 }
 
-                foreach (var item in info.storeItemInfo)
+                if (info.storeItemInfo != null)
                 {
-                    if (!names.ContainsKey(item.addStoreItemName))
+                    foreach (var item in info.storeItemInfo)
                     {
-                        names.Add(item.addStoreItemName, assetPath);
+                        if (!names.ContainsKey(item.addStoreItemName))
+                        {
+                            names.Add(item.addStoreItemName, assetPath);
+                        }
                     }
+
                 }
                 if (info.sceneModInfo != null)
                 {

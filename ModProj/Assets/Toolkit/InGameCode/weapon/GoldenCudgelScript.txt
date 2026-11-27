@@ -1,0 +1,1678 @@
+
+local GoldenCudgel = {
+    maxLen = 10,
+    maxTime = 0.2,
+    maxResetTime = 0.05,
+    lenOfForward = 0,
+    lenOfBack = 0,
+    
+    lastHitTime = 0,
+    vertHitForce = 10,
+    swingHitForce = 5,
+    characterList = {},
+    
+    lastVel = UE.Vector3.zero,
+    lastVelocity = UE.Vector3.zero,
+    phTrack = nil,
+    ohTrack = nil,
+    
+    nextTime = {},
+    nextPushTime = 0,
+    lastPushCol = {},
+    
+    hangingActId = -1,
+    networkActId = -1,
+    --network pressing hand
+    pressList = {},
+    
+    baseManaTime = 0.3,
+}
+
+function GoldenCudgel:Awake()
+    self.origLenOfForward = self.endOfForward.localPosition.z - self.stretchOfForward.localPosition.z
+    self.origLenOfBack = math.abs(self.stretchOfBack.localPosition.z - self.endOfBack.localPosition.z)
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    if self.isOnline and CL.Network.NetworkRoomMgr.curNetworkMapType == CL.Network.NetworkMapType.Gauntlet then
+        self.host.manaCost = self.host.manaCost * 2
+    end
+    
+    self.grabBegin = function(attach, g)
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerStopHanging()
+                end
+            end
+        else
+            self:StopHanging()
+        end
+    end
+    
+    self.host.interact:GrabBeginEvent("+", self.grabBegin)
+
+    local isFcDead = false
+    local realMp = 0
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if not self.isOpenSkill then
+            return
+        end
+        
+        if CL.FullBodyMuscleState.dmgHitData:IsIgnore() then
+            --print("ignore dmg-----------------")
+            return
+        end
+        
+        local len = self:ExtensionLen(point)
+        if len <= 0 then
+            return
+        end
+        
+        isFcDead = fc.attr:IsDead()
+        
+        self.cacheDmgFinalMlp = CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp
+        CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp + (len / self.realLen) * self.maxDmgMlp
+        --print("----------------hit extensition len :".. len .. "  per:" .. (len / self.realLen) ..  "   dmg scale:"  .. (len / self.realLen) * self.maxDmgMlp)
+        
+        local ph = self.host.interact:GetPrimaryHand()
+        realMp = not IsNullOrDestroyed(ph) and math.max(0, (ph.character.attr.mp.Value - self.hitMana)) or -1
+    end
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    end
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if not self.isOpenSkill then
+            return
+        end
+        
+        if self.isStretchForward or self.isStretchBack then
+            local ph = self.host.interact:GetPrimaryHand()
+            if not isFcDead and not IsNullOrDestroyed(ph) then
+                if realMp >= 0 then
+                    CostMana(self.host, ph.character.attr.mp.Value - realMp, ph.character)
+                else
+                    local needMana = self.hitMana * self.host.AppliedManaCostMultiplier
+                    CostMana(self.host, needMana, ph.character)
+                end
+            end
+        end
+        
+        CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = self.cacheDmgFinalMlp
+        self.cacheDmgFinalMlp = nil
+        
+        local state = fc.muscleState.stateRecord[mu.muscleName]
+        if fc.muscleState:IsArmor(state, otherCol) then
+            return
+        end
+        
+        if not self.isElogatingHit then
+            if relaVel.magnitude >= self.minSwingSpeed then
+                local vel = self:IsForward(point) > 0 and self.lastForwardVel or self.lastBackVel
+                if not vel then
+                    return
+                end
+                local speed = vel.magnitude
+                --When extending, the speed must be greater than requiredImpactSpeed, so it only takes effect at maximum extension. 
+                --This avoids flinging enemies that collide with it while stationary.
+                if speed < self.requiredImpactSpeed then
+                    return
+                end
+                
+                if self:IsForward(point) > 0 and not self.isStretchForward then
+                    return
+                end
+                
+                if self:IsForward(point) < 0 and not self.isStretchBack then
+                    return
+                end
+                
+                local closetPoint = nil
+                if otherCol.sharedMesh and not otherCol.convex then
+                    closetPoint = point
+                else
+                    closetPoint = otherCol:ClosestPoint(point)
+                end
+                local eo = CL.EffectMgr.Instance:PlayEffect(self.sideHitEffect, closetPoint, UE.Quaternion.LookRotation(-vel))
+                local intensity = UE.Mathf.Clamp(speed/120, 0.3, 1)
+                eo:SetIntensity(intensity)
+                if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state:ServerSideHitEffect(closetPoint, UE.Quaternion.LookRotation(-vel), 
+                            intensity)
+                    end
+                end
+            end
+            if self.isStretchForward or self.isStretchBack then
+                local lastVel = self:GetLastHitVelocity(point)
+                local len = self:ExtensionLen(point)
+                local intensity = CL.EasingEquations.EaseOutQuint(0, (len / self.realLen), 1)
+                local force = lastVel * intensity * self.sideHitMlp
+                if not fc.muscleState:IsPowerfulCharacter() then
+                    if lastVel.magnitude > self.knockoutSpeed then
+                        fc.motion:Knockout()
+                    end
+                else
+                    force = force / 2
+                    fc.controller:AddPushback(self.trans.position, 2)
+                end
+                fc.bone:AddForceWithMusclePart(mu.muscleName, force, UE.ForceMode.VelocityChange)
+            end
+        else
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerVertHitEffect(point,
+                        UE.Quaternion.LookRotation((thisCol.transform.position - self.trans.position).normalized))
+                end
+            end
+            
+            CL.EffectMgr.Instance:PlayEffect(self.vertHitEffect, point, UE.Quaternion.LookRotation((thisCol.transform.position - self.trans.position).normalized))
+            self.hitSound:PlaySound()
+            local force = self.vertHitForce
+            if not fc.muscleState:IsPowerfulCharacter() then
+                fc.motion:Knockout()
+            else
+                self.host:CloseSkill()
+                force = self.vertHitForce / 2
+            end
+            fc.bone:AddForceWithMusclePart(mu.muscleName, self.trans.forward * self:IsForward(point) * force, UE.ForceMode.VelocityChange)
+        end
+        self.isElogatingHit = false
+    end
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    end
+    
+    self.hitCharacterPhase = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        if not self.isElogatingHit then
+            return
+        end
+        local state = GetNetworkIBState(self)
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            if state ~= nil then
+                state:ServerVertHitEffect(point,
+                    UE.Quaternion.LookRotation((beHitCol.transform.position - self.trans.position).normalized))
+            end
+        end
+        
+        CL.EffectMgr.Instance:PlayEffect(self.vertHitEffect, point, UE.Quaternion.LookRotation((beHitCol.transform.position - self.trans.position).normalized))
+        self.hitSound:PlaySound()
+        
+        local ph = self.host.interact:GetPrimaryHand()
+        if not IsNullOrDestroyed(ph) then
+            local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(beHitCol)
+            local pushDir = (character.trans.position - ph.character.trans.position).normalized
+            if state ~= nil then
+                state:ServerOnElogatingHitPlayer(character.networkPlayer.netId, pushDir * 300)
+            end
+        end
+        
+        self.isElogatingHit = false
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        self.hitInfoObj.hitInfo:OnInteractCharacterHitPhase2Event("+", self.hitCharacterPhase) 
+    end
+    
+    if self.isOnline then
+        self.cmdCharacter = {}
+        if not CL.Network.VRNetworkManager.Instance.IsServer then
+            self.joint.angularXMotion = UE.ConfigurableJointMotion.Free
+            self.joint.angularYMotion = UE.ConfigurableJointMotion.Free
+            self.joint.angularZMotion = UE.ConfigurableJointMotion.Free
+        end
+    end
+    
+    --self.GrabAlwaysTrigger = function(attach, g)
+    --    if g then
+    --        self.characterList[attach.attachedHand.character] = attach.attachedHand.character.capsuleRB.mass
+    --    else
+    --        self.characterList = {}
+    --        
+    --        local ph = self.host.interact:GetPrimaryHand()
+    --        if not IsNullOrDestroyed(ph) then
+    --            print(" un grab exist ph:" .. ph.character.trans.name)
+    --            self.characterList[ph.character] = ph.character.capsuleRB.mass
+    --        end
+    --        
+    --        local sh = self.host.interact:GetSecondaryHand()
+    --        if not IsNullOrDestroyed(sh) then
+    --            print(" un grab exist sh:" .. sh.character.trans.name)
+    --            self.characterList[sh.character] = sh.character.capsuleRB.mass
+    --        end
+    --    end
+    --end
+    --self.host.interact:GrabAlwaysTriggerEvent("+", self.GrabAlwaysTrigger)
+end
+
+function GoldenCudgel:ExtensionLen(point)
+    local localPos = self.trans:InverseTransformPoint(point)
+    if localPos.z > 0 and localPos.z > self.origForwardPoint then
+        return localPos.z - self.origForwardPoint
+    end
+    if localPos.z <= 0 and localPos.z < self.origBackPoint then
+        return math.abs(self.origBackPoint - localPos.z)
+    end
+    
+    return 0
+end
+
+function GoldenCudgel:IsForward(point)
+    local localPos = self.trans:InverseTransformPoint(point)
+    if localPos.z > 0 then
+        return 1
+    else
+        return -1
+    end
+end
+
+function GoldenCudgel:GetLastHitVelocity(point)
+    local localPos = self.trans:InverseTransformPoint(point)
+    if localPos.z > self.host.interact.rb.centerOfMass.z then
+        return self.lastForwardVel
+    else
+        return self.lastBackVel
+    end
+end
+
+function GoldenCudgel:Start()
+    self.origLenOfForward = self.endOfForward.localPosition.z - self.stretchOfForward.localPosition.z
+    self.origLenOfBack = math.abs(self.stretchOfBack.localPosition.z - self.endOfBack.localPosition.z)
+    
+    self.origForwardPoint = self.pointForward.localPosition.z
+    self.origBackPoint = self.pointBack.localPosition.z
+    self.realLen = self.maxLen - self.origLenOfForward
+    self.elongatingSpeed = self.realLen / self.maxTime
+    self.maxElongatingSpeed = self.elongatingSpeed * 2
+    self.shorteningSpeed = self.realLen / self.maxResetTime
+    
+    self.oriMass = self.host.interact.rb.mass
+end
+
+function GoldenCudgel:OnGrab(a, g)
+    if g then
+        self.isGrabed = true
+        if not self.isOnline or CL.Network.VRNetworkManager.ServerOnline then
+            self:StartStretch()
+        end
+        
+        if CL.Network.VRNetworkManager.ClientOnline then
+            self:NetworkStretchUpdate()
+        end
+        
+        if self.shadowScript then
+            self.shadowScript.maxSpring = self.maxPullSpring
+        end
+        
+        self.camp = a.attachedHand.character.aiProxy:GetCamp()
+        
+        self.characterList[a.attachedHand.character] = a.attachedHand.character.capsuleRB.mass
+        --if self.isOnline then
+        --    if CL.Network.VRNetworkManager.Instance.IsServer then
+        --        self.host.interact.networkIB.networkIBState:ServerStopHanging()
+        --    end
+        --else
+        --    self:StopHanging()
+        --end
+        self:GrabEffect(a.attachedHand)
+        
+        
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            if not self.cmdCharacter[a.attachedHand.character] then
+                local cmd = a.attachedHand.character.networkPlayer.networkPlayerCommand
+                cmd:RegisterTriggerAction(self.host.interact.netId,   
+                    function(isPress, netId, handIdx)
+                        local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(netId)
+                        if IsNullOrDestroyed(networkPlayer) then
+                            return
+                        end
+                        
+                        local hand = networkPlayer.interactCharacter.hands[handIdx]
+                        if isPress then
+                            self.pressList[hand] = true
+                        else
+                            self.pressList[hand] = nil
+                        end
+                    end
+                )
+                self.cmdCharacter[a.attachedHand.character] = true
+                
+                --cmd:RegisterCmdHandTrigger(self.host.interact.netId, 
+                --    function(playerId, handIdx, vec)
+                --        self.host.interact.rb.angularVelocity = vec
+                --    end
+                --)
+            end
+        end
+        
+        self.lastOwner = a.attachedHand.character
+    else
+        --if self.characterList[a.attachedHand.character] ~= nil then
+        --    a.attachedHand.character.capsuleRB.mass = self.characterList[a.attachedHand.character]
+        --end
+        if not self.host.interact:IsGrabbed() then
+            self.isGrabed = false
+            self.characterList[a.attachedHand.character] = {}
+        end
+        
+        
+        if a.attachedHand.handTracker == self.phTracker then
+            self.phTracker:SetTrackSpeed(1)
+        end
+        
+        if a.attachedHand.handTracker == self.ohTracker then
+            self.ohTracker:SetTrackSpeed(1)
+        end
+        
+        if self:CheckHangingCondition(a.attachedHand) then
+            if self.isOnline then
+                if self.lastOwner.IsLocalPlayer then
+                    local ave = 0
+                    if CL.Network.VRNetworkManager.Instance.IsServer 
+                    and not CL.Network.VRNetworkManager.ServerOnly
+                    and a.attachedHand.character.IsLocalPlayer then
+                        for k, v in ipairs(self.eulerXList) do
+                            ave = v + ave
+                        end
+                        ave = ave/#self.eulerXList
+                    else
+                        ave = self.eulerXList[#self.eulerXList]
+                    end
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.ServerOnline then
+                            state:ServerStartHanging(a.attachedHand, ave > 0, self.trans, a.attachedHand.character.networkPlayer.netId)
+                        else
+                            state:CommandStartHanging(a.attachedHand, ave > 0, self.trans,a.attachedHand.character.networkPlayer.netId)
+                        end
+                    end
+                    self:StartHanging(a.attachedHand)
+                end
+            else
+                self:StartHanging(a.attachedHand)
+            end
+        else
+            if self.isOnline and self.lastOwner.IsLocalPlayer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    if CL.Network.VRNetworkManager.ServerOnline then
+                        state:ServerStopHanging()
+                    else
+                        state:CommandStopHanging()
+                    end
+                end
+            end
+        end
+        
+        if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+            if self.lastIgnoreMu then
+                CL.PhysicsHelper.IgnoreCollisions(self.lastIgnoreMu.col, self.host.interact:GetCols(), false)
+            end
+            self.lastIgnoreMu = a.attachedHand.character.aiProxy.ra:GetMuscle(a.attachedHand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND 
+                and CL.RagdollBoneInfo.RHand or CL.RagdollBoneInfo.LHand)
+            CL.PhysicsHelper.IgnoreCollisions(self.lastIgnoreMu.col, self.host.interact:GetCols(), true)
+        end
+        
+        self.lastOwner = nil
+    end
+end
+
+function GoldenCudgel:GrabEffect(hand)
+    CL.Scheduler.RemoveSchedule(self.delayEffectActId)
+    local handJustGrabTime = 0.25
+    self.delayEffectActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.trans) then
+                sche:Stop()
+                return
+            end
+    
+            if not self:IsGrabForwardPart(hand) then
+                self.fwdGrabEffect:Play()
+            else
+                self.backGrabEffect:Play()
+            end        
+        end
+    , 0, 0, handJustGrabTime).actionId
+    
+end
+
+function GoldenCudgel:CheckHangingCondition(hand)
+    if IsNullOrDestroyed(self.host.interact) then
+        return false
+    end
+    if self.host.interact.rb.velocity.magnitude > self.hangLimitSpeed then
+        return false
+    end
+    
+    if self.isOnline then
+        local speed = self.startHangingSpeed
+        if self.isOnline then
+            if not SafeLocalTrackPhysics(self.host.interact) then
+                speed = self.startHangingSpeed / 5
+            end
+        end
+        return self.angularVelocity.magnitude > speed
+    else
+        return self.host.interact.rb.angularVelocity.magnitude > self.startHangingSpeed
+    end
+end
+
+function GoldenCudgel:NetworkStartHanging(hand, flag)
+    self:StartHanging(hand, flag)
+end
+
+function GoldenCudgel:NetworkUpdateHanger(pos, rot)
+    self.hanger.position = pos
+    self.hanger.rotation = rot
+    self.hanger.gameObject:SetActive(true)
+end
+
+function GoldenCudgel:StartHanging(hand, flag)
+    if self.isHanging or self.hangingActId > 0 then
+        self:StopHanging()
+    end
+    self.hanger:SetParent(nil)
+    self.host.interact.rb.mass = 60
+    if flag == nil then
+        local ave = 0
+        for k, v in ipairs(self.eulerXList) do
+            ave = v + ave
+        end
+        ave = ave/#self.eulerXList
+        self.joint.targetAngularVelocity = UE.Vector3(0, 0, self.angularSpeed * (ave > 0 and 1 or -1))
+    else
+        self.joint.targetAngularVelocity = UE.Vector3(0, 0, self.angularSpeed * (flag and 1 or -1))
+    end
+    
+    local isLocalTrackPhysics = true
+    if  self.isOnline then
+        isLocalTrackPhysics = SafeLocalTrackPhysics(self.host.interact)
+    end
+    
+    if isLocalTrackPhysics then
+        local vec = UE.Vector3.Cross(self.lastForwardVel, self.trans.forward)
+        self.hanger.forward = vec.normalized
+        self.hanger.gameObject:SetActive(true)
+    end
+    
+    if self.isOnline then
+        if not isLocalTrackPhysics then
+            self.joint.targetAngularVelocity = UE.Vector3(0, 0, 0)
+        else
+            self.host.interact.rb.angularVelocity = self.angularVelocity
+            
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    state:ServerSetHanger(self.hanger.position, self.hanger.rotation)
+                else
+                    state:CommandSetHanger(self.hanger.position, self.hanger.rotation)
+                end
+            end
+            
+        end
+    end
+    --CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + vec.normalized, UE.Color.red, 2)
+    
+    self.lastIgnoreMu = hand.character.aiProxy.ra:GetMuscle(hand:GetHandIndex() == CL.RagdollBoneInfo.RIGHT_HAND 
+        and CL.RagdollBoneInfo.RHand or CL.RagdollBoneInfo.LHand)
+    CL.PhysicsHelper.IgnoreCollisions(self.lastIgnoreMu.col, self.host.interact:GetCols(), true)
+    local resetTime = 0.5
+    
+    local targetPos = self.trans.position
+    local angularDrag = self.host.interact.rb.angularDrag
+    
+    local speed = self.startHangingSpeed
+    if self.isOnline then
+        if isLocalTrackPhysics and not hand.character.IsLocalPlayer then
+            speed = self.startHangingSpeed / 5
+        end
+    end
+    self.fwdSound.enabled = true
+    self.backSound.enabled = true
+    
+    self.isHanging = true
+    --self.host.interact.rb.angularDrag = 0
+    self.hangingActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.trans) then
+                sche:Stop()
+                return
+            end
+            
+            if t > resetTime then
+                CL.PhysicsHelper.IgnoreCollisions(self.lastIgnoreMu.col, self.host.interact:GetCols(), false)
+                resetTime = self.rotateTime
+            end
+            
+            if self.isOnline then
+                isLocalTrackPhysics = SafeLocalTrackPhysics(self.host.interact)
+            end
+        
+            if self.host.interact.handCalling or t >= self.rotateTime then
+                --self.host.interact.rb.angularDrag = angularDrag
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.ServerOnline then
+                            --print("update hang---StopHanging---")
+                            state:ServerStopHanging()
+                        else
+                            --print("update hang---CommandStopHanging---")
+                            state:CommandStopHanging()
+                        end
+                    end
+                end
+                self:StopHanging()
+                sche:Stop()
+                return
+            end
+            
+            if self.isOnline and not isLocalTrackPhysics then
+                return
+            end
+            --print("StartHanging angularVelocity.magnitude" .. self.host.interact.rb.angularVelocity.magnitude .."  vel:" .. self.host.interact.rb.velocity.magnitude)
+            if self.host.interact.rb.angularVelocity.magnitude <= speed then
+                --self.host.interact.rb.angularDrag = angularDrag
+                self:StopHanging()
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.ServerOnline then
+                            state:ServerStopHanging()
+                        else
+                            state:CommandStopHanging()
+                        end
+                    end
+                end
+                sche:Stop()
+                --print("StartHanging angular velocity -------------------------return")
+                return
+            end
+        end
+    , 0, self.rotateTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function GoldenCudgel:StopHanging()
+    --print("stop hanging---------------------")
+    CL.Scheduler.RemoveSchedule(self.hangingActId)
+    self.hangingActId = -1
+    if not IsNullOrDestroyed(self.hanger) then
+        self.hanger.gameObject:SetActive(false)
+        self.hanger:SetParent(self.trans)
+        self.hanger.localPosition = UE.Vector3.zero
+        self.hanger.localRotation = UE.Quaternion.identity
+    end
+    if self.lastIgnoreMu then
+        CL.PhysicsHelper.IgnoreCollisions(self.lastIgnoreMu.col, self.host.interact:GetCols(), false)
+    end
+    
+    
+    self.fwdSound.enabled = false
+    self.backSound.enabled = false
+    
+    self.isHanging = false
+    if not IsNullOrDestroyed(self.host) then
+        self.host.interact.rb.mass = self.oriMass or 10
+    end
+    self.lastIgnoreMu = nil
+end
+
+function GoldenCudgel:OpenSkill()
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        local ph = self.host.interact:GetPrimaryHand()
+        if not IsNullOrDestroyed(ph) and not ph.character:HasEnoughMana(self.host.manaCost * self.baseManaTime) then
+            NoManaTips()
+        end
+    end
+    
+    self.isOpenSkill = true
+end
+
+function GoldenCudgel:CloseSkill()
+    self.isOpenSkill = false
+    
+    self.lastPushCol = {}
+end
+
+function GoldenCudgel:StartStretch()
+    --print("server start stretch--------------")
+    CL.Scheduler.RemoveSchedule(self.deformActId)
+    local ph = nil
+    local oh = nil
+    local forwardLen = self.origLenOfForward
+    local backLen = self.origLenOfBack
+    
+    local forwardEnterLen = 0
+    local backEnterLen = 0
+    
+    local isStretchForward = false
+    local isStretchBack = false
+    local isHit = false
+    local shadow = nil
+    local verDot = 0
+    
+    local isFwdReach = false
+    local isBackReach = false
+    local center = UE.Vector3.zero
+    
+    self.lastPointFwdPos = self.pointForward.position
+    self.lastPointBackPos = self.pointBack.position
+    
+    self.eulerXList = {}
+    
+    ---------------------------- cal angular vel online
+    self.angularVelocity = UE.Vector3.zero
+    local lastRotation = self.trans.rotation
+    local deltaRotation = nil
+    local angle = 0
+    local axis = nil
+    ----------------------------
+    
+    self.phTracker = nil
+    self.ohTracker = nil
+    
+    self.fwdHitLimit = 1
+    self.backHitLimit = 1
+    
+    local curAngularForce = self.host.interact.angularForce
+    local curTrackSpeed = self.host.interact.singleHandSpeed
+    local openable = true
+    local curSoundSpeed = 0
+    self.deformActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            ph = self.host.interact:GetPrimaryHand()
+            oh = self.host.interact:GetSecondaryHand()
+            curTrackSpeed = (not IsNullOrDestroyed(oh) and not IsNullOrDestroyed(ph))
+                and self.host.interact.twoHandSpeed or self.host.interact.singleHandSpeed
+                
+            local trackspeed = (curTrackSpeed - self.minHandSpeed) 
+                        + (1 - UE.Mathf.Clamp01((forwardLen + backLen) / self.maxLen)) * self.minHandSpeed
+            
+            if self.phTracker == nil then
+                if not IsNullOrDestroyed(ph) then
+                    self.phTracker = ph.handTracker
+                end
+            else
+                if IsNullOrDestroyed(ph) then
+                    self.phTracker:SetTrackSpeed(1)
+                    self.phTracker = nil
+                else
+                    if self.phTracker ~= ph.handTracker then
+                        self.phTracker:SetTrackSpeed(1)
+                        self.phTracker = ph.handTracker
+                    end
+                    self.phTracker:SetTrackSpeed(curTrackSpeed)
+                end
+            end
+            
+            if self.ohTracker == nil then
+                if not IsNullOrDestroyed(oh) then
+                    self.ohTracker = oh.handTracker
+                end
+            else
+                if IsNullOrDestroyed(oh) then
+                    self.ohTracker:SetTrackSpeed(1)
+                    self.ohTracker = nil
+                else
+                    if  self.ohTracker ~= oh.handTracker then
+                        self.ohTracker:SetTrackSpeed(1)
+                        self.ohTracker = oh.handTracker
+                    end
+                    self.ohTracker:SetTrackSpeed(curTrackSpeed)
+                end
+            end
+            
+            
+            if IsNullOrDestroyed(self.trans) then
+                sche:Stop()
+                return
+            end
+            
+            self.lastForwardVel = (self.pointForward.position - self.lastPointFwdPos)/ UE.Time.deltaTime
+            self.lastBackVel = (self.pointBack.position - self.lastPointBackPos)/ UE.Time.deltaTime
+            
+            self.lastPointFwdPos = self.pointForward.position
+            self.lastPointBackPos = self.pointBack.position
+            
+            if #self.eulerXList > 4 then
+                table.remove(self.eulerXList, 1)
+            end
+            
+            
+            if self.isOnline then
+                deltaRotation = self.trans.rotation * UE.Quaternion.Inverse(lastRotation)
+                lastRotation = self.trans.rotation
+                angle, axis = deltaRotation:ToAngleAxis()
+                angle = angle * UE.Mathf.Deg2Rad
+                self.angularVelocity = (1 / UE.Time.deltaTime) * angle * axis
+                --print("  ----  x:" .. self.angularVelocity.x .. "  y:" .. self.angularVelocity.y .. " z:" ..self.angularVelocity.z .. "   mag:" .. self.angularVelocity.magnitude)
+            end
+            
+            table.insert(self.eulerXList, self.trans.rotation.eulerAngles.x)
+            
+            self.lastVel = (self.host.interact.rb.velocity + self.lastVel) / 2
+            
+            if IsNullOrDestroyed(shadow) then
+                shadow = self.host.interact:GetShadow()
+                if not IsNullOrDestroyed(shadow) then
+                    self.shadowScript = shadow.transform:GetComponent(typeof(CL.InteractTriggerX)).script:GetSelf()
+                end
+            end
+            
+            isStretchForward = false
+            isStretchBack = false
+            
+            openable = true
+            if self.isOnline and self.isOpenSkill and not IsNullOrDestroyed(ph) then
+                if not ph.character:HasEnoughMana(self.host.manaCost * self.baseManaTime) then
+                    openable = false
+                end
+            end
+            
+            if not IsNullOrDestroyed(ph) and (ph:IsTriggering() or self.pressList[ph]) and self.isOpenSkill and openable then
+                if not self:IsGrabForwardPart(ph) then
+                    if not self.isStretchForward then
+                        self.fwdHitLimit = 1
+                    end
+                    isStretchForward = true
+                else
+                    if not self.isStretchBack then
+                        self.backHitLimit = 1
+                    end
+                    isStretchBack = true
+                end
+            end
+            if not IsNullOrDestroyed(oh) and (oh:IsTriggering() or self.pressList[oh]) and self.isOpenSkill and openable then
+                if not self:IsGrabForwardPart(oh) then
+                    if not self.isStretchForward then
+                        self.fwdHitLimit = 1
+                    end
+                    isStretchForward = true
+                else
+                    if not self.isStretchBack then
+                        self.backHitLimit = 1
+                    end
+                    isStretchBack = true
+                end
+            end
+            
+            
+            verDot = math.abs(UE.Vector3.Dot(self.trans.forward, UE.Vector3.up))
+            --if self.shadowScript and (isStretchForward or isStretchBack) and 
+            --    verDot >= 0.8 then
+            --    self.shadowScript.maxSpring = self.maxPullSpring
+            --    print("set max pulll------------------- ")
+            --else
+            --    self.shadowScript.maxSpring = self.basePullSpring
+            --end
+            
+            if isStretchForward then
+                forwardEnterLen, isHit = self:CollisionOnStretch(self.pointForward.position, true, forwardLen + backLen < self.maxLen)
+                if forwardEnterLen < self.maxEnterLen or (verDot >= 0.9 and isFwdReach) then
+                    if forwardLen + backLen < self.maxLen then
+                        forwardLen = self:Elongating(true, forwardEnterLen == 0 and not isHit)
+                        if not isFwdReach and not self.glowEffectForward.isPlaying then
+                            self.glowEffectForward:Play()
+                            self.stretchFwdEffect:Play()
+                            
+                            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                                local state = GetNetworkIBState(self)
+                                if state ~= nil then
+                                    state:ServerPlayGlowEffect(true, true)
+                                end
+                            end
+                        end
+                    else
+                        if not isFwdReach then
+                            self.glowEffectForward:Stop()
+                            self.glowEffectForward:Clear()
+                            self.stretchFwdEffect:Stop()
+                            
+                            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                                local state = GetNetworkIBState(self)
+                                if state ~= nil then
+                                    state:ServerPlayGlowEffect(true, false)
+                                end
+                            end
+                            
+                            isFwdReach = true
+                        end
+                        self.shadowScript:SetStretch(true, self.stretchOfForward.localScale, self.endOfForward.localPosition)
+                    end
+                else
+                    forwardLen = self:ShorteningTo(true, forwardEnterLen)
+                end
+            else
+                self.fwdHitLimit = 0
+                
+                forwardLen = self:Shortening(true)
+                if self.glowEffectForward.isPlaying then
+                    self.glowEffectForward:Stop()
+                    self.glowEffectForward:Clear()
+                    self.stretchFwdEffect:Stop()
+                    
+                    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then
+                            state:ServerPlayGlowEffect(true, false)
+                        end
+                    end
+                end
+            end
+            if isStretchBack then
+                backEnterLen, isHit = self:CollisionOnStretch(self.pointBack.position, false, forwardLen + backLen < self.maxLen)
+                if backEnterLen < self.maxEnterLen or (verDot >= 0.9 and isBackReach) then
+                    if forwardLen + backLen < self.maxLen then
+                        backLen = self:Elongating(false, backEnterLen == 0 and not isHit)
+                        if not isBackReach and not self.glowEffectBack.isPlaying then
+                            self.glowEffectBack:Play()
+                            self.stretchBackEffect:Play()
+                            
+                            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                                local state = GetNetworkIBState(self)
+                                if state ~= nil then
+                                    state:ServerPlayGlowEffect(false, true)
+                                end
+                            end
+                        end
+                    else
+                        if not isBackReach then
+                            self.glowEffectBack:Stop()
+                            self.glowEffectBack:Clear()
+                            self.stretchBackEffect:Stop()
+                            
+                            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                                local state = GetNetworkIBState(self)
+                                if state ~= nil then
+                                    state:ServerPlayGlowEffect(false, false)
+                                end
+                            end
+                            
+                            isBackReach = true
+                        end
+                        
+                        self.shadowScript:SetStretch(false, self.stretchOfBack.localScale, self.endOfBack.localPosition)
+                    end
+                else
+                    backLen = self:ShorteningTo(false, backEnterLen)
+                end
+            else
+                self.backHitLimit = 0
+                
+                backLen = self:Shortening(false)
+                if self.glowEffectBack.isPlaying then
+                    self.glowEffectBack:Stop()
+                    self.glowEffectBack:Clear()
+                    self.stretchBackEffect:Stop()
+                    
+                    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then
+                            state:ServerPlayGlowEffect(false, false)
+                        end
+                    end
+                end
+            end
+            
+            self.isStretchForward = isStretchForward
+            self.isStretchBack = isStretchBack
+            
+            if not isStretchBack and not isStretchForward then
+                if backLen + forwardLen <= self.origLenOfForward + self.origLenOfBack then
+                    isFwdReach = false
+                    isBackReach = false
+                    
+                    if not self.isGrabed then
+                        sche:Stop()
+                        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                            local state = GetNetworkIBState(self)
+                            if state ~= nil then
+                                state:ServerStretchState(self.isStretchForward, self.isStretchBack, 
+                                    self.isFwdReach, self.isBackReach, forwardLen, backLen)
+                            end
+                        end
+                        self.fwdSound.enabled = false
+                        self.backSound.enabled = false
+                        --print("stop stretch------------------")
+                        return
+                    end
+                end
+                
+                --for k, v in pairs(self.characterList) do
+                --    k.capsuleRB.mass = v
+                --end
+            end
+            center.z = (forwardLen - backLen)/2 * self.centerMlp
+            self.host.interact.rb.centerOfMass = center
+            --self.centerOfMass.localPosition = self.host.interact.rb.centerOfMass
+            
+            
+            curAngularForce = self.minAngularForce + (self.host.interact.angularForce - self.minAngularForce) 
+                * (1 - UE.Mathf.Clamp01((forwardLen + backLen) / self.maxLen))
+                
+            if not IsNullOrDestroyed(ph) then
+                local sd = ph.grabJoint.slerpDrive
+                sd.positionSpring = curAngularForce
+                ph.grabJoint.slerpDrive = sd
+            end
+            --if not IsNullOrDestroyed(oh) then
+            --    local sd = oh.grabJoint.slerpDrive
+            --    sd.positionSpring = curAngularForce
+            --    oh.grabJoint.slerpDrive = sd
+            --end
+            
+            self.isFwdReach = isFwdReach
+            self.isBackReach = isBackReach
+            
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    --Sometimes synchronization fails when data is updated too quickly
+                    state:ServerRefleshCenter(center.z)
+                    
+                    state:ServerStretchState(self.isStretchForward, self.isStretchBack, 
+                        self.isFwdReach, self.isBackReach, forwardLen, backLen, trackspeed, curAngularForce)
+                end
+                --print(" self.isStretchForward-----------:" .. tostring(self.isStretchForward) .. " self.isFwdReach" .. tostring(self.isFwdReach) .. "  forwardLen > self.origLenOfForward:" .. tostring(forwardLen > self.origLenOfForward) .. "  sound:" .. tostring(self.fwdSound.enabled))
+            end
+            
+            self.fwdSound.enabled = (self.isStretchForward and not self.isFwdReach) or (not self.isStretchForward and forwardLen > self.origLenOfForward)
+            self.backSound.enabled = (self.isStretchBack and not self.isBackReach) or (not self.isStretchBack and backLen > self.origLenOfBack)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function GoldenCudgel:TargetRefleshCenter(netId)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:TargetRefleshCenter(netId, self.host.interact.rb.centerOfMass)
+        end
+    end
+end
+
+function GoldenCudgel:NetworkRefleshCenter(value)
+    if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+        or IsNullOrDestroyed(self.host.interact.rb) then
+        return
+    end
+    
+    local center = self.host.interact.rb.centerOfMass
+    center.z = value
+    self.host.interact.rb.centerOfMass = center
+end
+
+function GoldenCudgel:NetworkSetStretchForward(flag)
+    self.isStretchForward = flag
+end
+
+function GoldenCudgel:NetworkSetStretchBack(flag)
+    self.isStretchBack = flag
+end
+
+function GoldenCudgel:NetworkStretchUpdate()
+    CL.Scheduler.RemoveSchedule(self.networkActId)
+    local ph = nil
+    local oh = nil
+    
+    local forwardEnterLen = 0
+    local backEnterLen = 0
+    local center = UE.Vector3.zero
+
+    local isHit = false
+    
+    self.eulerXList = {}
+    
+    self.lastPointFwdPos = self.pointForward.position
+    self.lastPointBackPos = self.pointBack.position
+    
+    ---------------------------- cal angular vel online
+    self.angularVelocity = UE.Vector3.zero
+    local lastRotation = self.trans.rotation
+    local deltaRotation = nil
+    local angle = 0
+    local axis = nil
+    ----------------------------
+    
+    local fwdReach = false
+    local backReach = false
+    
+    local forwardLen = 0
+    local backLen = 0
+    local curAngularForce = self.host.interact.angularForce
+    local curTrackSpeed = self.host.interact.singleHandSpeed
+    self.networkActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            ph = self.host.interact:GetPrimaryHand()
+            oh = self.host.interact:GetSecondaryHand()
+            
+            if self.phTracker == nil then
+                if not IsNullOrDestroyed(ph) then
+                    self.phTracker = ph.handTracker
+                end
+            else
+                if IsNullOrDestroyed(ph) then
+                    self.phTracker:SetTrackSpeed(1)
+                    self.phTracker = nil
+                else
+                    if self.phTracker ~= ph.handTracker then
+                        self.phTracker:SetTrackSpeed(1)
+                        self.phTracker = ph.handTracker
+                    end
+                    self.phTracker:SetTrackSpeed(curTrackSpeed)
+                end
+            end
+            
+            if self.ohTracker == nil then
+                if not IsNullOrDestroyed(oh) then
+                    self.ohTracker = oh.handTracker
+                end
+            else
+                if IsNullOrDestroyed(oh) then
+                    self.ohTracker:SetTrackSpeed(1)
+                    self.ohTracker = nil
+                else
+                    if  self.ohTracker ~= oh.handTracker then
+                        self.ohTracker:SetTrackSpeed(1)
+                        self.ohTracker = oh.handTracker
+                    end
+                    self.ohTracker:SetTrackSpeed(curTrackSpeed)
+                end
+            end
+            
+            if IsNullOrDestroyed(self.trans) then
+                return
+            end
+            
+            self.lastForwardVel = (self.pointForward.position - self.lastPointFwdPos)/ UE.Time.deltaTime
+            self.lastBackVel = (self.pointBack.position - self.lastPointBackPos)/ UE.Time.deltaTime
+            
+            self.lastPointFwdPos = self.pointForward.position
+            self.lastPointBackPos = self.pointBack.position
+            
+            if #self.eulerXList > 4 then
+                table.remove(self.eulerXList, 1)
+            end
+            table.insert(self.eulerXList, self.trans.rotation.eulerAngles.x)
+            
+            if self.isOnline then
+                deltaRotation = self.trans.rotation * UE.Quaternion.Inverse(lastRotation)
+                lastRotation = self.trans.rotation
+                angle, axis = deltaRotation:ToAngleAxis()
+                angle = angle * UE.Mathf.Deg2Rad
+                self.angularVelocity = (1 / UE.Time.deltaTime) * angle * axis
+                --print("  client----  x:" .. self.angularVelocity.x .. "  y:" .. self.angularVelocity.y .. " z:" ..self.angularVelocity.z .. "   mag:" .. self.angularVelocity.magnitude)
+            end
+            
+            if not IsNullOrDestroyed(ph) then
+                local cmd = ph.character.networkPlayer.networkPlayerCommand
+                if ph.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressDown then
+                    cmd:CmdTriggerAction(self.host.interact.netId, true, ph.character.networkPlayer.netId, ph:GetHandIndex())
+                elseif ph.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp then
+                    cmd:CmdTriggerAction(self.host.interact.netId, false, ph.character.networkPlayer.netId, ph:GetHandIndex())
+                end
+            end
+            if not IsNullOrDestroyed(oh) then
+                local cmd = oh.character.networkPlayer.networkPlayerCommand
+                if oh.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressDown then
+                    cmd:CmdTriggerAction(self.host.interact.netId, true, oh.character.networkPlayer.netId, oh:GetHandIndex())
+                elseif oh.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp then
+                    cmd:CmdTriggerAction(self.host.interact.netId, false, oh.character.networkPlayer.netId, oh:GetHandIndex())
+                end
+            end
+            
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                forwardLen = state:GetStretchForwardLen()
+                backLen = state:GetStretchBackLen()
+                --self.isStretchForward = self.host.interact.networkIB.networkIBState:GetIsStretchForward()            
+                --self.isStretchBack = self.host.interact.networkIB.networkIBState:GetIsStretchBack()
+                
+                fwdReach = state:GetIsFwdReach()
+                if self.isFwdReach ~= fwdReach then
+                    self.isFwdReach = fwdReach
+                    if fwdReach and not IsNullOrDestroyed(ph) and ph.character.IsLocalPlayer then
+                        state:ReqRigidbodyCenter(ph.character.networkPlayer.netId)
+                    end
+                end
+                backReach = state:GetIsBackReach()
+                if self.isBackReach ~= backReach then
+                    self.isBackReach = backReach
+                    if backReach and not IsNullOrDestroyed(ph) and ph.character.IsLocalPlayer then
+                        state:ReqRigidbodyCenter(ph.character.networkPlayer.netId)
+                    end
+                end
+                curAngularForce = state:GetAngularForce()
+                curTrackSpeed = state:GetTrackSpeed()
+            end
+
+            if self.isStretchForward then
+                forwardEnterLen, isHit = self:CollisionOnStretch(self.pointForward.position, true, forwardLen + backLen < self.maxLen)
+            end
+            
+            if self.isStretchBack then
+                backEnterLen, isHit = self:CollisionOnStretch(self.pointBack.position, false, forwardLen + backLen < self.maxLen)
+            end
+            
+            if not self.isStretchBack and not self.isStretchForward then
+                if backLen + forwardLen <= self.origLenOfForward + self.origLenOfBack then
+                    if not self.isGrabed then
+                        self.fwdSound.enabled = false
+                        self.backSound.enabled = false
+                        sche:Stop()
+                        return
+                    end
+                end
+            end
+            
+            --center.z = (forwardLen - backLen)/2 * self.centerMlp
+            --self.host.interact.rb.centerOfMass = center
+            
+            if not IsNullOrDestroyed(ph) then
+                local sd = ph.grabJoint.slerpDrive
+                sd.positionSpring = curAngularForce
+                ph.grabJoint.slerpDrive = sd
+            end
+            --if not IsNullOrDestroyed(oh) then
+            --    local sd = oh.grabJoint.slerpDrive
+            --    sd.positionSpring = curAngularForce
+            --    oh.grabJoint.slerpDrive = sd
+            --end
+            
+            self.fwdSound.enabled = (self.isStretchForward and not self.isFwdReach) or (not self.isStretchForward and forwardLen > self.origLenOfForward)
+            --print(" self.isStretchForward-----------:" .. tostring(self.isStretchForward) .. " self.isFwdReach  " .. tostring(self.isFwdReach) .. "  forwardLen > self.origLenOfForward:" .. tostring(forwardLen > self.origLenOfForward) .. "   sound:" .. tostring(self.fwdSound.enabled))
+            self.backSound.enabled = (self.isStretchBack and not self.isBackReach) or (not self.isStretchBack and backLen > self.origLenOfBack)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function GoldenCudgel:NetworkPlayGlowEffect(isForward, isPlay)
+    if isForward then
+        if isPlay then
+            self.glowEffectForward:Play()
+            self.stretchFwdEffect:Play()
+        else
+            self.glowEffectForward:Stop()
+            self.glowEffectForward:Clear()
+            self.stretchFwdEffect:Stop()
+        end
+    else
+        if isPlay then
+            self.glowEffectBack:Play()
+            self.stretchBackEffect:Play()
+        else
+            self.glowEffectBack:Stop()
+            self.glowEffectBack:Clear()
+            self.stretchBackEffect:Stop()
+        end
+    end
+end
+
+function GoldenCudgel:NetworkStretchForwardUpdate(value)
+    self:ElongatingTo(true, value)
+end
+
+function GoldenCudgel:NetworkStetchBackUpdate(value)
+    self:ElongatingTo(false, value)
+end
+
+function GoldenCudgel:IsGrabForwardPart(hand)
+    local pos = hand.grabJoint.connectedAnchor
+    return pos.z >= 0
+end
+
+function GoldenCudgel:Elongating(stretchForward, isMaxSpeed)
+    local stretchPart = stretchForward and self.stretchOfForward or self.stretchOfBack
+    local endPart = stretchForward and self.endOfForward or self.endOfBack
+    local checkPoint = stretchForward and self.pointForward or self.pointBack
+    local origLen = stretchForward and self.origLenOfForward or self.origLenOfBack
+    
+    local vec = stretchPart.localScale
+    vec.z = UE.Time.deltaTime * (isMaxSpeed and self.maxElongatingSpeed or self.elongatingSpeed) + vec.z
+    stretchPart.localScale = vec
+    local len = vec.z * origLen
+    
+    local pos = endPart.localPosition
+    pos.z = stretchForward and (len + self.stretchOfForward.localPosition.z) 
+        or (-len + self.stretchOfBack.localPosition.z)
+    
+    endPart.localPosition = pos
+    
+    return len
+end
+
+function GoldenCudgel:ElongatingTo(stretchForward, value)
+    local stretchPart = stretchForward and self.stretchOfForward or self.stretchOfBack
+    local endPart = stretchForward and self.endOfForward or self.endOfBack
+    local origLen = stretchForward and self.origLenOfForward or self.origLenOfBack
+    local vec = stretchPart.localScale
+    vec.z = value / origLen
+    stretchPart.localScale = vec
+    
+    local pos = endPart.localPosition
+    pos.z = stretchForward and (value + self.stretchOfForward.localPosition.z) 
+        or (-value + self.stretchOfBack.localPosition.z)
+    endPart.localPosition = pos
+end
+
+function GoldenCudgel:SetStretch(stretchForward, localScale, localPos)
+    local stretchPart = stretchForward and self.stretchOfForward or self.stretchOfBack
+    local endPart = stretchForward and self.endOfForward or self.endOfBack
+    stretchPart.localScale = localScale
+    endPart.localPosition = localPos
+end
+
+function GoldenCudgel:Shortening(stretchForward, enterLen)
+    local stretchPart = stretchForward and self.stretchOfForward or self.stretchOfBack
+    local endPart = stretchForward and self.endOfForward or self.endOfBack
+    local origLen = stretchForward and self.origLenOfForward or self.origLenOfBack
+    
+    local vec = stretchPart.localScale
+    vec.z = math.max(vec.z - UE.Time.deltaTime * self.shorteningSpeed, 1)
+    stretchPart.localScale = vec
+    local len = vec.z * origLen
+    
+    local pos = endPart.localPosition
+    pos.z = stretchForward and (len + self.stretchOfForward.localPosition.z) 
+        or (-len + self.stretchOfBack.localPosition.z)
+    endPart.localPosition = pos
+    
+    self.shadowScript:SetStretch(stretchForward, stretchPart.localScale, pos)
+    
+    return len
+end
+
+function GoldenCudgel:ShorteningTo(stretchForward, enterLen)
+    local stretchPart = stretchForward and self.stretchOfForward or self.stretchOfBack
+    local endPart = stretchForward and self.endOfForward or self.endOfBack
+    local origLen = stretchForward and self.origLenOfForward or self.origLenOfBack
+    
+    local vec = stretchPart.localScale
+    local len = vec.z * origLen - enterLen
+    vec.z = len / origLen
+    stretchPart.localScale = vec
+    local cachePos = endPart.position
+    local pos = endPart.localPosition
+    pos.z = stretchForward and (len + self.stretchOfForward.localPosition.z) 
+        or (-len + self.stretchOfBack.localPosition.z)
+    endPart.localPosition = pos
+    self.shadowScript:SetStretch(stretchForward, stretchPart.localScale, pos)
+    CL.DebugDraw.DrawLine(cachePos, endPart.position, UE.Color.red, 2)
+    return len
+end
+
+function GoldenCudgel:CollisionOnStretch(point, stretchForward, isPush)
+    if not self.isGrabed then
+        return 0, false
+    end
+    
+    if not self.isStretchForward and not self.isStretchBack then
+        return 0, false
+    end
+    
+    local vec = point - self.trans.position
+    local offset = self.maxElongatingSpeed * UE.Time.deltaTime
+    local isHit, raycastHit = UE.Physics.SphereCast(self.trans.position, 0.02, vec.normalized, vec.magnitude + offset,
+        CL.LayerDefine.EnvLayerMask.value)
+    --CL.DebugDraw.DrawLine(self.trans.position, point, UE.Color.red, 0.5)
+    if not isHit then
+        return 0, false
+    end
+    if IsNullOrDestroyed(raycastHit.collider.attachedRigidbody) then
+        return 0, false
+    end
+
+    if self.cacheCollider ~= raycastHit.collider then
+        self.cachePu = CL.PhysicsUnit.GetPhysicsUnit(raycastHit.collider)
+        self.cacheCollider = raycastHit.collider
+    end
+    
+    local len = UE.Vector3.Distance(raycastHit.point, point)
+    if UE.Vector3.Dot((stretchForward and self.trans.forward or -self.trans.forward), 
+        (raycastHit.point - point).normalized) > 0 then
+        len = 0
+    end
+    if isPush and len > 0 then
+        if IsNullOrDestroyed(self.cachePu) then
+            if raycastHit.collider.attachedRigidbody.isKinematic then
+                self:PushCharacter(raycastHit.point, raycastHit.normal, len)
+            end
+        else
+            if self.cachePu:IsStaticScene() then
+                self:PushCharacter(raycastHit.point, raycastHit.normal, len)
+            end
+        end
+    end
+    
+    return len, isHit
+end
+
+function GoldenCudgel:PushCharacter(point, normal, len)
+    local dir = self.trans.position - point
+    --local dir = normal
+
+    --if len <= self.pullDis then
+    --    self.host.interact.rb:MovePosition(self.host.interact.trans.position + dir * len)
+    --    self.host.interact.rb.velocity = UE.Vector3.zero
+    --    for k, v in pairs(self.characterList) do
+    --        k.capsuleRB:MovePosition(self.host.interact.trans.position + dir * len)
+    --        k.capsuleRB.velocity = UE.Vector3.zero
+    --    end
+    --    return
+    --end
+    
+    local vel = dir / UE.Time.deltaTime
+    local calVel = UE.Vector3.MoveTowards(self.host.interact.rb.velocity, vel, self.maxDeltaDis)
+    --self.host.interact.rb:MovePosition(self.host.interact.trans.position + dir * len)
+    local ph = self.host.interact:GetPrimaryHand()
+    local oh = self.host.interact:GetSecondaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        if IsNullOrDestroyed(ph.attachTo) then
+            ph = nil
+        else
+            if ph.attachTo.interact ~= self.host.interact then
+                ph = nil
+            end
+        end
+    end
+    
+    if not IsNullOrDestroyed(oh) then
+        if IsNullOrDestroyed(oh.attachTo) then
+            oh = nil
+        else
+            if oh.attachTo.interact ~= self.host.interact then
+                oh = nil
+            end
+        end
+    end
+    self.host.interact.rb.velocity = UE.Vector3.Lerp(self.host.interact.rb.velocity, calVel, self.characterSpeedLerp)
+    --print("over len:------------------:".. len)
+    for k, v in pairs(self.characterList) do
+        if (ph and not IsNullOrDestroyed(ph) and k == ph.character) or (oh and not IsNullOrDestroyed(oh) and k == oh.character) then
+            calVel = UE.Vector3.MoveTowards(k.capsuleRB.velocity, vel, self.maxDeltaDis)
+            if calVel.sqrMagnitude > self.maxSqrPullSpeed then
+                --print("push character is bigger------------:" .. calVel.sqrMagnitude)
+                calVel = calVel.normalized * self.maxSqrPullSpeed
+            end
+            if not CS.System.Single.IsNaN(calVel.x) then
+                k.capsuleRB.velocity = UE.Vector3.Lerp(k.capsuleRB.velocity, calVel, self.characterSpeedLerp)
+                --k.capsuleRB:MovePosition(self.host.interact.trans.position + dir * len)
+                --CL.DebugDraw.DrawLine(self.host.interact.trans.position, self.host.interact.trans.position + dir * len, UE.Color.yellow, 2)
+                --k.capsuleRB.mass = 1
+                --print("push character------------------ vel:" .. vel.y..  "calcVel::".. calVel.y  .. "   len:" .. len)
+            end
+        end
+    end
+end
+
+function GoldenCudgel:ApplyElogatingHit(thisCol, hitCol, hitDir, point, isPeakPoint)
+    if UE.Time.time - self.lastHitTime < 0.2 then
+        return
+    end
+    
+    self.isElogatingHit = isPeakPoint
+    
+    self.lastHitTime = UE.Time.time
+    
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ByPassHitScanProtect()
+    
+    CL.InteractTrigger.ApplyHitScanDamage(hitCol, self.host.interact, 
+    self.host.interact.rb, thisCol, hitDir, self.camp)
+    
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+    CL.InteractTrigger.doingHitScan = false
+    CL.InteractTrigger.hitScanProtect = true
+end
+
+function GoldenCudgel:PushBackCharacter(dir)
+    local isPush = false
+    local ph = self.host.interact:GetPrimaryHand()
+    local oh = self.host.interact:GetSecondaryHand()
+    if not IsNullOrDestroyed(ph) then
+        if IsNullOrDestroyed(ph.attachTo) then
+            ph = nil
+        else
+            if ph.attachTo.interact ~= self.host.interact then
+                ph = nil
+            end
+        end
+    end
+    
+    if not IsNullOrDestroyed(oh) then
+        if IsNullOrDestroyed(oh.attachTo) then
+            oh = nil
+        else
+            if oh.attachTo.interact ~= self.host.interact then
+                oh = nil
+            end
+        end
+    end
+    for k, v in pairs(self.characterList) do
+        if k and not IsNullOrDestroyed(k) and k:IsMidAir() then
+            if ((ph and not IsNullOrDestroyed(ph) and k == ph.character) or (oh and not IsNullOrDestroyed(oh) and k == oh.character)) then
+                k:AddForce(dir * self.pushBackForce)
+                k:SetDragForAWhile(0.2)
+                k:SetMovementForAWhile(false, 0.2)
+                isPush = true
+            end
+        end
+    end
+    
+    self.nextPushTime = UE.Time.time + 0.3
+end
+
+function GoldenCudgel:NetworkSideHitEffect(pos, rot, intensity)
+    self.hitSound:PlaySound()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.sideHitEffect, pos, rot)
+    eo:SetIntensity(intensity)
+end
+
+function GoldenCudgel:NetworkVertHitEffect(pos, rot)
+    self.hitSound:PlaySound()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.vertHitEffect, pos, rot)
+end
+
+function GoldenCudgel:OnColliderEnter(collision)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.isHanging then
+        local p = CL.PhysicsUnit.GetPhysicsUnitTopDown(collision.collider)
+        if not IsNullOrDestroyed(p) and p.unitType == CL.Tagger.Tag.FlyObject then
+            local ct = collision:GetContact(0)
+            local vel = self:IsForward(ct.point) > 0 and self.lastForwardVel or self.lastBackVel
+            local speed = p.rb.velocity.magnitude
+            p.rb.velocity = p.rb.velocity.normalized * speed/2 + vel.normalized * speed/2
+        end
+        
+        return
+    end
+    
+    if not self.isStretchForward and not self.isStretchBack then
+        return
+    end
+    
+    if self.isFwdReach and self.isBackReach then
+        return
+    end
+    
+    local ct = collision:GetContact(0)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collision.collider)
+    
+    --push go
+    if IsNullOrDestroyed(pu) or pu.unitType ~= CL.Tagger.Tag.InteractRole then
+        if not IsNullOrDestroyed(ct.otherCollider.attachedRigidbody) and 
+        (not self.lastPushCol[ct.otherCollider] or UE.Time.time > self.lastPushCol[ct.otherCollider]) then
+            local vel = self:IsForward(ct.point) > 0 and self.lastForwardVel or self.lastBackVel
+            ct.otherCollider.attachedRigidbody:AddForce(vel * self.pushPuMlp, UE.ForceMode.VelocityChange)
+            self.lastPushCol[ct.otherCollider] = UE.Time.time + 0.3
+        end
+    end
+    
+    if (not IsNullOrDestroyed(pu) and pu:IsScene()) or CL.PhysicsUnit.IsSceneLayer(collision.transform) then
+        local pass = false
+        if self:IsForward(ct.point) > 0 and ct.thisCollider == self.fwdCol then
+            pass = true
+        end
+        if self:IsForward(ct.point) < 0 and ct.thisCollider == self.backCol then
+            pass = true
+        end
+        
+        local vel = self:IsForward(ct.point) > 0 and self.lastForwardVel or self.lastBackVel
+        local speed = vel.magnitude
+        --print("Hitspeed------------------------:" .. speed)
+        local nextTime = self.nextTime[ct.thisCollider] or 0
+        if pass and UE.Time.time >= nextTime and speed > 30 then
+            local closetPoint = nil
+            if collision.collider.sharedMesh and not collision.collider.convex then
+                closetPoint = ct.point
+            else
+                closetPoint = collision.collider:ClosestPoint(ct.point)
+            end
+            local intensity = UE.Mathf.Clamp(speed/80, 0.3, 1)
+            --print("play Hit effect------------------------:" .. speed .. " intensity:" .. intensity)
+            local eo = CL.EffectMgr.Instance:PlayEffect(self.sideHitEffect, closetPoint, UE.Quaternion.LookRotation(-vel.normalized))
+            eo:SetIntensity(intensity)
+            
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerSideHitEffect(closetPoint, UE.Quaternion.LookRotation(-vel.normalized), 
+                        intensity)
+                end
+            end
+            
+            self.nextTime[ct.thisCollider] = UE.Time.time + 0.2
+        end
+        
+        local verDot = math.abs(UE.Vector3.Dot(self.trans.forward, ct.normal))
+        if verDot > 0.9 then
+            local isPass = false
+            if (self:IsForward(ct.point) > 0 and not self.isFwdReach) and self.fwdHitLimit > 0 then
+                self.fwdHitLimit = 0
+                isPass = true
+            end
+            if (self:IsForward(ct.point) < 0 and not self.isBackReach) and self.backHitLimit > 0 then
+                self.backHitLimit = 0
+                isPass = true
+            end
+            if isPass then
+                CL.EffectMgr.Instance:PlayEffect(self.vertHitEffect, ct.point, UE.Quaternion.LookRotation((self.trans.position - ct.point).normalized))
+                self.hitSound:PlaySound()
+                if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state:ServerVertHitEffect(ct.point, UE.Quaternion.LookRotation((self.trans.position - ct.point).normalized))
+                    end
+                end
+            end
+        end
+        
+        --push character
+        if verDot > 0.9 and UE.Time.time > self.nextPushTime then
+            if self:IsForward(ct.point) > 0 and self.isFwdReach then
+                return
+            end
+            
+            if self:IsForward(ct.point) < 0 and self.isBackReach then
+                return
+            end
+            
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerPushBackCharacter(ct.normal)
+                end
+            end
+            self:PushBackCharacter(ct.normal)
+        end
+        
+        return
+    end
+    
+    if IsNullOrDestroyed(pu) then
+        --print("OnColliderEnter----not pu--:" .. ct.otherCollider.name.. " root :" .. ct.otherCollider.transform.root.name)
+        return
+    end
+    
+    if not (pu.unitType == CL.Tagger.Tag.InteractRole or pu.unitType == CL.Tagger.Tag.PlayerRole) then
+        --print("OnColliderEnter---not role---:" .. ct.otherCollider.name.. " root :" .. ct.otherCollider.transform.root.name)
+        return
+    end
+    
+    local isPeakPoint = true
+    if ct.thisCollider == self.fwdMiddleCol or ct.thisCollider == self.backMiddleCol then
+        if collision.relativeVelocity.magnitude < 2 then
+            --print("OnColliderEnter------:" .. ct.otherCollider.name .. " root :" .. ct.otherCollider.transform.root.name)
+            return
+        end
+        
+        isPeakPoint = false
+    end
+    
+    if pu.unitType == CL.Tagger.Tag.PlayerRole and not isPeakPoint then
+        return
+    end
+    
+    --When extending, the speed must be greater than requiredImpactSpeed, so it only takes effect at maximum extension. 
+    --This avoids flinging enemies that collide with it while stationary.
+    local vel = self:IsForward(ct.point) > 0 and self.lastForwardVel or self.lastBackVel
+    if vel.magnitude < self.requiredImpactSpeed then
+        return
+    end
+
+    if self:IsForward(ct.point) > 0 then
+        if isPeakPoint and self.isFwdReach then
+            return
+        end
+        if not self.isStretchForward then
+            return
+        end
+    end
+    
+    if self:IsForward(ct.point) < 0 then
+        if isPeakPoint and self.isBackReach then
+            return
+        end
+        if not self.isStretchBack then
+            return
+        end
+    end
+    
+    local hitVec = ct.normal
+    if isPeakPoint then
+        hitVec = (ct.point - self.trans.position).normalized
+    else
+        hitVec = self.lastVel.normalized
+    end
+    
+    self:ApplyElogatingHit(ct.thisCollider, ct.otherCollider, hitVec, ct.point, isPeakPoint)
+end
+
+function GoldenCudgel:OnDead()
+    self.host.interact:GrabBeginEvent("-", self.grabBegin)
+    
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        self.hitInfoObj.hitInfo:OnInteractCharacterHitPhase2Event("-", self.hitCharacterPhase) 
+    end
+end
+
+return Class(nil, nil, GoldenCudgel)

@@ -1,0 +1,332 @@
+--luaBehaviour
+local ArrowConnect = {
+    intensity = 0.25,
+    --lifeTime = 10,
+    lineWaveEffect = nil,
+    lineWave = nil,
+}
+
+
+function ArrowConnect:Awake()
+    self.onStabEnterHandler = function(si)
+        self:OnStabEnter(si)
+    end
+    
+    self.OnStabExitHandler = function(si)
+        self:OnStabExit(si)
+    end
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function ArrowConnect:SetParentNode(arrow)
+    self.childArrow = nil
+    self.parentArrow = arrow
+end
+
+function ArrowConnect:SetChildNode(arrow)
+    self.parentArrow = nil
+    self.childArrow = arrow
+end
+
+function ArrowConnect:ClearCachedArrow()
+    self.parentArrow = nil
+    self.childArrow = nil
+end
+
+function ArrowConnect:OnStabEnter(si)
+    self.stabRb = si.stabTargetRB
+    self.stabAnchor = si.joint.connectedAnchor
+    self.stabJoint = si.joint
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:ServerOnStabEnter(self.stabRb, self.stabAnchor) end
+    end
+    
+    self:Connect()
+    
+    if not IsNullOrDestroyed(self.trail) then
+        CL.Scheduler.RemoveSchedule(self.delayTrailId)
+        self.trail.enabled = false
+    end
+end
+
+function ArrowConnect:NetworkOnStabEnter(stabRb, stabAnchor)
+    self.stabRb = stabRb
+    self.stabAnchor = stabAnchor
+    if not IsNullOrDestroyed(self.trail) then
+        CL.Scheduler.RemoveSchedule(self.delayTrailId)
+        self.trail.enabled = false
+    end
+end
+
+function ArrowConnect:OnStabExit(si)
+    self.stabRb = nil
+    self.stabAnchor = nil
+    self.stabJoint = nil
+    self:Disconnect()
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:ServerOnStabExit() end
+    end
+end
+
+function ArrowConnect:Connect()
+    if self.parentArrow then
+        return self.parentArrow:Connect()
+        --print("let parentConnect")
+    end
+    if not self.childArrow then
+        --print("not child arrow")
+        return false
+    end
+    
+    if IsNullOrDestroyed(self.stabRb) then
+        --print("not self.stabRb")
+        return false
+    end
+    
+    if IsNullOrDestroyed(self.childArrow.stabRb) then
+        --print("not self.childArrow.stabRb")
+        return false
+    end
+    
+    if self.stabRb.transform.root == self.childArrow.stabRb.transform.root then
+        --print("the same object----")
+        return false
+    end
+    
+    if not IsNullOrDestroyed(self.joint) then
+        if self.joint.gameObject == self.stabRb.gameObject then
+            if self.childArrow.stabRb == self.joint.connectedBody then
+                --print("already connect object----")
+                return false
+            else
+                --print("connect a new object----")
+                self.joint.connectedBody = self.childArrow.stabRb
+                self.joint.autoConfigureConnectedAnchor = false
+                self.joint.connectedAnchor = self.childArrow.stabAnchor
+                self.joint.anchor = self.stabAnchor
+                
+                local ll = self.joint.linearLimit
+                if not IsNullOrDestroyed(self.stabJoint) and not IsNullOrDestroyed(self.stabJoint.connectedBody) 
+                    and self.childArrow.stabJoint and not IsNullOrDestroyed(self.childArrow.stabJoint) and not IsNullOrDestroyed(self.childArrow.stabJoint.connectedBody) then
+                    local pos1 = self.stabJoint.connectedBody.transform:TransformPoint(self.stabAnchor)
+                    local pos2 = self.childArrow.stabJoint.connectedBody.transform:TransformPoint(self.childArrow.stabAnchor)
+                    ll.limit = UE.Vector3.Distance(pos1, pos2) + 0.2
+                end
+                self.joint.linearLimit = ll 
+                
+                self:ParticleConnect(self.childArrow)
+                
+                if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetIBNetworkState(self.ib)
+                    if state ~= nil then state:ServerOnConnect(self.joint.connectedBody, self.joint.connectedAnchor, self.joint.anchor, self.childArrow.ib, self.joint.linearLimit.limit) end
+                end
+                return true
+            end
+        else
+            self:Disconnect()
+        end
+    end
+    
+    self:ParticleConnect(self.childArrow)
+
+    if IsNullOrDestroyed(self.stabRb) then
+        return false
+    end
+    self.joint = self.stabRb.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.joint.connectedBody = self.childArrow.stabRb
+    self.joint.autoConfigureConnectedAnchor = false
+    self.joint.connectedAnchor = self.childArrow.stabAnchor
+    self.joint.anchor = self.stabAnchor
+
+    self.joint.xMotion = UE.ConfigurableJointMotion.Limited
+    self.joint.yMotion = UE.ConfigurableJointMotion.Limited
+    self.joint.zMotion = UE.ConfigurableJointMotion.Limited
+    
+    local ll = self.joint.linearLimit
+    if not IsNullOrDestroyed(self.stabJoint) and not IsNullOrDestroyed(self.stabJoint.connectedBody)
+        and self.childArrow.stabJoint and not IsNullOrDestroyed(self.childArrow.stabJoint) and not IsNullOrDestroyed(self.childArrow.stabJoint.connectedBody) then
+        local pos1 = self.stabJoint.connectedBody.transform:TransformPoint(self.stabAnchor)
+        local pos2 = self.childArrow.stabJoint.connectedBody.transform:TransformPoint(self.childArrow.stabAnchor)
+        ll.limit = UE.Vector3.Distance(pos1, pos2) + 0.2
+    end
+    self.joint.linearLimit = ll
+    
+    self:LockStab()
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:ServerOnConnect(self.joint.connectedBody, self.joint.connectedAnchor, self.joint.anchor, self.childArrow.ib, self.joint.linearLimit.limit) end
+    end
+    
+    return true
+end
+
+function ArrowConnect:NetworkOnConnect(connectedBody, connectedAnchor, anchor, childArrow, limit)
+    if IsNullOrDestroyed(childArrow) then
+        return
+    end
+    local child = childArrow.trans:GetComponent(typeof(CL.LuaBehaviour))
+    if IsNullOrDestroyed(child) or child.script == nil then
+        return
+    end
+    self:ParticleConnect(child.script:GetSelf())
+    if IsNullOrDestroyed(self.stabRb) then
+        return
+    end
+    if IsNullOrDestroyed(self.joint) then
+        self.joint = self.stabRb.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint.xMotion = UE.ConfigurableJointMotion.Limited
+        self.joint.yMotion = UE.ConfigurableJointMotion.Limited
+        self.joint.zMotion = UE.ConfigurableJointMotion.Limited
+    end
+    
+    self.joint.connectedBody = connectedBody
+    self.joint.autoConfigureConnectedAnchor = false
+    self.joint.connectedAnchor = connectedAnchor
+    self.joint.anchor = anchor
+    local ll = self.joint.linearLimit
+    ll.limit = limit
+    self.joint.linearLimit = ll
+end
+
+function ArrowConnect:LockStab()
+    if self.stabJoint and not IsNullOrDestroyed(self.stabJoint) then
+        self.stabJoint.zMotion = UE.ConfigurableJointMotion.Locked
+    end
+end
+
+function ArrowConnect:Disconnect()
+    if  self.parentArrow and not IsNullOrDestroyed(self.parentArrow.trans) then
+        self.parentArrow:Disconnect()
+        return
+    end
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.isOnline then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:ServerDoDisconnect() end
+    end
+    
+    self:DoDisconnect()
+end
+
+function ArrowConnect:DoDisconnect()
+    self:CloseParticleEffect()
+    
+    if not IsNullOrDestroyed(self.joint) then
+        --print("destroyed joint")
+        self.joint.connectedBody = nil
+        self.joint.xMotion = UE.ConfigurableJointMotion.Free
+        self.joint.yMotion = UE.ConfigurableJointMotion.Free
+        self.joint.zMotion = UE.ConfigurableJointMotion.Free
+        UE.Object.Destroy(self.joint)
+    end
+    self.joint = nil
+    
+    self:UnlockStab()
+end
+
+function ArrowConnect:UnlockStab()
+    if self.stabJoint and not IsNullOrDestroyed(self.stabJoint) then
+        self.stabJoint.zMotion = UE.ConfigurableJointMotion.Free
+    end
+end
+
+function ArrowConnect:OnEnable()
+    --self.__base.OnEnable(self)
+    self:ClearCachedArrow()
+    self:DoDisconnect()
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:Clear()
+    end
+
+    self:StartLifeCircle()
+
+    self.parentArrow = nil
+    self.childArrow = nil
+    
+    if not IsNullOrDestroyed(self.stab) then
+        if self.stab.StabEnterEvent then
+            self.stab:StabEnterEvent("+", self.onStabEnterHandler)
+        end
+        if self.stab.StabExitEvent then
+            self.stab:StabExitEvent("+", self.OnStabExitHandler)
+        end
+    end
+end
+
+function ArrowConnect:OnDisable()
+    --In order not to affect the Clear() after an Lua Error
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:Clear()
+    end
+    self:ClearCachedArrow()
+    --self.__base.OnDisable(self)
+    self:StopLifeCircle()
+    
+    self:CloseParticleEffect()
+    
+    if not IsNullOrDestroyed(self.stab) then
+        if self.stab.StabEnterEvent then
+            self.stab:StabEnterEvent("-", self.onStabEnterHandler)
+        end
+        if self.stab.StabExitEvent then
+            self.stab:StabExitEvent("-", self.OnStabExitHandler)
+        end
+    end
+end
+
+--[[
+    effect
+]]
+
+function ArrowConnect:ParticleConnect(arrow)
+    local to = nil
+    local toAnchor = nil
+    
+    if not arrow or not arrow.stabRb or not self.stabRb then
+        return
+    else
+        to = arrow.stabRb.transform
+        toAnchor = arrow.stabAnchor
+        if IsNullOrDestroyed(to) then
+            return
+        end
+
+        self:CloseParticleEffect()
+        
+        self.lineWaveEffect = CL.EffectMgr.Instance:PlayEffect(self.effectName, self.stabRb.transform:TransformPoint(self.stabAnchor), self.stabRb.transform.rotation)
+        
+        self.lineWave = self.lineWaveEffect.trans:GetComponent(typeof(CL.LineWave))
+        self.lineWave:SetTargetTransAndAnchor(to, toAnchor)
+        self.lineWave:SetFollowTransAndAnchor(self.stabRb.transform, self.stabAnchor)
+        self.lineWave:Play()
+    end
+end
+
+function ArrowConnect:CloseParticleEffect()
+    if self.lineWave and not IsNullOrDestroyed(self.lineWave) then
+        self.lineWave:SetTargetTransAndAnchor(nil, UE.Vector3.zero)
+        self.lineWave:Stop()
+        self.lineWave = nil
+    end
+    
+    if self.lineWaveEffect and not IsNullOrDestroyed(self.lineWaveEffect) then
+        CL.EffectMgr.Instance:GiveBack(self.lineWaveEffect)
+        self.lineWaveEffect = nil
+    end
+end
+
+function ArrowConnect:DoGiveBack()
+    self:DoDisconnect()
+    self.__base.DoGiveBack(self)
+end
+return Class(Require("Weapon/ArrowBaseScript"), nil, ArrowConnect)

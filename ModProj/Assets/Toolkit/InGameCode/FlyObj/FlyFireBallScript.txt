@@ -1,0 +1,97 @@
+
+local flyFireBall = {
+    doubleExploded = false,
+    radius = 1,
+}
+
+
+function flyFireBall:EnhanceSpell()
+    self.doubleExploded = true
+end
+
+--[[
+    collison
+]]
+
+function flyFireBall:OnCollision(col, pu)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+    
+    self:TryGroundIgnite()
+end
+
+function flyFireBall:OnCollisionWithScene(collision)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self.host:PlaySceneImpactEffect(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    self:TryGroundIgnite()
+end
+
+function flyFireBall:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+    self.host:CollisionCountUpdate()
+    
+    self:TryGroundIgnite()
+end
+
+--[[
+    trigger
+]]
+function flyFireBall:OnTrigger(pu, col)
+    if not col or IsNullOrDestroyed(col) then
+        return
+    end
+
+    self.__base.OnTrigger(self, pu, col)
+    self:TryGroundIgnite()
+end
+
+function flyFireBall:OnTriggerWithStaticScene(col)
+    self.__base.OnTriggerWithStaticScene(self, col)
+    self:TryGroundIgnite()
+end
+
+function flyFireBall:OnTriggerWithRole(fc, col)
+    self.__base.OnTriggerWithRole(self, fc, col)
+    self:TryGroundIgnite()
+end
+
+function flyFireBall:TryGroundIgnite()
+    if self.isIgnite then
+        return
+    end
+    self.isIgnite = true
+    
+    local pos = self:GetIgnirePos()
+    if not pos then
+        return
+    end
+    
+    CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            CL.FlyObject.CreateFlyObj(self.objName, self.host.owner, pos, UE.Vector3(self.host.trans.forward.x, 0,
+                    self.host.trans.forward.z))
+        end
+    , 0, 0, 0.2)
+end
+
+function flyFireBall:GetIgnirePos()
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.host.trans.position, 0.05, UE.Vector3.down,
+        self.explodeRange * 0.8, CL.LayerDefine.EnvLayerMask.value)
+    if isHit then
+        return raycastHit.point
+    else
+        return nil
+    end
+end
+
+
+function flyFireBall:ResetState()
+    self.__base.ResetState(self)
+    
+    self.isIgnite = nil
+end
+
+return Class(Require("FlyObj/FlySpellBaseScript"),nil,flyFireBall)

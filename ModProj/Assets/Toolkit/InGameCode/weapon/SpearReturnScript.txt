@@ -1,0 +1,714 @@
+local SpearReturn = {
+    hand = nil,
+    enemyRb = nil,
+    returnCount = 3,
+    IsStabbed = false,
+    IsRecalling = false,
+    enemyFc = nil,
+    isGrabbed = false,
+    SecondaryHand = nil,
+    
+    pushSpring = 50000,
+    angularPushSpring = 900000,
+    pushSpeed = 3,
+    muSlowLerpValue = 0.3,
+    muFollowLerpValue = 0.8,
+}
+
+function SpearReturn:Awake()
+    self.so = self.host.interact:GetStabObject()
+    
+    self.cols = self.host.interact:GetCols()
+    self.stabEnterHandler = function(si)
+        self:OnStab(si)
+    end
+    
+    self.onCallBegin = function(hand)
+        if not IsNullOrDestroyed(self.joint) then
+            self:BreakPushJoint()
+        end
+        
+        if self.isStabEnv then
+            local col = self.collisionDetector.stabCol
+            if IsNullOrDestroyed(col) then
+                return
+            end
+            self:IgnoreCollisionsWithCol(col, true)
+            self.pushActId = CL.Scheduler.Create(self.trans,
+                function(sche, t, s)
+                    self:IgnoreCollisionsWithCol(col, false)
+                end
+            , 0, 0, 0.2)
+            :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+        end
+    end
+    
+    self.host.interact:CallBeginEvent("+", self.onCallBegin)
+    self.stabExitHandler = function(si)
+        self:OnStabExit(si)
+    end
+    self.so:StabEnterEvent("+", self.stabEnterHandler)
+    self.so:StabExitEvent("+", self.stabExitHandler)
+    
+    --This is risky, in multiplayer mode PlayerInstance is not necessarily 
+    --the player who grabs this weapon, the correct usage is to get it via 
+    --OnGrab(a, g) {self.player = a.attached.character}.
+    --self.player = CL.InteractCharacter.PlayerInstance
+    --self.leftHand = self.player.hands[1]
+    --self.rightHand = self.player.hands[0]
+    --self.RightGrip = self.rightHand.inputs[CL.VRTKInputButton.ButtonType.Grip]
+    --self.leftGrip = self.leftHand.inputs[CL.VRTKInputButton.ButtonType.Grip]
+    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+end
+
+function SpearReturn:Start()
+    self.collisionDetector = self.collisionDetectorLb.script:GetSelf()
+end
+
+function SpearReturn:NetworkInject()
+    self.host:InjectFunc("ResetVals", self.ResetVals)
+    self.host:InjectFunc("TurnOffGlow", self.TurnOffGlow)
+    self.host:InjectFunc("DoRecall", self.DoRecall)
+    self.host:InjectFunc("CallBackFromAfar", self.CallBackFromAfar)
+    self.host:InjectIntListFunc("RpcIgnoreCollisionsWithCol", self.RpcIgnoreCollisionsWithCol)
+    
+    self.host:InjectBoolState("isActive", false)
+    print("ReturnSpear NetworkInject Suc")
+end
+
+function SpearReturn:OnStab(si)  
+
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+    
+    local stabPos = si:GetStabPos()
+
+    if IsNullOrDestroyed(pu) or pu.unitType ~= CL.Tagger.Tag.InteractRole then
+        self.IsStabbed = true
+        CL.EffectMgr.Instance:PlayEffect(self.Sparks, stabPos, self.host.transform.rotation)
+        return
+    end
+    self.enemyFc = pu
+        print("OnStab ---enemyFc =" .. pu.trans.name)
+
+    self.stabEnemyInfo = si    
+    local targetMu = pu.ra:GetMuscle(si.stabTarget)
+    local targetRb = si.stabTargetRB
+    self.targetMu = targetMu
+    self.host.interact.rb.velocity = self.host.interact.rb.velocity * 2
+    self.stabAnchor = si.joint.anchor
+    self.stabConnectAnchor = si.joint.connectedAnchor
+    
+    if not self.isGrabed then
+        self:TryPushToEnv(self.stabAnchor)
+    end
+    
+    if self.returnCount == 1 and self.host.interact.rb.velocity.magnitude >= 7.5 then 
+        self:LastChargeExplode()
+    end
+end
+
+function SpearReturn:TryPushToEnv(anchor)
+    print("try push to env--------")
+    local pos = self.trans:TransformPoint(anchor)
+    local dir = pos - self.trans.position
+    local startPos = self.trans.position
+    local isHit, raycastHit  = UE.Physics.SphereCast(startPos, 0.1, dir, 10,
+        UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value)))
+    if not isHit then
+        return
+    end
+    
+    local rb = raycastHit.collider.attachedRigidbody
+    if IsNullOrDestroyed(rb) then
+        return
+    end
+    
+    if not rb.isKinematic then
+        return
+    end
+    
+    self.isPushToEnv = true
+    print(" do push to env------------------:" .. raycastHit.point.x ..  "  " .. raycastHit.point.y .. "  " .. raycastHit.point.z)
+    self:ConnectToEnv(raycastHit.collider, pos, raycastHit.point)
+    self:DoPushToEnv(raycastHit.collider, raycastHit.point)
+end
+
+function SpearReturn:ConnectToEnv(col, point, targetPoint)
+    if not IsNullOrDestroyed(self.joint) then
+        self:BreakPushJoint()
+    end
+    
+    self.host.interact.rb.mass = 1000
+    self.host.interact.rb.velocity = UE.Vector3.zero
+    --local rb = col.attachedRigidbody
+    self.joint = self.trans.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    --self.joint.connectedBody = rb
+    self.joint.autoConfigureConnectedAnchor = false
+    local moveDir = (targetPoint - self.trans.position).normalized
+    local stabberCol = UE.Vector3.Dot(moveDir, self.trans.forward) > 0 and self.forwardCol or self.backCol
+    local closetPos = stabberCol:ClosestPoint(targetPoint) - moveDir * 0.1
+    self.joint.anchor = self.trans:InverseTransformPoint(closetPos)
+    
+    local connectPoint = targetPoint --+ (targetPoint - self.trans.position).normalized * 0.5
+    self.joint.connectedAnchor = connectPoint
+    self.joint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.zMotion = UE.ConfigurableJointMotion.Free
+    self.joint.angularXMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularYMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.angularZMotion = UE.ConfigurableJointMotion.Locked
+    self.joint.enableCollision = true
+    local drive = self.joint.xDrive
+    drive.positionSpring = self.pushSpring
+    drive.positionDamper = 100
+    self.joint.xDrive = drive
+    self.joint.yDrive = drive
+    self.joint.zDrive = drive
+    self.joint.slerpDrive = drive    
+    
+    local angularDrive = self.joint.angularXDrive
+    drive.positionSpring = self.angularPushSpring
+    drive.positionDamper = 100
+    self.joint.angularXDrive = angularDrive
+    self.joint.angularYZDrive = angularDrive
+end
+
+function SpearReturn:BreakPushJoint()
+    print("break push joint-----------------------")
+    self.host.interact.rb.mass = 12
+    if not IsNullOrDestroyed(self.joint) then
+        UE.Object.Destroy(self.joint)
+    end
+    self.so.scalingForward = false
+    self.joint = nil
+    
+    self.isPushToEnv = false
+end
+
+function SpearReturn:DoPushToEnv(stabCol, point)
+    self.so.scalingForward = true
+    local moveDir = (point - self.trans.position).normalized
+    local isForward = UE.Vector3.Dot(moveDir, self.trans.forward) > 0
+    local stabberCol = isForward and self.forwardCol or self.backCol
+    
+    local curPos = self.trans:TransformPoint(self.joint.anchor)
+    local needProtect = UE.Vector3.Distance(curPos, point) > 0.5
+        
+    
+    CL.Scheduler.RemoveSchedule(self.pushActId)
+    self.pushActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.joint) then
+                sche:Stop()
+                return
+            end
+            
+            if self.isStabEnv then
+                self:BreakPushJoint()
+                if needProtect then
+                    self:EnemyStabLegalDetect()
+                    self:EnemySlowdownForAWhile()
+                end
+                sche:Stop()
+                return
+            end
+            
+            self:EnemyFollowJoint()
+            
+            curPos = self.trans:TransformPoint(self.joint.anchor)
+            local dot = UE.Vector3.Dot((curPos - self.trans.position).normalized, (point - curPos).normalized)
+            if dot <= 0 then
+                self:BreakPushJoint()
+                sche:Stop()
+                local isStab = self.collisionDetector:TryBuildStab(stabberCol, stabCol, point)
+                --print(" try stab on push end-----------:" .. tostring(isStab))
+                if isStab then
+                    if needProtect then
+                        self:EnemyStabLegalDetect()
+                        self:EnemySlowdownForAWhile()
+                    end
+                else
+                    self.host.interact.rb.velocity = UE.Vector3.zero
+                end
+                return
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpearReturn:EnemyStabLegalDetect()
+    if not self.stabEnemyInfo then
+        return
+    end
+    
+    local drive = self.stabEnemyInfo.joint.zDrive
+    self.stabEnemyInfo.joint.zMotion = UE.ConfigurableJointMotion.Limited
+    drive.positionSpring = drive.positionSpring / 2
+    drive.positionDamper = drive.positionDamper / 2
+    self.stabEnemyInfo.joint.zDrive = drive
+    
+    local limit = self.stabEnemyInfo.joint.linearLimit
+    limit.limit = 1
+    self.stabEnemyInfo.joint.linearLimit = limit
+    
+    CL.Scheduler.RemoveSchedule(self.legalDetectActId)
+    self.legalDetectActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if not self.enemyFc or IsNullOrDestroyed(self.enemyFc) then
+                sche:Stop()
+                return
+            end
+            
+            if not self.targetMu then
+                sche:Stop()
+                return
+            end
+            
+            if not self.stabEnemyInfo then
+                sche:Stop()
+                return
+            end
+            
+            local connectAnchor = self.stabEnemyInfo.joint.connectedAnchor
+            local stabTargetPos = self.stabEnemyInfo.joint.connectedBody.transform:TransformPoint(connectAnchor)
+            
+            local geo = self.stabEnemyInfo.stabGeo
+            local geoPos = geo:GetGeoPoint(self.trans)
+            local forwardDir = geo:GetForwardWorld(self.trans)
+            local stabPos = geoPos + forwardDir * geo.geoFwdDis
+            local minStabPos = stabPos + forwardDir * geo.stabMin
+            
+            self.collisionDetector.stabPoint:SetParent(nil)
+            self.collisionDetector.stabPoint.position = minStabPos
+            
+            local dot = UE.Vector3.Dot((stabTargetPos - self.trans.position).normalized, (stabPos - stabTargetPos).normalized)
+            if dot <= 0 then
+                --print(" EnemyStabLegalDetect dot break--------:" .. dot)
+                self.so:BreakStabInfo(self.stabEnemyInfo)
+                --self.so:BreakAllStab()
+                sche:Stop()
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpearReturn:EnemySlowdownForAWhile()
+    if not self.enemyFc or IsNullOrDestroyed(self.enemyFc) then
+        return
+    end
+    
+    if not self.targetMu then
+        return
+    end
+    local vel = self.targetMu.rb.velocity
+    local speed = vel.magnitude
+    local mus = self.enemyFc.bone:GetTemporaryListMuscleChain(CL.RagdollBoneInfo.Spine)
+    local mu = nil
+    local endTime = 0
+    CL.Scheduler.RemoveSchedule(self.slowdownActId)
+    self.slowdownActId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if not self.enemyFc or IsNullOrDestroyed(self.enemyFc) then
+                return
+            end
+            
+            if not self.targetMu then
+                return
+            end
+            
+            self.targetMu.rb.velocity = UE.Vector3.Lerp(self.targetMu.rb.velocity, self.host.interact.rb.velocity, self.muSlowLerpValue)
+            
+            --print("slow down vel------:" .. self.targetMu.rb.velocity.magnitude)
+            for i = 0, mus.Count - 1 do
+                mu = self.enemyFc.bone.ragdoll:GetMuscle(mus[i])
+                if mu then
+                    if not IsNullOrDestroyed(mu.rb) and mu ~= self.targetMu then
+                        --if mu.rb.velocity.sqrMagnitude > vel.sqrMagnitude then
+                        --    mu.rb.velocity = mu.rb.velocity.normalized * speed
+                        --end
+                        mu.rb.velocity = UE.Vector3.Lerp(mu.rb.velocity, self.targetMu.rb.velocity, self.muSlowLerpValue)
+                    end
+                end
+            end
+        end
+    , 0, 0.5)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpearReturn:EnemyFollowJoint()
+    if not self.enemyFc or IsNullOrDestroyed(self.enemyFc) then
+        return
+    end
+    
+    if self.enemyFc.muscleState:IsPowerfulCharacter() then
+        return
+    end
+    
+    if not self.targetMu then
+        return
+    end
+    
+    self.enemyFc.motion:Knockout()
+    --self.targetMu.rb.velocity = self.host.interact.rb.velocity
+    local vel = self.targetMu.rb.velocity
+    local speed = vel.magnitude
+    local mus = self.enemyFc.bone:GetTemporaryListMuscleChain(CL.RagdollBoneInfo.Spine)
+    local mu = nil
+    for i = 0, mus.Count - 1 do
+        mu = self.enemyFc.bone.ragdoll:GetMuscle(mus[i])
+        if mu then
+            if not IsNullOrDestroyed(mu.rb) and mu ~= self.targetMu then
+                --if mu.rb.velocity.sqrMagnitude > vel.sqrMagnitude then
+                --    mu.rb.velocity = mu.rb.velocity.normalized * speed
+                --end
+                mu.rb.velocity = UE.Vector3.Lerp(mu.rb.velocity, self.targetMu.rb.velocity, self.muFollowLerpValue)
+            end
+        end
+    end
+end
+
+function SpearReturn:IsPush()
+    return self.joint and not IsNullOrDestroyed(self.joint)
+end
+
+function SpearReturn:OnStabEnv(isStabEnter)
+    self.isStabEnv = isStabEnter
+end
+
+function SpearReturn:OnStabExit(si)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+    if IsNullOrDestroyed(pu) or pu.unitType ~= CL.Tagger.Tag.InteractRole then
+      return
+    end
+    self.targetMu = nil
+    self.enemyFc = nil
+    --print("On stabExit ---enemyFc == null")
+    self.stabEnemyInfo = nil
+end
+
+function SpearReturn:OnChargeReady()
+    self:ActiveCall()
+end
+
+function SpearReturn:OnGrab(a, g)
+    self:StopRecallUpdate()
+    
+    self.hand = a.attachedHand
+    if not g then
+        self.isGrabed = false
+        
+        if self.enemyFc and not self.isPushToEnv then
+            self:TryPushToEnv(self.stabAnchor)
+        end
+        --self:TryPushToEnv(self.trans:InverseTransformPoint(self.trans.position + self.trans.forward))
+        
+        if self.isOnline then
+            self.isOwnerLocalPlayer = SafeIsOwnerLocalPlayer(self.host.interact)
+            print("ungrab.character-------:" .. self.hand.character.trans.name)
+        end
+        print("on ungrab-----------------------")
+        
+        self.trails.gameObject:SetActive(true)
+        
+        if self:IsActiveCall() then
+            if not self.isOnline or self.isOwnerLocalPlayer then
+                self:StartRecallUpdate()
+            end
+            
+            self:Throwing()
+            self:BanHands(true)
+        end
+    else
+        if self.isGrabed then
+          return
+        end
+        print("on grab-----------------------frist")
+        self.isGrabed = true
+        
+        self:ResetVals()
+        self:BanHands(false)
+        
+        if not self.isOnline or self.isOwnerLocalPlayer then
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    self.host:ServerRpcFunc("ResetVals")
+                else
+                    self.host:CommandFunc("CmdResetVals", nil, nil, nil, nil)
+                end
+            end
+            if self:IsActiveCall() then
+                if self.returnCount <= 0 then
+                    if self.isOnline then
+                        self.host:ServerRpcFunc("TurnOffGlow")
+                    end
+                    self:TurnOffGlow()
+                    self:DisactiveCall()
+                    --self:StopThrowUpdate()
+                else
+                    --self:StartThrowUpdate()
+                end
+            end
+        end
+    end
+end
+
+--function ReturnSpear:StopThrowUpdate()
+--    CL.Scheduler.RemoveSchedule(self.throwTimeId)
+--end
+--
+--function ReturnSpear:StartThrowUpdate()
+--    self.throwTimeId = CL.Scheduler.Create(self.trans,
+--        function(sche, t, s)
+--            if IsNullOrDestroyed(self.trans) then
+--                sche:Stop()
+--                return
+--            end
+--    
+--
+--            local p = self.hand.inputs[CL.VRTKInputButton.ButtonType.Grip].IsPressed
+--            if self.isPress and not p then
+--                self.isPress = false
+--                self.hand:Ban(true)
+--                sche:Stop()
+--                self:Throwing()
+--                return
+--            end
+--            if not self.isPress and p then
+--                self.isPress = true
+--            end
+--        end
+--    ,0, -1).actionId
+--end
+
+function SpearReturn:Throwing()
+    
+end
+
+function SpearReturn:BanHands(isBan)
+    self.SecondaryHand = self.hand:GetAnotherHand()
+    self.hand:Ban(isBan)
+    self.SecondaryHand:Ban(isBan)
+    print("ban hand------------:" .. tostring(isBan))
+end
+
+function SpearReturn:StopRecallUpdate()
+    CL.Scheduler.RemoveSchedule(self.recallCheckId)
+end
+function SpearReturn:StartRecallUpdate()
+    self.recallCheckId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.trans) then
+                sche:Stop()
+                return
+            end
+            
+            local p = self.hand.inputs[CL.VRTKInputButton.ButtonType.Grip].IsPressed
+            if self.isPress and not p then
+                self.isPress = false 
+            end
+            if not self.isPress and p then
+                if UE.Vector3.Distance(self.host.transform.position, self.hand.transform.position) > 1 then
+                    self.isPress = true
+                    self:DoRecall()
+                    sche:Stop()
+                    return
+                end
+            end
+        end
+    ,0, -1).actionId
+end
+
+function SpearReturn:DoRecall()
+    print(" do recall------------------")
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcFunc("DoRecall")
+    elseif CL.Network.VRNetworkManager.ClientOnline then
+        self.host:CommandFunc("DoRecall", nil, nil, nil, nil)
+        return
+    end
+    
+    self.returnCount = self.returnCount - 1
+    if self.returnCount <= 0 then
+        self:TurnOffGlow()
+    else
+        self:TurnOnGlow()
+    end
+    
+    self.IsRecalling = true
+    if not self:CheckReforge() then
+        self:Calling(0.5)
+        self:IgnoreCollision(true)                
+    end
+end
+
+function SpearReturn:CheckReforge()
+    local so = self.host.interact:GetStabObject()
+    if self.IsStabbed then 
+        if self.isOnline then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.shadowName, 
+            self.host.transform.position, self.host.transform.rotation,
+            false, false, self.host.interact.netId, true, 
+                function(netIb, go)
+                    if IsNullOrDestroyed(go) then
+                        return
+                    end
+                    if not self.targetMu then
+                        return
+                    end
+                    local trig = netIb.ib:GetInteractTrigger()
+                    trig.script:GetSelf():BuildJoint(self.targetMu.rb, self.stabAnchor, self.stabConnectAnchor)
+                end
+            )
+        else
+            local leftSpear = CL.PrefabPool.SpawnPrefab(self.shadowName, CL.InteractTrigger.WeaponPath)
+            leftSpear.transform.position = self.host.transform.position
+            leftSpear.transform.rotation = self.host.transform.rotation
+            if not self.targetMu then
+                return
+            end
+            local ib = CL.PhysicsUnit.GetPhysicsUnitTopDown(leftSpear.transform)
+            local trig = ib:GetInteractTrigger()
+            trig.script:GetSelf():BuildJoint(self.targetMu.rb, self.stabAnchor, self.stabConnectAnchor)
+        end
+        so:BreakAllStab()
+    end
+    
+    
+    if UE.Vector3.Distance(self.host.transform.position, self.hand.transform.position) > self.recallDis then
+        self.host.transform.position = self.hand.transform.position
+        self.host.transform.rotation = self.hand.transform.rotation
+        self.host.interact.rb.velocity = UE.Vector.zero
+        self:Calling(0.01)
+        self:CallBackFromAfar()
+        return true
+    else
+        return false
+    end
+end
+
+function SpearReturn:CallBackFromAfar()
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:ServerRpcFunc("CallBackFromAfar")
+    end
+    
+    self.trails.gameObject:SetActive(false)
+    self.host.interact:PlayAppearEffect()
+    --CL.EffectMgr.Instance:PlayEffect(self.ReforgeSparks, self.host.transform.position, self.host.transform.rotation)
+end
+
+function SpearReturn:IsActiveCall()
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return self.host:GetBoolStateValue("isActive")
+    else
+        return self.isActive
+    end
+end
+
+function SpearReturn:ActiveCall()
+    self.isActive = true
+    if self.isOnline or CL.Network.VRNetworkManager.ServerOnline then
+        self.host:SetBoolStateValue("isActive", true)
+    end
+    self.returnCount = 3
+    self:TurnOnGlow()
+end
+
+function SpearReturn:DisactiveCall()
+    self.isActive = false
+    if self.isOnline or CL.Network.VRNetworkManager.ServerOnline then
+        self.host:SetBoolStateValue("isActive", false)
+    end
+    
+    self.returnCount = 3
+end
+
+function SpearReturn:Calling(time)
+    self.hand:CallAndGrab(self.callAttach, time)
+end
+
+function SpearReturn:IgnoreCollision(isIgnore)
+    print("Ignore collision--------:" .. tostring(isIgnore))
+    for i = 0, self.cols.Length - 1 do
+        self.cols[i].enabled = not isIgnore
+    end
+end
+
+function SpearReturn:ResetVals()
+  self:IgnoreCollision(false)
+  self.trails.gameObject:SetActive(false)
+  self.IsRecalling = false
+  self.IsStabbed = false
+  self.enemyFc = nil
+    print("On ResetVals ---enemyFc == null")
+
+  if self:IsActiveCall() then
+      self:TurnOnGlow()
+  end
+end
+
+function SpearReturn:TurnOnGlow()
+    local mainTipMat = self.mainTipMesh.materials
+    local backTipMat = self.backTipMash.materials
+    mainTipMat[0] = self["activeMat" .. self.returnCount]
+    backTipMat[0] = self["activeMat" .. self.returnCount]
+    if self.returnCount <= 0 then
+        self:TurnOffGlow()
+        return
+    end
+    self.mainTipMesh.materials = mainTipMat
+    self.backTipMash.materials = backTipMat
+    
+    self.host.interact:GetAllRenderers(true)
+end
+
+function SpearReturn:TurnOffGlow()
+  local mainTipMat = self.mainTipMesh.materials
+  local backTipMat = self.backTipMash.materials
+  mainTipMat[0] = self.activeMat0
+  backTipMat[0] = self.activeMat0
+  self.mainTipMesh.materials = mainTipMat
+  self.backTipMash.materials = backTipMat
+
+  self.trails.gameObject:SetActive(false)
+  self.host.interact:GetAllRenderers(true)
+end
+
+function SpearReturn:LastChargeExplode()
+  if not self.host.interact:IsGrabbed() then
+    self.enemyFc.motion:Knockout()
+    self.host.interact.rb.velocity = self.host.interact.rb.velocity * 2
+
+    self.returnCount = 0
+    self.trails.gameObject:SetActive(false)
+
+    --self:StopThrowUpdate()
+    CL.Scheduler.RemoveSchedule(self.recallCheckId)
+    CL.EffectMgr.Instance:PlayEffect(self.explodeChargeName, self.host.transform.position, self.host.transform.rotation)
+    self:ResetVals()
+    self:TurnOffGlow()
+  end
+end
+
+function SpearReturn:IgnoreCollisionsWithCol(col, isIgnore)
+    CL.PhysicsHelper.IgnoreCollisions(col, self.cols, isIgnore)    
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(col)
+        local list_int = CS.System.Collections.Generic.List(CS.System.Int32)
+        local list = list_int()
+        list:Add(key)
+        list:Add(cid)
+        list:Add(isIgnore and 1 or 0)
+    end
+end
+
+function SpearReturn:RpcIgnoreCollisionsWithCol(list)
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(list[1], list[0])
+    CL.PhysicsHelper.IgnoreCollisions(col, self.host.interact:GetCols(), list[2] == 1 and true or false)
+end
+
+return Class(nil, nil, SpearReturn)

@@ -1,0 +1,164 @@
+--luaBehaviour
+local SpikeBase = {
+    lifeTime = 10,
+    }
+
+function SpikeBase:Awake()
+    --self.onStabEnterHandler = function(si)
+    --    
+    --end
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function SpikeBase:RandomSpike()
+    local random = math.random(1, 2)
+    local idx = 1
+    random = math.random(1, 6)
+    while self["spike".. idx] do
+        self["spike".. idx].gameObject:SetActive(idx == random)
+        idx = idx + 1
+    end
+    
+    idx = 1
+    random = math.random(1, 6)
+    while self["fracture".. idx] do
+        self["fracture".. idx].gameObject:SetActive(idx == random)
+        idx = idx + 1
+    end
+end
+
+function SpikeBase:StartLifeCircle()
+    self:StopLifeCircle()
+    self.lifeCircleId = CL.Scheduler.Create(self.host.interact, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpikeBase:StopLifeCircle()
+    CL.Scheduler.RemoveSchedule(self.lifeCircleId)
+    self.lifeCircleId = nil
+end
+
+
+function SpikeBase:OnEnable()
+    self:StartLifeCircle()
+    
+    
+    --local so = self.host.interact:GetStabObject()
+    --if so ~= nil then
+    --    so:StabEnterEvent("+", self.onStabEnterHandler)
+    --end
+end
+
+function SpikeBase:OnDisable()
+    self:StopLifeCircle()
+    
+    --local so = self.host.interact:GetStabObject()
+    --if so ~= nil then
+    --    so:StabEnterEvent("-", self.onStabEnterHandler)
+    --end
+end
+
+
+function SpikeBase:Update()
+    self:AdjectRotation()
+end
+
+function SpikeBase:AdjectRotation()
+    if not self.disabled then
+       if self.host.interact.rb.velocity.sqrMagnitude > 0.01 then
+           CL.PhysicsFollow.TrackRotation(self.host.interact.rb, UE.Quaternion.LookRotation(self.host.interact.rb.velocity))
+        end
+    end
+end
+
+function SpikeBase:OnPut(owner)
+    self.host.interact:SetLatestHolder(owner.host.interact:GetLatestHolder())
+end
+
+function SpikeBase:InitSpike(go)
+    local trig = go:GetComponent(typeof(CL.InteractTriggerX))
+    local script = trig.script:GetSelf()
+    go.transform.localScale = self:GetShieldHeight() * UE.Vector3.one / 2
+    script.host.interact.rb.velocity = self.shootSpeed * go.transform.forward
+end
+
+function SpikeBase:GetShieldHeight(character)
+    if not self.height then
+        local height = character:GetPlayerHeight()
+        self.height = height * self.perCentOfHeight
+    end
+    return self.height
+end
+
+function SpikeBase:OnShoot(pu)
+    self.disabled = false
+    self.host.interact:MarkThrowAssist(1)
+    
+    self:RandomSpike()
+    self.host.interact:GetCols(true)
+    
+    if pu then
+        CL.FlyObject.CopyWeaponBuffToUnit(pu, self.host.interact)
+    end
+    self.givebackId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            self:GiveBack()
+        end,
+    0, 0, self.lifeTime).actionId
+end
+
+function SpikeBase:OnColliderEnter(collision)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    if self.disabled then
+        return
+    end
+    
+    local hand = CL.InteractHand.GetHandByCollider(collision.collider)
+    if not IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local player = CL.PlayerUnit.GetPhysicsUnit(collision.transform.root)
+    if not IsNullOrDestroyed(player) then
+        if player.unitType == CL.Tagger.Tag.PlayerRole then
+            return
+        end
+    end
+    
+    self.disabled = true
+end
+
+function SpikeBase:OnCancel(owner)
+    self:GiveBack()
+end
+
+function SpikeBase:GiveBack()
+    self.disabled = false
+    self.host.interact:Clear()
+    
+    self:StopLifeCircle()
+    CL.Scheduler.RemoveSchedule(self.givebackId)
+    
+    self:OnResetState()
+    
+    local hitInfoObj = self.host.interact:GetRagdollHitInfoObj()
+    if hitInfoObj then
+        hitInfoObj:ResetState()
+    end
+    if self.isOnline then
+        self.host.interact.networkIB:OnGiveBack()
+    end
+    CL.PrefabPool.GiveBack(self.host.interact.gameObject)
+end
+
+function SpikeBase:OnResetState()
+
+end
+
+return Class(nil, nil, SpikeBase)

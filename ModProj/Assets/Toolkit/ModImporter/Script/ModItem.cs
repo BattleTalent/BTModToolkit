@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using System.IO;
+﻿using UnityEngine;
 using UnityEngine.UI;
 namespace CrossLink
 {
@@ -14,28 +11,20 @@ namespace CrossLink
         private ModInfo modInfo;
 
         private int scpIdx = 0;
-        private int maxCount = -1;
+        private int maxCount = 0;
 
         public void SetData(ModInfo info, ModPanel modPanel, int idx)
         {
             modInfo = info;
             mp = modPanel;
-            maxCount = modInfo.scripts.Count;
+            maxCount = modInfo == null || modInfo.scripts == null ? 0 : modInfo.scripts.Count;
 
             itemIdx = idx;
-            name = GetNameFromModPath(modInfo.path);
-            nameText.text = name;
-        }
-
-        string GetNameFromModPath(string path)
-        {
-            int idx = path.LastIndexOf("\\Mods\\");
-            path = path.Substring(idx, path.Length - idx);
-            path = path.Replace("\\Mods\\", "");
-            idx = path.IndexOf("\\");
-            path = path.Substring(0, idx);
-
-            return path;
+            name = ModImporter.GetNameFromModPath(modInfo == null ? null : modInfo.path);
+            if (nameText != null)
+            {
+                nameText.text = name;
+            }
         }
 
         private void ShowScripts()
@@ -48,10 +37,29 @@ namespace CrossLink
 
         public void ShowScriptByIdx(int idx)
         {
+            if (modInfo == null || modInfo.scripts == null)
+            {
+                Debug.LogWarning("ModItem has no mod data, cannot show script.");
+                return;
+            }
+
+            if (idx < 0 || idx >= modInfo.scripts.Count)
+            {
+                Debug.LogWarning("ModItem script index out of range:" + idx);
+                return;
+            }
+
             string path = modInfo.scripts[idx];
             var obj = ResourceMgr.Instantiate(path) as TextAsset;
             if (obj == null)
                 return;
+
+            if (mp == null)
+            {
+                Debug.LogWarning("ModPanel is missing, cannot show script text.");
+                return;
+            }
+
             mp.RefleshScriptText(path, obj.text);
             
             Debug.Log(obj.text);
@@ -88,20 +96,15 @@ namespace CrossLink
         [EasyButtons.Button]
         public void SpawnMods()
         {
-            foreach (string path in modInfo.gos)
+            if (ModImporter.Instance == null)
             {
-                var go = ResourceMgr.Instantiate(path) as GameObject;
-
-                if (go != null)
-                {
-                    go.transform.position = Vector3.zero;
-                }
-                else
-                {
-                    Debug.Log("Spawn fail:" + path);
-                }
+                Debug.LogWarning("ModImporter is missing, cannot spawn prefabs.");
+                return;
             }
 
+            ModImporter.Instance.SpawnMods(modInfo);
+            if (modInfo == null || modInfo.gos == null)
+                return;
 
             ShowScripts();
 
@@ -112,12 +115,21 @@ namespace CrossLink
         private int itemIdx;
         void OnItemClick()
         {
+            if (mp == null)
+            {
+                Debug.LogWarning("ModPanel is missing, cannot select ModItem.");
+                return;
+            }
+
             mp.OnItemSelect(itemIdx);
         }
 
         public void OnSelect(bool isSelect)
         {
-            image.gameObject.SetActive(isSelect);
+            if (image != null)
+            {
+                image.gameObject.SetActive(isSelect);
+            }
         }
 
 
@@ -125,58 +137,14 @@ namespace CrossLink
         [EasyButtons.Button]
         public void SaveAsPrefabs()
         {
-            foreach (string path in modInfo.gos)
+            if (ModImporter.Instance == null)
             {
-                var go = ResourceMgr.Instantiate(path) as GameObject;
+                Debug.LogWarning("ModImporter is missing, cannot save prefabs.");
+                return;
+            }
 
-                if (go != null)
-                {
-                    ScriptHelper.RefleshScripts(go);
-                    CreatePrefabObj(go, ModImporter.Instance.prefabPath + "/" + name);
-                }
-                else
-                {
-                    Debug.Log("Save fail:" + path);
-                }
-            }
-            //GameObject[] gos = SpawnMods();
-            //ModDataMgr.Instance.CacheData(modInfo.path, gos);
-        }
-
-        private void CreatePrefabObj(GameObject obj, string path)
-        {
-            Debug.Log(obj.name + " saved to: " + path);
-#if UNITY_EDITOR
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-            try
-            {
-                SaveScripts(path);
-                UnityEditor.PrefabUtility.SaveAsPrefabAsset(obj, path + "/" + obj.name + ".prefab");
-            }
-            catch (System.Exception e)
-            {
-                //Debug.Log(e);
-            }
-#endif
+            ModImporter.Instance.SaveAsPrefabs(modInfo);
         }
         #endregion
-
-        public void SaveScripts(string exportPath)
-        {
-            string subFolder = "/Script";
-            Directory.CreateDirectory(exportPath + subFolder);
-
-            foreach (string scriptPath in modInfo.scripts)
-            {
-                var obj = ResourceMgr.Instantiate(scriptPath) as TextAsset;
-                if (obj == null)
-                    return;
-                string[] words = scriptPath.Split('/');
-                File.WriteAllText(exportPath + subFolder + "/" + words[words.Length - 1] + ".txt", obj.text);
-            }
-        }
     }
 }

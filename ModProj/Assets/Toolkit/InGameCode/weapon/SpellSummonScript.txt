@@ -1,0 +1,621 @@
+local SpellBase = Require("Weapon/SpellBaseScript")
+
+local DefaultScaleSize = 0.08
+
+local SpellSummon = {
+    checkDis = 0.35,
+    dotValue = 0.3,
+    maxDis = 0.5,
+    maxScale = 1,
+    minScale = 0.2,
+    
+    summonChargeTime = 2,
+}
+
+function SpellSummon:CleanupSummonRuntime(useCloseEffect)
+    self.chargeTimerId = SafeRemoveSchedule(self.chargeTimerId)
+
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.loopSoundInfo)
+    self.loopSoundInfo = nil
+
+    if useCloseEffect then
+        self:CloseChargeEffect(self.eo)
+    elseif self.eo ~= nil and not IsNullOrDestroyed(self.eo) then
+        CL.EffectMgr.Instance:GiveBack(self.eo)
+    end
+
+    self.eo = nil
+end
+
+--[[
+        spawnlogic
+]]
+
+function SpellSummon:Start()
+    self.OnSpawnNetworkIB = function(netId)
+        if self.spawnNetId == netId then
+            self.spawnNetId = -1
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            
+            if IsNullOrDestroyed(self.go) then
+                self.go = netIb.ib
+                if SafeIsOwnerLocalPlayer(self.host.interact) then
+                    self:IgnoreCollisionWithHand(self.go, true)
+                end
+            end
+        end
+    end
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function SpellSummon:OnDestroy()
+    self:CleanupSummonRuntime(false)
+    if CL.Network.VRNetworkManager.ClientOnline and self.OnSpawnNetworkIB then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+    end
+
+    SpellBase.OnDestroy(self)
+end
+
+function SpellSummon:OpenSkill()
+    self:SetHandPose(true)
+    
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    self:StartCharge()
+end
+
+function SpellSummon:StartCharge()
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    local slotHand = self:GetSlotHand()
+    local hIdx = slotHand:GetHandIndex()
+    if not slotHand then
+        return
+    end
+    
+    if self.eo and not IsNullOrDestroyed(self.eo) then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    state:ServerCloseChargeEffect(slotHand.character.networkPlayer.netId)
+                else
+                    state:CommandCloseChargeEffect(slotHand.character.networkPlayer.netId)
+                end
+            end
+        end
+        self:CloseChargeEffect(self.eo)
+    end
+    
+    local otherHand = slotHand:GetAnotherHand()
+    local curScale = DefaultScaleSize
+    self:CloseCharge()
+    
+    local onCondition = false
+    local isSpawn = false
+    local value = nil
+    local actualValue = 0
+    local time = self.summonChargeTime
+    local chargeSpeed = 1/time
+    
+    local hangPos = nil
+    
+    self.chargeTimerId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or IsNullOrDestroyed(slotHand) or IsNullOrDestroyed(otherHand) then
+                sche:Stop()
+                return
+            end
+            --check hand.
+            if not onCondition then
+                if not self:IsAllowSkill() then
+                    self:CloseCharge()
+                    return
+                end
+                
+                if self:CheckHandCondition(slotHand, otherHand, self.checkDis, self.dotValue) then
+                    onCondition = true
+                    
+                    self.eo = self:OnChargeEffect(slotHand, otherHand)
+                    if self.isOnline then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then
+                            if CL.Network.VRNetworkManager.ServerOnline then
+                                state:ServerPlayChargeEffect(slotHand.character.networkPlayer.netId)
+                            else
+                                state:CommandPlayChargeEffect(slotHand.character.networkPlayer.netId)
+                            end
+                        end
+                    end
+                    
+                    self.loopSoundInfo = self.summonSound:PlaySoundInfo()
+                    if self.loopSoundInfo then
+                        self.loopSoundInfo.audio.volume = 0
+                    end
+                    
+                    self:OnCondition()
+                end
+            else
+                value = (slotHand.trans.position - otherHand.trans.position).sqrMagnitude 
+                    / (self.maxDis * self.maxDis)
+                if time > 0 then
+                    time = time - UE.Time.unscaledDeltaTime
+                    if time <= 0 then
+                        if self.summonReadySound then
+                            self.summonReadySound:PlaySound()
+                        end
+                    end
+                    actualValue = value > actualValue and
+                    math.min(actualValue + UE.Time.unscaledDeltaTime * chargeSpeed, value) or
+                    UE.Mathf.Lerp(actualValue, value, 0.3)
+                else
+                    actualValue = value
+                end
+                hangPos = self:GetHangPos(slotHand, otherHand)
+                
+                
+                if not isSpawn then
+                    self:UpdateChargeEffect(self.eo, hIdx, hangPos, actualValue)
+                    
+                    if actualValue >= 1 then
+                        if self.isOnline then
+                            local state = GetNetworkIBState(self)
+                            if state ~= nil then
+                                if CL.Network.VRNetworkManager.ServerOnline then
+                                    state:ServerReadySpawn(slotHand.character.networkPlayer.netId)
+                                else
+                                    state:CommandReadySpawn(slotHand.character.networkPlayer.netId)
+                                end
+                            end
+                        else
+                            self:SpawnObj(hangPos, slotHand, otherHand)
+                        end
+                        self:CloseChargeEffect(self.eo, self.loopSoundInfo)
+                        
+                        self.eo = nil
+                        
+                        isSpawn = true
+                    end
+                else
+                    if not IsNullOrDestroyed(self.go) then
+                        if self.isOnline then
+                            if CL.Network.VRNetworkManager.ClientOnline then
+                                self.go.networkIB.networkRB.enabled = false
+                            end
+                        end
+                        self:RefleshObj(self.go, hangPos, slotHand, otherHand)
+                    end
+                end
+            end
+            
+        end
+    , 0, -1).actionId
+end
+
+function SpellSummon:CloseSkill()
+    self.isInitIB = false
+    
+    self:CloseCharge()
+    self:CloseChargeEffect(self.eo, self.loopSoundInfo)
+    self.eo = nil
+    self.loopSoundInfo = nil
+    
+    self:LaunchObj(self.go)
+    self.go = nil
+    
+    self:SetHandPose(false)
+end
+
+function SpellSummon:CancelSkill()
+    self:CloseCharge()
+    self:CloseChargeEffect(self.eo, self.loopSoundInfo)
+    self.eo = nil
+    self.loopSoundInfo = nil
+end
+
+function SpellSummon:CloseCharge()
+    self.chargeTimerId = SafeRemoveSchedule(self.chargeTimerId)
+end
+
+function SpellSummon:CancelGo()
+    local go = self.go
+    local it = go.trans:GetComponent(typeof(CL.InteractTrigger))
+    
+    CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(go)
+                or IsNullOrDestroyed(go.rb) or IsNullOrDestroyed(it) then
+                sche:Stop()
+                return
+            end
+            it.skillChangeColors = nil
+            self:EnableCols(go:GetCols(), true)
+            go.rb.useGravity = true
+            go:Dead()
+        end
+    , 0, 0, 0.25)
+end
+
+
+function SpellSummon:OnChargeEffect(slotHand, otherHand)
+    local pos = self:GetHangPos(slotHand, otherHand)
+    local nid = self.isOnline and CL.EffectMgr.GetEffectObjNetId() or -1
+    return CL.EffectMgr.Instance:PlayEffect(self.summonEffect, pos, self.host.interact.trans.rotation, nid)
+end
+
+function SpellSummon:NetworkPlayChargeEffect(netId)
+    local slotHand = self:GetSlotHand()
+    local hIdx = slotHand:GetHandIndex()
+    if not slotHand then
+        return
+    end
+    
+    if CL.InteractCharacter.PlayerInstance.networkPlayer.netId == netId then
+        return
+    end
+    
+    local otherHand = slotHand:GetAnotherHand()
+    local hangPos = self:GetHangPos(slotHand, otherHand)
+    self.eo = CL.EffectMgr.Instance:PlayEffect(self.summonEffect, hangPos, self.host.interact.trans.rotation)
+    
+    self.loopSoundInfo = self.summonSound:PlaySoundInfo()
+    if self.loopSoundInfo then
+        self.loopSoundInfo.audio.volume = 0
+    end
+    
+    self.chargeTimerId = SafeRemoveSchedule(self.chargeTimerId)
+    
+    local value = nil
+    local actualValue = 0
+    local time = self.summonChargeTime
+    local chargeSpeed = 1/time
+    
+    self.chargeTimerId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact)
+                or IsNullOrDestroyed(slotHand) or IsNullOrDestroyed(otherHand) then
+                sche:Stop()
+                return
+            end
+            value = (slotHand.trans.position - otherHand.trans.position).sqrMagnitude 
+                / (self.maxDis * self.maxDis)
+            if time > 0 then
+                time = time - UE.Time.unscaledDeltaTime
+                actualValue = value > actualValue and
+                math.min(actualValue + UE.Time.unscaledDeltaTime * chargeSpeed, value) or
+                UE.Mathf.Lerp(actualValue, value, 0.3)
+            else
+                actualValue = value
+            end
+            
+            hangPos = self:GetHangPos(slotHand, otherHand)
+
+            if IsNullOrDestroyed(self.go) then
+                if not IsNullOrDestroyed(self.eo) then
+                    self:UpdateChargeEffect(self.eo, hIdx, hangPos, actualValue)
+                end
+            else
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    self:RefleshObj(self.go, hangPos, slotHand, otherHand)
+                end
+            end
+        end
+    , 0, -1).actionId
+end
+
+
+function SpellSummon:UpdateChargeEffect(eo, idx, pos, value)
+    --update charge effect scale and position
+    eo.trans.position = UE.Vector3.Lerp(eo.trans.position, pos, 0.5)
+    
+    local vec = eo.trans.position - pos
+    if (vec).sqrMagnitude > 0.0025 then
+        eo.trans.position = pos + vec.normalized * 0.05
+    end
+
+    eo.trans.localScale = UE.Vector3.one * value * 1.5
+    
+    eo.trans:Rotate(0,  (idx == 0 and -3 or 3) * value, 0, UE.Space.World)
+    --effect
+    
+    if self.loopSoundInfo then
+        self.loopSoundInfo.audio.volume = 0.3 * value
+    end
+end
+
+function SpellSummon:CloseChargeEffect(eo, soundInfo)
+    if IsNullOrDestroyed(eo) then
+        return
+    end
+    local time = 0.3
+    local scale = eo.trans.localScale
+    local volume = soundInfo and soundInfo.audio.volume or 0
+    CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then
+                sche:Stop()
+                return
+            end
+            if not IsNullOrDestroyed(eo) then
+                eo.trans.localScale = scale *(1 - t/time)
+            end
+        
+            if soundInfo then
+                soundInfo.audio.volume = volume * (1 - t/time)
+            end
+
+            if t >= time then
+                if not IsNullOrDestroyed(eo) then
+                    CL.EffectMgr.Instance:GiveBack(eo)
+                end
+                
+                if soundInfo then
+                    CL.AudioMgr.Instance:GiveBackAndLerpToZero(soundInfo)
+                end
+                sche:Stop()
+            end
+        end
+    , 0, time)
+end
+
+function SpellSummon:UnSlotSpell(slot)
+    self:CleanupSummonRuntime(false)
+    SpellBase.UnSlotSpell(self, slot)
+end
+
+function SpellSummon:NetworkCloseChargeEffect(netId)
+    if CL.InteractCharacter.PlayerInstance.networkPlayer.netId == netId then
+        return
+    end
+    
+    self:CloseChargeEffect(self.eo, self.loopSoundInfo)
+end
+
+function SpellSummon:OnCondition()
+    local slotHand = self:GetSlotHand()
+    if not slotHand then
+        return
+    end
+
+    local otherHand = slotHand:GetAnotherHand()
+    slotHand:HapticPulse(0.5)
+    otherHand:HapticPulse(0.5)
+end
+
+function SpellSummon:PlaySpawnEffect(it)
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, 
+        it.interact.trans.position,it.interact.trans.rotation)
+    return eo
+end
+
+function SpellSummon:StopSpawnEffect(it)
+    if self.spawnEo then
+        CL.EffectMgr.Instance:GiveBack(self.spawnEo)
+        self.spawnEo = nil
+    end
+    
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.iceAudioInfo)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.magicAudioInfo)
+
+    if it and self.normalColor then
+        it:SetWeaponColor(self.normalColor)
+    end
+end
+
+function SpellSummon:NetworkReadySpawn()
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local slotHand = self:GetSlotHand()
+        local hIdx = slotHand:GetHandIndex()
+        if not slotHand then
+            return
+        end
+    
+        local otherHand = slotHand:GetAnotherHand()
+        
+        local hangPos = self:GetHangPos(slotHand, otherHand)
+        
+        self:SpawnObj(hangPos, slotHand, otherHand)
+        
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerCloseChargeEffect(slotHand.character.networkPlayer.netId) end
+    end
+end
+
+function SpellSummon:NetworkOnSpawn(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if not IsNullOrDestroyed(netIb) then
+        if IsNullOrDestroyed(self.go) then
+            self.go = netIb.ib
+            
+            if SafeIsOwnerLocalPlayer(self.host.interact) then
+                self:IgnoreCollisionWithHand(self.go, true)
+            end
+        end
+    else
+        self.spawnNetId = netId
+    end
+end
+
+function SpellSummon:SpawnObj(pos, slotHand, otherHand)
+    local rot = UE.Quaternion.LookRotation(otherHand.trans.position -
+        slotHand.trans.position)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(self.objPath, pos, 
+            rot, false, false, 0, true, 
+            function(networkWeapon, weaponGo)
+                if not IsNullOrDestroyed(weaponGo) then
+                    --local ib = CL.PhysicsUnit.GetPhysicsUnit(weaponGo.transform)
+                    --if ib then
+                    --    self.host.interact.networkIB.networkIBState:ServerInitIB(ib)
+                    --end
+                    
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerOnSpawn(networkWeapon.netId) end
+                    
+                    self:InitObj(weaponGo)
+                end
+            end)
+        end
+        return
+    else
+        local go = CL.ResourceMgr.Instantiate(CL.StringCache.GetString(self.objPath, CL.InteractTrigger.WeaponPath))
+        go.transform.rotation = UE.Quaternion.LookRotation(otherHand.trans.position -
+        slotHand.trans.position)
+        go.transform.position = pos
+        
+        self:InitObj(go)
+    end
+end
+
+function SpellSummon:InitObj(go)
+    local ib = go:GetComponent(typeof(CL.InteractWeapon))
+    ib.rb.useGravity = false
+    
+    self:IgnoreCollisionWithHand(ib, true)
+    
+    self.go = ib
+    
+    self.isInitIB = true
+    
+    local it = self.go.trans:GetComponent(typeof(CL.InteractTrigger))
+    self:PlaySpawnEffect(it)
+end
+
+function SpellSummon:IgnoreCollisionWithHand(ib, ignore)
+    local slotHand = self:GetSlotHand()
+    if slotHand then
+    local otherHand = slotHand:GetAnotherHand()
+        CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), slotHand.physicsHand.colliders, ignore)
+        CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), otherHand.physicsHand.colliders, ignore)
+    end
+    CL.PhysicsHelper.IgnoreCollisions(ib:GetCols(), self.host.interact:GetCols(), ignore)
+end
+
+function SpellSummon:NetworkInitIB(ib) --unsafe
+    self:InitObj(ib.gameObject)
+end
+
+function SpellSummon:EnableCols(cols, enable)
+    for i = 0, cols.Length - 1 do
+        cols[i].enabled = enable
+        cols[i].isTrigger = not enable
+    end
+end
+
+function SpellSummon:CalCurScale(slotHand, otherHand)
+    local dis = UE.Vector3.Distance(slotHand.trans.position, otherHand.trans.position)
+    local scale = (dis - self.checkDis)/(self.maxDis - self.checkDis) * (self.maxScale - self.minScale) + self.minScale
+
+    scale = scale > self.maxScale and self.maxScale or scale
+    return scale
+end
+
+function SpellSummon:GetHangPos(slotHand, otherHand)
+    return (slotHand.trans.position + otherHand.trans.position) / 2
+end
+
+function SpellSummon:RefleshObj(ib, pos, slotHand, otherHand)
+    if not ib or IsNullOrDestroyed(ib) then
+        return
+    end
+    local center = self:GetHangPos(slotHand, otherHand)
+    
+    local vec = nil
+    local dir = nil
+    local dis = nil
+    
+    --self.testPoint.position = pos
+    
+    vec = pos - ib.trans.position
+    dis = vec.magnitude
+    dir = vec.normalized
+    vec = dir * dis/5 + ib.trans.position
+    
+    --self.testPoint2.position = vec
+    CL.PhysicsFollow.TrackPosition(ib.rb, vec, 0.5, dis/10)
+    CL.PhysicsFollow.TrackRotation(ib.rb, UE.Quaternion.LookRotation(otherHand.trans.position -
+        slotHand.trans.position), 10)
+end
+
+function SpellSummon:LaunchObj(go)
+    if go == nil or IsNullOrDestroyed(go) then
+        return
+    end
+    --self:EnableCols(go:GetCols(), true)
+    
+    local it = go.trans:GetComponent(typeof(CL.InteractTrigger))
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnLaunchObj(go) end
+        end
+    end
+    self:OnLaunchObj(go)
+end
+
+function SpellSummon:OnLaunchObj(ib)
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        self:IgnoreCollisionWithHand(ib, false)
+        ib.networkIB.networkRB.enabled = true
+    end
+    
+    ib.rb.useGravity = true
+end
+
+function SpellSummon:IsAllowSkill()
+    --Both hands must be free
+    local h = self:GetSlotHand()
+    if not h or IsNullOrDestroyed(h) then
+        return false
+    end
+    
+    if h.attachTo then
+        return false
+    end
+    
+    local ah = h:GetAnotherHand()
+    if ah.attachTo then
+        return false
+    end
+    
+    return true
+end
+
+function SpellSummon:CheckHandCondition(slotHand, otherHand, dis, dotValue)
+    local vec = slotHand.trans.position - otherHand.trans.position
+    if dis then
+        --check dis
+        if vec.sqrMagnitude > dis * dis then
+            return false
+        end
+    end
+    
+    if dotValue then
+        local dir = vec.normalized
+        if UE.Vector3.Dot(slotHand:GetPalmDir(), dir) > -dotValue then
+            return false
+        end
+        --check dir
+        if UE.Vector3.Dot(-dir, otherHand:GetPalmDir()) > -dotValue then
+            return false
+        end
+    end
+    return true
+end
+
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellSummon)

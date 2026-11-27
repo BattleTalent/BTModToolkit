@@ -1,0 +1,475 @@
+local BowRepeating = {
+    arrowNum = 5,
+    perAngle = 10,
+    ignoreWeaponColActIdList = {},
+    }
+
+function BowRepeating:Start()
+    self.pullerScript.gameObject:SetActive(false)
+    self.puller = self.pullerScript:GetSelf()
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    local num = self.host.interact:IsEnhance() and self.enhanceArrowNum or self.arrowNum
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetIds[netId] then
+            self.initNetIds[netId] = nil
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            self:EnchantArrowIB(netIb.ib)
+            self:IgnoreArrowCollision(netIb.ib, true)
+            self:OnReleaseClientAfterGen(netIb.ib)
+        end
+    end
+    
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function BowRepeating:OnPut(a)
+    local hand = self.puller:GetPullingHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local isOtherWeapon = true
+    if not self.putedWeapon or #self.putedWeapon < 1 then
+        self.putedWeapon, self.putedArrow = self:SpawnArrow()
+        for k, v in ipairs(self.putedArrow) do
+            self:EnchantArrowIB(v.ib)
+        end
+    else
+        isOtherWeapon = false
+    end
+    
+    self:PutWeapon(a, isOtherWeapon)
+end
+
+function BowRepeating:OnPutArrow(attach)
+    self.putedArrow = self:SpawnArrow()
+    for k, v in ipairs(self.putedArrow) do
+        self:ClearArrowStabObject(v.ib)
+        self:EnchantArrowIB(v.ib)
+    end
+    self:PutArrow(attach)
+end
+
+function BowRepeating:OnPutWeapon(weapon,attach)
+    self.putedWeapon = {}
+    self.putedWeapon[1] = weapon
+    self:PutWeapon(attach)
+end
+
+function BowRepeating:PutInteractBase(ib)
+    self:IgnoreArrowCollision(ib, true)
+    self:ArrowColsEnable(ib, false)
+    ib:SetKinematic(true)
+    --self:ClientExecute(function ()
+        self:SwitchInteractBaseNetwork(ib,false)
+    --end)
+end
+
+function BowRepeating:PutArrow(attach)
+    for i = 1, #self.putedArrow do
+        self:PutInteractBase(self.putedArrow[i].ib,attach)
+        self.putedArrow[i]:OnPut(self)
+        self:SetArrowOnShootPos(self.putedArrow[i].ib, attach, #self.putedArrow, i)
+    end
+    
+    self:ClearIgnoreColSche()
+    self.lastReleaseWeapon = nil
+end
+
+function BowRepeating:PutWeapon(attach)
+    if self.putedWeapon then
+        for i = 1, #self.putedWeapon do
+            local s = self.putedWeapon[i]:GetComponent(typeof(CL.Scabbard))
+            local su = self.putedWeapon[i]:GetComponent(typeof(CL.ScabbardUser))
+            if not IsNullOrDestroyed(s) and s:IsConnect() then
+                s:LocalDisconnectWithOther()
+            end
+            if not IsNullOrDestroyed(su) and su:IsConnect() then
+                su:LocalDisconnectWithOther()
+                if not su.IsScabbardUserGrabbed then
+                    self.putedWeapon[i] = su.Scabbard.ib
+                end
+            end
+
+            self:ProtectArrowStabObj(self.putedWeapon[i])
+        
+            self:SetArrowOnShootPos(self.putedWeapon[i], attach, #self.putedWeapon, i)
+            self:PutInteractBase(self.putedWeapon[i])
+        end
+    end
+
+    if self.putedWeapon[1] and not IsNullOrDestroyed(self.putedWeapon[1]) then
+        local interactTrigger = self.putedWeapon[1]:GetComponent(typeof(CL.InteractTriggerX))
+        if interactTrigger then
+            if interactTrigger.script:GetScriptName() == "Weapon/BowTransformScript" then
+                local script = interactTrigger.script:GetSelf()
+                if script and not script.isTransform then
+                    self.putedWeapon[1].transform.right = -self.puller.trans.forward
+                end
+            end
+        end
+    end
+    
+    self:ClearIgnoreColSche()
+    self.lastReleaseWeapon = nil
+end
+
+function BowRepeating:ClearIgnoreColSche()
+    for i = 1,#self.ignoreWeaponColActIdList do
+        CL.Scheduler.RemoveSchedule(self.ignoreWeaponColActIdList[i])
+    end
+    self.ignoreWeaponColActIdList = {}
+end
+
+function BowRepeating:SpawnArrow()
+    local putedArrow = {}
+    
+    local arrow = nil
+    local num = self.host.interact:IsEnhance() and self.enhanceArrowNum or self.arrowNum
+    for i = 1, num do
+        arrow = self.__base.SpawnArrow(self)
+        putedArrow[i] = arrow
+    end
+    return putedArrow
+end
+
+function BowRepeating:SetArrowOnShootPos(arrow, a, count, idx)
+    arrow.transform.parent = a.transform
+    arrow.transform.localPosition = UE.Vector3.zero
+    
+    local holdHand = self.host.interact:GetPrimaryHand() or self.host.interact:GetSecondaryHand()
+    if IsNullOrDestroyed(holdHand) then
+        return
+    end
+    local palmDir = holdHand:GetPalmDir()
+    arrow.transform.position = arrow.transform.position + palmDir * -0.025
+    
+    arrow.transform.rotation = self.puller.trans.rotation
+    
+    if count > 1 then
+        local total = (count - 1) * self.perAngle
+        local curAngle = -total/2 + (idx - 1) * self.perAngle
+        arrow.transform.localRotation = UE.Quaternion.Euler(UE.Vector3(0, -90 + curAngle, 90))
+    end
+end
+
+function BowRepeating:GetSpawnArrowTransData(arrowIb,index)
+    if self.useNetworkShootData then
+        return self.weaponPositionFromNetwork[index],self.weaponRotationFromNetwork[index]
+    end
+    return arrowIb.trans.position,arrowIb.trans.rotation
+end
+
+function BowRepeating:OnReleaseServer(attach,shootFactor)
+    if self.putedArrow then
+        self.netSpawnWeapon = {}
+        self.netSpawnArrow = {}
+
+        local positionCache = {}
+        local rotationCache = {}
+
+        for i = 1, #self.putedArrow do
+            positionCache[#positionCache+1], rotationCache[#rotationCache+1] = self:GetSpawnArrowTransData(self.putedArrow[i].ib,i)
+        end
+        local num = #self.putedArrow 
+        for i = 1, #self.putedArrow do
+            if CL.Network.NetworkRoomMgr.IsInPvpMode then
+                self.count = self.count + 1
+                self.putedArrow[i].ib.gameObject.name = self.host.interact.trans.name .. "_Arrow" .. self.count
+                
+                self.netSpawnWeapon[#self.netSpawnWeapon + 1] = self.putedArrow[i].ib
+                self.netSpawnArrow[#self.netSpawnArrow + 1] = self.putedArrow[i]
+                
+                self:ClearArrowStabObject(self.putedArrow[i].ib)
+                self:SetIBLastHolder(self.putedArrow[i].ib)
+                self.putedArrow[i].ib:MarkThrowAssist(1)
+                self:IgnoreArrowCollision(self.putedArrow[i].ib, true)
+                
+                if #self.netSpawnArrow >= num then
+                    self:OnReleaseServerAfterGen(nil, nil)
+                end
+                --self.host.interact.networkIB.networkIBState:ServerSpawnArrow(netIb.netId)
+            else
+                CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(
+                    self.arrowPrefab, 
+                    positionCache[i], rotationCache[i],
+                    false, false, self.host.interact.netId, true, 
+                    function(netIb, go)
+                        if IsNullOrDestroyed(go) then
+                            return
+                        end
+                        
+                        local arrow = go:GetComponent(typeof(CL.LuaBehaviour)).script.self
+                        self.count = self.count + 1
+                        go.name = self.host.interact.trans.name .. "_Arrow" .. self.count
+                        
+                        self.netSpawnWeapon[#self.netSpawnWeapon + 1] = netIb.ib
+                        self.netSpawnArrow[#self.netSpawnArrow + 1] = arrow
+                        
+                        self:ClearArrowStabObject(netIb.ib)
+                        self:SetIBLastHolder(netIb.ib)
+                        netIb.ib:MarkThrowAssist(1)
+                        self:IgnoreArrowCollision(netIb.ib, true)
+                        
+                        if #self.netSpawnArrow >= num then
+                            self:OnReleaseServerAfterGen(netIb,go)
+                        end
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerSpawnArrow(netIb.netId) end
+                    end
+                )
+            end
+        end
+    end
+    if self.putedWeapon and self.putedWeapon[1] and not IsNullOrDestroyed(self.putedWeapon[1]) then
+        self:SwitchInteractBaseNetwork(self.putedWeapon[1],true)
+        self:OnReleaseLocal(self.putedWeapon,self.putedArrow)
+    end
+end
+
+function BowRepeating:OnReleaseServerAfterGen(netIb,go)
+    if self.netSpawnArrow then
+        for i = 1, #self.netSpawnArrow do
+            self:EnchantArrowIB(self.netSpawnArrow[i].ib)
+        end
+    end
+    self:OnReleaseLocal(self.putedWeapon,self.netSpawnArrow)
+end
+
+function BowRepeating:OnReleaseClient(attach,shootFactor)
+    if self.putedWeapon and #self.putedWeapon > 0 then
+        for i = 1, #self.putedWeapon do
+            print(self.putedWeapon[i])
+            self.putedWeapon[i].transform.parent = nil
+            local dir = #self.putedWeapon == 1 and self.puller.trans.forward or self.putedWeapon[i].trans.forward
+            self:RecordReleaseWeaponData(dir * self.shootWeaponSpeed,self.putedWeapon[i].trans.position,self.putedWeapon[i].trans.rotation)
+            
+            self.putedWeapon[i]:SetKinematic(false)
+            self:ArrowColsEnable(self.putedWeapon[i], true)
+            self:SwitchInteractBaseNetwork(self.putedWeapon[i],true)
+        end
+        self.putedWeapon = nil
+    end
+
+    if self.putedArrow then
+        for i = 1, #self.putedArrow do
+            self.putedArrow[i].ib.trans.parent = nil
+            local dir = self.putedArrow[i].ib.trans.forward
+            self:RecordReleaseWeaponData(dir * self.shootWeaponSpeed,self.putedArrow[i].ib.trans.position,self.putedArrow[i].ib.trans.rotation)
+        end
+    end
+end
+
+function BowRepeating:OnReleaseClientAfterGen(ib)
+    if IsNullOrDestroyed(ib) then
+        return
+    end
+
+    ib.transform.parent = nil
+    ib:SetKinematic(false)
+    self:ArrowColsEnable(ib, true)
+
+    ib:SetHolderCollision(self.holdingCharacter, true, true, true, true)
+    ib:SetHolderCollision(self.holdingCharacter, true, true, true, false, 0.5)
+    
+    self.lastReleaseWeapon = ib
+    local ignoreWeapon = ib
+    self.ignoreWeaponColActIdList[#self.ignoreWeaponColActIdList+1] = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact) or IsNullOrDestroyed(ignoreWeapon) then
+                sche:Stop()
+                return
+            end
+            CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), ignoreWeapon:GetCols(), false)
+            --CL.InteractCharacter.AIPlayerInstance.ra:SetCollisionIgnoreWith(ignoreWeapon:GetCols(), false)
+        end,
+    0, 0, 0.5).actionId
+    ib:MarkThrowAssist(1)
+    self:SetIBLastHolder(ib)
+end
+
+function BowRepeating:OnReleaseEnd()
+    if self.putedWeapon and #self.putedWeapon > 0 then
+        for i = 1, #self.putedWeapon do
+            self.putedWeapon[i].transform.parent = nil
+            self.putedWeapon[i]:SetKinematic(false)
+            self:ArrowColsEnable(self.putedWeapon[i], true)
+            self:SwitchInteractBaseNetwork(self.putedWeapon[i],true)
+        end
+        self.putedWeapon = nil
+    end
+    
+    if not CL.Network.NetworkRoomMgr.IsInPvpMode and self.putedArrow then
+        for i = 1, #self.putedArrow do
+            self.putedArrow[i].ib:SetKinematic(false)
+            self:ArrowColsEnable(self.putedArrow[i].ib,true)
+            if self.isOnline then
+                if CL.Network.NetworkRoomMgr.IsInPvpMode then
+                    self.putedArrow[i]:DoGiveBack()
+                else
+                    self.putedArrow[i]:ResetArrow()
+                    self:PushToArrowPool(self.putedArrow[i])
+                end
+            end
+        end
+        self.putedArrow = nil
+    end
+end
+
+function BowRepeating:OnReleaseInteractBase(ib,getDirectionFunc)
+    if IsNullOrDestroyed(ib) then
+        return
+    end
+
+    ib.transform.parent = nil
+    ib:SetKinematic(false)
+    self:ArrowColsEnable(ib, true)
+
+    self:OnShootWeapon(ib,getDirectionFunc)
+    
+    ib:SetHolderCollision(self.holdingCharacter, true, true, true, true)
+    ib:SetHolderCollision(self.holdingCharacter, true, true, true, false, 0.5)
+    
+    self.lastReleaseWeapon = ib
+    local ignoreWeapon = ib
+    self.ignoreWeaponColActIdList[#self.ignoreWeaponColActIdList+1] = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.interact) or IsNullOrDestroyed(ignoreWeapon) then
+                sche:Stop()
+                return
+            end
+            CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), ignoreWeapon:GetCols(), false)
+            --CL.InteractCharacter.AIPlayerInstance.ra:SetCollisionIgnoreWith(ignoreWeapon:GetCols(), false)
+        end,
+    0, 0, 0.5).actionId
+    ib:MarkThrowAssist(1)
+    self:SetIBLastHolder(ib)
+end
+
+function BowRepeating:OnReleaseLocal(putedWeapon,putedArrow)
+    if putedWeapon and #putedWeapon > 0 then
+        for i = 1, #putedWeapon do
+            self:OnReleaseInteractBase(putedWeapon[i], function (ib)
+                return self.puller.trans.forward
+            end)
+            self:WeaponDrop(putedWeapon[i])
+        end
+    end
+    
+    if putedArrow then
+        for i = 1, #putedArrow do
+            if putedArrow[i] and not IsNullOrDestroyed(putedArrow[i].ib) then
+                self:OnReleaseInteractBase(putedArrow[i].ib, function (ib)
+                    return ib.trans.forward
+                end)
+                self:ShootArrow(putedArrow[i])
+                self.host.interact:CostDurability()
+                
+                if putedArrow[i].ib:IsOnEnchant() then
+                    self.host.interact:EnchantSkillCountUpdate()
+                end
+            end
+        end
+    end
+    self:ClearNetworkShootData()
+end
+
+function BowRepeating:OnEnchantStart()
+    if self.putedArrow then
+        for i = 1, #self.putedArrow do
+            self:EnchantArrowIB(self.putedArrow[i].ib)        
+        end
+    end
+end
+
+function BowRepeating:OnEnchantEnd()
+    if self.putedArrow then
+        for i = 1, #self.putedArrow do
+            self.putedArrow[i].ib:EnchantEnd()
+        end
+    end
+end
+
+function BowRepeating:OnPulling()
+    if self.putedArrow then
+        if not self.host.interact:IsOnEnchant() then
+            return
+        end
+        for i = 1, #self.putedArrow do
+            if self.putedArrow[i].ib:IsEnchantble() and not self.putedArrow[i].ib:IsOnEnchant() then
+                self:EnchantArrowIB(self.putedArrow[i].ib)
+            end
+        end
+    end
+end
+
+function BowRepeating:OnCancel()
+    if self.putedWeapon and #self.putedWeapon > 0 then
+        for i = 1, #self.putedWeapon do
+            self.putedWeapon[i].transform.parent = nil
+            self.putedWeapon[i]:SetKinematic(false)
+            self:ArrowColsEnable(self.putedWeapon[i], true)
+            
+            self:IgnoreArrowCollision(self.putedWeapon[i], false)
+            
+            if not self.putedArrow or not self.putedArrow[i] then
+                self.putedWeapon[i]:OnDrop(true)
+            end
+        end
+        
+        self.putedWeapon = nil
+    end
+    
+    if self.putedArrow then
+        for i = 1, #self.putedArrow do
+            if self.putedArrow[i] and not IsNullOrDestroyed(self.putedArrow[i].ib) then
+                if self.isOnline then
+                    if CL.Network.NetworkRoomMgr.IsInPvpMode then
+                        self.putedArrow[i]:DoGiveBack()
+                    else
+                        self.putedArrow[i]:ResetArrow()
+                        self:PushToArrowPool(self.putedArrow[i])
+                    end
+                else
+                    self:ResetArrow(self.putedArrow[i])
+                end
+            end
+        end
+        self.putedArrow = nil
+    end
+end
+
+function BowRepeating:OnShootWeapon(weapon,getDirectionFunc)
+    if not self.useNetworkShootData then
+        local dir = getDirectionFunc(weapon)
+        local force = dir * self.shootWeaponSpeed
+        local stab = weapon:GetStabObject()
+        
+        if not IsNullOrDestroyed(stab) then
+            stab:AddStabTargetForce(force)
+        end
+        weapon.rb.velocity = force
+    else
+        weapon.rb.velocity = self.weaponVelocityFromNetwork[self.weaponListIndexFromNetwork]
+        weapon.trans.position = self.weaponPositionFromNetwork[self.weaponListIndexFromNetwork]
+        weapon.trans.rotation = self.weaponRotationFromNetwork[self.weaponListIndexFromNetwork]
+        self.weaponListIndexFromNetwork = self.weaponListIndexFromNetwork + 1
+    end
+end
+
+--------------------------------------------------------------------Network Functions--------------------------------------------------------------------
+function BowRepeating:NetworkLocalOnPutArrow(arrowib) -- override from BowBase
+
+end
+
+return Class(Require("Weapon/BowBaseScript"), nil, BowRepeating)

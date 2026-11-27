@@ -1,0 +1,652 @@
+local particleCurve = UE.ParticleSystem.MinMaxCurve(1)
+
+
+local ShieldOfEarth = {
+    flyDis = 0.04,
+    
+    maxSpeed = 50,
+    sqrHandSpeed = 5,
+    
+    brokenSpeed = 500,
+    brustEffect = "ShieldOfEarthExplode",
+    
+    brokenEffect = "ShieldOfEarthBroken",
+    
+    effectInteval = 0.2,
+    lastEffectTime = 0,
+    showEffectSpeed = 2,
+    maxEffectSpeed = 6,
+    maxEffectIntensity = 5,
+    addForceIntensity = 7,
+    
+    endPos = nil,
+    
+    lerpValue = 0.04,
+    
+    radius = 0.15,
+    
+    leftTime = 2,
+    
+    perCentOfHeight = 0.885,
+    
+    spikeTrans = {},
+    
+    groundCols = {},
+    rayLayer = UE.LayerMask.GetMask(
+        --UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value),
+        --UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value),
+        UE.LayerMask.LayerToName(CL.LayerDefine.EnvOnlyLayer.value)),
+    
+    pushFc = {},
+}
+
+function ShieldOfEarth:Awake()
+    local idx = 1
+    local node = nil
+    local childCount = 0
+    while self["group" .. idx] do
+        childCount = self["group"..idx].childCount
+        for i = 0, childCount - 1 do
+            node = self["group"..idx]:GetChild(i)
+            table.insert(self.spikeTrans, node)
+        end
+        idx = idx + 1
+    end
+    
+    local so = self.host.interact:GetStabObject()
+    
+    self.onStabEnterHandler = function(si)
+        CL.Scheduler.RemoveSchedule(self.stabActId)
+        self.stabActId = CL.Scheduler.Create(self.host.interact.trans,
+            function(sche, t, s)
+                if not si then
+                    return
+                end
+                
+                local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+                if pu then
+                    local cols = pu:GetCols()
+                    CL.PhysicsHelper.IgnoreCollisions(self.obstaclesCol, cols, false)
+                    
+                    if pu.unitType == CL.Tagger.Tag.InteractRole then
+                        if pu.reactAnim.pendants then
+                            local fCols = nil
+                            for i = 0, pu.reactAnim.pendants.Count - 1 do
+                                fCols = pu.reactAnim.pendants[i].ib:GetCols()
+                                CL.PhysicsHelper.IgnoreCollisions(self.obstaclesCol, fCols, false)
+                            end
+                        end
+                    end
+                end
+            end,
+        0, 0, 0)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    end
+    if so ~= nil then
+        so:StabEnterEvent("+", self.onStabEnterHandler)
+    end
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function ShieldOfEarth:StartFollow(character, startPos)
+    self.character = character
+    local targetPos = self:GetTargetPos(character)
+    local targetRot = character.transform.rotation
+    
+    self.obstaclesCols = {}
+    self:IgnoreCollisionWithObstacles(targetPos, startPos)
+    
+    local soundInfo = self.raiseSound:PlaySoundInfo()
+    if soundInfo then
+        soundInfo.ao.trans:SetParent(self.trans)
+    end
+    
+    self.spawnEo = CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, startPos, self.trans.rotation)
+    self.spawnEo.trans:SetParent(self.trans)
+    self.spawnEo.trans.localPosition = UE.Vector3.zero
+    
+    
+    local checkInterval = 0.2
+    local nextCheckTime = 0
+    local dis = 0
+    
+    local protectedTime = 0
+    self.followActId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.trans) then
+                if self.isOnline then
+                    if CL.Network.VRNetworkManager.Instance.IsServer then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerStopFollow(false) end
+                    end
+                else
+                    self:StopFollow()
+                end
+                return
+            end
+            
+            if IsNullOrDestroyed(character) then
+                return
+            end
+            if self.endTime and UE.Time.time > self.endTime then
+                if self.isOnline then
+                    if CL.Network.VRNetworkManager.Instance.IsServer then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerStopFollow(true) end
+                    end
+                else
+                    sche:Stop()
+                    self:OnTimeOut()
+                    self:GiveBack()
+                end
+                return
+            end
+            if self.endPos then
+                targetPos = self.endPos
+            else
+                targetPos = self:GetTargetPos(character)
+            end
+            
+            
+            if self.endRot then
+                targetRot = self.endRot
+            else
+                targetRot = character.transform.rotation
+            end
+            
+            if not self.isReached then
+                self:IgnoreCollisionWithObstacles(targetPos, startPos)
+                
+                dis = math.abs(targetPos.y - self.trans.position.y)
+                
+                if soundInfo then
+                    soundInfo.audio.volume = math.max(dis, 0.9)
+                end
+                if dis < 0.05 then
+                    self.isReached = true
+                    protectedTime = UE.Time.time + 0.3
+                    CL.AudioMgr.Instance:GiveBackAndLerpToZero(soundInfo)
+                    self.spawnEo:Stop()
+                end
+                
+                --if not self.host.interact.rb.isKinematic then
+                --    self:TickFollow(targetPos, targetRot, t)
+                --end
+            else
+                
+                self:IgnoreCollisionWithGround(targetPos)
+                
+                if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+                    if UE.Time.time > protectedTime and  (UE.Vector3.Dot(character.transform.forward, self.trans.forward) < 0.99 or (targetPos - self.trans.position).sqrMagnitude > 1) then
+                        if self.owner then
+                            --print("release-----:" .. UE.Vector3.Dot(character.transform.forward, self.trans.forward) .. " " .. (targetPos - self.trans.position).sqrMagnitude)
+                            self.owner:ReleaseSummonGo()
+                            --self.trans.forward = character.transform.forward
+                            
+                            self.owner = nil
+                        end
+                    end
+                end
+            end
+            
+            self:HandleCollision(targetPos, character)
+            
+            if UE.Time.time > nextCheckTime then
+                self:TryResetCollision(targetPos)
+                nextCheckTime = UE.Time.time + checkInterval
+            end
+            
+            
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ShieldOfEarth:NetworkStopFollow(isTimeOut)
+    self:StopFollow()
+    if isTimeOut then
+        self:OnTimeOut()
+    end
+    self:GiveBack()
+end
+
+
+function ShieldOfEarth:InitState(character, pos, owner, height)
+    self.height = height * self.perCentOfHeight
+    self:AdjectScaleByHeight(self.height)
+    self:InitPosition(pos, self.height)
+    
+    --self.host.interact.rb.constraints = UE.RigidbodyConstraints.FreezeRotationZ
+    
+    self.owner = owner
+    self:StartFollow(character, pos)
+end
+
+function ShieldOfEarth:InitPosition(pos, height)
+    self.trans.position = pos - UE.Vector3.up * height / 2
+end
+
+function ShieldOfEarth:AdjectScaleByHeight(height)
+    self.model.localScale = UE.Vector3.one * height / 2
+end
+
+function ShieldOfEarth:IsReachedTargetPos()
+    return self.isReached
+end
+
+function ShieldOfEarth:GetShieldHeight(character)
+    if not self.height then
+        local height = character.capsuleCollider.height
+        self.height = height * self.perCentOfHeight
+    end
+    return self.height
+end
+
+function ShieldOfEarth:GetShieldWidth()
+    if not self.width then
+        local height = self.character.capsuleCollider.height
+        self.width = 0.2 * self.perCentOfHeight * self.height
+    end
+    return self.width
+end
+
+function ShieldOfEarth:GetShieldLength()
+    if not self.length then
+    local height = self.character.capsuleCollider.height
+        self.length = 1.2 * self.perCentOfHeight * height
+    end
+    return self.length
+end
+
+
+function ShieldOfEarth:ConfirmEndState()
+    if self.isReached then
+        self.endPos = self.trans.position
+        self.endRot = self.trans.rotation
+    else
+        self.endPos = self:GetTargetPos(self.character)
+        self.endRot = self.character.transform.rotation
+    end
+    self.endTime = UE.Time.time + self.leftTime
+end
+
+function ShieldOfEarth:GetTargetPos(character)
+    local height = character.capsuleCollider.height  * self.perCentOfHeight
+    local pos = character.transform.position + character.transform.forward * 1 + UE.Vector3.up * height/2
+    return pos
+end
+
+function ShieldOfEarth:CheckArea()
+    local pos = self:GetTargetPos(self.character)
+    local isHit, raycastHit  = UE.Physics.SphereCast(pos + self.character.transform.right * 0.3, 0.1, UE.Vector3.down, 5, CL.LayerDefine.EnvLayerMask.value)
+end
+
+function ShieldOfEarth:SlowDown(intensity)
+    self.host.interact.rb.velocity = UE.Vector3.Lerp(self.host.interact.rb.velocity, UE.Vector3.zero, intensity)
+end
+
+function ShieldOfEarth:StopFollow()
+    CL.Scheduler.RemoveSchedule(self.followActId)
+end
+
+
+function ShieldOfEarth:TickFollow(pos, rot, time)
+    --local vec = nil
+    --local dir = nil
+    --local dis = nil
+    --vec = pos - self.trans.position
+    --dis = vec.magnitude
+    --dir = vec.normalized
+    --local intensity = 0.25 * math.min(time * 2, 1)
+    --vec = dir * dis * intensity + self.trans.position
+    --CL.PhysicsFollow.TrackPosition(self.host.rb, vec, 0.5, dis/10)
+    
+    if self.host.interact.rb.isKinematic then
+        self.trans.position = UE.Vector3.Lerp(self.trans.position, pos, time/2)
+        self.trans.rotation = UE.Quaternion.Lerp(self.trans.rotation, rot, time/2)
+    else
+        local vec = UE.Vector3.Lerp(self.trans.position, pos, time/2)
+        CL.PhysicsFollow.TrackPosition(self.host.interact.rb, vec, vec.magnitude)
+        CL.PhysicsFollow.TrackRotation(self.host.interact.rb, rot, 10)
+    end
+end
+
+
+function ShieldOfEarth:Suspension()
+    self.host.interact.rb.useGravity = true
+    self.host.interact.rb.isKinematic = true
+    
+    self.obstaclesCol.transform:SetLayerAll(CL.LayerDefine.EnvLayer.value)
+end
+
+function ShieldOfEarth:AutoDistroy()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    CL.Scheduler.RemoveSchedule(self.lifeActId)
+    self.lifeActId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if self.isOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerStopFollow(true) end
+            end
+            self:OnTimeOut()
+            self:GiveBack()
+        end
+    , 0, 0, self.leftTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+
+end
+
+-------------------------------------------Skill----------------------------------------------
+function ShieldOfEarth:SkillOn(owner)
+    self:PlayBrustEffect()
+    --brustEffect
+    for k, v in ipairs(self.spikeTrans) do
+        owner:ShootSpike(v.position, v.rotation, self.flyObjName)
+    end
+    
+    self:GiveBack()
+end
+
+------------------------------------------Collision-------------------------------------------
+
+function ShieldOfEarth:IgnoreCollisionWithObstacles(targetPos, startPos)
+    self.cols = self.host.interact:GetCols(true)
+    if not self.cols then
+        return
+    end
+    
+    --find obstacles
+    --local raycastHit  = UE.Physics.SphereCastAll(targetPos, length/2, 
+    --    (startPos - targetPos).normalized, (startPos - targetPos).magnitude)
+    
+    local width = self:GetShieldWidth()
+    local length = self:GetShieldLength()
+    local height = self:GetShieldHeight()
+    local raycastHit = UE.Physics.OverlapBox(targetPos + self.character.transform.forward * 0.1 + 
+        UE.Vector3.up * 0.05, UE.Vector3(length/2 + 0.2, height, width/2 + 0.2), 
+        self.character.transform.rotation)--self.rayLayer)
+    
+    local pu = nil
+    local col = nil
+    local pass = true
+    for i = 0, raycastHit.Length - 1 do
+        col = raycastHit[i]
+        for j = 0, self.cols.Length - 1 do
+            if self.cols[j] == col then
+                pass = false
+                break
+            end
+        end
+        
+        if self.obstaclesCols[col] then
+            pass = false
+        end
+        
+        if pass then
+            if col.gameObject.layer == CL.LayerDefine.EnvLayer.value or 
+                col.gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value then
+                table.insert(self.obstaclesCols, col)
+                --print("insert collision :" .. col.gameObject.name)
+            end
+        end
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, true)
+    end
+end
+
+function ShieldOfEarth:ResetCollisionWithObstacles()
+    if not self.obstaclesCols or not self.cols then
+        return
+    end
+    
+    for k, v in ipairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, false)
+    end
+    
+    self.obstaclesCols = nil
+end
+
+function ShieldOfEarth:TryResetCollision(targetpos)
+    if not self.obstaclesCols or #self.obstaclesCols <= 0 then
+        return
+    end
+    
+    --local point0 = self.trans.position
+    --local point1 = targetpos
+    --self.colNum = UE.Physics.OverlapCapsuleNonAlloc(point0, point1, length/2, 
+    --            CL.PhysicsHelper.shareOverlapColArray)
+    local width = self:GetShieldWidth()
+    local length = self:GetShieldLength()
+    local height = self:GetShieldHeight()
+    local raycastHit = UE.Physics.OverlapBox(targetpos + self.character.transform.forward * 0.1 + 
+        UE.Vector3.up * height/2, UE.Vector3(length/2, height/2, width/2), 
+        self.character.transform.rotation)--self.rayLayer)
+    
+    if raycastHit.Length <= 0 then
+        return
+    end
+    
+    local stillCols = {}
+    for i = 0, raycastHit.Length - 1 do
+        for j = #self.obstaclesCols, 1, -1 do
+            if raycastHit[i] == self.obstaclesCols[j] then
+                table.insert(stillCols, raycastHit[i])
+                table.remove(self.obstaclesCols, j)
+                break
+            end
+        end  
+    end
+    
+    for k, v in pairs(self.obstaclesCols) do
+        CL.PhysicsHelper.IgnoreCollisions(v, self.cols, false)
+    end
+    
+    self.obstaclesCols = stillCols
+end
+
+function ShieldOfEarth:IgnoreCollisionWithGround(targetPos)
+    self.cols = self.host.interact:GetCols(true)
+    if not self.cols then
+        return
+    end
+    
+    local ignoreList = {}
+        
+    --find obstacles
+    local raycastHit  = UE.Physics.SphereCastAll(targetPos, self.radius, 
+        -UE.Vector3.up, self:GetShieldHeight(self.character), self.rayLayer)
+    
+    
+    local pu = nil
+    local col = nil
+    local pass = true
+    for i = 0, raycastHit.Length - 1 do
+        col = raycastHit[i].collider
+        for j = 0, self.cols.Length - 1 do
+            if self.cols[j] == col then
+                pass = false
+                break
+            end
+        end
+        
+        if pass and not self.groundCols[col] then
+            --if col.gameObject.layer == CL.LayerDefine.EnvLayer.value or 
+            --    col.gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value then
+            if UE.Vector3.Dot(UE.Vector3.up, raycastHit[i].normal) > 0.98 then
+                table.insert(ignoreList, col)
+            end
+            --end
+        end
+    end
+
+    
+    for k, v in ipairs(ignoreList) do
+        if not IsNullOrDestroyed(self.groundCols[v]) then
+            CL.PhysicsHelper.IgnoreCollisions(v, self.cols, true)
+            self.groundCols[col] = col
+        end
+    end
+end
+
+
+--function ShieldOfEarth:IgnoreColision(pos)
+--    self.cols = self.host.interact:GetCols(true)
+--    if not self.cols then
+--        return
+--    end
+--    
+--    local width = self:GetShieldWidth()
+--    local length = self:GetShieldLength()
+--    local height = self:GetShieldHeight()
+--    local cols = UE.Physics.OverlapBox(pos, UE.Vector3(length/2, height/2, width/2), self.character.transform.rotation)
+--    CL.DebugDraw.DrawBox(pos, self.character.transform.rotation,
+--    UE.Vector3(length, height, width), UE.Color.red, 0.1)
+--    if cols then
+--        --if hit obstacle cannot create
+--        for i = 0, cols.Length - 1 do
+--            if cols[i].gameObject.layer == CL.LayerDefine.EnvLayer.value
+--            or cols[i].gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value then
+--                CL.PhysicsHelper.IgnoreCollisions(cols[i], self.cols, false)
+--                --print("ignore collision with:" .. cols[i].gameObject.name .. " "..
+--                --    cols[i].gameObject.transform.parent.name)
+--            end
+--        end
+--    end
+--end
+
+--function ShieldOfEarth:CheckAccessible(pos)
+--    local width = self:GetShieldWidth()
+--    local length = self:GetShieldLength()
+--    local height = self:GetShieldHeight()
+--    local cols = UE.Physics.OverlapBox(pos + self.character.transform.forward * 0.1 + 
+--        UE.Vector3.up * 0.05, UE.Vector3(length/2, height/2, width/2), 
+--        self.character.transform.rotation)--self.rayLayer)
+--    --CL.DebugDraw.DrawBox(pos + self.character.transform.forward * 0.1 + 
+--    --    UE.Vector3.up * 0.05, self.character.transform.rotation,
+--    --UE.Vector3(length, height, width), UE.Color.red, 1)
+--        --if hit obstacle cannot create
+--    for i = 0, cols.Length - 1 do
+--        if (cols[i].gameObject.layer == CL.LayerDefine.EnvLayer.value
+--        or cols[i].gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value
+--        or (cols[i].attachedRigidbody and cols[i].attachedRigidbody.isKinematic))
+--        then
+--            local pu = CL.PhysicsUnit.GetPhysicsUnit(cols[i])
+--            if pu and pu ~= self.host.interact then
+--                if cols[i].gameObject.transform.parent then
+--                    print("CheckAccessible collision with:" .. cols[i].gameObject.name .. " "..
+--                    cols[i].gameObject.transform.parent.name)
+--                else
+--                    print("CheckAccessible collision with:" .. cols[i].gameObject.name)
+--                end
+--                return false
+--            end
+--        end
+--    end
+--    return true
+--end
+
+function ShieldOfEarth:HandleCollision(pos, character)
+    local width = self:GetShieldWidth()
+    local length = self:GetShieldLength()
+    local height = self:GetShieldHeight()
+    
+    local pu = nil
+    local mu = nil
+    local cols = UE.Physics.OverlapBox(pos + self.character.transform.forward * 0.1 + 
+        UE.Vector3.up * 0.05, UE.Vector3(length/2, height/2, width/2), 
+        self.character.transform.rotation)--self.rayLayer)
+    --CL.DebugDraw.DrawBox(pos + self.character.transform.forward * 0.1 + 
+    --    UE.Vector3.up * 0.05, self.character.transform.rotation,
+    --UE.Vector3(length, height, width), UE.Color.red, 1)
+    --if hit obstacle cannot create
+    for i = 0, cols.Length - 1 do
+        --if cols[i].gameObject.transform.parent then
+        --    print("CheckAccessible collision with:" .. cols[i].gameObject.name .. " ".. cols[i].gameObject.transform.parent.name)
+        --else
+        --    print("CheckAccessible collision with:" .. cols[i].gameObject.name)
+        --end
+        --if (cols[i].gameObject.layer == CL.LayerDefine.EnvLayer.value
+        --or cols[i].gameObject.layer == CL.LayerDefine.EnvOnlyLayer.value
+        --or (cols[i].attachedRigidbody and cols[i].attachedRigidbody.isKinematic)) then
+        --    local pu = CL.PhysicsUnit.GetPhysicsUnit(cols[i])
+        --    if pu and pu ~= self.host.interact then
+        --    end
+        --else
+        if cols[i].gameObject.layer == CL.LayerDefine.InteractLayer.value then
+            pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(cols[i].transform)
+            if pu and not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.InteractRole then  --IsPowerfulCharacter
+                --mu = pu.ra:GetMuscleByCol(cols[i])
+                mu = pu.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+                if mu then
+                    CL.FullBodyMuscleState.StayDmg = true
+                    pu.muscleState:PushMuscle(mu, self.host.interact)
+                    CL.FullBodyMuscleState.StayDmg = false
+                    
+                    --self.pushFc[pu] = mu
+                    --print("push fc--------------------" .. mu.muscleName)
+                end
+            end
+        end
+    end
+end
+
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+function ShieldOfEarth:OnTimeOut()
+    self:PlayBrokenEffect()
+end
+
+function ShieldOfEarth:PlayBrokenEffect()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.brokenEffect, self.trans.position, self.trans.rotation)
+    eo.trans.localScale = self:GetShieldHeight() * UE.Vector3.one / 2
+end
+
+function ShieldOfEarth:PlayBrustEffect()
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.brustEffect, self.trans.position, self.trans.rotation)
+    eo.trans.localScale = self:GetShieldHeight() * UE.Vector3.one / 2
+end
+
+
+function ShieldOfEarth:GiveBack()
+    self:StopFollow()
+    
+    local so = self.host.interact:GetStabObject()
+    so:BreakAllStab()
+    
+    self:ResetCollisionWithObstacles()
+    
+    self.trans:SetLayerAll(CL.LayerDefine.InteractLayer.value)
+    
+    if self.owner then
+        self.owner:OnGoDead(self.trans.gameObject)
+        self.owner = nil
+    end
+    self.character = nil
+    self.endPos = nil
+    self.endRot = nil
+    self.endTime = nil
+    
+    self.isReached = nil
+    self.host.interact.rb.isKinematic = false
+    
+    self.host.interact:Clear()
+    if self.isOnline then
+        self.host.interact.networkIB:OnGiveBack()
+    end
+    CL.PrefabPool.GiveBack(self.trans.gameObject)
+    CL.EffectMgr.Instance:GiveBack(self.spawnEo)
+    
+    CL.Scheduler.RemoveSchedule(self.lifeActId)
+end
+
+return Class(nil,nil,ShieldOfEarth)

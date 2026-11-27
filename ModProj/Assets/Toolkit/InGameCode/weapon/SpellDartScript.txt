@@ -1,0 +1,443 @@
+local SpellDart = {
+    checkDis = 0.3,
+    
+    minThrowVel = 1,
+    
+    maxDisOfDartFollow = 0.5,
+    maxRotOfDartFollow = 30,
+    
+    interval = 0.15,
+    
+    lastThrowTime = 0,
+    
+    handPose01 = {0.2, 0.25, 0.25, 0.25, 0.2},
+    handPose02 = {0, 0, 0, 0, 0},
+    
+    handPose03 = {0.6, 0.8, 0.8, 0.7, 0.6},
+    
+    initNetId = -1,
+    }
+
+function SpellDart:Start()
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetId > 0 then
+            self.initNetId = -1
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            
+            local slotHand = self:GetSlotHand()
+            if slotHand then
+                self:IgnoreCollisionWithPlayer(netIb.ib:GetCols(), slotHand, slotHand:GetAnotherHand(), true)
+            end
+            self.dart = netIb.ib
+            netIb.networkRB.enabled = false
+            
+            self:AfterSpawn(netIb.ib)
+        end
+    end
+    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+        
+    if self.isOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+    end
+end
+
+function SpellDart:OnDestroy()
+    if self.isOnline and self.OnSpawnNetworkIB then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+    end
+end
+
+function SpellDart:SlotSpell(slot)
+    local slotHand = self:GetSlotHand()
+    if slotHand then
+        self.slotHandCols = slotHand.physicsHand.fist:GetComponent(typeof(UE.Collider))
+        self.otherHandCols = slotHand:GetAnotherHand().physicsHand.fist:GetComponent(typeof(UE.Collider))
+    end
+end
+
+function SpellDart:UnSlotSpell(slot)
+    self.slotHandCols = nil
+    self.otherHandCols = nil
+    
+    self:StopDetector()
+    if self.dart and not IsNullOrDestroyed(self.dart) then
+        self:CancelThrow(self.dart)
+    end
+end
+
+--[[
+        spawnlogic
+]]
+function SpellDart:OpenSkill()
+    self:StartDetector()
+end  
+
+
+function SpellDart:StartDetector()
+    self:StopDetector()
+    if self.dart and not IsNullOrDestroyed(self.dart) then
+        self:CancelThrow(self.dart)
+    end
+    
+    local slotHand = self:GetSlotHand()
+
+    if not slotHand then
+        return
+    end
+    
+    self.nextSpawnTime = 0
+    
+    local onCharge = false
+    local chargeTime = 0.2
+    local onSpawn = false
+    
+    local otherHand = slotHand:GetAnotherHand()
+    local isSpawn = false
+    local readyPose = false
+    self.detactTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not self.slotHand then
+                return
+            end
+            
+            if not isSpawn and slotHand.character.IsLocalPlayer then
+                if UE.Time.time < self.nextSpawnTime then
+                    return
+                end
+                
+                if not onCharge and UE.Time.time - self.lastThrowTime > chargeTime then
+                    onCharge = true
+                    SetHandPose(slotHand, self.handPose03)
+                end
+                
+                if UE.Time.time - self.lastThrowTime < self.interval then
+                    return
+                end
+                
+                --check hand.
+                self:SpawnObj(self.flyObjName, slotHand, otherHand)
+                isSpawn = true
+                readyPose = false
+                onCharge = false
+            else
+                if self.dart and not IsNullOrDestroyed(self.dart) then
+                    self:RefleshGo(self.dart, slotHand, otherHand)
+                    
+                    if CL.Network.VRNetworkManager.IsOnline and not slotHand.character.IsLocalPlayer then
+                        return
+                    end
+                    
+                    if not readyPose and self:CheckHandCondition(slotHand, otherHand, self.checkDis, 0.8) then
+                        self.slotHand:HapticPulse(self.slotHand.character.skillOpenHapticCurve, 0.3, 0.5)
+                        readyPose = true
+                    end
+                    
+                    if not readyPose then
+                        return
+                    end
+                    
+                    if self:TryThrow(slotHand) then
+                        self.lastThrowTime = UE.Time.time
+                        
+                        SetHandPose(slotHand, self.handPose02)
+                        
+                        isSpawn = false
+                    end
+                    
+                        
+                    if not self:CheckHandCondition(slotHand, otherHand, nil, 0.5) then
+                        readyPose = false
+                    end
+                end
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function SpellDart:StopDetector()
+    RemoveSchedule(self, self.detactTimer)
+end
+
+function SpellDart:CloseSkill()
+    --print("stop skill------------")
+    self:StopDetector()
+    
+    if self.dart and not IsNullOrDestroyed(self.dart) then
+        self:CancelThrow(self.dart)
+        self.spawnEffect:Play()
+        
+        self.cancelSound:PlaySound()
+    end
+    
+    local slotHand = self:GetSlotHand()
+    if slotHand then
+        FreeHandPose(slotHand)
+    end
+end
+
+function SpellDart:CmdSpawnShuriken()
+    if not self.slotHand then
+        return
+    end
+    self:SpawnObj(self.flyObjName, self.slotHand, self.slotHand:GetAnotherHand())
+end
+
+function SpellDart:SpawnObj(flyObjName, slotHand, otherHand)
+    if not slotHand or IsNullOrDestroyed(slotHand) then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(flyObjName, 
+                self.createPoint.position, self.createPoint.rotation,
+                false, false, self.host.interact.netId, true, 
+                function(netIb, go)
+                    if IsNullOrDestroyed(go) then
+                        return
+                    end
+                    local pos = self:GetObjHangPoint(slotHand, otherHand)
+                    netIb.ib.rb.velocity = UE.Vector3.zero
+                    go.transform.position = pos
+                    go.transform.rotation = self.createPoint.rotation
+                    
+                    self:IgnoreCollisionWithPlayer(netIb.ib:GetCols(), slotHand, otherHand, true)
+                    self.dart = netIb.ib
+                    
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerOnSpawnShuriken(netIb.netId) end
+                    self:AfterSpawn(netIb.ib)
+                end)
+        else
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CmdSpawnShuriken() end
+        end
+        return
+    else
+        local pos = self:GetObjHangPoint(slotHand, otherHand)
+        local go = CL.PrefabPool.SpawnPrefab(self.flyObjName, "Weapon/")
+        local ib = go:GetComponent(typeof(CL.InteractBase))
+        ib.rb.velocity = UE.Vector3.zero
+        go.transform.position = pos
+        go.transform.rotation = self.createPoint.rotation
+        
+        self:IgnoreCollisionWithPlayer(ib:GetCols(), slotHand, otherHand, true)
+        self.dart = ib
+        self:AfterSpawn(ib)
+    end
+end
+
+function SpellDart:OnSpawnShuriken(netId)
+    self.initNetId = netId
+end
+
+function SpellDart:AfterSpawn(ib)
+    self.spawnEffect:Play()
+    self.skillSound:PlaySound()
+    self.slotHand:HapticPulse(self.slotHand.character.skillOpenHapticCurve, 0.3, UE.Random.Range(0.8, 1.25))
+    SetHandPose(self.slotHand, self.handPose01)
+    
+    ib.indestructible = true
+    ib.checkDrop = false
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        ib.networkIB.networkRB.enabled = false
+        ib:SetRBCols(false)
+        
+        local pos = self.createPoint.position
+        ib.rb.velocity = UE.Vector3.zero
+        ib.trans.position = pos
+        ib.trans.rotation = self.createPoint.rotation
+    end
+end
+
+function SpellDart:IgnoreCollisionWithPlayer(cols, slotHand, otherHand, ignore)
+    --CL.PhysicsHelper.IgnoreCollisions(cols, slotHand.physicsHand.colliders, ignore)
+    --CL.PhysicsHelper.IgnoreCollisions(cols, otherHand.physicsHand.colliders, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(cols, self.host.interact:GetCols(), ignore)
+    
+    CL.PhysicsHelper.IgnoreCollisions(self.slotHandCols, cols, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(self.otherHandCols,cols, ignore)
+    
+    local playerCols = slotHand.character:GetPlayerUnit():GetCols()
+    CL.PhysicsHelper.IgnoreCollisions(cols, playerCols, ignore)
+end
+
+function SpellDart:GetObjHangPoint(slotHand, otherHand)
+    --local p1 = slotHand.trans.position
+    --local p2 = otherHand.trans.position
+    --return p1 + (p2 - p1) * 0.4
+    return self.createPoint.position
+end
+
+function SpellDart:RefleshGo(go, slotHand, otherHand)
+    local pos = self:GetObjHangPoint(slotHand, otherHand)
+    
+    local vec = pos - go.rb.transform.position
+    local dis = vec.magnitude
+    local delta = self.maxDisOfDartFollow
+    if dis < self.maxDisOfDartFollow then
+        if dis < 0.05 then
+            delta = dis
+        else
+            delta = 0.05
+        end
+    end
+    if dis > 1 then
+        delta = delta * dis
+    end
+    
+    CL.PhysicsFollow.TrackPosition(go.rb, vec.normalized * delta + go.rb.transform.position)
+    
+    CL.PhysicsFollow.TrackRotation(go.rb, self.createPoint.rotation, self.maxRotOfDartFollow)
+end
+
+function SpellDart:CancelThrow(ib)
+    local lua = ib.trans:GetComponent(typeof(CL.LuaBehaviour))
+    lua.script.self:GiveBack()
+    
+    self.dart = nil
+end
+
+function SpellDart:TryThrow(hand)
+    local vel = self:GetDirVelOfHand()
+    if vel.magnitude >= self.minThrowVel and UE.Vector3.Dot(vel, hand.character.trans.forward) > 0.3 then
+        
+        if CL.Network.VRNetworkManager.IsOnline then
+            local state = GetNetworkIBState(self)
+            if CL.Network.VRNetworkManager.Instance.IsServer then 
+                if state ~= nil then state:ServerOnLaunch(self.dart.networkIB.netId) end
+                self:LaunchObj(self.dart, vel, self.dart.trans.position)
+            else
+                if state ~= nil then state:CmdLaunch(self.dart.networkIB.netId, vel, self.dart.trans.position) end
+                self:PrepareLaunch()
+            end
+        else
+        --print("TryThrow launch-------------:" .. vel.x .. "  " .. vel.y .. "  " .. vel.z  .. "  speed:" .. vel.magnitude)
+            self:LaunchObj(self.dart, vel, self.dart.trans.position)
+        end
+        self.dart = nil
+        self.nextSpawnTime = UE.Time.time + 0.2
+        
+        return true
+    else
+        return false
+    end
+end
+
+function SpellDart:GetDirVelOfHand()
+    local slotHand = self:GetSlotHand()
+
+    if not slotHand then
+        return 0
+    end
+
+    local otherHand = slotHand:GetAnotherHand()
+    
+    local vel = otherHand.velocityEstimator:GetAvgVelocityLocalWithWeight(0.1)
+    vel = vel + self.createPoint.position
+    vel = self.createPoint:InverseTransformPoint(vel)
+    vel.y = 0
+    vel = self.createPoint:TransformPoint(vel) - self.createPoint.position
+    
+    return vel
+end
+
+function SpellDart:PrepareLaunch()
+    self.dart:SetRBCols(false)
+    self.dart:SetKinematic(true)
+end
+
+function SpellDart:NetworkOnLaunch(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    --print("network on launch net id:" .. netId)
+    if IsNullOrDestroyed(netIb) then
+        --print("network on launch IsNullOrDestroyed netIb:" .. netId)
+        return
+    end
+
+    netIb.ib:MarkThrowAssist();
+    local slotHand = self.host.interact:GetSlotHand()
+    if slotHand then
+        netIb.ib:SetLatestHolder(slotHand.character.aiProxy);
+    end
+
+    netIb.ib.networkIB.networkRB.enabled = true
+    netIb.ib:SetRBCols(true)
+    netIb.ib:SetKinematic(false)
+end
+
+function SpellDart:CmdLaunch(netId, vel, pos)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    end
+    
+    if self.dart and not IsNullOrDestroyed(self.dart) and self.dart.networkIB.netId == netId then
+        self.dart = nil
+    end
+    
+    --print("cmd launch-------------:" .. vel.x .. "  " .. vel.y .. "  " .. vel.z  .. "  speed:" .. vel.magnitude .. " netid:" .. netId)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:ServerOnLaunch(netId) end
+    self:LaunchObj(netIb.ib, vel, pos)
+end
+
+function SpellDart:LaunchObj(ib, vel, pos)
+    --self.testPoint2.position = ib.trans.position
+    --self.testPoint3.position = ib.trans.position + vel
+    if CL.Network.VRNetworkManager.IsOnline then
+        ib.networkIB.networkRB.enabled = true
+
+        ib:MarkThrowAssist();
+        local slotHand = self.host.interact:GetSlotHand()
+        if slotHand then
+            ib:SetLatestHolder(slotHand.character.aiProxy);
+        end
+    end
+    
+    ib.trans.position = pos
+    
+    if not CL.Network.VRNetworkManager.IsOnline or CL.Network.VRNetworkManager.ServerOnline then
+        --print("LaunchObj launch-------------:" .. vel.x .. "  " .. vel.y .. "  " .. vel.z  .. "  speed:" .. vel.magnitude)
+        ib:AddForce(vel.normalized * self.intensity + vel * 0.3, UE.ForceMode.VelocityChange)
+    end
+    
+    if not CL.Network.VRNetworkManager.ClientOnline then
+        local lua = ib.trans:GetComponent(typeof(CL.LuaBehaviour))
+        if lua then
+            lua.script.self:OnShoot(self)
+        end
+    end
+end
+
+function SpellDart:CheckHandCondition(slotHand, otherHand, dis, dirValue)    
+    --check dir
+    if UE.Vector3.Dot(slotHand:GetPalmDir(), otherHand:GetPalmDir()) > -dirValue then
+        --print("not parallel---------------:" .. UE.Vector3.Dot(slotHand:GetPalmDir(), otherHand:GetPalmDir()))
+        return false
+    end
+    
+    local dir = (otherHand.trans.position - slotHand.trans.position).normalized
+    if UE.Vector3.Dot(slotHand:GetPalmDir(), dir) < 0.5 then
+        --print("face to back---------------:::"..UE.Vector3.Dot(slotHand:GetPalmDir(), dir))
+        return false
+    end
+    
+    if dis then
+        --check dis
+        if UE.Vector3.Distance(slotHand.trans.position, otherHand.trans.position) > dis then
+            return false
+        end
+    end
+    
+    return true
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellDart)

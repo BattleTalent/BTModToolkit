@@ -1,0 +1,124 @@
+
+local ShotgunBase = {
+    recoilVector = UE.Vector3(0, 0.1, -0.3),
+    recoilCurve = UE.AnimationCurve(UE.Keyframe(0, 1000), UE.Keyframe(0.1, 0)),
+    
+    -- bool value: 0 -> false  1 -> true
+    dontShootOnInstant = false,   
+    shootOnCharge = true,         
+    shootOnActivateEnd = false,   
+    autoSetupBulletIgnore = false,
+    
+    flyObjName = "",
+    
+    shootVel = -1,
+    recoilRotate = -15,
+    recoilRandomBias = 3,
+    releaseBulletTime = 0.2,
+    releaseBulletNumber = 1,
+    
+    bulletOffset = 0,
+}
+
+function ShotgunBase:PlayShootAction(shootPosition)
+    local ph = self.host.interact:GetPrimaryHand()
+    
+    if not IsNullOrDestroyed(ph) then
+        ph:HapticPulse(ph.character.skillOpenHapticCurve, 0.2, UE.Random.Range(0.8, 1))
+    end
+    
+    local aimDir = shootPosition.forward
+    if self.bulletOffset ~= 0 then
+        aimDir = aimDir + UE.Random.insideUnitSphere * self.bulletOffset
+    end
+    
+    local bulletScript = nil
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        bulletScript = self.host:NetworkCreateFlyObj(self.flyObjName, shootPosition.position,
+        aimDir, self.shootVel)
+    else
+        bulletScript = self.host:CreateFlyObj(self.flyObjName, shootPosition.position,
+        aimDir, self.shootVel)
+    end
+    
+    --if bulletScript and bulletScript:IsEnchantble() then
+    --    bulletScript:Enchant()
+    --end
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerOnShoot(bulletScript) end
+    end
+    self:OnShoot(bulletScript)
+    
+    return bulletScript
+end
+
+function ShotgunBase:OnShoot(bulletScript)
+    local ph = self.host.interact:GetPrimaryHand()
+    TryAerialStay(ph)
+    
+    if self.autoSetupBulletIgnore or self.autoSetupBulletIgnore == 1 then
+        CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), self.host.interact:GetCols(), true)
+        
+        CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(bulletScript) and not IsNullOrDestroyed(self.host.interact) then
+                CL.PhysicsHelper.IgnoreCollisions(bulletScript:GetCols(), self.host.interact:GetCols(), false)
+            end
+        end
+        ,0, 0, 0.3)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+    
+    local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
+    self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
+    self.recoilActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            self.host.interact.rb:AddForce(self.host.interact.trans:TransformVector(self.recoilVector) *
+                self.recoilCurve:Evaluate(t), UE.ForceMode.Acceleration)
+            
+            self.host.interact.rb:AddRelativeTorque(UE.Vector3(self.recoilRotate, bias, 0), UE.ForceMode.Impulse)
+        end
+    ,0, self.recoilCurve.keys[self.recoilCurve.length - 1].time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self.host.interact:CostDurability()
+end
+
+function ShotgunBase:UpdateSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        local i = 1
+        while self["shootPosition" .. i] do
+            self:PlayShootAction(self["shootPosition" .. i])
+            i = i + 1
+        end
+    end
+    self:OnUpdateSkill()
+end
+
+function ShotgunBase:OnUpdateSkill()
+end
+
+function ShotgunBase:OnChargeRelease()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    if self.shootOnCharge or self.shootOnCharge == 1 then
+        self:PlayShootAction()
+    end
+end
+
+function ShotgunBase:OnActivateEnd()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    if self.shootOnActivateEnd or self.shootOnActivateEnd == 1 then
+        self:PlayShootAction()
+    end
+end
+
+
+return Class(nil, nil, ShotgunBase)

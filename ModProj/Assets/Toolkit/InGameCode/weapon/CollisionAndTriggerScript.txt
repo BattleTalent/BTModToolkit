@@ -1,0 +1,25 @@
+
+local CollisionAndTrigger = {
+    
+}
+
+function CollisionAndTrigger:OnTriggerStay(collider)
+    if not self:IsCondition(collider) then
+        return
+    end
+    
+    self:TriggerEnterHandler(collider)
+end
+
+function CollisionAndTrigger:IsCondition(collision)
+    return true
+end
+
+function CollisionAndTrigger:TriggerEnterHandler(collision)
+    if self.interactTriggerX then
+        self.interactTriggerX.script.self:TriggerStay(collision)
+    end
+end
+
+
+return Class(Require("Weapon/BaseCollisionScript"), nil, CollisionAndTrigger)

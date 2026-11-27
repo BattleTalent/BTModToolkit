@@ -1,0 +1,113 @@
+
+local flyIceBall = {
+    freezeSec = 3,
+    
+    protectTime = 0.3,
+}
+
+function flyIceBall:FlyStart()
+    self.protectEndTime = UE.Time.time + self.protectTime
+
+    self.__base.FlyStart(self)
+    
+end
+
+function flyIceBall:OnTrigger(pu, col)
+    if not col or IsNullOrDestroyed(col) then
+        return
+    end
+
+    if pu.unitType == CL.Tagger.Tag.InteractWeapon or pu.unitType == CL.Tagger.Tag.InteractObj then
+        if pu:IsEnchantble() then --need to enchant
+            return
+        end
+    end
+
+    self.__base.OnTrigger(self, pu, col)
+end
+
+function flyIceBall:OnTriggerWithRole(fc, col)
+    self:Freeze(fc)
+    self.__base.OnTriggerWithRole(self, fc, col)
+end
+
+function flyIceBall:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    self:Freeze(fc)
+    self.host:CollisionCountUpdate()
+    self.host:PlayImpact(self.trans.position, self.trans.forward)
+end
+
+function flyIceBall:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+
+    self.host:PlayImpact(point, normal)
+    self.host:PlaySceneImpactEffect(point, normal)
+    self.host:CollisionCountUpdate()
+
+    if UE.Vector3.Dot(normal, UE.Vector3.up) >= 0.70710678 then
+        local spawnPoint = point
+        if not IsNullOrDestroyed(otherCol) then
+            local rayOrigin = point + normal * 0.5
+            local ray = UE.Ray(rayOrigin, -normal)
+            local raycastSucceeded, didHit, groundHit = pcall(function()
+                return otherCol:Raycast(ray, 1.0)
+            end)
+
+            if raycastSucceeded and didHit and groundHit then
+                spawnPoint = groundHit.point
+            end
+        end
+
+        if CL.Network.VRNetworkManager.IsOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(
+                    "DynamicIceSurface", self.host.owner, spawnPoint, UE.Vector3.up)
+            else
+                CL.Network.NetworkSpawnMgr.Instance:CmdNetSpawnFlyObjWithCallback(
+                    "DynamicIceSurface", self.host.owner, spawnPoint, UE.Vector3.up)
+            end
+        else
+            CL.FlyObject.CreateFlyObj("DynamicIceSurface", self.host.owner, spawnPoint, UE.Vector3.up)
+        end
+    end
+end
+
+function flyIceBall:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function flyIceBall:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function flyIceBall:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.host.ownerHolder and self.host.ownerHolder.character == player then
+        if UE.Time.time < self.protectEndTime then
+            return
+        end
+    end
+    
+    player.aiProxy:FreezeForAWhile(0.5)
+    
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+end
+
+
+function flyIceBall:Freeze(fc)
+    fc.muscleState:EnableFreeze(true, nil, false)
+    fc.muscleState:UnFreezeAgain(self.freezeSec)
+end
+
+function flyIceBall:EnhanceSpell()
+    --AOE
+    self.host.flyObjTobeCreatedOnImpact = self.enhanceFlyObj
+end
+
+function flyIceBall:ResetState()
+    self.host.flyObjTobeCreatedOnImpact = nil
+    self.__base.ResetState(self)
+end
+
+return Class(Require("FlyObj/FlySpellBaseScript"),nil,flyIceBall)

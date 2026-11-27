@@ -1,0 +1,116 @@
+local LightningEffect = {
+    points = {},
+    
+    thickness = 0.5, --The distance between two points
+    activeIntensity = 0.015,  --Maximum distance of point deviation
+    activeBase = 0,
+    
+    followIntensity = 0.2, --The intensity of follow target
+    followBaseValue = 0.1, --base value of follow target
+    
+    width = 0.01,
+    
+    lightingEndTime = 0,
+
+}
+
+function LightningEffect:PlayEffect(startTrans, endTrans)
+    self.startTrans = startTrans
+    self.endTrans = endTrans
+    
+    self.lineRenderer.positionCount = 0
+    self.points = {}
+    
+    self.updateTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function LightningEffect:StopUpdate()
+    RemoveSchedule(self, self.updateTimer)
+end
+
+
+function LightningEffect:Update()
+    if IsNullOrDestroyed(self.startTrans) or IsNullOrDestroyed(self.endTrans) then
+        self:StopUpdate()
+        return
+    end
+
+    self.curCount = self:CalcPointNum()
+    
+    self:RefleshPoint()
+end
+
+function LightningEffect:CalcPointNum()
+    local dis = UE.Vector3.Distance(self.startTrans.position, self.endTrans.position)
+    
+    return math.ceil(dis/self.thickness)
+end
+
+function LightningEffect:RefleshPoint()
+    self:UpdatePointNum(self.curCount)
+    
+    local startPoint = self.startTrans.position
+    local endPoint = self.endTrans.position
+    local dis = UE.Vector3.Distance(startPoint, endPoint)
+    
+    local perDis = dis/self.curCount
+    
+    local midNum = self.curCount/2
+    
+    local curPos = nil
+    local followRate = nil
+    
+    local lightningOffset = self.lightingEndTime > UE.Time.time and 0.035 or 0
+    
+    if self.lineRenderer.positionCount <= 0 or self.curCount <= 1 then
+        return
+    end
+    
+    for i = 1, self.lineRenderer.positionCount do
+        curPos = UE.Vector3.Lerp(startPoint, endPoint, (i - 1)/(self.curCount - 1))
+        if i == 1 or i == self.curCount or self.points[i].isNew then
+            self.points[i].position = curPos
+            self.points[i].isNew = false
+        else
+            followRate = math.abs(midNum - i)/midNum * self.followIntensity + self.followBaseValue
+            --follow
+            curPos = UE.Vector3.Lerp(self.points[i].position, curPos, followRate)
+            
+            --lightning Effect
+            curPos = UE.Random.insideUnitSphere * (self.activeIntensity + lightningOffset) + curPos
+            
+            self.points[i].position = curPos
+        end
+        
+        
+        self.lineRenderer:SetPosition(i - 1, self.points[i].position)
+    end
+end
+
+
+function LightningEffect:LightingInTime()
+    self.lightingEndTime = UE.Time.time + 0.15
+end
+
+
+function LightningEffect:UpdatePointNum(num)
+    if num > #self.points then
+        self:AddPoint(num - #self.points)
+    end
+    self.lineRenderer.positionCount = num
+end
+
+function LightningEffect:AddPoint(num)
+    for i = 1, num do
+        local tb = {}
+        tb.isNew = true
+        self.points[#self.points + 1] = tb
+    end
+end
+
+return Class(nil,nil,LightningEffect)

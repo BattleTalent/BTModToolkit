@@ -1,0 +1,1145 @@
+
+local ShieldHarryPair = {
+    aimWidget_l = nil,
+    aimWidget_r = nil,
+    
+    disactiveColor = UE.Color.clear,
+    activeColor = UE.Color(0.66, 0.27, 0.27, 0),
+    
+    ---------------Recoil----------------
+    recoilVector = UE.Vector3(0, 0.1, -0.3),
+    recoilCurve = UE.AnimationCurve(UE.Keyframe(0, 1000), UE.Keyframe(0.1, 0)),
+    recoilRotate = -15,
+    recoilRandomBias = 3,
+    -----------------------------------
+    
+    nextShotIdx = 0,
+    
+    isLoaded_l = true,
+    isLoaded_r = true,
+    
+    reLoadTime = 0.3,
+    
+    autoSetupBulletIgnore = 1,
+    
+    speed_level1 = 20,
+    speed_level2 = 40,
+    
+    biteInterval = 0.6,
+    isPress = false,
+    
+    ctlFoList = {},
+    
+    suctionForce = 30000,
+    
+    ------------Desmember--------------
+    fragInfoList = {},
+    biteMlp = 6,
+    
+    ----------Expression---------------
+    leftEyeIndex = -1,
+    rightEyeIndex = -1,
+    painFaceIndex = -1,
+    satisfyFaceIndex = -1,
+    
+    lastPainTime = 0,
+    
+    painInterval = 0.3,
+    lastHitTime = 0,
+    --------------Sound----------------
+    sound_name_beaten = {"HarryPairShield/hit02"},
+    sound_beaten = 1,
+    sound_name_beaten_strong = {"HarryPairShield/Hit03"},
+    sound_beaten_strong = 2,
+}
+
+function ShieldHarryPair:OnGrab(attach, isGrabbed)
+    self.isPress = false
+
+    if isGrabbed then
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self.aimWidget_l.gameObject:SetActive(true)
+            self.aimWidget_l.enabled = true
+            self.aimWidget_r.gameObject:SetActive(true)
+            self.aimWidget_r.enabled = true
+        end
+        self.hand = attach.attachedHand
+        
+        --self:SoundEffectUpdate()    
+    else
+        self.aimWidget_l.enabled = false
+        self.aimWidget_l.gameObject:SetActive(false)
+        self.aimWidget_r.enabled = false
+        self.aimWidget_r.gameObject:SetActive(false)
+        
+        --self:StopSoundEffectUpdate()
+        self.hand = nil
+    end
+    
+    
+    CL.Scheduler.RemoveSchedule(self.updateActId)
+    if isGrabbed then
+        if attach.attachedHand.character.IsLocalPlayer then
+            self.updateActId = CL.Scheduler.Create(self,
+                function(sche, t, s)
+                    self:ButtonClick()
+                end
+            , 0, -1).actionId
+        end
+    end
+    
+    if self.isOnline then
+        local OnButtonOnePressUp = function()
+            if self.isPress then
+                self:OnPressUp()
+            end
+        end
+        
+        local OnButtonOnePressDown = function()
+            if not self.isPress then
+                self:OnPressDown()
+            end
+        end
+    end
+end
+
+function ShieldHarryPair:Awake()
+    self.soundList = {}
+    self.soundList[self.sound_beaten] = self.sound_name_beaten
+    self.soundList[self.sound_beaten_strong] = self.sound_name_beaten_strong
+    
+    self.painFaceIndex = self.mainMeshRenderer.sharedMesh:GetBlendShapeIndex("Pain Face")    
+    self.satisfyFaceIndex = self.mainMeshRenderer.sharedMesh:GetBlendShapeIndex("Satisfy face")
+    self.leftEyeIndex = self.mainMeshRenderer.sharedMesh:GetBlendShapeIndex("LeftEyeBlink")
+    self.rightEyeIndex = self.mainMeshRenderer.sharedMesh:GetBlendShapeIndex("RightEyeBlink")
+    
+    self.defaultJawPos = self.jawTrans.localPosition
+    self.defaultJawRot = self.jawTrans.localRotation
+    self.defaultLeftCheekPos = self.leftCheekTrans.localPosition
+    self.defaultRightCheekPos = self.rightCheekTrans.localPosition
+    self.defaultLeftCheekRot = self.leftCheekTrans.localRotation
+    self.defaultRightCheekRot = self.rightCheekTrans.localRotation
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        CL.FullBodyMuscleState.dmgEffectData.pushbackDir = UE.Vector3.zero
+        CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel = UE.Vector3.zero
+        
+        local hpFactor = fc.attr:GetHpFactor()
+        if hpFactor < 0.1 then
+            if not self.fragInfoList[mu] then
+                local state = fc.muscleState:GetMuscleState(mu)
+                self.fragInfoList[mu] = state.cutResist
+            else
+                if self.fragInfoList[mu] > 0 then
+                    self.fragInfoList[mu] = self.fragInfoList[mu] - CL.FullBodyMuscleState.dmgHitData.dmgFinalResult * self.biteMlp
+                end
+            end
+            if self.fragInfoList[mu] <= 0 then
+                local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+                if frag then
+                    CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+                    self:SatisfyFace()
+                end
+            end
+        end
+    end
+    self.biteHitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+end
+
+function ShieldHarryPair:Start()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerEyeBowUpdate()
+            end
+        end
+    else
+        self:EyeBowUpdate()
+    end
+end
+
+function ShieldHarryPair:OpenSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self.isPress then
+        self:TryShootEye()
+    else
+        self:TryShootEyeOnPress()
+    end
+end
+
+function ShieldHarryPair:TryShootEye()
+    local fo = nil
+    local foName = self.pushFlyObjName
+    local speed = self.speed_level1
+    local recoilIntensity = 2
+    if self.nextShotIdx == 0 then
+        if self.isLoaded_l then
+            fo = self:ShootEyeBall(self.shootPos_l, foName, speed, recoilIntensity)
+            self:LoadLeftEye(false)
+            self:ReloadLeftEye()
+            
+            self.nextShotIdx = 1
+        elseif self.isLoaded_r then
+            fo = self:ShootEyeBall(self.shootPos_r, foName, speed, recoilIntensity)
+            self:LoadRightEye(false)
+            self:ReloadRightEye()
+            
+            self.nextShotIdx = 0
+        end
+    elseif self.nextShotIdx == 1 then
+        if self.isLoaded_r then
+            fo = self:ShootEyeBall(self.shootPos_r, foName, speed, recoilIntensity)
+            self:LoadRightEye(false)
+            self:ReloadRightEye()
+            
+            self.nextShotIdx = 0
+        elseif self.isLoaded_l then
+            fo = self:ShootEyeBall(self.shootPos_l, foName, speed, recoilIntensity)
+            self:LoadLeftEye(false)
+            self:ReloadLeftEye()
+            
+            self.nextShotIdx = 1
+        end
+    end
+    
+    if not fo or IsNullOrDestroyed(fo) then
+        return
+    end
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerRecordFo(fo.netId)
+            end
+        end
+    else
+        self:RecordFo(fo)
+    end
+end
+
+function ShieldHarryPair:ClientRecordFo(netId)
+    local nfo = CL.Network.NetworkSpawnMgr.Instance:GetNetworkFlyObject(netId)
+    local fo = not IsNullOrDestroyed(nfo) and nfo.flyObject or nil
+    if IsNullOrDestroyed(fo) then
+        if self.lastRecordFoWarnNetId ~= netId then
+            self.lastRecordFoWarnNetId = netId
+            print("[NetReadyRisk] ShieldHarryPair ClientRecordFo flyObject not ready netId=" .. netId)
+        end
+        return
+    end
+    
+    self:RecordFo(fo)
+end
+
+function ShieldHarryPair:RecordFo(fo)
+    local tb = fo.script:GetSelf()
+    self.ctlFoList[tb] = fo
+    
+    if not self.isOnline or (self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer) then
+        tb:InitState(true, self)
+    end
+end
+
+function ShieldHarryPair:ReloadLeftEye()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerReloadLeftEyeAnim()
+            end
+        end
+    else
+        self:ReloadLeftEyeAnim()
+    end
+end
+
+function ShieldHarryPair:ReloadLeftEyeAnim()
+    local growTime = 0.2
+    local scale = UE.Vector3.one * 150
+    local isShow = false
+    self.eyeL.localScale = UE.Vector3.zero
+    CL.Scheduler.RemoveSchedule(self.reloadLeftId)
+    self.reloadLeftId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if self.reLoadTime - t < growTime then
+                if not isShow then
+                    self.eyeL.gameObject:SetActive(true)
+                    self.eyeGrowSound:PlaySound()
+                    isShow = true
+                end
+                self.eyeL.localScale = scale * (1-(self.reLoadTime - t)/growTime)
+            end
+            if t >= self.reLoadTime then
+                self:LoadLeftEye(true)
+            end
+        end
+    , 0, self.reLoadTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ShieldHarryPair:ReloadRightEye()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerReloadRightEyeAnim()
+            end
+        end
+    else
+        self:ReloadRightEyeAnim()
+    end
+end
+
+function ShieldHarryPair:ReloadRightEyeAnim()
+    local growTime = 0.2
+    local scale = UE.Vector3.one * 150
+    self.eyeR.localScale = UE.Vector3.zero
+    local isShow = false
+    CL.Scheduler.RemoveSchedule(self.reloadRightId)
+    self.reloadRightId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if self.reLoadTime - t < growTime then
+                if not isShow then
+                    self.eyeR.gameObject:SetActive(true)
+                    self.eyeGrowSound:PlaySound()
+                    isShow = true
+                end
+                self.eyeR.localScale = scale * (1-(self.reLoadTime - t)/growTime)
+            end
+            if t >= self.reLoadTime then
+                self:LoadRightEye(true)
+            end
+        end
+    , 0, self.reLoadTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ShieldHarryPair:LoadLeftEye(isLoad)
+    self.isLoaded_l = isLoad
+end
+
+function ShieldHarryPair:LoadRightEye(isLoad)
+    self.isLoaded_r = isLoad
+end
+
+function ShieldHarryPair:TryShootEyeOnPress()
+    local fo_l = nil    
+    local fo_r = nil
+
+    local foName = self.dmgFlyObjName
+    local speed = self.speed_level2
+    local recoilIntensity = 4
+    if self.isLoaded_l then
+        fo_l = self:ShootEyeBall(self.shootPos_l, foName, speed, recoilIntensity)
+        self:LoadLeftEye(false)
+        self:ReloadLeftEye()
+    end
+    
+    if self.isLoaded_r then
+        fo_r = self:ShootEyeBall(self.shootPos_r, foName, speed, recoilIntensity)
+        self:LoadRightEye(false)
+        self:ReloadRightEye()
+    end
+    
+    if fo_l and not IsNullOrDestroyed(fo_l) then
+        local tb = fo_l.script:GetSelf()
+        tb:InitState(false, self)
+    end
+
+    if fo_r and not IsNullOrDestroyed(fo_r) then
+        local tb = fo_r.script:GetSelf()
+        tb:InitState(false, self)
+    end
+end
+
+
+-----------------------------------button click--------------------------------
+
+function ShieldHarryPair:ButtonClick()
+    if not self.hand then
+        return
+    end
+    
+    local p = self.hand.inputs[CL.VRTKInputButton.ButtonType.ButtonOne].IsPressed
+    if self.isPress and not p then
+        self:OnPressUp()
+        
+        if CL.Network.VRNetworkManager.ClientOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:CommandOnPress(p)
+            end
+        end
+    end
+    if not self.isPress and p then
+        self:OnPressDown()
+        
+        if CL.Network.VRNetworkManager.ClientOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:CommandOnPress(p)
+            end
+        end
+    end
+end
+
+function ShieldHarryPair:OnPressUp()
+    for k, v in pairs(self.ctlFoList) do
+        if not IsNullOrDestroyed(v) then
+            k:StopPush()
+            --isExist = true
+        end
+    end
+    
+    --self:EmissionOff()
+    
+    self.isPress = false
+end
+
+function ShieldHarryPair:OnPressDown()
+    --local isExist = false
+
+    for k, v in pairs(self.ctlFoList) do
+        if not IsNullOrDestroyed(v) then
+            k:StartPush()
+            --isExist = true
+        end
+    end
+    --self.ctlFoList = {}
+    
+    --self:EmissionOn()
+    
+    self.isPress = true
+end
+
+function ShieldHarryPair:NetworkOnPress(isPress)
+    if not isPress then
+        self:OnPressUp()
+    else
+        self:OnPressDown()
+    end
+end
+
+---------------------------------skill part one-------------------------------
+
+function ShieldHarryPair:ShootEyeBall(trans, name, speed, recoilIntensity)
+    local fo = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = self.host:NetworkCreateFlyObj(name, trans.position, trans.forward, speed)
+        end
+    else
+        fo = self.host:CreateFlyObj(name, trans.position, trans.forward, speed)
+    end
+    
+    
+    if self.autoSetupBulletIgnore == 1 then
+        CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.host.interact:GetCols(), true)
+        
+        CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(fo) and not IsNullOrDestroyed(self.host.interact) then
+                CL.PhysicsHelper.IgnoreCollisions(fo:GetCols(), self.host.interact:GetCols(), false)
+            end
+        end
+        , 0, 0, 0.2)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerOnShotEyeBall(trans == self.shootPos_l and 0 or 1, recoilIntensity)
+            end
+        end
+    else
+        self:OnShotEyeBall(trans == self.shootPos_l and 0 or 1, recoilIntensity)
+    end
+    
+    return fo
+end
+
+function ShieldHarryPair:OnShotEyeBall(idx, intensity)
+    local trans = idx == 0 and self.shootPos_l or self.shootPos_r
+    CL.EffectMgr.Instance:PlayEffect(self.shotEffectName, trans.position, trans.rotation)
+    
+    if self.shootSound ~= nil then
+        self.shootSound:PlaySound()
+    end
+    self:AddRecoil(trans, intensity)
+end
+
+function ShieldHarryPair:AddRecoil(trans, intensity)
+    local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
+    local addForce = function (sche, t, s)
+        if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(trans) then sche:Stop(); return end
+        self.host.interact.rb:AddForce(trans:TransformVector(self.recoilVector * intensity) *
+            self.recoilCurve:Evaluate(t), UE.ForceMode.Acceleration)
+            
+        self.host.interact.rb:AddRelativeTorque(UE.Vector3(self.recoilRotate, bias, 0), UE.ForceMode.Impulse)
+    end
+    
+    self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
+    self.recoilActId = CL.Scheduler.Create(self.host, 
+        addForce
+    , 0, self.recoilCurve.keys[self.recoilCurve.length - 1].time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self.host.interact:CostDurability()
+end
+
+function ShieldHarryPair:OnEyeBallDead(tb)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local fo = self.ctlFoList[tb]
+            if fo and not IsNullOrDestroyed(fo) then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerRemoveFo(fo.netId)
+                end
+            end
+        end
+    else
+        self.RemoveFo(tb)
+    end
+end
+
+function ShieldHarryPair:ClientRemoveFo(netId)
+    local nfo = CL.Network.NetworkSpawnMgr.Instance:GetNetworkFlyObject(netId)
+    local fo = not IsNullOrDestroyed(nfo) and nfo.flyObject or nil
+    if IsNullOrDestroyed(fo) then
+        if self.lastRemoveFoWarnNetId ~= netId then
+            self.lastRemoveFoWarnNetId = netId
+            print("[NetReadyRisk] ShieldHarryPair ClientRemoveFo flyObject not ready netId=" .. netId)
+        end
+        return
+    end
+    local tb = fo.script:GetSelf()
+    self:RemoveFo(tb)
+end
+
+function ShieldHarryPair:RemoveFo(tb)
+    if not self.ctlFoList then
+        return
+    end
+    self.ctlFoList[tb] = nil
+end
+
+-----------------------------------------bite---------------------------------------------
+
+function ShieldHarryPair:TriggerStay(collider)
+    if self.isOnline and not SafeLocalTrackPhysics(self.host.interact) then
+        return
+    end
+    
+    
+    if self.isBite then
+        return
+    end
+    local tpu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collider)
+    if IsNullOrDestroyed(tpu) or tpu.unitType ~= CL.Tagger.Tag.InteractRole then
+        return
+    end
+    
+    --local hpFactor = tpu.attr:GetHpFactor()
+    --if hpFactor > 0.3 then
+    --    return
+    --end
+    
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(collider)
+    if self:TryToBiteFc(tpu, collider) then
+        self.isBite = true
+        --self.nextBiteTime = UE.Time.time + self.biteInteval
+    end
+end
+
+function ShieldHarryPair:TryToBiteFc(fc, col)
+    if IsNullOrDestroyed(col.attachedRigidbody) then
+        return false
+    end
+    
+    local targetRb = col.attachedRigidbody
+    local suc = self:JointWithTarget(targetRb, col, fc)
+    if suc then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    state:ServerJointTarget(CL.InteractCharacter.PlayerInstance.networkPlayer.netId, targetRb, col, fc)
+                else
+                    state:CommandJointTarget(CL.InteractCharacter.PlayerInstance.networkPlayer.netId, targetRb, col, fc)
+                end
+            end
+        end
+        
+        if not self.isOnline then
+            self:UpdateJointToBite()
+        end
+    end
+    return suc
+end
+
+function ShieldHarryPair:ClientJointWithTarget(rb, col, pu)
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self:UpdateJointToBite()
+    end
+    
+    return self:JointWithTarget(rb, col, pu)
+end
+
+function ShieldHarryPair:JointWithTarget(rb, col, pu)
+    if IsNullOrDestroyed(rb) then
+        return false
+    end
+    
+    local point = col:ClosestPoint(self.bitePoint.position)
+    
+    if not self.joint then
+        self.joint = self.host.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    end
+    
+    self.joint.autoConfigureConnectedAnchor = false
+    self.joint.connectedBody = rb
+    self.joint.anchor = self.trans:InverseTransformPoint(self.bitePoint.position + self.bitePoint.forward * 0.005)
+    self.joint.connectedAnchor = rb.transform:InverseTransformPoint(point)
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+
+    if pu then
+        pu:OnAttachBuild(self.host.interact, self.joint, self.host.rb)
+    end
+    
+    self.targetCol = col
+    self.targetRb = rb
+    self.targetPu = pu
+    
+    --self.biteTargetPoint:SetParent(self.targetRb.transform)
+    --self.biteTargetPoint.localPosition = self.joint.connectedAnchor
+    return true
+end
+
+function ShieldHarryPair:UpdateJointToBite()
+    if IsNullOrDestroyed(self.joint) then
+        return
+    end
+    
+    local playerNetId = self.isOnline and CL.InteractCharacter.PlayerInstance.networkPlayer.netId or -1
+    if self.isOnline then
+        if SafeLocalTrackPhysics(self.host.interact) then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    state:ServerCloseBiteAnim(playerNetId, 0.15)
+                else
+                    state:CommandCloseBiteAnim(playerNetId, 0.15)
+                end
+            end
+            self:CloseBiteAnim(0.15)
+        end
+    else
+        self:CloseBiteAnim(0.15)
+    end
+
+    local pos = nil
+    local curSpring = 0
+    local ld = self.joint.xDrive        
+    local sd = self.joint.slerpDrive
+    local sqrDis = 0
+    local maxDis = 0.035
+    local nextBiteTime = 0
+    CL.Scheduler.RemoveSchedule(self.updateJointId)
+    self.updateJointId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if self.isOnline and not SafeLocalTrackPhysics(self.host.interact) then
+                return
+            end
+            
+            if IsNullOrDestroyed(self.joint) then
+                sche:Stop()
+                self:StopBite()
+                
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.Instance.IsServer then
+                            state:ServerStopExpression(playerNetId)
+                            state:ServerCloseBiteAnim(playerNetId, 0.15)
+                        else
+                            state:CommandStopExpression(playerNetId)
+                            state:CommandCloseBiteAnim(playerNetId, 0.15)
+                        end
+                    end
+                end
+                self:StopExpression()
+                self:CloseBiteAnim(0.15)
+                return
+            end
+            
+            if IsNullOrDestroyed(self.targetRb) then
+                sche:Stop()
+                self:StopBite()
+                
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.Instance.IsServer then
+                            state:ServerStopExpression(playerNetId)
+                            state:ServerCloseBiteAnim(playerNetId, 0.15)
+                        else
+                            state:CommandStopExpression(playerNetId)
+                            state:CommandCloseBiteAnim(playerNetId, 0.15)
+                        end
+                    end
+                end
+                
+                self:StopExpression()
+                self:CloseBiteAnim(0.15)
+                return
+            end
+            
+            pos = self.targetRb.transform:TransformPoint(self.joint.connectedAnchor)
+            sqrDis = (pos - self.bitePoint.position).sqrMagnitude
+            if sqrDis > maxDis then
+                sche:Stop()
+                self:StopBite()
+                
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.Instance.IsServer then
+                            state:ServerStopExpression(playerNetId)
+                            state:ServerCloseBiteAnim(playerNetId, 0.15)
+                        else
+                            state:CommandStopExpression(playerNetId)
+                            state:CommandCloseBiteAnim(playerNetId, 0.15)
+                        end
+                    end
+                end
+                self:StopExpression()
+                self:CloseBiteAnim(0.15)
+                return
+            end
+            
+            if UE.Time.time > nextBiteTime and sqrDis < 0.01 then
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.Instance.IsServer then
+                            state:ServerBiteAnim(playerNetId, 0.3)
+                        else
+                            state:CommandBiteAnim(playerNetId, 0.3)
+                        end
+                    end
+                end
+                self:BiteAnim(0.3)
+                
+                self:BiteTarget()
+                nextBiteTime = UE.Time.time + self.biteInterval
+            end
+            
+            
+            curSpring = (1-sqrDis/maxDis) * self.suctionForce
+            --curSpring = CL.EasingEquations.EaseInQuart(0, 1, (1-sqrDis/maxDis)) * self.suctionForce
+            ld.positionSpring = curSpring
+            ld.positionDamper = curSpring * 0.05
+            self.joint.xDrive = ld
+            self.joint.yDrive = ld
+            self.joint.zDrive = ld
+            sd.positionSpring = curSpring * 0.5
+            sd.positionDamper = curSpring * 0.05
+            self.joint.slerpDrive = sd
+        end
+        , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ShieldHarryPair:BiteTarget()
+    if IsNullOrDestroyed(self.targetCol) then
+        return
+    end
+    
+    local dir = self.targetRb.transform:TransformPoint(self.joint.connectedAnchor) -self.bitePoint.position
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(self.targetCol, self.host.interact,self.host.interact.rb, self.biteCol, dir.normalized, CL.AIProxy.CampNone, false)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+end
+
+function ShieldHarryPair:StopUpdateJoint()
+    CL.Scheduler.RemoveSchedule(self.updateJointId)
+end
+
+function ShieldHarryPair:StopBite()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerStopBite()
+            end
+        end
+    else
+        self:ResetJoint()
+    end
+    self:StopUpdateJoint()
+    
+    self.isBite = false
+end
+
+function ShieldHarryPair:ClientStopBite()
+    self:ResetJoint()
+    self:StopUpdateJoint()
+    self.isBite = false
+end
+
+function ShieldHarryPair:ResetJoint()
+    if not IsNullOrDestroyed(self.joint) then
+        self.joint.xMotion = UE.ConfigurableJointMotion.Free
+        self.joint.yMotion = UE.ConfigurableJointMotion.Free
+        self.joint.zMotion = UE.ConfigurableJointMotion.Free
+        self.joint.angularXMotion = UE.ConfigurableJointMotion.Free
+        self.joint.angularYMotion = UE.ConfigurableJointMotion.Free
+        self.joint.angularZMotion = UE.ConfigurableJointMotion.Free
+        
+        self.joint.connectedBody = nil
+        local ld = self.joint.xDrive        
+        ld.positionSpring = 0
+        ld.positionDamper = 0
+        self.joint.xDrive = ld
+        self.joint.yDrive = ld
+        self.joint.zDrive = ld
+        local sd = self.joint.slerpDrive
+        sd.positionSpring = 0
+        sd.positionDamper = 0
+        self.joint.slerpDrive = sd
+    end
+end
+
+---------------------------------------expression----------------------------------------
+
+function ShieldHarryPair:EyeBowUpdate()
+    local interval = 4
+    local nextActTime = -1
+    local lastActTime = -1
+    local blinkTime = 0.4
+    local curTime = 0
+    local value = 0
+    CL.Scheduler.RemoveSchedule(self.eyebowActId)
+    self.eyebowActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            curTime = UE.Time.time
+            if curTime > nextActTime then
+                if lastActTime < 0 then
+                    lastActTime = curTime
+                end
+                if curTime < lastActTime + blinkTime/2 then
+                    value = (curTime - lastActTime)/blinkTime/2 * 100
+                    self.mainMeshRenderer:SetBlendShapeWeight(self.leftEyeIndex, value)
+                    self.mainMeshRenderer:SetBlendShapeWeight(self.rightEyeIndex, value)
+                    
+                    self.eyelashMeshRenderer:SetBlendShapeWeight(self.leftEyeIndex, value)
+                    self.eyelashMeshRenderer:SetBlendShapeWeight(self.rightEyeIndex, value)
+                else
+                    value = (1 - (curTime - lastActTime - blinkTime/2)/(blinkTime/2)) * 100
+                    self.mainMeshRenderer:SetBlendShapeWeight(self.leftEyeIndex, value)
+                    self.mainMeshRenderer:SetBlendShapeWeight(self.rightEyeIndex, value)
+                    
+                    self.eyelashMeshRenderer:SetBlendShapeWeight(self.leftEyeIndex, value)
+                    self.eyelashMeshRenderer:SetBlendShapeWeight(self.rightEyeIndex, value)
+                    if curTime > lastActTime + blinkTime then
+                        nextActTime = curTime + interval
+                        lastActTime = -1
+                    end
+                end
+            end
+            
+        end
+    , 0, -1).actionId
+    
+end
+
+function ShieldHarryPair:PlayExpression(idx, maxWeight, time, actTime, delayEndTime)
+    local value = 0
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerEyeBowStop()
+            end
+        end
+    else
+        self:EyeBowStop()
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.expressionActId)
+    self.expressionActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if t < actTime then
+                value = t/actTime * maxWeight
+                self.mainMeshRenderer:SetBlendShapeWeight(idx, value)
+                self.mainMeshRenderer:SetBlendShapeWeight(idx, value)
+                
+                self.eyelashMeshRenderer:SetBlendShapeWeight(idx, value)
+                self.eyelashMeshRenderer:SetBlendShapeWeight(idx, value)
+                
+                self.beardMeshRenderer:SetBlendShapeWeight(idx - 2, value)
+                self.beardMeshRenderer:SetBlendShapeWeight(idx - 2, value)
+            else
+                if t > actTime + delayEndTime then
+                    value = (1 - (t - (actTime + delayEndTime))/ (time - (actTime + delayEndTime))) * maxWeight
+                    self.mainMeshRenderer:SetBlendShapeWeight(idx, value)
+                    self.mainMeshRenderer:SetBlendShapeWeight(idx, value)
+                    
+                    self.eyelashMeshRenderer:SetBlendShapeWeight(idx, value)
+                    self.eyelashMeshRenderer:SetBlendShapeWeight(idx, value)
+                    
+                    self.beardMeshRenderer:SetBlendShapeWeight(idx - 2, value)
+                    self.beardMeshRenderer:SetBlendShapeWeight(idx - 2, value)
+                end
+            end
+        end
+    , 0, time + delayEndTime)
+    :SetOnStop(
+        function()
+            self.mainMeshRenderer:SetBlendShapeWeight(idx, 0)
+            self.mainMeshRenderer:SetBlendShapeWeight(idx, 0)
+            
+            self.eyelashMeshRenderer:SetBlendShapeWeight(idx, 0)
+            self.eyelashMeshRenderer:SetBlendShapeWeight(idx, 0)
+            
+            self.beardMeshRenderer:SetBlendShapeWeight(idx - 2, 0)
+            self.beardMeshRenderer:SetBlendShapeWeight(idx - 2, 0)
+        end
+        ).actionId
+end
+
+function ShieldHarryPair:EyeBowStop()
+    CL.Scheduler.RemoveSchedule(self.eyebowActId)
+end
+
+function ShieldHarryPair:PainFace(intensity)
+    if UE.Time.time - self.lastPainTime > 0.3 then
+        self.lastPainTime = UE.Time.time
+        
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerPlayExpression(self.painFaceIndex, intensity * 100, 0.5, 0.1, 0.2)
+                end
+            end
+        else
+            self:PlayExpression(self.painFaceIndex, intensity * 100, 0.5, 0.1, 0.2)
+        end
+    end
+end
+
+function ShieldHarryPair:SatisfyFace()
+    local maxWeight = math.random(50, 100)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerPlayExpression(self.satisfyFaceIndex, maxWeight, 2, 0.3, 1)
+            end
+        end
+    else
+        self:PlayExpression(self.satisfyFaceIndex, maxWeight, 2, 0.3, 1)
+    end
+end
+
+function ShieldHarryPair:StopExpression()
+    CL.Scheduler.RemoveSchedule(self.expressionActId)
+    --if self.isOnline then
+    --    if CL.Network.VRNetworkManager.Instance.IsServer then
+    --        self.host.interact.networkIB.networkIBState:ServerEyeBowUpdate()
+    --    end
+    --else
+    self:EyeBowUpdate()
+    --end
+end
+
+function ShieldHarryPair:BiteAnim(time)
+    local lastLocalPos = self.jawTrans.localPosition
+    local lastLocalRot = self.jawTrans.localRotation
+    
+    local lastleftCheekPos = self.leftCheekTrans.localPosition
+    local lastleftCheetRot = self.leftCheekTrans.localRotation
+    
+    local lastRightCheekPos = self.rightCheekTrans.localPosition
+    local lastRightCheetRot = self.rightCheekTrans.localRotation
+    
+    local isBite = false
+    local midTime = time * 2/3
+    local value = 0
+    CL.Scheduler.RemoveSchedule(self.boneActId)
+    self.boneActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if t < midTime then
+                value = CL.EasingEquations.EaseOutQuart(0, 1, t/midTime)
+                self.jawTrans.localPosition = UE.Vector3.Lerp(lastLocalPos, self.jawTargetTrans.localPosition, value)
+                self.jawTrans.localRotation = UE.Quaternion.Lerp(lastLocalRot, self.jawTargetTrans.localRotation, value)
+                
+                self.leftCheekTrans.localPosition = UE.Vector3.Lerp(lastleftCheekPos, self.defaultLeftCheekPos, value)
+                self.leftCheekTrans.localRotation = UE.Quaternion.Lerp(lastleftCheetRot, self.defaultLeftCheekRot, value)
+                
+                self.rightCheekTrans.localPosition = UE.Vector3.Lerp(lastRightCheekPos, self.defaultRightCheekPos, value)
+                self.rightCheekTrans.localRotation = UE.Quaternion.Lerp(lastRightCheetRot, self.defaultRightCheekRot, value)
+            else
+                if not isBite then
+                    self.biteSound:PlaySound()
+                    isBite = true
+                end
+                value = CL.EasingEquations.EaseOutQuart(0, 1, (t - midTime)/(time - midTime))
+                self.jawTrans.localPosition = UE.Vector3.Lerp(self.jawTargetTrans.localPosition, self.defaultJawPos, value)
+                self.jawTrans.localRotation = UE.Quaternion.Lerp(self.jawTargetTrans.localRotation, self.defaultJawRot, value)
+                
+                self.leftCheekTrans.localPosition = UE.Vector3.Lerp(self.defaultLeftCheekPos, self.leftCheekTargetTrans.localPosition, value)
+                self.leftCheekTrans.localRotation = UE.Quaternion.Lerp(self.defaultLeftCheekRot, self.leftCheekTargetTrans.localRotation, value)
+                
+                self.rightCheekTrans.localPosition = UE.Vector3.Lerp(self.defaultRightCheekPos, self.rightCheekTargetTrans.localPosition, value)
+                self.rightCheekTrans.localRotation = UE.Quaternion.Lerp(self.defaultRightCheekRot, self.rightCheekTargetTrans.localRotation, value)
+            end
+        end
+    , 0, time).actionId
+end
+
+function ShieldHarryPair:CloseBiteAnim(time)
+    local lastLocalPos = self.jawTrans.localPosition
+    local lastLocalRot = self.jawTrans.localRotation
+    
+    local lastleftCheekPos = self.leftCheekTrans.localPosition
+    local lastleftCheetRot = self.leftCheekTrans.localRotation
+    
+    local lastRightCheekPos = self.rightCheekTrans.localPosition
+    local lastRightCheetRot = self.rightCheekTrans.localRotation
+    
+    CL.Scheduler.RemoveSchedule(self.boneActId)
+    self.boneActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            self.jawTrans.localPosition = UE.Vector3.Lerp(lastLocalPos, self.defaultJawPos, t/time)
+            self.jawTrans.localRotation = UE.Quaternion.Lerp(lastLocalRot, self.defaultJawRot, t/time)
+            
+            self.leftCheekTrans.localPosition = UE.Vector3.Lerp(lastleftCheekPos, self.defaultLeftCheekPos, t/time)
+            self.leftCheekTrans.localRotation = UE.Quaternion.Lerp(lastleftCheetRot, self.defaultLeftCheekRot, t/time)
+            
+            self.rightCheekTrans.localPosition = UE.Vector3.Lerp(lastRightCheekPos, self.defaultRightCheekPos, t/time)
+            self.rightCheekTrans.localRotation = UE.Quaternion.Lerp(lastRightCheetRot, self.defaultRightCheekRot, t/time)
+        end
+    , 0, time).actionId
+end
+
+---------------------------------------Collision------------------------------------------
+
+function ShieldHarryPair:OnColliderEnter(collision)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local relaVelMag = collision.relativeVelocity.sqrMagnitude
+    if self.isBite then
+        return
+    end
+    
+    if relaVelMag < 4 then
+        return
+    end
+    
+    if UE.Time.time - self.lastHitTime < self.painInterval then
+        return
+    end
+    self.lastHitTime = UE.Time.time
+    
+    local intensity = math.min(relaVelMag/100, 1)
+    if intensity > 0.1 then
+        if intensity > 0.7 then
+            self:PlaySoundRandom(self.sound_beaten_strong, intensity - 0.2, 100)
+        else
+            self:PlaySoundRandom(self.sound_beaten, math.min(intensity + 0.2, 0.7), 100)
+        end
+    end
+    self:PainFace(math.min(relaVelMag/30, 1))
+end
+
+------------------------------------------------------------------------------------------
+
+function ShieldHarryPair:EmissionOn()
+    CL.Scheduler.RemoveSchedule(self.emissionActId)
+    SetMaterialEmission(self.renderer, self.activeColor)
+end
+
+function ShieldHarryPair:EmissionOff()
+    CL.Scheduler.RemoveSchedule(self.emissionActId)
+    self.emissionActId = SetMaterialEmissionWithinTime(self.trans, {self.renderer}, UE.Color(0.1, 0.1, 0.1), 1).actionId
+end
+
+---------------------------------------Sound-----------------------------------------------
+
+function ShieldHarryPair:PlaySoundRandom(listIdx, intensity, weight)
+    local ran = math.random(0, 100)
+    if ran >= weight then
+        return false
+    end
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerPlaySound(listIdx, intensity, weight)
+            end
+        end
+    else
+        self:PlaySound(listIdx, intensity, weight)
+    end
+    
+    return true
+end
+
+function ShieldHarryPair:PlaySound(listIdx, intensity, weight)
+    local list = self.soundList[listIdx]
+    if self.au then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.au, 0.1)
+    end
+    self.soundPlayer.soundInfo:RefleshPlaySound()
+    self.soundPlayer.soundInfo.soundNames = list
+    self.au = self.soundPlayer:PlaySoundInfo()
+    if self.au and intensity > 0 then
+        self.au.audio.volume = self.soundPlayer.soundInfo.vol * intensity
+    end
+end
+
+function ShieldHarryPair:SoundEffectUpdate()
+    local enemyWeight = 0
+    CL.Scheduler.RemoveSchedule(self.soundCtlId)
+    self.soundCtlId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if self.hand then
+                local target = CL.AIProxy.GetCloestAndAngleTarget(self.hand.character.trans, 0.7, self.hand.character.aiProxy:GetCamp(), false)
+                if not IsNullOrDestroyed(target) and not self.hand.character.aiProxy:CheckBlockByObstacle(target) then
+                    if self:PlaySoundRandom(self.sound_name_enemy, -1, enemyWeight) then
+                        enemyWeight = -1
+                    end
+                end
+            end
+            
+        end
+    , 0.5, -1).actionId
+end
+
+function ShieldHarryPair:StopSoundEffectUpdate()
+    CL.Scheduler.RemoveSchedule(self.soundCtlId)
+end
+
+return Class(nil,nil,ShieldHarryPair)

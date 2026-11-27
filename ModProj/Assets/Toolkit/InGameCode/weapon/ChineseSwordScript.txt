@@ -1,0 +1,499 @@
+
+local ChineseSword = {
+    damageInfoList = {},
+    hitInterval = 0.22,
+    
+    lastTime = 0,
+    
+    maxCount = 10,
+    
+    cutPlayerEffect = "CutOffBlood",
+}
+
+function ChineseSword:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    
+    
+    local restoreHitScan = function()
+        CL.InteractTrigger.EndHitScan()
+        CL.FullBodyMuscleState.StayDmg = false
+        CL.InteractTrigger.doingHitScan = false
+        CL.InteractTrigger.hitScanProtect = true
+    end
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if CL.Network.VRNetworkManager.ClientOnline then
+            if CL.FullBodyMuscleState.dmgHitData.basicData.stabGeo ~= nil and CL.FullBodyMuscleState.dmgHitData.dmgFinalResult > 0 then
+                local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(thisCol)
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:CmdOnHitPhase(fc.networkCharacter.netId, mu.muscleName, point, 
+                        normal, cid, key, UE.Time.time, CL.FullBodyMuscleState.dmgHitData.dmgFinalResult)
+                end
+            end
+            return
+        end
+
+        local idx = self:IsInfoExist(fc)
+        --print("skill end remove----------------:" .. fc.trans.name .. " idx:" .. tostring(idx) .. " dmg :" ..CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.damageMlp.. " finalDmg:" ..CL.FullBodyMuscleState.dmgHitData.dmgFinalResult)
+        if idx and self.damageInfoList[idx].isApplyDmg then
+            table.remove(self.damageInfoList, idx)
+            return
+        end
+        
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult > 0 then
+            local idx = self:IsInfoExist(fc)
+            if idx then
+                --print("fc update dmgInfo-------------:" .. fc.trans.name .. " olddmg:" ..self.damageInfoList[idx].damage .. " cur:" .. 
+                --    CL.FullBodyMuscleState.dmgHitData.dmgFinalResult)
+                --damage accumulate
+                self.damageInfoList[idx].damage = CL.FullBodyMuscleState.dmgHitData.dmgFinalResult + self.damageInfoList[idx].damage
+                --self.damageInfoList[idx].mu = mu
+                self.damageInfoList[idx].point = point
+                self.damageInfoList[idx].normal = normal
+                self.damageInfoList[idx].col = thisCol
+                self.damageInfoList[idx].time = UE.Time.time
+            else
+                idx = self:GetInfoIdx()
+                --print("get idx---------::".. fc.trans.name .. " idx:" .. idx .. " new ::" ..CL.FullBodyMuscleState.dmgHitData.dmgFinalResult)
+                self.damageInfoList[idx] = {}
+                self.damageInfoList[idx].pu = fc
+                self.damageInfoList[idx].damage = CL.FullBodyMuscleState.dmgHitData.dmgFinalResult
+                --self.damageInfoList[idx].mu = mu
+                self.damageInfoList[idx].point = thisCol.transform:InverseTransformPoint(point)
+                self.damageInfoList[idx].normal = thisCol.transform:InverseTransformDirection(normal)
+                self.damageInfoList[idx].col = thisCol
+                self.damageInfoList[idx].time = UE.Time.time
+                self.damageInfoList[idx].effect = fc.reactAnim.reactProfile.dismemberEffect
+            end
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    
+    self.hitCharacterPhase1 = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        if not self.onSheath then
+            return
+        end
+        
+        if not IsNullOrDestroyed(self.sbUser) and not self.sbUser:IsConnect() then
+            return
+        end
+        
+        local idx = self:IsInfoExist(character:GetPlayerUnit())
+        if idx then
+            local finalDmg = character.aiProxy.finalDmg * character.aiProxy.finalDmgMlp
+            local value = (self.damageInfoList[idx].damage * self.intensity)/finalDmg
+            
+            character.aiProxy.finalDmgMlp = value
+            
+            --print("hitCharacterPhase1 apply dmg value---:" .. finalDmg .. "  value:" .. value .. " isApplyDmg---:" ..tostring(self.damageInfoList[idx].isApplyDmg))
+            
+            self.damageInfoList[idx].isApplyDmg = true
+        else
+            --print("hitCharacterPhase1 not exist---:" .. character.networkPlayer.netId)
+        end
+    end
+    
+    self.hitCharacterPhase2 = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        local idx = self:IsInfoExist(character:GetPlayerUnit())
+        if idx and self.damageInfoList[idx].isApplyDmg then
+            table.remove(self.damageInfoList, idx)
+            --print("hitCharacterPhase2---clear::".. character.trans.name)
+            
+            return
+        end
+        
+        if not fromLocalPlayer then
+            return
+        end
+        --print("hitCharacterPhase---------::".. character.trans.name  .. " dmg:" .. character.aiProxy.finalDmg .. 
+        --    " shieldDmg:" .. character.aiProxy.finalShieldDmg .. 
+        --    " total:" .. (character.aiProxy.finalDmg + character.aiProxy.finalShieldDmg))
+        if CL.Network.VRNetworkManager.IsOnline then
+            if SafeIsOwnerLocalPlayer(self.host.interact) then
+                local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(beHitCol)
+                if CL.Network.VRNetworkManager.ClientOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state:CmdOnHitCharacterPhase(character.networkPlayer.netId, point, 
+                            normal, cid, key, UE.Time.time, character.aiProxy.finalDmg + character.aiProxy.finalShieldDmg)
+                    end
+                else
+                    self:NetworkOnHitCharacterPhase(character.networkPlayer.netId, point, 
+                        normal, cid, key, UE.Time.time, character.aiProxy.finalDmg + character.aiProxy.finalShieldDmg)
+                end
+            end
+        end
+    end
+    if CL.Network.VRNetworkManager.IsOnline then
+        self.hitInfoObj.hitInfo:OnInteractCharacterHitPhase1Event("+", self.hitCharacterPhase1) 
+        self.hitInfoObj.hitInfo:OnInteractCharacterHitPhase2Event("+", self.hitCharacterPhase2) 
+    end
+
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if not self.onSheath then
+            --print("not  onSheath---")
+            return
+        end
+        
+        if not IsNullOrDestroyed(self.sbUser) and not self.sbUser:IsConnect() then
+            return
+        end
+
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp <= 0 then
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = 1
+        end
+        local idx = self:IsInfoExist(fc)
+        if idx then
+            local finalDmg = CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.damageMlp + CL.FullBodyMuscleState.dmgHitData.dmgAdd
+            finalDmg = finalDmg * CL.FullBodyMuscleState.dmgHitData.dmgMlp
+            
+            if self.hitInfoObj.hitInfo.damageThrough > 0 then
+                finalDmg = finalDmg + self.hitInfoObj.hitInfo.damageThrough * finalDmg + CL.FullBodyMuscleState.dmgHitData.dmgArmorAdd * CL.FullBodyMuscleState.dmgHitData.dmgArmorMlp
+            end
+            
+            local value = (self.damageInfoList[idx].damage * self.intensity)/finalDmg
+            
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = value
+            
+            --print("dmg value---:" .. finalDmg .. "  curdmg:" ..CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.damageMlp .. "  totaldmg:" ..self.damageInfoList[idx].damage.."  value:" .. value)
+            
+            --swordLightEff
+            if self.isOnline then
+                local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(thisCol)
+                local pos = thisCol.transform:InverseTransformPoint(point)
+                local dir = thisCol.transform:InverseTransformDirection(normal)
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerSkillOnCollider(fc.networkCharacter.netId, pos, dir, cid, key, false)
+                end
+            else
+                CL.EffectMgr.Instance:PlayEffect("SwordLight", point, UE.Quaternion.LookRotation(normal))
+            end
+            
+            self.damageInfoList[idx].isApplyDmg = true
+        else
+            --print("not exist---:" .. fc.trans.name)
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    
+    self.OnSheathHandler = function(sb, isOn, time)
+        if isOn then
+            if not self.onSheath then
+                self.onSheath = true
+                
+                xpcall(function()
+                    self:SkillOn()
+                end, restoreHitScan)
+            end
+        else
+            --Quickly sheathed to use the skill
+            --if time < 0.5 then
+                self:TryDash(time)
+                self.onSheath = false
+                --print("on sheath---------------false")
+            --end
+        end
+    end
+    self.sbUser:OnSheathEvent("+", self.OnSheathHandler)
+end
+
+function ChineseSword:NetworkOnHitPhase(fcNetId, muName, point, normal, cid, key, time, dmgFinalResult)
+    local netFc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(fcNetId)
+    if IsNullOrDestroyed(netFc) then
+        return
+    end
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(cid, key)
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    local mu = netFc.fc.ra:GetMuscle(muName)
+    if not mu then
+        return
+    end
+    local idx = self:IsInfoExist(netFc.fc)
+    if idx then
+        self.damageInfoList[idx].damage = dmgFinalResult + self.damageInfoList[idx].damage
+        --self.damageInfoList[idx].mu = mu
+        self.damageInfoList[idx].point = point
+        self.damageInfoList[idx].normal = normal
+        self.damageInfoList[idx].col = col
+        self.damageInfoList[idx].time = UE.Time.time
+    else
+        idx = self:GetInfoIdx()
+        self.damageInfoList[idx] = {}
+        self.damageInfoList[idx].pu = netFc.fc
+        self.damageInfoList[idx].damage = dmgFinalResult
+        --self.damageInfoList[idx].mu = mu
+        self.damageInfoList[idx].point = col.transform:InverseTransformPoint(point)
+        self.damageInfoList[idx].normal = col.transform:InverseTransformDirection(normal)
+        self.damageInfoList[idx].col = col
+        self.damageInfoList[idx].time = UE.Time.time
+        self.damageInfoList[idx].effect = netFc.fc.reactAnim.reactProfile.dismemberEffect
+        self.damageInfoList[idx].isApplyDmg = false
+    end
+end
+
+function ChineseSword:NetworkOnHitCharacterPhase(netId, point, normal, cid, key, time, dmgFinalResult)
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(netId)
+    if IsNullOrDestroyed(networkPlayer) then
+        return
+    end
+    
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(cid, key)
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    local playerUnit = networkPlayer.interactCharacter:GetPlayerUnit()
+    local idx = self:IsInfoExist(playerUnit)
+    
+    
+    if idx then
+        self.damageInfoList[idx].damage = dmgFinalResult + self.damageInfoList[idx].damage
+        self.damageInfoList[idx].point = col.transform:InverseTransformPoint(point)
+        self.damageInfoList[idx].normal = col.transform:InverseTransformDirection(normal)
+        self.damageInfoList[idx].col = col
+        self.damageInfoList[idx].time = UE.Time.time
+        --print("NetworkOnHitCharacterPhase-------------:" .. playerUnit.trans.name .. " total dmg:" ..self.damageInfoList[idx].damage)
+    else
+        idx = self:GetInfoIdx()
+        self.damageInfoList[idx] = {}
+        self.damageInfoList[idx].pu = playerUnit
+        self.damageInfoList[idx].damage = dmgFinalResult
+        self.damageInfoList[idx].point = col.transform:InverseTransformPoint(point)
+        self.damageInfoList[idx].normal = col.transform:InverseTransformDirection(normal)
+        self.damageInfoList[idx].col = col
+        self.damageInfoList[idx].time = UE.Time.time
+        self.damageInfoList[idx].effect = self.cutPlayerEffect
+        --print("NetworkOnHitCharacterPhase-------------:" .. playerUnit.trans.name .. " dmgFinalResult:" ..self.damageInfoList[idx].damage)
+    end
+end
+
+function ChineseSword:NetworkOnSwordSkill(point, normal)
+    CL.EffectMgr.Instance:PlayEffect("SwordLight", point, UE.Quaternion.LookRotation(normal))
+end
+
+function ChineseSword:NetworkSkillOnCollider(netId, point, normal, cid, key, isCharacter)
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(cid, key)
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    
+    if isCharacter then
+        local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(netId)
+        if not IsNullOrDestroyed(networkPlayer) then
+            local playerUnit = networkPlayer.interactCharacter:GetPlayerUnit()
+            local idx = self:IsInfoExist(playerUnit)
+            if idx then
+                table.remove(self.damageInfoList, idx)
+            end
+        end
+    else
+        local netFc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(netId)
+        if not IsNullOrDestroyed(netFc) then
+            local idx = self:IsInfoExist(netFc.fc)
+            if idx then
+                table.remove(self.damageInfoList, idx)
+            end
+        end
+    end
+
+    point = col.transform:TransformPoint(point)
+    normal = col.transform:TransformDirection(normal)
+    CL.EffectMgr.Instance:PlayEffect("SwordLight", point, UE.Quaternion.LookRotation(normal))
+end
+
+function ChineseSword:OnGrab(a, g)
+    if g then
+        if a then
+            self.character = a.attachedHand.character
+        end
+    else
+        self.character = nil
+    end
+end
+
+function ChineseSword:IsInfoExist(pu)
+    for k, v in ipairs(self.damageInfoList) do
+        if v.pu == pu then
+            return k
+        end
+    end
+    return false
+end
+
+
+function ChineseSword:GetInfoIdx()
+    local idx = #self.damageInfoList + 1
+    if idx > self.maxCount then
+        local time = self.damageInfoList[1].time
+        for k, v in ipairs(self.damageInfoList) do
+            if IsNullOrDestroyed(v) or 
+            (v.pu.unitType == CL.Tagger.Tag.InteractRole and v.pu.attr:IsDead() or v.pu.character.attr:IsDead()) then
+                return k
+            end
+            
+            if v.time < time then
+                idx = k
+                time = v.time
+            end
+        end
+    end
+    
+    return idx
+end
+
+
+--[[for test
+function ChineseSword:OpenSkill()
+    if not self.onSheath then
+        self.onSheath = true
+            
+        xpcall(function()
+            self:SkillOn()
+        end, 
+        function()
+        CL.InteractTrigger.EndHitScan()
+        CL.FullBodyMuscleState.StayDmg = false
+        CL.InteractTrigger.doingHitScan = false
+        CL.InteractTrigger.hitScanProtect = true
+        end)
+    else
+        self.onSheath = false
+    end
+end
+--]]
+
+function ChineseSword:SkillOn()
+    if IsNullOrDestroyed(self.host) or
+        IsNullOrDestroyed(self.host.interact.rb) then
+        return
+    end
+    local attr = nil
+    local pass = true
+    local curInfo = nil
+    local hitList = {}
+    for i = #self.damageInfoList, 1, -1 do
+        pass = true
+        curInfo = self.damageInfoList[i]
+        if not curInfo or IsNullOrDestroyed(curInfo.pu) then
+            table.remove(self.damageInfoList, i)
+            pass = false
+        else
+            attr = curInfo.pu.unitType == CL.Tagger.Tag.InteractRole and curInfo.pu.attr or curInfo.pu.character.attr
+            if attr:IsDead() then
+                table.remove(self.damageInfoList, i)
+                pass = false
+            end
+        end
+        
+        if pass then
+            table.insert(hitList, curInfo)
+        end
+    end
+    if #hitList <= 0 then
+        return
+    end
+    
+    local holder = self.host.interact:GetHolder()
+    local camp = nil
+    if holder then
+        camp = holder:GetCamp()
+    end
+    
+    CL.InteractTrigger.doingHitScan = true
+    CL.InteractTrigger.hitScanProtect = false
+    
+    local normal = nil
+    --print("dmgInfoListLength--------------:" .. #hitList)
+    
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ByPassHitScanProtect()
+    for i = #hitList, 1, -1 do
+        if hitList[i] and not IsNullOrDestroyed(hitList[i].pu) then
+            if not IsNullOrDestroyed(hitList[i].col) then
+                --print("do hit scan:" .. hitList[i].pu.trans.name)
+                --normal = hitList[i].col.transform:TransformDirection(hitList[i].normal)
+                --print("rb.velocity-----------------------x:::" .. self.host.interact.rb.velocity.x .. " y:" ..self.host.interact.rb.velocity.y .."  z:" .. self.host.interact.rb.velocity.z)
+                normal = self.host.interact.rb.velocity - UE.Vector3.up
+                CL.InteractTrigger.ApplyHitScanDamage(hitList[i].col, self.host.interact, 
+                self.host.interact.rb, self.bladeCol, normal, camp)
+                
+                if hitList[i].pu.unitType == CL.Tagger.Tag.PlayerRole then
+                    if self.isOnline then
+                        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(hitList[i].col)
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then
+                            state:ServerSkillOnCollider(hitList[i].pu.character.networkPlayer.netId, 
+                                hitList[i].point, hitList[i].normal, cid, key, true)
+                        end
+                    else
+                        local point = hitList[i].col.transform:TransformPoint(hitList[i].point)
+                        local dir = hitList[i].col.transform:TransformDirection(hitList[i].normal)
+                        CL.EffectMgr.Instance:PlayEffect("SwordLight", point, UE.Quaternion.LookRotation(dir))
+                    end
+                end
+            end
+        end
+    end
+    
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+    CL.InteractTrigger.doingHitScan = false
+    CL.InteractTrigger.hitScanProtect = true
+    
+end
+
+function ChineseSword:Destroy()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.hitInfoObj.hitInfo.OnInteractRoleHitPhase2Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+    end
+    if self.hitInfoObj.hitInfo.OnInteractRoleHitPhase1Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+    end
+    
+    if self.sbUser.OnSheathEvent then
+        self.sbUser:OnSheathEvent("-", self.OnSheathHandler)
+    end
+end
+
+function ChineseSword:TryDash(time)
+    --[[
+    if self.host.interact:IsEnhance() and time < 0.5 and not IsNullOrDestroyed(self.character) then
+        --breakStuck
+        if not IsNullOrDestroyed(self.character) then
+            self.character:BreakAllStuckActions()
+        end
+    
+        self:Dash()
+    end
+    ]]
+end
+
+function ChineseSword:Dash()
+    local moveDir = self.character:GetHeadset().forward
+    local lh = self.character.hands[CL.RagdollBoneInfo.LEFT_HAND]
+    local inputDir = lh.inputs[CL.VRTKInputButton.ButtonType.Touchpad].Axis
+    
+    if inputDir ~= UE.Vector2.zero then
+        local localDir = UE.Vector3(inputDir.x, 0, inputDir.y)
+        moveDir = self.character:GetHeadset():TransformDirection(localDir)
+        moveDir.y = 0
+        moveDir:Normalize()
+    end
+    
+    self.character:DoDash(moveDir, true, true)
+end
+
+return Class(nil ,nil, ChineseSword)

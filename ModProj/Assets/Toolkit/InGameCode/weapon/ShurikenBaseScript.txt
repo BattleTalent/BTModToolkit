@@ -1,0 +1,268 @@
+--luaBehaviour
+local ShurikenBase = {
+    lifeTime = 10,
+    rotVec = UE.Vector3(0, 90, 0),
+    rotSpeed = 10,
+    }
+
+function ShurikenBase:Awake()
+    self.onStabEnterHandler = function(si)
+        if not IsNullOrDestroyed(self.trail) then
+            self.trail.enabled = false
+        end
+        
+        self:StabEnterEffect(si)
+    end
+    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+end
+
+function ShurikenBase:Start()
+end
+
+function ShurikenBase:Reset()
+    self.trail = self.host.gameObject:GetComponent(UE.TrailRenderer)
+    
+end
+
+function ShurikenBase:StartLifeCircle()
+    self.lifeCircleId = CL.Scheduler.RemoveSchedule(self.lifeCircleId)
+    
+    self.lifeCircleId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:Update()
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ShurikenBase:StopLifeCircle()
+    CL.Scheduler.RemoveSchedule(self.lifeCircleId)
+    self.lifeCircleId = nil
+end
+
+function ShurikenBase:OnEnable()
+    self:StartLifeCircle()
+    
+    if self.isSelfRotate == 1 then
+        self.rotEffect:Play()
+    end
+    
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("+", self.onStabEnterHandler)
+    end
+end
+
+function ShurikenBase:OnDisable()
+    self:StopLifeCircle()
+    
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("-", self.onStabEnterHandler)
+    end
+end
+
+
+function ShurikenBase:Update()
+    if (self.rotateOnShoot == 1 and self.isShoot) or not self.rotateOnShoot then
+        self:AdjectRotation()
+    end
+    
+    if self.isSelfRotate == 1 and not self.isShoot then
+        if not self.rotSoundInfo then
+            self.rotSoundInfo = self.loopSound:PlaySoundInfo()
+            if self.rotSoundInfo then
+                self.rotSoundInfo.ao.trans:SetParent(self.ib.trans)
+                self.rotSoundInfo.ao.trans.localPosition = UE.Vector3.zero
+            end
+        end
+        
+        self:RotateSelf()
+    end
+end
+
+function ShurikenBase:AdjectRotation()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self.disabled then
+       if self.ib.rb.velocity.sqrMagnitude > 0.01 then
+           CL.PhysicsFollow.TrackRotation(self.ib.rb, UE.Quaternion.LookRotation(self.ib.rb.velocity))
+        end
+    end
+end
+
+function ShurikenBase:RotateSelf()
+    self.modelTrans.rotation = self.modelTrans.rotation * UE.Quaternion.Euler(self.rotVec * UE.Time.deltaTime * self.rotSpeed)
+end
+
+function ShurikenBase:OnPut(owner)
+end
+
+function ShurikenBase:OnShoot(owner)
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetIBNetworkState(self.ib)
+            if state ~= nil then state:ServerOnShoot() end
+        end
+    end
+    
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = true
+    end
+    
+    if self.throwSound then
+        self.throwSound:PlaySound()
+    end
+    
+    if self.isSelfRotate == 1 then
+        self.rotEffect:Stop()
+        
+        if self.rotSoundInfo then
+            CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.rotSoundInfo)
+            self.rotSoundInfo = nil
+        end
+    end
+    
+    if owner then
+        CL.FlyObject.CopyWeaponBuffToUnit(owner.host.interact, self.ib)
+    end
+    
+    self.ib:MarkThrowAssist()
+    
+    self.modelTrans.rotation = self.ib.trans.rotation
+    
+    self.isShoot = true
+    
+    self.disabled = false
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.givebackTimeId = CL.Scheduler.Create(self.ib, 
+        function(sche, t, s)
+            self:GiveBack()
+        end,
+    0, 0, self.lifeTime).actionId
+end
+
+function ShurikenBase:NetworkOnShoot()
+    if not self.isShoot then
+        self:OnShoot()
+    end
+end
+
+function ShurikenBase:OnColliderEnter(collision)
+    if self.disabled then
+        return
+    end
+    
+    local hand = CL.InteractHand.GetHandByCollider(collision.collider)
+    if not IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local player = CL.PlayerUnit.GetPhysicsUnit(collision.transform.root)
+    if not IsNullOrDestroyed(player) then
+        if player.unitType == CL.Tagger.Tag.PlayerRole then
+            return
+        end
+    end
+    
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = false
+    end
+    
+    if self.stabEffectName then
+        local thisCol, otherCol, point = collision:GetContactPoint(0)
+        CL.EffectMgr.Instance:PlayEffect(self.stabEffectName,
+            point, self.ib.trans.rotation)
+    end
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil then state:ServerOnCollision() end
+    end
+    
+    self.disabled = true
+end
+
+function ShurikenBase:OnCollision()
+    self:DisableTrail()
+    self.disabled = true
+end
+
+function ShurikenBase:DisableTrail()
+    --CL.Scheduler.RemoveSchedule(self.delayTrailId)
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = false
+    end
+end
+
+function ShurikenBase:StabEnterEffect(si)
+    if self.stabSound then
+        self.stabSound:PlaySound()
+    end
+end
+
+function ShurikenBase:OnCancel(bow)
+    self:GiveBack()
+end
+
+function ShurikenBase:GiveBack()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetIBNetworkState(self.ib)
+            if state ~= nil then state:ServerGiveBack() end
+            self:DoGiveBack()
+        else
+            return
+        end
+    else
+        self:DoGiveBack()
+    end
+end
+
+function ShurikenBase:DoGiveBack()
+    self.disabled = false
+    self.isShoot = false
+    
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:Clear()
+    end
+    
+    self:StopLifeCircle()
+    CL.Scheduler.RemoveSchedule(self.givebackTimeId)
+
+    self:OnResetState()
+
+    if self.rotSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.rotSoundInfo)
+        self.rotSoundInfo = nil
+    end
+    
+    if self.trail ~= nil and not IsNullOrDestroyed(self.trail) then
+        self.trail:Clear()
+        self.trail.enabled = false
+    end
+    if not IsNullOrDestroyed(self.ib) then
+        local hitInfoObj = self.ib:GetRagdollHitInfoObj()
+        if hitInfoObj then
+            hitInfoObj:ResetState()
+        end
+    
+        if self.isOnline then
+            self.ib.networkIB:OnGiveBack()
+        end
+        CL.PrefabPool.GiveBack(self.ib.gameObject)
+    end
+end
+
+function ShurikenBase:OnResetState()
+
+end
+
+return Class(nil, nil, ShurikenBase)

@@ -1,0 +1,401 @@
+
+local ElectricSawBlade = {
+    attenuation = 0.2,    
+    cutSpeed = 0.1,
+    refreshFm = 0.02,
+    
+    colActId = -1,
+    
+    minVolume = 0.2,
+    maxVolume = 0.8,
+    
+    minPitch = 1,
+    maxPitch = 1.5,
+    
+    collisionList = {},
+    collisionCount = 0,
+    
+    cutList = {},
+    cutValue = 0.02,
+    
+    hitTime = 0.15,
+    lastHitTS = 0,
+    
+    stabInfo = {},
+    
+    isActive = false,
+    isFristTouch = true,
+    
+    activeDmgMp = 10,
+}
+
+function ElectricSawBlade:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    
+    self.onGrab = function(a, g)
+        self:OnSawGrab(a, g)
+    end
+    self.sawIb:GrabEvent("+", self.onGrab)
+    
+    local holder = self.interactTrigger.interact:GetLatestHolder()
+    if holder then
+        self.camp = holder:GetCamp()
+    end
+end
+
+function ElectricSawBlade:ClientPlayCuttingEffect(fcNetId, colKey, colId, point, normal)
+    local col = CL.Network.NetworkColliderMgr.Instance:GetCollider(colKey, colId)
+    if IsNullOrDestroyed(col) then
+        return
+    end
+    
+    local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(fcNetId)
+    if IsNullOrDestroyed(nfc) then
+        return
+    end
+    
+    local rm = nfc.fc.ra:GetMuscleByCol(col)
+    if rm then
+        self:PlayCuttingEffect(nfc.fc, rm, point, normal)
+    end
+end
+
+function ElectricSawBlade:PlayCuttingEffect(fc, mu, point, normal)
+    local material = fc.reactAnim.reactProfile.bodyCollisionMaterial
+
+    --local force = self.bladePu.rb.velocity.sqrMagnitude/40
+    CL.CollisionEffectTable.PlayImpact("Weapon", material, point, normal, 0.5)
+end
+
+function ElectricSawBlade:ApplyDesmember(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+    local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point)
+    if not frag then
+        return
+    end
+    
+    if not fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+        return
+    end
+    
+    local cutInfo = self.cutList[mu]
+    if cutInfo then
+        if cutInfo.cd <= 0 then
+            local beCutMu = fc.ra:GetMuscle(frag.Name)
+        
+            if beCutMu and not beCutMu:IsThisRipped() then
+                self.cutMuscle = mu
+                self.cutBodyFragment = frag
+                self.cutList[mu] = nil
+            end
+        else
+            cutInfo.cd = cutInfo.cd - self.cutSpeed
+        end
+    else
+        self.cutList[mu] = {
+            ["cd"] =  otherRB.mass * self.cutValue,
+        }
+        local beCutMu = fc.ra:GetMuscle(frag.Name)
+        if beCutMu and not beCutMu:IsThisRipped() then
+            local parentMu = fc.ra:GetMuscle(CL.RagdollBoneInfo.GetParentBone(frag.Name))
+            if CL.SettingMgr.Instance.realisticEffect then
+                if parentMu then
+                    local cutPos = frag:GetCutPlanePos()
+                    local cutNormal = frag:GetCutPlaneNormal()
+                    local dismemberEffect = fc.reactAnim.reactProfile.dismemberEffect
+                    self.cutList[mu]["dismemberEffect"] = dismemberEffect
+                end
+            end
+            
+            self.cutList[mu]["parentMu"] = parentMu
+            self.cutList[mu]["cutTime"] = UE.Time.time  --for play dismember effect
+        end
+    end
+end
+
+function ElectricSawBlade:OnSawGrab(a, g)
+    if not IsNullOrDestroyed(a) then
+        local isRight = a.attachedHand:GetHandIndex() == 0
+        local player = a.attachedHand.character
+        
+        CL.PhysicsHelper.IgnoreCollisions(self.bladeCols, player.hands[isRight and 0 or 1].physicsHand.colliders, g)
+        player.aiProxy.ra:SetCollisionIgnoreWith(self.bladeCols, g)
+        
+        self.camp = player.aiProxy:GetCamp()
+    end
+end
+
+function ElectricSawBlade:OnColliderEnter(collision)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.sawIb) then
+        return
+    end
+    
+    if not self.isActive then
+        return
+    end
+    
+    if collision.gameObject.layer == CL.LayerDefine.EnvLayer.value or 
+    collision.gameObject.layer == CL.LayerDefine.InteractLayer.value or
+    collision.gameObject.layer == CL.LayerDefine.RagdollLayer.value then
+        if not self.collisionList[collision.collider] then
+            self.isFristTouch = false
+
+            local thisCol, otherCol, point = collision:GetContactPoint(0)
+            
+            if self.isOnline then
+                local state = GetIBNetworkState(self.sawIb)
+                if state ~= nil then
+                    if CL.Network.VRNetworkManager.ServerOnline then
+                        local netId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                        state:ServerShowCollisionExpression(netId, true)
+                        state:ServerRefleshCollisionExpression(netId, point)
+                    else
+                        state:CommandShowCollisionExpression(true)
+                        state:CommandRefleshCollisionExpression(point)
+                    end
+                end
+            end
+            self:ShowCollisionExpression(true)
+            self:RefleshCollisionExpression(point)
+        else
+            self.collisionList[collision.collider] = true
+            self.collisionCount = self.collisionCount + 1
+        end
+    end
+end
+
+function ElectricSawBlade:OnColliderExit(collision)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.sawIb) then
+        return
+    end
+    
+    if self.collisionList[collision.collider] then
+        self.collisionList[collision.collider] = nil
+        self.collisionCount = self.collisionCount - 1
+    end
+    
+    if self.collisionCount <= 0 then
+        if self.isOnline then
+            local state = GetIBNetworkState(self.sawIb)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    local netId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                    state:ServerShowCollisionExpression(netId, false)
+                else
+                    state:CommandShowCollisionExpression(false)
+                end
+            end
+        end
+        self:ShowCollisionExpression(false)
+        
+        self.isFristTouch = true
+    end
+end
+
+function ElectricSawBlade:OnColliderStay(collision)
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.sawIb) then
+        return
+    end
+    
+    if not self.isActive then
+        return
+    end
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    if self.bladeCol ~= thisCol then
+        return
+    end
+    
+    if self.isFristTouch then
+        if collision.gameObject.layer == CL.LayerDefine.EnvLayer.value or 
+        collision.gameObject.layer == CL.LayerDefine.InteractLayer.value or
+        collision.gameObject.layer == CL.LayerDefine.RagdollLayer.value then
+            if not self.collisionList[collision.collider] then
+                self.isFristTouch = false
+                
+                if self.isOnline then
+                    local state = GetIBNetworkState(self.sawIb)
+                    if state ~= nil then
+                        if CL.Network.VRNetworkManager.ServerOnline then
+                            local netId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                            state:ServerShowCollisionExpression(netId, true)
+                        else
+                            state:CommandShowCollisionExpression(true)
+                        end
+                    end
+                end
+                self:ShowCollisionExpression(true)
+            end
+        end
+    end
+    
+    if self.isOnline then
+        local state = GetIBNetworkState(self.sawIb)
+        if state ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                local netId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                state:ServerRefleshCollisionExpression(netId, point)
+            else
+                state:CommandRefleshCollisionExpression(point)
+            end
+        end
+    end
+    self:RefleshCollisionExpression(point)
+    
+    --print("collision name:".. collision.gameObject.name .. "  layer:".. collision.gameObject.layer)
+    --if collision.gameObject.layer == CL.LayerDefine.EnvLayer.value then
+    --end
+    
+    if collision.gameObject.layer == CL.LayerDefine.RagdollLayer.value or 
+    collision.gameObject.layer == CL.LayerDefine.InteractLayer.value then
+        if UE.Time.time - self.lastHitTS < self.hitTime then
+            return
+        end
+        self.lastHitTS = UE.Time.time
+        
+        if IsNullOrDestroyed(self.sawIb) then
+            return
+        end
+        
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collision.transform)
+        
+        if IsNullOrDestroyed(pu) or pu.unitType ~= CL.Tagger.Tag.InteractRole then
+            return
+        end
+        
+        local fc = pu
+        if not fc then
+            return
+        end
+        local rm = fc.ra:GetMuscleByCol(collision.collider)
+        if not rm then
+            return
+        end
+        
+        if CL.SettingMgr.Instance.realisticEffect then
+            if self.isOnline then
+                local state = GetIBNetworkState(self.sawIb)
+                if state ~= nil then
+                    if CL.Network.VRNetworkManager.ServerOnline then
+                        local netId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(collision.collider)
+                        state:ServerPlayCuttingEffect(netId, fc.networkCharacter.netId, key, cid, point, normal)
+                    else
+                        local key, cid = CL.Network.NetworkColliderMgr.Instance:GetColliderKey(collision.collider)
+                        state:CommandPlayCuttingEffect(fc.networkCharacter.netId, key, cid, point, normal)
+                    end
+                end
+                self:PlayCuttingEffect(fc, rm, point, normal)
+            end
+            if fc.muscleState:IsPowerfulCharacter() then
+                if fc.attr:IsDead() then
+                    self:ApplyDesmember(fc, rm, otherCol, rm.rb, thisCol, point)
+                end
+            else
+                if fc.attr:GetHpFactor() < 0.5 then
+                    self:ApplyDesmember(fc, rm, otherCol, rm.rb, thisCol, point)
+                end
+            end
+        end
+        
+        if self.isOnline then
+            local state = GetIBNetworkState(self.sawIb)
+            if state ~= nil then
+                if CL.Network.VRNetworkManager.ClientOnline then
+                    state:CommandApplyHit(otherCol, -normal)
+                else
+                    state:ServerApplyHit(otherCol, -normal)
+                end
+            end
+        end
+        
+        CL.FullBodyMuscleState.StayDmg = true
+        CL.FullBodyMuscleState.SlashDmg = true
+        CL.InteractTrigger.BeginScanDmg()
+        CL.InteractTrigger.ApplyHitScanDamage(otherCol, self.sawIb, self.sawIb.rb, self.bladeCol, -normal, "None")
+        CL.InteractTrigger.EndHitScan()
+        CL.FullBodyMuscleState.StayDmg = false
+        CL.FullBodyMuscleState.SlashDmg = false
+    end
+end
+
+function ElectricSawBlade:NetworkApplyHitScan(otherCol, dir)
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(otherCol, self.sawIb, self.sawIb.rb, self.bladeCol, dir, "None")
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+    CL.FullBodyMuscleState.SlashDmg = false
+end
+
+function ElectricSawBlade:ShowCollisionExpression(isShow)
+    if IsNullOrDestroyed(self.effect) then
+        return
+    end
+    if isShow then
+        self.effect:Play()
+        if not self.soundInfo then
+            self.soundInfo = self.sound:PlaySoundInfo()
+            if self.soundInfo then
+                self.soundInfo.ao.transform:SetParent(self.sound.gameObject.transform)
+            end
+        end
+    else
+        self.effect:Stop()
+        if self.soundInfo then
+            CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.soundInfo)
+            self.soundInfo = nil
+        end
+    end
+end
+
+function ElectricSawBlade:RefleshCollisionExpression(point)
+    if IsNullOrDestroyed(self.effect) then
+        return
+    end
+    
+    if not IsNullOrDestroyed(self.hand) then
+        self.hand:HapticPulse(0.5)
+    end
+    
+    --effect position update
+    self.effect.gameObject.transform.position = self.bladeCol:ClosestPoint(point)
+    
+    --sound data (according to impulse)
+    --local sqrInpulse = col.impulse.sqrMagnitude
+    --self.sound.pitch
+    --self.sound.volume
+end
+
+function ElectricSawBlade:SetSawActive(isActive)
+    self.isActive = isActive
+    
+    if not isActive then
+        self.isFristTouch = true
+        if self.isOnline then
+            if SafeIsOwnerLocalPlayer(self.sawIb) then
+                local state = GetIBNetworkState(self.sawIb)
+                if state ~= nil then
+                    if CL.Network.VRNetworkManager.ServerOnline then
+                        local netId = CL.InteractCharacter.PlayerInstance.networkPlayer.netId
+                        state:ServerShowCollisionExpression(netId, false)
+                    else
+                        state:CommandShowCollisionExpression(false)
+                    end
+                end
+                self:ShowCollisionExpression(false)
+            end
+        else
+            self:ShowCollisionExpression(false)
+        end
+    end
+end
+
+function ElectricSawBlade:Enhance()
+    self.cutSpeed = self.cutSpeed * 2
+end
+
+function ElectricSawBlade:OnDestroy()
+end
+
+return Class(nil,nil,ElectricSawBlade)

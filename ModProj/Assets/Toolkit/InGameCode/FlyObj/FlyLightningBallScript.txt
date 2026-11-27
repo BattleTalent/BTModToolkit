@@ -1,0 +1,251 @@
+local FlyLightningBall = {
+    lightRadius = 2,
+    
+    lastEndTime = 0,
+    lastSearchTime = 0,
+    searchInterval = 0.1,
+    
+    infoList ={},
+    selectInfos = {},
+    ignoreCols = {},
+    spawnRadius = 0.1,
+}
+
+function FlyLightningBall:OnSpawn()
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    
+    CL.Scheduler.RemoveSchedule(self.lightningActId)
+    if self.host.col and IsNullOrDestroyed(self.host.col) then
+        self.ignoreCols[self.host.col] = true
+    end
+    
+    local scale = 0
+    self.lightningActId = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if t > self.host.maxFlyTime - 0.3 then
+                scale = (t - self.host.maxFlyTime)/0.3
+                self.trans.localScale = UE.Vector3(scale, scale, scale)
+            else
+                self:TrySpawnLightning()
+            end
+        end
+    , 0, self.host.maxFlyTime)
+    
+end
+
+function FlyLightningBall:TrySpawnLightning()
+    if UE.Time.time < self.lastEndTime then
+        return false
+    end
+    
+    if self.isOnline then
+        if IsNullOrDestroyed(self.host.networkFO) then
+            return false
+        end
+    end
+    
+    local fo = nil
+    
+    local recordEndTime = 0
+    local interval = 0
+    local count = 0
+    
+    local dir = nil
+    
+    if UE.Time.time >= self.lastSearchTime then
+        self.infoList = self:GetTarget(self.trans.position + self.trans.forward * self.host.rb.velocity.magnitude * self.searchInterval, self.trans.forward, self.ignoreCols)
+        self.lastSearchTime = UE.Time.time + self.searchInterval
+    end
+    
+    
+    if #self.infoList > 0 then
+        count = math.random(self.minCount, self.maxCount)
+        self.selectInfos = self:WeightedRandom(self.infoList, count)
+        for i = 1, count do
+            if self.selectInfos[i] and self.selectInfos[i].col 
+                and not IsNullOrDestroyed(self.selectInfos[i].col) then
+                --print(" select target:" .. self.selectInfos[i].col.transform.root.name)
+                dir = self.selectInfos[i].col.transform.position + self.spawnRadius * UE.Random.insideUnitSphere - self.trans.position
+            else
+                dir = self.trans.forward + UE.Random.insideUnitSphere * 0.5
+            end
+
+            
+            fo = nil
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    fo = CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.summonObjName, self.host.owner, self.trans.position, dir, -1)
+                    if IsNullOrDestroyed(fo) then
+                        return false
+                    end
+                    
+                    self.host.networkFO:ServerOnSummonLightning(fo)
+                end
+            else
+                fo = CL.FlyObject.CreateFlyObj(self.summonObjName, self.host.owner, self.trans.position, dir)
+            end
+            
+            if fo then
+                local tb = fo.script:GetSelf()
+                tb:SetOriginFo(self.host)
+                self.ignoreCols[fo.col] = true
+            end
+        end
+        recordEndTime = self.lastEndTime
+        interval = UE.Random.Range(self.minInterval, self.maxInterval)
+        self.lastEndTime = UE.Time.time + interval
+        
+        return true
+    end
+end
+
+function FlyLightningBall:NetworkOnSummonLightning(fo)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not IsNullOrDestroyed(fo) then
+        local tb = fo.script:GetSelf()
+        tb:SetOriginFo(self.host)
+        self.ignoreCols[fo.col] = true
+    end
+end
+
+--[[
+    Electrically Conductive
+]]
+
+function FlyLightningBall:GetTarget(pos, dir, ignoreCols)
+    
+    self.colNum = UE.Physics.OverlapSphereNonAlloc(pos, self.lightRadius, 
+                CL.PhysicsHelper.shareOverlapColArray)
+
+    if self.colNum <= 0 then
+        return
+    end
+    
+    local infoList = {}
+    local pu = nil
+    local weight = 0 
+    local rb = nil
+    local pass = nil
+    local anchor = nil
+    local player = nil
+    if self.host.ownerHolder ~= nil and not IsNullOrDestroyed(self.host.ownerHolder) then
+        if not IsNullOrDestroyed(self.host.ownerHolder.character) then
+            player = self.host.ownerHolder.character:GetPlayerUnit() 
+        end
+    end
+    --print("raycastHitLength ::".. raycastHit.Length .. "  len---:"..UE.Vector3.Distance(pos, self["testpoint4"].position) .. " rad:" ..self.lightRadius)
+    for i = 0, self.colNum - 1 do
+        weight = 0
+        pass = true
+        --print("col:" .. raycastHit[i].collider.transform.name .. "  pos ::" .. raycastHit[i].point.x .. " y:" 
+        --    ..raycastHit[i].point.y .."  z:" .. raycastHit[i].point.z)
+
+        if not ignoreCols[CL.PhysicsHelper.shareOverlapColArray[i]] then
+            pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(CL.PhysicsHelper.shareOverlapColArray[i])
+            if pu == player then
+                pass = false
+            end
+            
+            if not IsNullOrDestroyed(pu) then
+                --if pu.unitType == CL.Tagger.Tag.PlayerRole 
+                --or pu.unitType == CL.Tagger.Tag.PlayerHand
+                if pu.unitType == CL.Tagger.Tag.Env 
+                or pu.unitType == CL.Tagger.Tag.EnvGround then
+                    pass = false
+                end
+                
+                if pass then
+                    if pu.unitType == CL.Tagger.Tag.InteractRole then
+                        weight = weight + 50 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.InteractWeapon then
+                        weight = weight + 4 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.FlyObject then
+                        weight = weight + 3 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.InteractObj then
+                        weight = weight + 2 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.SceneObject then
+                        weight = weight + 1 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.PlayerRole then
+                        weight = weight + 30 * self.weightIntensity
+                    elseif pu.unitType == CL.Tagger.Tag.PlayerHand then
+                        weight = weight + 20 * self.weightIntensity
+                    end 
+                    
+                    
+                    rb = CL.PhysicsHelper.shareOverlapColArray[i].attachedRigidbody
+                    if rb then
+                        weight = weight + 1
+                        
+                        if not rb.isKinematic then
+                            weight = weight + 1
+                        end
+                    end
+                    --print("distance :: " .. raycastHit[i].collider.transform.root.name .." ::" .. raycastHit[i].distance .. " weight:" .. weight)
+                    
+                    
+                    table.insert(infoList, {
+                        ["weight"] = weight,
+                        ["col"] = CL.PhysicsHelper.shareOverlapColArray[i],
+                    })
+                end
+            end
+        end
+    end
+    
+    table.sort(infoList, 
+        function(a,b)
+            return a.weight > b.weight
+        end
+    )    
+    
+    return infoList
+end
+
+
+function FlyLightningBall:WeightedRandom(infos, count)
+    local sum = 0
+    for _, v in ipairs(infos) do
+        sum = sum + v.weight
+    end
+    
+    local list = {}
+    local selects = {}
+    for i = 1, count do
+        list[i] = math.random(1, sum)
+    end
+    local n = 0
+    for idx, v in ipairs(infos) do
+        for i = count, 1, -1 do
+            if not list[i] then
+                break
+            end
+            
+            if list[i] <= v.weight then
+                table.insert(selects, infos[idx])
+                table.remove(list, i)
+            else
+                list[i] = list[i] - v.weight
+            end
+        end
+        
+        if #list <= 0 then
+            break
+        end
+    end
+    
+    return selects
+end
+
+
+
+
+function FlyLightningBall:ResetState()
+    self.infoList ={}
+    self.selectInfos = {}
+    self.ignoreCols = {}
+end
+
+return Class(nil, nil, FlyLightningBall)

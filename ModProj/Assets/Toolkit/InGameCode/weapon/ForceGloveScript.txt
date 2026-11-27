@@ -1,0 +1,549 @@
+
+local tt = {}
+local swingSpeed = 0.8
+local flyObjName = "FlyClaw"
+
+local color1 = UE.Color(0.72, 0.4, 0.95, 0)
+local color2 = UE.Color(0, 0, 0, 0)
+local colorIntensity = 3
+
+function tt:Awake()
+    self.cd = 2
+    self.dragSpeed = 150
+    self.angleSpeed = 200
+    self.cDragSpeed = 250
+    self.intensity = 40    
+    self.fcIntensity = 15
+    self.createTime = 0
+    
+    self.dis = 0.6
+    
+    self.jointList = {}
+    self.jointPool = {}
+end
+
+function tt:OnGrab(a, g)
+    if (g) then
+        if(a.attachedHand:GetHandIndex() == 0) then 
+            self.hand = "right";
+        else
+            self.hand = "left";
+        end
+        
+        local player = CL.InteractCharacter.PlayerInstance
+        if player == nil then
+            return
+        end
+        local ikRef = player.ik.references;
+        self.armBone = ikRef.rightForearm;
+        self.handBone = ikRef.rightHand;
+        self.pelvis = ikRef.pelvis;
+        if(self.hand == "left") then 
+            self.armBone = ikRef.leftForearm;
+            self.handBone = ikRef.leftHand;
+        end
+        self.hand = player.hands[a.attachedHand:GetHandIndex()]        
+        self.otherHand = player.hands[1-a.attachedHand:GetHandIndex()]
+        self.handPoseControl = self.hand.handPoseControl
+        
+        self.playerRb = player.capsuleRB
+        self.playerTrans = self.playerRb.transform
+        self.renders = self.hand == "right" and CL.InteractTrigger.GetHandRRenderer() or CL.InteractTrigger.GetHandLRenderer()
+    else
+        self:CloseSkill()
+        self.claw = nil
+        self:SetExpression(false)
+    end
+end
+
+
+function tt:OpenSkill()
+    if not self.onCharge and not self.claw then
+        self.onCharge = true
+        --UnGrab
+        if not self.rbs then
+            self:SetExpression(true)
+            self:SetChargeEffect(true)
+            
+            self.lastRecordTime = 0
+            self.velocityList = {}
+            local lastSamplingTime = 0
+        
+            local pos = self.createPoint.position
+            local dir = -self.host.interact.trans.right
+            self.claw = self.host:CreateFlyObj(flyObjName, pos, dir)
+            self.claw.rb.velocity = UE.Vector3.zero
+            self.claw.rb.angularVelocity = UE.Vector3.zero
+            self.claw.trans.localScale = UE.Vector3.zero
+        
+            self.cdTimer = CL.Scheduler.Create(self,
+                function(sche, t, s)
+                    if self.claw then
+                        local scale = UE.Vector3.Lerp(self.claw.trans.localScale, UE.Vector3.one,  t/self.cd)
+                        if scale.x >= 1 and not self.isReady then
+                            local scp = self.claw.gameObject:GetComponent("FlyObjectX").script
+                            local lua = scp.self
+                            lua.isReady = true
+                            self.isReady = true
+                            self:SetChargeEffect(false)
+                        else
+                            self.claw.trans.localScale = scale
+                        end
+                        local tarPos = self.createPoint.position
+                        CL.PhysicsFollow.TrackPosition(self.claw.rb, tarPos, 50)
+                        
+                        if self.isReady then
+                            local realVol = self.host.interact.rb.velocity - self.playerRb.velocity
+                            local realSpeed = realVol.magnitude
+                            
+                            local curTime = UE.Time.time
+                            if curTime - lastSamplingTime > 0.007 then
+                                if #self.velocityList >= 15 then
+                                    table.remove(self.velocityList, 1)
+                                end
+                                table.insert(self.velocityList, realVol)
+                                lastSamplingTime = curTime
+                            end
+                            
+                            --record if velocity bigger then minSpeed
+                            if realSpeed >= swingSpeed then
+                                self.lastRecordTime = curTime
+                                self.lastMaxVol = realVol
+                            end
+                        end
+                    else
+                        self:SetChargeEffect(false)
+                        self.isReady = false
+                    end
+                end
+            , UE.Time.deltaTime, -1)
+            :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+        else
+            --drag object
+            self:SetExpression(false)
+            CL.Scheduler.RemoveSchedule(self.dragDelayTimeId)
+            self.dragDelayTimeId = CL.Scheduler.Create(self,
+                function(sche, t, s)
+                    self.isDrag = true
+                    self.dragTime = UE.Time.time
+                end
+            , 0, 0, 0.2)
+            :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+        end
+    end
+end
+
+function tt:CloseSkill()
+    self:SetChargeEffect(false)
+    --print("On CloseSkill")
+    if self.cdTimer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.cdTimer.actionId)
+        self.cdTimer = nil
+    end
+    
+    if self.dragDelayTimeId then
+        CL.Scheduler.RemoveSchedule(self.dragDelayTimeId)
+    end
+            
+    if not self.rbs then
+        if self.isReady then
+            --print("On Grabing")
+            if UE.Time.time - self.lastRecordTime < 0.15 then
+                local realVol = self.host.interact.rb.velocity - self.playerRb.velocity
+                
+                if realVol.magnitude < 0.4 then
+                    return false
+                end
+                local dir;
+                for k, vol in ipairs(self.velocityList) do
+                    dir = dir + vol
+                end
+                self.claw:AddForce(dir.normalized * self.intensity, UE.ForceMode.VelocityChange)
+                self.host.interact:CostDurability()
+                
+                local scp = self.claw.gameObject:GetComponent("FlyObjectX").script
+                local lua = scp.self
+                lua:StartFly()
+            end
+        else
+            if self.claw then
+                local scp = self.claw.gameObject:GetComponent("FlyObjectX").script
+                local lua = scp.self
+                lua:OnDestroy()
+                self:SetExpression(false)
+                self.claw = nil
+            end
+        end
+    else
+        self:SetExpression(true, function()
+           self:SetExpression(false)
+        end)
+        self:ThrowObj()
+    end
+    self.isReady = false
+    self.onCharge = false
+end
+
+
+function tt:OnClawTrigger(collider, pu)
+    local root = collider.gameObject.transform.root
+    pu = root:GetComponent(typeof(CL.PhysicsUnit))
+    local fc = root:GetComponent("FullCharacterControl")
+    
+    local cacheRb = nil
+    if self.otherHand.attachTo then
+        if self.otherHand.attachTo.interact.unitType == CL.Tagger.Tag.InteractWeapon then
+            local interact = self.otherHand.attachTo.interact
+            local itx = interact.trans:GetComponent(typeof(CL.InteractGloveTriggerX))
+            if itx then
+                local lua = itx.script.self
+                if lua.fc and fc and fc == lua.fc then
+                    if not lua.hasBeenRipped then
+                        --print("catch the same enemy!")
+                        return     
+                    else
+                        cacheRb = lua.rbs[1]
+                    end
+                end
+                local rb = root:GetComponentInChildren(typeof(UE.Rigidbody))
+                if lua.rbs and lua.rbs[1] == rb then
+                    --print("catch the same rigidbody!")
+                    return
+                end
+            end
+        end
+    end
+    if self.rbs then
+        return
+    end
+
+    if (pu ~= nil) then
+        self.tpu = pu
+        if fc then
+            self.fc = fc
+            self.hasBeenRipped = fc.ra:HasBeenRipped()
+            if self.hasBeenRipped then
+                local mc = collider.gameObject:GetComponent(typeof(CL.RagdollMuscleCollision)) or collider.gameObject.parent:GetComponent(typeof(CL.RagdollMuscleCollision))
+                if mc then
+                    self.rootName = fc.bone:GetRootOfRippedMuscleChain(mc.muName)
+                    local rm = fc.ra:GetMuscle(self.rootName)
+                    if rm.rb then
+                        if cacheRb == rm.rb then
+                            --print("catch the same muscle")
+                            return
+                        end
+                        self.rbs = {}
+                        table.insert(self.rbs, rm.rb)
+                        self:StartDrag()
+                        return
+                    end
+                end
+            else
+                --can grab or not
+                if not fc.motion.disableMotionFeature then
+                    self:StartDrag()
+                    return
+                else
+                    return
+                end
+            end
+            
+            local rb = collider.attachedRigidbody
+            if rb then
+                self.rbs = {}
+                table.insert(self.rbs, rb)
+                self:StartDrag()
+                return
+            end
+        end
+    end
+    
+    local rb = collider.attachedRigidbody
+    if rb ~= nil then
+        self.rbs = {}
+        table.insert(self.rbs, rb)
+        self:StartDrag()
+        return
+    end
+end
+
+function tt:StartDrag()
+    if self.fc and not self.hasBeenRipped then
+        if self.fc.motion.disableMotionFeature then
+            self.fc:AddForce(-self.host.transform.up * self.intensity, UE.ForceMode.VelocityChange)
+            self.rbs = nil
+            self.jointList = {}
+            return
+        else
+            self.startPos = self.fc.controller.capsuleRB.transform.position
+            self.poseHight = (self.handBone.position - self.pelvis.position).y
+            self.fc.motion:Knockout()
+            --dddself.bone:SetCollisionIgnoreWithMusclePartOnly()
+            self.fc.anim:PlayState("FallingLoop", 0.1)
+            self.fc.anim.animator:Update(1)
+            if not self.rbs then
+                self:GetPartPosition()
+            end        
+        end
+    end
+    local root = self.host.transform.root
+    if self.timer ~= nil then
+        self.host:RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+    
+    local isCharacter = self.fc and not self.hasBeenRipped
+    self.timer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            local vec = self.playerTrans.position - root.position
+                    
+            local isGrab = isCharacter and (self.fc.controller.capsuleRB.position - (root.position - root.right * self.dis)).sqrMagnitude < 3 or false
+            if isCharacter then
+                self.headPos.transform.rotation = UE.Quaternion.LookRotation(-self.playerTrans.forward)
+                if self.isDrag then
+                    self.fc.anim.animator:Update(UE.Time.unscaledDeltaTime)
+                end
+            end
+            for k, rb in ipairs(self.rbs) do
+                if isCharacter then
+                    if self.isDrag then
+                        self.fc.motion:Knockout()
+                        if isGrab and self.otherMuscle[rb] then
+                            
+                        else
+                            --local lerpPos = UE.Vector3.Lerp(rb.transform.position, self.jointList[rb]["obj"].transform.position, 0.5)
+                            local targetPos = self.jointList[rb]["obj"].transform.position
+                            local vec = targetPos - rb.transform.position
+                            local len = UE.Mathf.Lerp(0, 25, (UE.Time.time - self.dragTime)*3)
+                            vec = vec.sqrMagnitude > 1 and rb.transform.position + vec.normalized * UE.Time.unscaledDeltaTime * len or targetPos
+                            CL.PhysicsFollow.TrackPosition(rb, vec,  100)
+                        end
+                    else
+                        if self.mainMuscle[rb] then
+                            local dir = self.handBone.position - self.pelvis.position
+                            local rpos = rb.transform.position
+                            local offset = UE.Vector3(self.jointList[rb]["pos"].x + dir.x * 2, 
+                                self.jointList[rb]["pos"].y + dir.y - self.poseHight, 
+                                self.jointList[rb]["pos"].z + dir.z * 2)
+                            local lerpPos = UE.Vector3.Lerp(rb.transform.position, offset, 0.5)
+                            CL.PhysicsFollow.TrackPosition(rb, lerpPos, 5)
+                        end
+                    end
+                else
+                    local tarPos = self.createPoint.position + self.createPoint.up * self.dis
+                    local lerpPos = UE.Vector3.Lerp(rb.transform.position, tarPos, 0.5)
+                    CL.PhysicsFollow.TrackPosition(rb, lerpPos, 5)
+                    local tarRot = UE.Quaternion.LookRotation(self.createPoint.up)
+                    local localRot = UE.Quaternion.Slerp(rb.transform.rotation, tarRot, 0.1)
+                    CL.PhysicsFollow.TrackRotation(rb, localRot, 10)
+                end
+            end
+        end
+    , UE.Time.unscaledDeltaTime, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+ 
+
+--The offset of each position relative to the head
+function tt:GetPartPosition()
+    if not self.fc then
+        return
+    end
+    self.rbs = {}
+    self.mainMuscle = {}
+    self.otherMuscle = {}
+    local muscles = {}
+    local head = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.Head)
+    table.insert(muscles, head)
+    
+    self.ragTrans = self.fc.bone.ragdollRoot
+    local root = self.host.transform.root
+    
+    self.headPos.transform.rotation = UE.Quaternion.LookRotation(-self.playerTrans.forward)
+    self.headPos.transform.position = root.position + (self.handBone.position - self.pelvis.position).normalized * self.dis
+
+    local pelvis = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.Pelvis)
+    table.insert(muscles, pelvis)
+    self.mainMuscle[pelvis.rb] = pelvis.rb.position
+    
+    local spine = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.Spine)
+    if spine.joint.connectedBody ~= nil then
+        table.insert(muscles, spine)
+        self.mainMuscle[spine.rb] = true
+    end
+    
+    local rUpArm = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.RUpArm)
+    if rUpArm.joint.connectedBody ~= nil then
+        table.insert(muscles, rUpArm)
+        self.mainMuscle[rUpArm.rb] = true
+    end
+    
+    local lUpArm = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.LUpArm)
+    if lUpArm.joint.connectedBody ~= nil then
+        table.insert(muscles, lUpArm)
+        self.mainMuscle[lUpArm.rb] = true
+    end
+    
+    local rForeArm = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.RForeArm)
+    if rForeArm.joint.connectedBody ~= nil then
+        table.insert(muscles, rForeArm)
+        self.otherMuscle[rForeArm.rb] = rForeArm
+    end
+    
+    local lForeArm = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.LForeArm)
+    if lForeArm.joint.connectedBody ~= nil then
+        table.insert(muscles, lForeArm)
+        self.otherMuscle[lForeArm.rb] = lForeArm
+    end
+    
+    local rHand = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.RHand)
+    if rHand.joint.connectedBody ~= nil then
+        table.insert(muscles, rHand)
+        self.otherMuscle[rHand.rb] = rHand
+    end
+    
+    local lHand = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.LHand)
+    if lHand.joint.connectedBody ~= nil then
+        table.insert(muscles, lHand)
+        self.otherMuscle[lHand.rb] = lHand
+    end
+    
+    local rCalf = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.RCalf)
+    if rCalf.joint.connectedBody ~= nil then
+        table.insert(muscles, rCalf)
+        self.otherMuscle[rCalf.rb] = rCalf
+    end
+    
+    local lCalf = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.LCalf)
+    if lCalf.joint.connectedBody ~= nil then
+        table.insert(muscles, lCalf)
+        self.otherMuscle[lCalf.rb] = lCalf
+    end
+    
+    local rThigh = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.RThigh)
+    if rThigh.joint.connectedBody ~= nil then
+        table.insert(muscles, rThigh)
+        self.otherMuscle[rThigh.rb] = rThigh
+    end
+    
+    local lThigh = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.LThigh)
+    if lThigh.joint.connectedBody ~= nil then
+        table.insert(muscles, lThigh)
+        self.otherMuscle[lThigh.rb] = lThigh
+    end
+    
+    local rFoot = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.RFoot)
+    if rFoot.joint.connectedBody ~= nil then
+        table.insert(muscles, rFoot)
+        self.otherMuscle[rFoot.rb] = rFoot
+    end
+    
+    local lFoot = self.fc.ra:GetMuscle(CL.RagdollBoneInfo.LFoot)
+    if lFoot.joint.connectedBody ~= nil then
+        table.insert(muscles, lFoot)
+        self.otherMuscle[lFoot.rb] = lFoot
+    end
+    
+    local headTrans = self.headPos.transform
+    local vec = rUpArm.skl.position - lUpArm.skl.position
+    --self.lastPos.transform.position = rUpArm.skl.position
+    --self.jointPos.transform.position = lUpArm.skl.position
+    local angle = UE.Vector3.SignedAngle(UE.Vector3(vec.x, 0, vec.z), -self.playerTrans.right, UE.Vector3.up)
+    
+    local idx = 1
+    for k, v in ipairs(muscles) do
+        local jointPoint = self:GetJoint()
+        jointPoint.transform.position = headTrans.position + v.skl.position - head.skl.position
+        jointPoint.transform.position = self:RotateAround(jointPoint.transform.position, headTrans.position, UE.Vector3.up, angle)
+        self.jointList[v.rb] = {}
+        self.jointList[v.rb]["obj"] = jointPoint
+        self.jointList[v.rb]["pos"] = v.skl.position
+        idx = idx + 1
+        
+        table.insert(self.rbs, v.rb)
+    end
+end
+
+function tt:GetJoint()
+    local len = #self.jointPool
+    if len > 0 then
+        local obj = self.jointPool[len]
+        table.remove(self.jointPool, len)
+        return obj
+    else
+        local jointPoint = UE.Object.Instantiate(self.jointPos)
+        jointPoint.transform:SetParent(self.headPos.transform)
+        jointPoint.name = "joint"..len + 1
+        return jointPoint
+    end
+end
+
+function tt:RecycleJoint(obj)
+    table.insert(self.jointPool, obj)
+end
+
+function tt:SetExpression(isOnCharge, func)
+    self.host:SetGloveColor(isOnCharge and color1 or color2, isOnCharge and 0.2 or 0.5)
+    local tarValue = isOnCharge and 0.2 or 0.5
+    CL.Scheduler.RemoveSchedule(self.expTimeId)
+    self.expTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            for i = 0, 4 do
+                local weight = UE.Mathf.Lerp(self.handPoseControl.fingers[i].latestWeight, tarValue, 0.4)
+                self.handPoseControl.fingers[i]:SetPose(weight)
+            end
+        end
+    , UE.Time.unscaledDeltaTime, 0.2)
+    :SetOnStop(function()
+        if func then
+            func()
+        end
+    end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function tt:ThrowObj()
+    if self.fc then
+        if self.hasBeenRipped then
+            self.fc.bone:AddForceWithMusclePart(self.rootName, -self.host.interact.trans.right * self.intensity, UE.ForceMode.VelocityChange)
+        else
+            self.fc.motion:Knockout()
+            
+            local vec = self.host.interact.rb.velocity.magnitude > 1 and self.host.interact.rb.velocity.normalized or self.host.interact.rb.velocity
+            self.fc:AddForce(vec * self.fcIntensity, UE.ForceMode.VelocityChange)
+        end
+    else
+        if self.tpu then
+            self.tpu:AddForce(self.createPoint.up * self.intensity, UE.ForceMode.VelocityChange)
+        else
+            --normal collider
+        end
+    end
+    
+    if self.timer ~= nil then
+        CL.Scheduler.RemoveSchedule(self.timer.actionId)
+        self.timer = nil
+    end
+    self.isDrag = false
+    self.fc = nil
+    self.rbs = nil
+    self.tpu = nil
+    self.hasBeenRipped = nil
+    self.dragTime = nil
+    for k, v in pairs(self.jointList) do
+        self:RecycleJoint(v["obj"])
+    end
+    self.jointList = {}
+end
+
+function tt:SetChargeEffect(isPlay)
+    self.soundEffect.enabled = isPlay
+end
+
+function tt:RotateAround(pos, center, axis, angle)
+    local point = UE.Quaternion.AngleAxis(angle, axis) * (pos - center)
+    return center + point
+end
+
+return Class(nil,nil,tt)

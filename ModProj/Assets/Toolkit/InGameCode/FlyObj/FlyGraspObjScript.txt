@@ -1,0 +1,205 @@
+
+local flyGraspObj = {
+    pullingPlayerTime = 2,
+    pullingCharacterTime = 5,
+}
+local spellForceGrasp = Require("Weapon/SpellForceGraspScript")
+
+function flyGraspObj:FlyStart()
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self.host.networkFO:CommandPullingInfo(nil, nil, nil, nil)
+    end
+end
+
+function flyGraspObj:luaRequestPullingInfo(playerNetId)
+    if IsNullOrDestroyed(self.pullingPu) then
+        return
+    end
+    
+    local isPlayer = self.pullingPu.unitType == CL.Tagger.Tag.PlayerRole
+    if isPlayer then
+        self.host.networkFO:ServerPullingInfo(playerNetId, isPlayer, self.pullingPu.character.networkPlayer.netId, "", self.targetPoint)
+    else
+        self.host.networkFO:ServerPullingInfo(playerNetId, isPlayer, self.pullingPu.networkCharacter.netId, self.pullingMu.muscleName, self.targetPoint)
+    end
+end
+
+function flyGraspObj:StartPulling(pu, mu, point)
+    self.pullingPu = pu
+    self.pullingMu = mu
+    self.targetPoint = point
+    
+    local rb = mu.rb
+    CL.Scheduler.RemoveSchedule(self.actId)
+    
+    local eoDir = nil
+    local randomDir = UE.Random.insideUnitSphere
+    eoDir = UE.Vector3(randomDir.x, 0, randomDir.y)
+    self.eo = self:PlayPinEffect(point, eoDir)
+    
+    local targetPos = nil
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        pu.motion:Knockout()
+        targetPos = flyGraspObj.GetFcGraspPoint(pu, mu)
+    else
+        targetPos = rb.transform.position + UE.Vector3.up * 1
+    end
+    
+    local targetRot = nil
+    
+    local nextPos = nil
+    local time = (pu.muscleState:IsPowerfulCharacter() and not pu.attr:IsDead()) and 0.5 or self.pullingCharacterTime
+    --print("grab mu ----------------::" .. rb.transform.name)
+    self.actId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(pu) then
+                self:StopPulling(pu, rb)
+                return
+            end
+            
+            nextPos = UE.Vector3.Lerp(rb.position, targetPos, UE.Time.deltaTime * 10)
+            
+            if not CL.Network.VRNetworkManager.IsOnline or (CL.Network.VRNetworkManager.IsOnline
+                and CL.Network.VRNetworkManager.Instance.IsServer) then
+                --pulling
+                CL.PhysicsFollow.TrackPosition(rb, nextPos, 20, 0.5)
+                --CL.PhysicsFollow.TrackRotation(self.targetMu.rb, self.targetRot)
+            end
+            
+            if self.eo and not IsNullOrDestroyed(self.eo) then
+                self.eo.trans.position = nextPos
+            end
+            
+            if t >= time then
+                self:StopPulling(pu, rb)
+                
+                sche:Stop()
+            end
+        end
+    , 0, time).actionId
+end
+
+function flyGraspObj.GetGroundPoint(pos, len)
+    local hit, hitInfo = UE.Physics.SphereCast(pos, 
+                0.01,
+                UE.Vector3.down, len, UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value)))
+    CL.DebugDraw.DrawLine(pos, pos + UE.Vector3.down * len, UE.Color.red, 5)
+    if not hit then
+        return nil
+    end
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(hitInfo.collider)
+    if not IsNullOrDestroyed(pu) and pu.unitType ~= CL.Tagger.Tag.SceneObject then
+        return nil
+    end
+    return hitInfo.point
+end
+
+function flyGraspObj.GetFcGraspPoint(fc, mu)
+    local rb = mu.rb
+    local ground = flyGraspObj.GetGroundPoint(rb.transform.position + UE.Vector3.up * 0.5, 10)
+    if not ground then
+        return rb.transform.position
+    end
+    
+    local offset = 0.5
+    if mu.muscleName == CL.RagdollBoneInfo.RHand or mu.muscleName == CL.RagdollBoneInfo.LHand then
+        offset = fc.controller.capsuleCollider.height / 3 + 0.5
+    elseif mu.muscleName == CL.RagdollBoneInfo.Pelvis or  mu.muscleName == CL.RagdollBoneInfo.Spine 
+    or mu.muscleName == CL.RagdollBoneInfo.Chest then
+        offset = 0.25
+    end
+    local pos = ground + UE.Vector3.up * (fc.controller.capsuleCollider.height + offset)
+    if pos.y < rb.transform.position.y then
+        return rb.transform.position
+    end
+    
+    return pos
+end
+
+function flyGraspObj:StartPullingPlayer(pu, point)
+    self.pullingPu = pu
+    self.pullingMu = nil
+    self.targetPoint = point
+    
+    local rb = pu.character.capsuleRB
+    CL.Scheduler.RemoveSchedule(self.actId)
+    
+    local eoDir = nil
+    local randomDir = UE.Random.insideUnitSphere
+    eoDir = UE.Vector3(randomDir.x, 0, randomDir.y)
+    
+
+    local head = pu.character.aiProxy.ra:GetMuscle(CL.RagdollBoneInfo.Head)
+    self.eo = self:PlayPinEffect(head.skl.position, eoDir)
+    
+    local targetPos = nil
+    if pu.character:IsGround() then
+        targetPos = pu.character.trans.position + UE.Vector3.up
+    else
+        targetPos = pu.character.trans.position
+    end
+    
+    local targetRot = nil
+    
+    local nextPos = nil
+    local time = self.pullingPlayerTime
+    --print("grab mu ----------------::" .. rb.transform.name)
+    self.actId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(pu) or pu.character.attr:IsDead() then
+                self:StopPulling(pu, rb)
+                return
+            end
+            
+            nextPos = UE.Vector3.Lerp(rb.position, targetPos, UE.Time.deltaTime * 10)
+            
+            if pu.character.IsLocalPlayer then
+                --pulling
+                CL.PhysicsFollow.TrackPosition(rb, nextPos, 20, 0.5)
+                --CL.PhysicsFollow.TrackRotation(self.targetMu.rb, self.targetRot)
+            end
+            
+            if self.eo and not IsNullOrDestroyed(self.eo) then
+                self.eo.trans.position = head.skl.position
+            end
+            
+            if t >= time then
+                self:StopPulling(pu, rb)
+                
+                sche:Stop()
+            end
+        end
+    , 0, time).actionId
+end
+
+function flyGraspObj:StopPulling()
+    CL.Scheduler.RemoveSchedule(self.actId)
+    self:StopPinEffect(self.eo)
+    spellForceGrasp.RemoveGraspBallHoldInfo(self.host)
+    
+    self.host:OnFinish()
+end
+
+function flyGraspObj:PlayPinEffect(pos, dir)
+    local eo = CL.EffectMgr.Instance:PlayEffect("Grab_Phantom_Hand_Hold", pos, UE.Quaternion.LookRotation(dir))
+    eo:PlayAnimationClip("Grab_Phantom_Hand_hold")
+    --eo.trans.name = "Grab_Phantom_Hand_hold_" .. spellForceGrasp.count
+    --spellForceGrasp.count = spellForceGrasp.count + 1
+    return eo
+end
+
+function flyGraspObj:StopPinEffect()
+    if not self.eo or IsNullOrDestroyed(self.eo) then
+        return
+    end
+    
+    self.eo:PlayAnimationClipThenGiveBack("Grab_Phantom_Hand_release")
+end
+
+function flyGraspObj:ResetState()
+    CL.Scheduler.RemoveSchedule(self.actId)
+    self:StopPinEffect(self.eo)
+end
+
+return Class(nil, nil, flyGraspObj)

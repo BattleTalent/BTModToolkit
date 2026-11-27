@@ -1,0 +1,1064 @@
+--luaBehaviour
+local ArrowPuller = {
+    pullFactor = 0,
+    lastShootFactor = 0,
+    shootFactorDeltaAcc = 0,
+
+    onTrigger = false,
+
+    releaseFactor = 0.7,
+
+    cmdCharacter = {},
+
+    netEnv = 0,
+    grabAttach = nil,
+
+    currentState = "",
+    stateId = 0,    
+    stackBannedHand = {},
+    queueStateBeforeStart = {},
+    networkStateDic = nil,
+    
+    startTime = 0,
+    
+    PullerState = {
+        UNGRAB = "UNGRAB",
+        IDLE = "IDLE",
+        READY = "READY",
+        PULLING = "PULLING",
+        RELEASED = "RELEASED",
+        CANCEL = "CANCEL",
+    }
+}
+
+--- Basic StateHandlers
+
+function ArrowPuller:RegisterStateHandlers()
+    self.stateHandlers = {
+        [self.PullerState.UNGRAB] = {
+            enter = function() self:OnUngrabEnter() end,
+            update = function() self:OnUngrabUpdate() end,
+            exit = function() self:OnUngrabExit() end,
+            blockedState = nil,
+        },
+        [self.PullerState.IDLE] = {
+            enter = function() self:OnIdleEnter() end,
+            update = function() self:OnIdleUpdate() end,
+            exit = function() self:OnIdleExit() end,
+            blockedState = {self.PullerState.RELEASED},
+        },
+        [self.PullerState.READY] = {
+            enter = function() self:OnReadyEnter() end,
+            update = function() self:OnReadyUpdate() end,
+            exit = function() self:OnReadyExit() end,
+            blockedState = nil,
+        },
+        [self.PullerState.PULLING] = {
+            enter = function() self:OnPullingEnter() end,
+            update = function() self:OnPullingUpdate() end,
+            exit = function() self:OnPullingExit() end,
+            blockedState = nil,
+        },
+        [self.PullerState.RELEASED] = {
+            enter = function() self:OnReleasedEnter() end,
+            update = function() self:OnReleasedUpdate() end,
+            exit = function() self:OnReleasedExit() end,
+            blockedState = nil,
+        },
+        [self.PullerState.CANCEL] = {
+            enter = function() self:OnCancelEnter() end,
+            update = function() self:OnCancelUpdate() end,
+            exit = function() self:OnCancelExit() end,
+            blockedState = nil,
+        }
+    }
+end
+
+function ArrowPuller:LocalChangeState(newState)
+    -- print(self.currentState .. " exit start")
+    if self.stateHandlers[self.currentState] and self.stateHandlers[self.currentState].exit then
+        self.stateHandlers[self.currentState].exit()
+    end
+    -- print(self.currentState .. " exit success")
+
+    local oldState = self.currentState
+    self.currentState = newState
+    self.stateId = self.stateId + 1
+
+    -- print(self.currentState .. " enter start")
+    if self.stateHandlers[newState] and self.stateHandlers[newState].enter then
+        self.stateHandlers[newState].enter()
+    end
+    -- print(self.currentState .. " enter success")
+end
+
+function ArrowPuller:ChangeState(newState,toServer)
+    if self.stateHandlers == nil then
+        -- print("stateHandlers nil")
+        return
+    end
+    if self.currentState == newState then return end
+
+    if self.stateHandlers[self.currentState] and self.stateHandlers[self.currentState].blockedState then
+        for i = 1,#self.stateHandlers[self.currentState].blockedState do
+            if self.stateHandlers[self.currentState].blockedState[i] == newState then
+                -- print("currentState:".. self.currentState .. " Blocked " .. newState)
+                return
+            end
+        end
+    end
+
+    toServer = toServer or false 
+    self:LocalChangeState(newState)
+
+    self:SyncState(self.stateId,newState,toServer)
+end
+
+function ArrowPuller:SyncState(stateId,state,toServer)
+    if not self.isOnline or not self.bow then
+        return 
+    end
+
+    if CL.Network.VRNetworkManager.Instance.IsServer and not toServer then
+        self.bow:ServerSyncPullerState(stateId,state)
+    end
+
+    if toServer then
+        self.bow:CmdSyncPullerState(stateId,state)
+    end
+end
+
+function ArrowPuller:NetworkSyncState(netStateID,state)
+    -- print("NetworkSyncState netStateID:".. netStateID .. " state:" .. state)
+    if self.networkStateDic == nil then
+        self.networkStateDic = {}
+    end
+    self.networkStateDic[netStateID] = state
+end
+
+function ArrowPuller:ApplyNetworkState(netStateID,state)
+    if self.stateHandlers == nil then
+        return
+    end
+    --print("ApplyNetworkState ".. state .. " start")
+    if self.stateId >= netStateID then
+        -- print("ApplyNetworkState ".. state .. " return")
+        return
+    end
+    self:LocalChangeState(state)
+    -- print("ApplyNetworkState ".. state .. " end")
+    self.stateId = netStateID
+end
+
+function ArrowPuller:UpdateNetworkSyncState()
+    if self.networkStateDic == nil then
+        return
+    end
+    -- do update
+    local sortedKeys = {}
+    for key, _ in pairs(self.networkStateDic) do
+        table.insert(sortedKeys, key)
+    end
+    table.sort(sortedKeys)
+    for _, key in ipairs(sortedKeys) do
+        self:ApplyNetworkState(key,self.networkStateDic[key])
+    end
+    -- clear
+    self.networkStateDic = nil
+end
+
+function ArrowPuller:NetworkShoot(netStateID)
+    self:NetworkSyncState(netStateID,self.PullerState.RELEASED)
+end
+
+function ArrowPuller:RefreshBowRef()
+    local bowInteractTrigger = self.bowInteractTrigger
+    if not IsNullOrDestroyed(bowInteractTrigger) and bowInteractTrigger.script then
+        self.bow = bowInteractTrigger.script.self
+    else
+        self.bow = nil
+    end
+end
+
+function ArrowPuller:Start()
+    self.trans = self.host.transform
+    self:RefreshBowRef()
+
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance)
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+
+    self:RegisterStateHandlers()
+    self:ChangeState(self.PullerState.UNGRAB)
+    
+    self.OnPressDown = function()
+        self.networkPressed = true
+    end
+end
+
+--- From bowbase
+function ArrowPuller:OnGrab(a, g)
+    self.isGrab = g
+    self:RefreshBowRef()
+    self.grabAttach = a
+    if g and a and not IsNullOrDestroyed(a.attachedHand) and not IsNullOrDestroyed(a.attachedHand.character) then
+        self.owner = a.attachedHand.character
+    else
+        self.owner = nil
+    end
+end
+
+function ArrowPuller:GetPullingHand()
+    return self.usingHand
+end
+
+--- Trigger
+function ArrowPuller:OnTriggerEnter(other)
+    if IsNullOrDestroyed(self.ib) then
+        return
+    end
+    
+    local ph = self.ib:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+
+    local hand = CL.InteractHand.GetHandByCollider(other)
+    if IsNullOrDestroyed(hand) or hand:IsCalling() then
+        return
+    end
+    
+    if ph == hand then
+        return
+    end
+    
+    if IsNullOrDestroyed(hand.physicsHand) or IsNullOrDestroyed(hand.physicsHand.hudHandCol) then
+        return
+    end
+
+    if other ~= hand.physicsHand.hudHandCol then
+        return
+    end
+
+    if self.isOnline then
+        if not IsNullOrDestroyed(ph.character) and ph.character.IsLocalPlayer then
+            if not IsNullOrDestroyed(hand.character) and hand.character.IsLocalPlayer then
+                self:OnHandEnter(hand)
+            else
+                if self.bow and not IsNullOrDestroyed(ph.character.networkPlayer) then
+                    self.bow:CmdOnHandAction(true, hand, ph.character.networkPlayer.netId)
+                end
+            end
+        end
+    else
+        self:OnHandEnter(hand)
+    end
+end
+
+function ArrowPuller:OnHandEnter(hand)
+    --print("OnHandEnter: on trigger = true  " .. hand.gameObject.name)
+    self.onTrigger = true
+    self.triggerHand = hand
+end
+
+function ArrowPuller:OnTriggerExit(other)
+    if IsNullOrDestroyed(self.ib)
+    or IsNullOrDestroyed(other) then
+        return
+    end
+    
+    local ph = self.ib:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return
+    end
+
+    local hand = CL.InteractHand.GetHandByCollider(other)
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    if ph == hand then
+        return
+    end
+    
+    if IsNullOrDestroyed(hand.physicsHand) or IsNullOrDestroyed(hand.physicsHand.hudHandCol) then
+        return
+    end
+
+    if other ~= hand.physicsHand.hudHandCol then
+        return
+    end
+    
+    if self.isOnline then
+        if not IsNullOrDestroyed(ph.character) and ph.character.IsLocalPlayer then
+            if not IsNullOrDestroyed(hand.character) and hand.character.IsLocalPlayer then
+                self:OnHandExit(hand)
+            else
+                if self.bow and not IsNullOrDestroyed(ph.character.networkPlayer) then
+                    self.bow:CmdOnHandAction(false, hand, ph.character.networkPlayer.netId)
+                end
+            end
+        end
+    else
+        self:OnHandExit(hand)
+    end
+end
+
+function ArrowPuller:OnHandExit(hand)
+    --print("OnHandExit: on trigger = false: " .. hand.gameObject.name)
+    self.onTrigger = false
+    self.triggerHand = nil
+end
+
+function ArrowPuller:OnDisable()
+    self:ChangeState(self.PullerState.UNGRAB)
+    if self.usingHand and not IsNullOrDestroyed(self.usingHand) then
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            if self.bow then
+                self.bow:ServerOnHandLeave()
+            end
+        end
+        self:OnHandLeave()
+    end
+end
+
+function ArrowPuller:OnEnable()
+    if not IsNullOrDestroyed(self.ib) then
+        self.primaryHand = self.ib:GetPrimaryHand()
+    else
+        self.primaryHand = nil
+    end
+end
+
+---stateHandlers : NO OWNER
+function ArrowPuller:OnUngrabEnter()
+    if self.bow then
+        self.bow:OnCancel()
+    end
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline then
+        self.cmdCharacter = {}
+    end
+end
+
+function ArrowPuller:OnUngrabUpdate()
+    if self.owner then
+        self:ChangeState(self.PullerState.IDLE)
+    end
+end
+
+function ArrowPuller:OnUngrabExit()
+    
+end
+
+function ArrowPuller:NetworkOnHandAction(isEnter, hand, isHolder)
+    --print("network on hand action:" .. " enter:" .. tostring(isEnter))
+    
+    if IsNullOrDestroyed(hand) or IsNullOrDestroyed(hand.character) then
+        return
+    end
+    
+    if hand.character.IsLocalPlayer and isHolder then
+        return
+    end
+    
+    if isEnter then
+        if hand:IsCalling() or self.primaryHand == hand then
+            return
+        end
+        if self.isPulling then
+            return
+        end
+        
+        if self.onTrigger then
+            return
+        end
+        
+        self:OnHandEnter(hand)
+    else
+        if not self.onTrigger then
+            return
+        end
+        
+        if IsNullOrDestroyed(hand) then
+            return
+        end
+        
+        -- not pulling
+        if self.usingHand == nil or IsNullOrDestroyed(self.usingHand) then
+            self:OnHandExit(hand)
+            return
+        end
+        
+        -- on pulling
+        if hand == self.usingHand then
+            --print("network on hand exit hand  " .. hand.gameObject.name .. " usingHand:" ..self.usingHand.gameObject.name)
+            self:OnHandExit(hand)
+            return
+        else
+            --print("network on hand exit hand  " .. hand.gameObject.name .. " usingHand:" ..self.usingHand.gameObject.name)
+        end
+    end
+end
+
+---stateHandlers : IDLE
+function ArrowPuller:OnIdleEnter()
+    self.pullFactor = 0
+end
+
+function ArrowPuller:OnIdleUpdate()
+    if not self.isGrab then
+        self:ChangeState(self.PullerState.UNGRAB)
+        return
+    end
+    if self.onTrigger then
+        if self.isOnline 
+        and not IsNullOrDestroyed(self.triggerHand)
+        and not IsNullOrDestroyed(self.triggerHand.character)
+        and self.triggerHand.character.IsLocalPlayer then
+            self:ChangeState(self.PullerState.READY,true)
+        end
+        if not self.isOnline then
+            self:ChangeState(self.PullerState.READY)
+        end
+    end
+end
+
+function ArrowPuller:OnIdleExit()
+end
+
+---stateHandlers : READY
+function ArrowPuller:ShowPullHint()
+    if IsNullOrDestroyed(self.ib) then
+        return
+    end
+    
+    if IsNullOrDestroyed(self.hintPoint) and not IsNullOrDestroyed(self.rope) then
+        self.hintPoint = self.ib:CreateHint(self.rope, UE.Vector3.zero)
+    end
+    if not IsNullOrDestroyed(self.hintPoint) then
+        self.ib:ShowHint(self.hintPoint)
+    end
+end
+
+function ArrowPuller:BanHand(hand)
+    hand:Ban(true)
+    self.stackBannedHand[#self.stackBannedHand+1] = hand
+end
+
+function ArrowPuller:RestoreHand()
+    for i = 1, #self.stackBannedHand, 1 do
+        if not IsNullOrDestroyed(self.stackBannedHand[i]) then
+            self.stackBannedHand[i]:Ban(false)
+        end
+    end
+    self.stackBannedHand = {}
+end
+
+function ArrowPuller:OnReadyEnter()
+    if self.isOnline then 
+        if self.triggerHand and not IsNullOrDestroyed(self.triggerHand) and not 
+            IsNullOrDestroyed(self.triggerHand.character) then
+            if self.triggerHand.character.IsLocalPlayer then
+                self:ShowPullHint()
+            end
+        end
+    end
+    if not self.isOnline then
+        self:ShowPullHint()
+    end
+    
+    if self.triggerHand and not IsNullOrDestroyed(self.triggerHand) then
+        self:BanHand(self.triggerHand)
+        if not IsNullOrDestroyed(self.triggerHand.character) then
+        self.triggerHand:HapticPulse(self.triggerHand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
+        end
+    end
+end
+
+function ArrowPuller:OnReadyUpdate()
+    if not self.isGrab then
+        self:ChangeState(self.PullerState.UNGRAB)
+        return
+    end
+    
+    if IsNullOrDestroyed(self.ib) then
+        return
+    end
+    
+    local ph = self.ib:GetPrimaryHand()
+    local grabberOtherHand = nil
+    if ph and not IsNullOrDestroyed(ph) and not IsNullOrDestroyed(ph.character) then
+        grabberOtherHand = ph.character.hands[ph:GetHandIndex() == 0 and 1 or 0]
+    end
+
+    if self.onTrigger then
+        if not self.triggerHand or IsNullOrDestroyed(self.triggerHand) or IsNullOrDestroyed(self.triggerHand.character) then
+            return
+        end
+        
+        local isPressDown = self.triggerHand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressDown or
+            self.triggerHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressDown
+        local isPrePressDown = false
+        if not isPressDown and grabberOtherHand == self.triggerHand and not self.triggerHand:IsCalling() and not self.triggerHand:IsGrabbing() then
+            isPrePressDown = self.triggerHand.inputs[CL.VRTKInputButton.ButtonType.Grip].PrePressDown or
+                self.triggerHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PrePressDown
+        end
+        if isPressDown or isPrePressDown then
+            if self:CanPull() then
+                if self.isOnline and self.triggerHand.character.IsLocalPlayer then
+                    self:LocalChangeState(self.PullerState.PULLING)
+                end
+                if not self.isOnline then
+                    self:ChangeState(self.PullerState.PULLING)
+                end
+            end
+        end
+    else
+        if self.isOnline and not IsNullOrDestroyed(ph) and not IsNullOrDestroyed(ph.character) and ph.character.IsLocalPlayer then
+            self:ChangeState(self.PullerState.IDLE,true)
+        end
+        if not self.isOnline then
+            self:ChangeState(self.PullerState.IDLE)
+        end
+    end
+end
+
+function ArrowPuller:OnReadyExit()
+    if not IsNullOrDestroyed(self.hintPoint) 
+    and not IsNullOrDestroyed(self.ib) then
+        self.ib:HideHint(self.hintPoint)
+    end
+    self:RestoreHand()
+end
+
+---stateHandlers : PULLING
+
+function ArrowPuller:OnPullingEnter()
+    if self.isOnline then
+        if self.triggerHand and not IsNullOrDestroyed(self.triggerHand) then
+            self:NetworkStartPull(self.triggerHand)
+        end
+        if self.usingHand and not IsNullOrDestroyed(self.usingHand) 
+        and not IsNullOrDestroyed(self.usingHand.character)
+        and self.usingHand.character.IsLocalPlayer then
+            if self.bow then
+                self.bow:CmdSyncPullingHand(self.stateId,self.usingHand)
+            end
+        end
+        if self.bow then
+            self.bow:ClearNetworkShootData(true)
+        end
+    else
+        self:StartPull()
+    end
+end
+
+function ArrowPuller:OnPullingUpdate()
+    if not self.isGrab then
+        self:ChangeState(self.PullerState.UNGRAB)
+        return
+    end
+    if self.isOnline then
+        self:UpdateHandTracker()
+    end
+    -- no need pass
+    
+    local isPressUp = false
+    
+    if not self.usingHand or IsNullOrDestroyed(self.usingHand) then
+        return
+    end
+    
+    isPressUp = self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressUp or
+        self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp
+
+    self:UpdatePull()
+    if self.bow then
+        self.bow:OnPulling()
+    end
+    if isPressUp then
+        if self.pullFactor > self.releaseFactor then
+            if self.isOnline and not IsNullOrDestroyed(self.usingHand.character) and self.usingHand.character.IsLocalPlayer then
+                self:LocalChangeState(self.PullerState.RELEASED)
+            end
+            if not self.isOnline then
+                self:ChangeState(self.PullerState.RELEASED)
+            end
+        else
+            if self.isOnline and not IsNullOrDestroyed(self.usingHand.character) and self.usingHand.character.IsLocalPlayer then
+                self:ChangeState(self.PullerState.CANCEL,true)
+            end
+            if not self.isOnline then
+                self:ChangeState(self.PullerState.CANCEL)
+            end
+        end
+    end
+end
+
+function ArrowPuller:OnPullingExit()
+    if self.isOnline then
+        self:NetworkEndPull(self.usingHand)
+    end
+    if not self.isOnline then
+        self:EndPull()
+    end
+    self:RestoreHand()
+end
+
+---stateHandlers : RELEASED
+function ArrowPuller:OnReleasedEnter()
+    if self.bow == nil or IsNullOrDestroyed(self.attach) then
+        self.usingHand = nil
+        return
+    end
+    self.bow:OnRelease(self.attach, self.pullFactor)
+    if self.isOnline and not IsNullOrDestroyed(self.usingHand)
+    and not IsNullOrDestroyed(self.usingHand.character) 
+    and self.usingHand.character.IsLocalPlayer then
+        self.bow:SyncLastReleaseWeaponShootData(self.stateId)
+    end
+    self:PlayArrowSound()
+    
+    self.usingHand = nil
+end
+
+function ArrowPuller:OnReleasedUpdate()
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        -- client need to wait next state sync
+        self:ChangeState(self.PullerState.IDLE)
+    end
+    if not self.isOnline then
+        self:ChangeState(self.PullerState.IDLE)
+    end
+end
+
+function ArrowPuller:OnReleasedExit()
+    if self.bow ~= nil and not IsNullOrDestroyed(self.attach) then
+        self.bow:OnReleaseEnd()
+    end
+end
+
+function ArrowPuller:OnCancelEnter()
+    if self.cancelArrowSound then
+        if self.usingHand
+        and not IsNullOrDestroyed(self.usingHand)
+        and not IsNullOrDestroyed(self.usingHand.trans)
+        and self.cancelArrowSound.soundInfo then
+            self.cancelArrowSound.soundInfo:Play(self.usingHand.trans.position)
+        end
+    end
+    
+    self.usingHand = nil
+    
+    if self.bow ~= nil then
+        self.bow:OnCancel()
+    end
+end
+
+function ArrowPuller:OnCancelUpdate()
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        self:ChangeState(self.PullerState.IDLE)
+    end
+    
+    if not self.isOnline then
+        self:ChangeState(self.PullerState.IDLE)
+    end
+end
+
+function ArrowPuller:OnCancelExit()
+end
+
+function ArrowPuller:Update()
+    self:UpdateNetworkSyncState()
+    if self.stateHandlers[self.currentState] and self.stateHandlers[self.currentState].update then
+        self.stateHandlers[self.currentState].update()
+    end
+end
+
+function ArrowPuller:PlayArrowSound()
+    if self.shootArrowSound then
+        if self.usingHand 
+        and not IsNullOrDestroyed(self.usingHand)
+        and not IsNullOrDestroyed(self.usingHand.trans)
+        and self.shootArrowSound.soundInfo then
+            self.shootArrowSound.soundInfo:Play(self.usingHand.trans.position)
+        end
+    end
+end
+
+function ArrowPuller:RpcOnRelease(factor)
+    self.pullFactor = factor
+end
+
+function ArrowPuller:UpdateHandTracker()
+    if not self.usingHand 
+    or IsNullOrDestroyed(self.usingHand) 
+    or not self.isPulling 
+    or IsNullOrDestroyed(self.attach) then
+        return
+    end
+
+    local hp = self.attach:GetHandPoseRef(self.usingHand)
+    if not IsNullOrDestroyed(hp) and not IsNullOrDestroyed(hp.tracker) then
+        hp.tracker:UpdateTrack()
+    end
+end
+
+function ArrowPuller:OnHandLeave()
+    if not self.usingHand or IsNullOrDestroyed(self.usingHand) then
+        return
+    end
+    self:RestoreHand()
+    if self.isOnline then
+        self:NetworkEndPull(self.usingHand)
+    else
+        self:EndPull()
+    end
+    self.usingHand = nil
+end
+
+function ArrowPuller:NetworkRefleshUsingHand(hand)
+    self:RestoreHand()
+    if IsNullOrDestroyed(hand) then
+        self.usingHand = nil
+        return
+    end
+    self.usingHand = hand
+    self.usingHand.PullingString = true
+end
+
+function ArrowPuller:CanPull()
+    if not self.triggerHand or IsNullOrDestroyed(self.triggerHand) then
+        return false
+    end
+    
+    if not IsNullOrDestroyed(self.triggerHand.attachTo) then
+        local ib = self.triggerHand.attachTo.interact
+        if not IsNullOrDestroyed(ib) and ib:IsUnsold() then
+            return false
+        end
+    end
+    
+    return true
+end
+
+function ArrowPuller:StartPull()
+    self.usingHand = self.triggerHand
+    
+    
+    if IsNullOrDestroyed(self.usingHand) then
+        return false
+    end
+    
+    if not self.bow 
+    or IsNullOrDestroyed(self.trans)
+    or IsNullOrDestroyed(self.ib) 
+    or IsNullOrDestroyed(self.ib.trans)
+    or IsNullOrDestroyed(self.attach) then
+        return
+    end
+    
+    self.usingHand.PullingString = true
+
+    if not IsNullOrDestroyed(self.usingHand.attachTo) then
+        local ib = self.usingHand.attachTo.interact
+        if IsNullOrDestroyed(ib) then
+            return false
+        end
+
+        if not IsNullOrDestroyed(ib) and ib:IsUnsold() then
+            return false
+        end
+        
+        
+        if ib.unitType == CL.Tagger.Tag.InteractWeapon then
+            if ib:GetPrefabNameForSpawn() == "ChainHammer" then
+                self.usingHand:Grab(nil)
+                ib:OnDrop(false)
+                
+                self.bow:OnPutArrow(self.attach)
+            else
+                self.bow:OnPutWeapon(self.usingHand.attachTo.interact,self.attach)
+            end
+        end
+        self.usingHand:Grab(nil)
+        ib:OnDrop(false)
+    else
+        self.bow:OnPutArrow(self.attach)
+    end
+
+    self:BanHand(self.usingHand)
+    self.isPulling = true
+
+    if self.spawnArrowSound and self.spawnArrowSound.soundInfo then
+        self.spawnArrowSound.soundInfo:Play(self.ib.trans.position)
+    end
+
+    self.startTime = UE.Time.time
+    local ph = self.ib:GetPrimaryHand()
+    self.attach:SetupHandPose(self.usingHand)
+
+    if not IsNullOrDestroyed(ph) and not IsNullOrDestroyed(ph.grabJoint) and not IsNullOrDestroyed(ph.handDir) then
+        local hld = ph.grabJoint.xDrive
+        hld.positionSpring = self.holdHandSpring
+        ph.grabJoint.xDrive = hld
+        ph.grabJoint.yDrive = hld
+        ph.grabJoint.zDrive = hld
+
+        local sd = ph.grabJoint.slerpDrive
+        sd.positionSpring = self.holdHandRotSpring
+        sd.positionDamper = self.holdHandRotDamper
+        ph.grabJoint.slerpDrive = sd
+        self.handBowDot = UE.Vector3.Dot(ph.handDir.up, self.trans.up) > 0
+    end
+
+    self.bowSpace = UE.Quaternion.Inverse(self.trans.rotation) * self.ib.trans.rotation
+
+    self.justPull = true
+
+    return true
+end
+
+function ArrowPuller:NetworkStartPull(hand)
+    self.usingHand = hand
+    
+    if IsNullOrDestroyed(self.ib)
+    or IsNullOrDestroyed(self.attach)
+    or IsNullOrDestroyed(self.trans) then
+        return
+    end
+    
+    if self.usingHand and not IsNullOrDestroyed(self.usingHand) and not IsNullOrDestroyed(self.usingHand.attachTo) then
+        local ib = self.usingHand.attachTo.interact
+        if IsNullOrDestroyed(ib) then
+            return
+        end
+
+        if ib.unitType == CL.Tagger.Tag.InteractWeapon then
+            if self.bow then
+                self.bow:OnPutWeapon(self.usingHand.attachTo.interact,self.attach)
+            end
+        end
+        self.usingHand:Grab(nil, true)
+        ib:OnDrop(false)
+    else
+        if self.bow and not IsNullOrDestroyed(self.attach) then
+            self.bow:OnPutArrow(self.attach)
+        end
+    end
+
+    if not self.usingHand or IsNullOrDestroyed(self.usingHand) then
+        return
+    end
+    self:BanHand(self.usingHand)
+    self.isPulling = true
+
+    if self.spawnArrowSound 
+    and self.spawnArrowSound.soundInfo then
+        self.spawnArrowSound.soundInfo:Play(self.ib.trans.position)
+    end
+
+    self.startTime = UE.Time.time
+    local ph = self.ib:GetPrimaryHand()
+    self.attach:SetupHandPose(self.usingHand)
+
+    if not IsNullOrDestroyed(ph) and not IsNullOrDestroyed(ph.grabJoint) and not IsNullOrDestroyed(ph.handDir) then
+        local hld = ph.grabJoint.xDrive
+        hld.positionSpring = self.holdHandSpring
+        ph.grabJoint.xDrive = hld
+        ph.grabJoint.yDrive = hld
+        ph.grabJoint.zDrive = hld
+
+        local sd = ph.grabJoint.slerpDrive
+        sd.positionSpring = self.holdHandRotSpring
+        sd.positionDamper = self.holdHandRotDamper
+        ph.grabJoint.slerpDrive = sd
+        self.handBowDot = UE.Vector3.Dot(ph.handDir.up, self.trans.up) > 0
+    end
+
+    self.bowSpace = UE.Quaternion.Inverse(self.trans.rotation) * self.ib.trans.rotation
+
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        if not SafeLocalTrackPhysics(self.ib) then
+            SafeSetNetworkRBEnabled(self.ib, false)
+        end
+    end
+
+    self.justPull = true
+end
+
+function ArrowPuller:UpdatePullJoint()
+    if not self.usingHand
+    or IsNullOrDestroyed(self.usingHand)
+    or IsNullOrDestroyed(self.usingHand.grabJoint)
+    or IsNullOrDestroyed(self.attach)
+    or IsNullOrDestroyed(self.ib)
+    or IsNullOrDestroyed(self.ib.rb) then
+        return
+    end
+    local handPos = self.attach:GetHandPoseRef(self.usingHand)
+    if IsNullOrDestroyed(handPos) or IsNullOrDestroyed(handPos.transform) then
+        return
+    end
+    local anotherAnchorPos = self.ib.rb.transform:InverseTransformPoint(handPos.transform.position)
+    self.usingHand.grabJoint.connectedAnchor = anotherAnchorPos
+end
+
+function ArrowPuller:EndPull()
+    if not self.isPulling 
+    or not self.usingHand 
+    or IsNullOrDestroyed(self.usingHand) 
+    or IsNullOrDestroyed(self.ib)
+    or IsNullOrDestroyed(self.attach)
+    or IsNullOrDestroyed(self.trans)
+    or IsNullOrDestroyed(self.rope) then
+        return
+    end
+    self.isPulling = false
+    self.attach:ClearHandPose(self.usingHand)
+    self.attach.transform.position = self.trans.position
+    self.rope.position = self.trans.position
+
+    if not IsNullOrDestroyed(self.usingHand.grabJoint) then
+        local ld = self.usingHand.grabJoint.xDrive
+        ld.positionSpring = 0
+        self.usingHand.grabJoint.xDrive = ld
+        self.usingHand.grabJoint.yDrive = ld
+        self.usingHand.grabJoint.zDrive = ld
+        self.usingHand.grabJoint.connectedBody = nil
+    end
+
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:SetTwoHandEnable(false)
+    end
+
+    local ph = self.ib:GetPrimaryHand()
+    if not IsNullOrDestroyed(ph) and not IsNullOrDestroyed(ph.grabJoint) and not IsNullOrDestroyed(self.ib) then
+        local sd = ph.grabJoint.slerpDrive
+        sd.positionSpring = self.ib.angularForce
+        ph.grabJoint.slerpDrive = sd
+    end
+end
+
+function ArrowPuller:NetworkEndPull(hand)
+    if not self.isPulling then
+        return
+    end
+    self.isPulling = false
+    if not IsNullOrDestroyed(hand) and not IsNullOrDestroyed(self.attach) then
+        self.attach:ClearHandPose(hand)
+    end
+    if not IsNullOrDestroyed(self.attach) and not IsNullOrDestroyed(self.attach.transform)
+    and not IsNullOrDestroyed(self.trans) then
+        self.attach.transform.position = self.trans.position
+    end
+    if not IsNullOrDestroyed(self.rope) and not IsNullOrDestroyed(self.trans) then
+        self.rope.position = self.trans.position
+    end
+
+    if not IsNullOrDestroyed(hand) and not IsNullOrDestroyed(hand.grabJoint) then
+        local ld = hand.grabJoint.xDrive
+        ld.positionSpring = 0
+        hand.grabJoint.xDrive = ld
+        hand.grabJoint.yDrive = ld
+        hand.grabJoint.zDrive = ld
+        hand.grabJoint.connectedBody = nil
+    end
+
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:SetTwoHandEnable(false)
+    end
+
+    if IsNullOrDestroyed(self.ib) then
+        return
+    end
+
+    local ph = self.ib:GetPrimaryHand()
+    if not IsNullOrDestroyed(ph) and not IsNullOrDestroyed(ph.grabJoint) then
+        local sd = ph.grabJoint.slerpDrive
+        sd.positionSpring = self.ib.angularForce
+        ph.grabJoint.slerpDrive = sd
+    end
+
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance)
+    and not CL.Network.VRNetworkManager.Instance.IsServer then
+        SafeSetNetworkRBEnabled(self.ib, true)
+    end
+end
+
+function ArrowPuller:UpdatePull()
+    if not self.usingHand 
+    or not self.bow
+    or IsNullOrDestroyed(self.usingHand) 
+    or IsNullOrDestroyed(self.usingHand.trans)
+    or IsNullOrDestroyed(self.ib) 
+    or IsNullOrDestroyed(self.ib.rb)
+    or IsNullOrDestroyed(self.attach)
+    or IsNullOrDestroyed(self.trans)
+    or IsNullOrDestroyed(self.rope) then
+        return
+    end
+
+    local hp = self.attach:GetHandPoseRef(self.usingHand)
+    if IsNullOrDestroyed(hp) or IsNullOrDestroyed(hp.tracker) then
+        return
+    end
+    hp.tracker:UpdateTrack()
+
+    local handRelativePos = self.trans:InverseTransformPoint(self.usingHand.trans.position)
+    local diffZ = UE.Mathf.Clamp(handRelativePos.z, -self.pullMaxDis, 0)
+    self.pullFactor = -diffZ / self.pullMaxDis
+    local handPos = self.trans.position + self.trans.forward * diffZ
+
+    --tempFixed
+    --if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+    --    self.attach.trans.position = UE.Vector3.Lerp(self.attach.trans.position, handPos, 0.8)
+    --    self.rope.position = self.attach.trans.position;
+    --else
+    self.attach.trans.position = handPos
+    self.rope.position = handPos
+    --end
+
+    if UE.Time.time - self.startTime > 0.2 then
+        self.shootFactorDeltaAcc = self.shootFactorDeltaAcc + UE.Mathf.Abs(self.pullFactor - self.lastShootFactor)
+        if self.shootFactorDeltaAcc > 0.2 then
+            if not IsNullOrDestroyed(self.usingHand.character) then
+                self.usingHand:HapticPulse(self.usingHand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
+            end
+
+            if self.pullArrowSound and self.pullArrowSound.soundInfo then
+                self.pullArrowSound.soundInfo:Play(handPos)
+            end
+
+            self.shootFactorDeltaAcc = 0
+        end
+    end
+
+    self.lastShootFactor = self.pullFactor
+
+    local ph = self.ib:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) or IsNullOrDestroyed(ph.trans) then
+        return
+    end
+
+    if self.bow == nil or self.bow.shootPosition == nil or IsNullOrDestroyed(self.bow.shootPosition)
+        or IsNullOrDestroyed(self.usingHand.grabJoint) then
+        return
+    end
+
+    local handDir = self.bow.shootPosition.position - self.usingHand.grabJoint.transform.position
+    local bowUp = self.handBowDot and ph.trans.forward or -ph.trans.forward
+
+    local localRot = UE.Quaternion.LookRotation(handDir, bowUp)
+
+    local worldBowRot = localRot * self.bowSpace
+    CL.PhysicsFollow.TrackRotation(self.ib.rb, worldBowRot)
+
+    self.lastLocalRot = localRot
+end
+
+function ArrowPuller:NetworkSyncPullingHand(stateid,hand)
+    self.triggerHand = hand
+    self:NetworkSyncState(stateid,self.PullerState.PULLING)
+end
+
+return Class(nil, nil, ArrowPuller)

@@ -1,0 +1,653 @@
+--luaBehaviour
+local Forestock = {
+    pullFactor = 0,
+    lastShootFactor = 0,
+    shootFactorDeltaAcc = 0,
+    
+    poseValues = {0.1, 0.47, 0.49, 0.46, 0.48},
+    
+    onTrigger = false,
+}
+
+function Forestock:Start()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+        
+    self.trans = self.host.transform
+    self.main = self.interactTrigger.script.self
+    
+    self.defaultPos = self.model.localPosition
+    self.pullMaxDis = UE.Vector3.Distance(self.model.position, self.endPoint.position)
+    
+    local onGrab = function(a, g)
+        self.isGrab = g
+        self:OnGrab(a, g)
+    end
+    self.ib:GrabEvent("+", onGrab)
+    
+    self.networkPressed = false
+end
+
+function Forestock:OnPressUp()
+    --print("on press up--------------")
+    self.networkPressed = false
+    self:Update(true, false)
+end
+
+function Forestock:OnPressDown()
+    --print("on press down--------------")
+    self.networkPressed = true
+    self:Update(false, true)
+end
+
+function Forestock:OnGrab(a, g)
+    if g then
+        self.lifeCricleId = CL.Scheduler.Create(self.trans, 
+            function(sche, t, s)
+                self:Update()
+                
+                if self.isOnline then
+                    self:ClientUpdate()
+                end
+            end
+        , 0, -1).actionId
+        
+        self.owner = a.attachedHand.character
+    else
+        self.onTrigger = false
+        if not IsNullOrDestroyed(self.hintPoint) then
+            if self.isOnline then
+                self.main:ServerShowHint(a.attachedHand.character.networkPlayer.netId, false)
+            else
+                self.ib:HideHint(self.hintPoint)
+            end
+        end
+        if self.isPulling then
+            if self.isOnline then
+                self.main:ServerOnHandLeave()
+            end
+            self:OnHandLeave()
+        end
+        if not IsNullOrDestroyed(self.usingHand) then
+            self.usingHand:Ban(false)
+        end        
+        CL.Scheduler.RemoveSchedule(self.lifeCricleId)
+        
+        if self.isOnline then
+            self.owner = nil
+        end
+    end
+end
+
+function Forestock:GetPullingHand()
+    return self.usingHand
+end
+
+function Forestock:OnTriggerEnter(other)
+    if self.isOnline then
+        if self.isGrab then
+            --if not SafeIsOwnerLocalPlayer(self.ib) then
+            --    return
+            --end
+        else
+            if not CL.Network.VRNetworkManager.Instance.IsServer then
+                return
+            end
+        end
+    end
+    
+    if self.usingHand ~= nil or IsNullOrDestroyed(self.ib:GetPrimaryHand()) then
+        return
+    end
+    local hand = CL.InteractHand.GetHandByCollider(other)
+    if IsNullOrDestroyed(hand) or hand:IsCalling() then
+        return
+    end
+    
+    if self.isOnline then
+        if self.isGrab then
+            self.main:CommandHandTrigger(true, hand.character.networkPlayer.netId, hand:GetHandIndex())
+        else
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                self.main:ServerOnHandEnter(hand)
+            end
+        end
+    end
+    
+    self:OnHandEnter(hand)
+end
+
+function Forestock:OnHandEnter(hand)    
+    self.onTrigger = true
+    if self.isOnline then
+        self.main:ServerShowHint(hand.character.networkPlayer.netId, true)
+    else
+        if IsNullOrDestroyed(self.hintPoint) then
+            self.hintPoint = self.ib:CreateHint(self.model, UE.Vector3.zero)
+        else
+            self.ib:ShowHint(self.hintPoint)
+        end
+    end
+    self.usingHand = hand
+    self:CheckShowHint()
+
+    self.usingHand:Ban(true)
+    hand:HapticPulse(hand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
+end
+
+function Forestock:NetworkHandTrigger(isEnter, netId, handIdx)
+    local networkPlayer = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(netId)
+    if IsNullOrDestroyed(networkPlayer) then
+        return
+    end
+
+    local hand = networkPlayer.interactCharacter.hands[handIdx]
+    if isEnter then
+        if IsNullOrDestroyed(hand) or hand:IsCalling() or self.primaryHand == hand then
+            return
+        end
+        self:OnHandEnter(hand)
+    else
+        if IsNullOrDestroyed(hand) or hand ~= self.usingHand then
+            return
+        end
+        self:OnHandExit(hand)
+    end
+end
+
+function Forestock:OnTriggerExit(other)
+    if self.isOnline then
+        if self.isGrab then
+            --if not SafeIsOwnerLocalPlayer(self.ib) then
+            --    return
+            --end
+        else
+            if not CL.Network.VRNetworkManager.Instance.IsServer then
+                return
+            end
+        end
+    end
+    
+    if self.usingHand == nil or IsNullOrDestroyed(self.ib:GetPrimaryHand()) then
+       return
+    end
+    
+    local hand = CL.InteractHand.GetHandByCollider(other)
+    if IsNullOrDestroyed(hand) or hand ~= self.usingHand then
+        return
+    end
+    
+    if self.isOnline then
+        if self.isGrab then
+            self.main:CommandHandTrigger(false, hand.character.networkPlayer.netId, hand:GetHandIndex())
+        else
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                self.main:OnHandExit(hand)
+            end
+        end
+    end
+    
+    self:OnHandExit(hand)
+end
+
+function Forestock:OnHandExit(hand)
+    self.onTrigger = false
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self.main:ServerShowHint(self.usingHand.character.networkPlayer.netId, false)
+        end
+    else
+        self.ib:HideHint(self.hintPoint)
+    end
+    self:StopCheckHint()
+    
+    if not self.isPulling then
+        self:OnHandLeave()
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            self.main:ServerOnHandLeave()
+        end
+    end
+end
+
+function Forestock:NetworkRefleshUsingHand(hand)
+    print("NetworkRefleshUsingHand:" .. (IsNullOrDestroyed(hand) and "nil" or " usinghand"))
+    if not IsNullOrDestroyed(self.usingHand) and hand ~= self.usingHand then
+        self.usingHand:Ban(false)
+    end
+    self.usingHand = hand
+end
+
+function Forestock:OnDisable()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not IsNullOrDestroyed(self.usingHand) then
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            self.main:ServerOnHandLeave()
+        end
+        self:OnHandLeave()
+    end
+end
+
+function Forestock:ClientUpdate()
+    if not self.usingHand or IsNullOrDestroyed(self.usingHand) then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnly then
+        return
+    end
+    
+    if self.usingHand.character.networkPlayer.netId ~= CS.Mirror.NetworkClient.localPlayer.netId then
+        return
+    end
+    
+    if self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressDown then
+        --print("CommandButtonPress----------true")
+        self.main:CommandButtonPress(true)
+    elseif self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressUp then
+        --print("CommandButtonPress----------false")
+        self.main:CommandButtonPress(false)
+    end
+    
+    if self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressDown then
+        self.main:CommandButtonPress(true)
+    elseif self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp then
+        self.main:CommandButtonPress(false)
+    end
+end
+
+function Forestock:Update(networkPressUp, networkPressDown)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        if self.isPulling then
+            self:UpdatePull()
+        end
+        return
+    end
+    
+    if IsNullOrDestroyed(self.usingHand) then
+        return
+    end
+    if not self.isGrab then
+        if self.isPulling then
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                self.main:ServerOnHandLeave()
+            end
+            self:OnHandLeave()
+        end
+        return
+    end
+    
+    local isPressDown = false
+    if self.isOnline then
+        isPressDown = networkPressDown
+    else
+        isPressDown = self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Grip].PressDown or
+            self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressDown
+        
+    end
+    
+    local isPressed = false
+    if self.isOnline then
+        isPressed = self.networkPressed
+    else
+        isPressed = self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Grip].IsPressed or
+            self.usingHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].IsPressed
+    end
+
+
+    if not self.isPulling then
+        if isPressDown then
+            if self.isOnline then
+                self.main:ServerStartHandPull(self.usingHand)
+            end
+            self:StartPull(self.usingHand)
+        end
+    else
+        if isPressed then
+            if self.isOnline then
+                if self.isNetworkHint then
+                    self.main:ServerShowHint(self.usingHand.character.networkPlayer.netId, false)
+                end
+            elseif self.hintPoint.gameObject.activeSelf then
+                self.ib:HideHint(self.hintPoint)
+            end
+            self:UpdatePull()
+            
+            if self:CheckReachPoint(true) then
+                if self:CheckReachPoint(false) then
+                    self:LoadCompleted()
+                    if self.lockOnLoaded == 1 then
+                        self.isLocked = true
+                    end
+                end
+            end
+        else
+            if self.onTrigger then
+                if IsNullOrDestroyed(self.hintPoint) then
+                    self.hintPoint = self.ib:CreateHint(self.model, UE.Vector3.zero)
+                else
+                    self:CheckShowHint()
+                    
+                    if self.isOnline then
+                        self.main:ServerShowHint(self.usingHand.character.networkPlayer.netId, true)
+                    else
+                        self.ib:ShowHint(self.hintPoint)
+                    end
+                end
+            end
+            if self.isOnline then
+                self.main:ServerOnHandLeave()
+            end
+            self:OnHandLeave()
+        end
+    end
+end
+
+function Forestock:CheckShowHint()
+    if not self.triggerCol then
+        return
+    end
+    if IsNullOrDestroyed(self.usingHand) then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.checkTimeId)
+    self.checkTimeId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.usingHand) then
+                sche:Stop()
+                return
+            end
+        
+            local cols = UE.Physics.OverlapBox(self.triggerCol.transform.position, self.triggerCol.size/2, self.triggerCol.transform.rotation)
+            local hand = nil
+            if cols then
+                for i = 0, cols.Length - 1 do
+                    hand = CL.InteractHand.GetHandByCollider(cols[i])
+                    if not IsNullOrDestroyed(hand) and hand == self.usingHand then
+                        return
+                    end
+                end
+            end
+            if self.isOnline then
+                self.main:ServerShowHint(self.usingHand.character.networkPlayer.netId, false)
+            else
+                self.ib:HideHint(self.hintPoint)
+            end
+        end,
+    0, 0, 0.2).actionId
+end
+
+function Forestock:StopCheckHint()
+    CL.Scheduler.RemoveSchedule(self.checkTimeId)
+end
+
+function Forestock:OnHandLeave()
+    self:RemoveHand()
+    
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self.main:ServerRebound(self:IsReachLoadPoint())
+        end
+    else
+        self:Rebound(self:IsReachLoadPoint())
+    end
+end
+
+
+function Forestock:RemoveHand()
+    if self.isPulling then
+        self:EndPull()
+    end
+    if not IsNullOrDestroyed(self.usingHand) then
+        self.usingHand:Ban(false)
+        self.usingHand = nil
+    end
+end
+
+
+function Forestock:CheckReachPoint(isLoad)
+    if (isLoad and self:IsReachLoadPoint()) or (not isLoad and self:IsReachShootPoint()) then
+        return true
+    end
+    
+    local reachPoint = isLoad and self.endPoint.position or self.startPoint.position
+
+    if UE.Vector3.Distance(self.model.position, reachPoint) < 0.02 then
+        if isLoad then 
+            self:OnReachLoadPoint()
+        else
+            self:OnReachShootPoint()
+        end
+        
+        return true
+    end
+    
+    return false
+end
+
+function Forestock:IsReachLoadPoint()
+    return self.isLoadPoint
+end
+
+function Forestock:IsReachShootPoint()
+    return self.isShootPoint
+end
+
+function Forestock:ResetReachCheck()
+    self.isLoadPoint = false
+    self.isShootPoint = false
+end
+
+function Forestock:OnReachLoadPoint()
+    self:LoadPointAction()
+    
+    if self.main.OnReachLoadPoint then
+        self.main:OnReachLoadPoint()
+    end
+end
+
+function Forestock:LoadPointAction()
+    self.isLoadPoint = true
+    --reachsound
+    self.loadBSound:PlaySound()
+end
+
+function Forestock:OnReachShootPoint()
+    self.isShootPoint = true
+    
+    --reachsound
+    self.loadESound:PlaySound()
+end
+
+function Forestock:Rebound(isLoad)
+    local pos = self.model.localPosition
+    CL.Scheduler.RemoveSchedule(self.reboundAnimTimeId)
+    self.reboundAnimTimeId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            --anim
+            self.model.localPosition = UE.Vector3.Lerp(pos, self.defaultPos, t/s)
+            if t >= 0.05 then
+                self.model.localPosition = self.defaultPos
+                
+                if isLoad then
+                    self:LoadCompleted()
+                    self:OnReachShootPoint()
+                    
+                    if self.lockOnLoaded == 1 then
+                        self.isLocked = true
+                    end
+                else
+                    self:ResetReachCheck()
+                end
+            end
+        end,
+    0, 0.05).actionId
+end
+
+function Forestock:UnLock()
+    self.isLocked = false
+    self:ResetReachCheck()
+end
+
+function Forestock:LoadCompleted()
+    --loaded sound
+    self.isLocked = true
+    
+    self.main:OnLoadCompeleted()
+    
+    --resetReachCheck  for reLoad.
+    self:ResetReachCheck()
+end
+
+
+function Forestock:StartPull(usingHand)
+    self.usingHand = usingHand
+    if IsNullOrDestroyed(self.usingHand) then
+        return
+    end
+    SetHandPose(self.usingHand, self.poseValues)
+
+    self.isPulling = true
+    --self.spawnArrowSound.soundInfo:Play(self.ib.trans.position)
+    self.startTime = UE.Time.time
+    local ph = self.ib:GetPrimaryHand()
+    self.attach:SetupHandPose(self.usingHand)
+    
+    self:IgnoreCollisionWithHand(self.usingHand, true)
+
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self.ib.networkIB.networkRB.enabled = false
+    end
+
+    if not IsNullOrDestroyed(ph) then
+        local hld = ph.grabJoint.xDrive
+        hld.positionSpring = self.holdHandSpring
+        ph.grabJoint.xDrive = hld
+        ph.grabJoint.yDrive = hld
+        ph.grabJoint.zDrive = hld
+        
+        local sd = ph.grabJoint.slerpDrive
+        sd.positionSpring = self.holdHandRotSpring
+        sd.positionDamper = self.holdHandRotDamper
+        ph.grabJoint.slerpDrive = sd
+    
+        self.handDot = UE.Vector3.Dot(ph.handDir.up, self.trans.up) > 0
+    else
+        self.handDot = true
+    end
+    
+    self.mainSpace = UE.Quaternion.Inverse(self.trans.rotation) * self.ib.trans.rotation
+    
+    RemoveSchedule(self.ib.trans, self.trackTimer)
+    self.trackTimer = CL.Scheduler.Create(self.ib.trans, 
+        function(sche, t, s)
+            if not IsNullOrDestroyed(self.usingHand) then
+                local hp = self.attach:GetHandPoseRef(self.usingHand)
+                if not IsNullOrDestroyed(hp) then
+                    hp.tracker:UpdateTrack()
+                end
+            end
+        end,
+    0, -1)
+end
+
+
+function Forestock:EndPull()
+    self.isPulling = false
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self.ib.networkIB.networkRB.enabled = true
+    end
+    
+    if not IsNullOrDestroyed(self.usingHand) then
+        self.attach:ClearHandPose(self.usingHand)
+        local ld = self.usingHand.grabJoint.xDrive
+        ld.positionSpring = 0
+        self.usingHand.grabJoint.xDrive = ld
+        self.usingHand.grabJoint.yDrive = ld
+        self.usingHand.grabJoint.zDrive = ld
+        self.usingHand.grabJoint.connectedBody = nil
+        self:IgnoreCollisionWithHand(self.usingHand, false)
+    end
+    self.attach.transform.position = self.trans.position
+    self.ib:SetTwoHandEnable(false)
+    
+    --local ph = self.ib:GetPrimaryHand()
+    --if not IsNullOrDestroyed(ph) then
+    --    local sd = ph.grabJoint.slerpDrive
+    --    sd.positionSpring = self.ib.angularForce
+    --    ph.grabJoint.slerpDrive = sd
+    --end
+    
+    RemoveSchedule(self, self.trackTimer)
+end
+
+function Forestock:UpdatePull()
+    local handRelativePos = self.trans:InverseTransformPoint(self.usingHand.trans.position)
+    local diffZ = UE.Mathf.Clamp(handRelativePos.z, -self.pullMaxDis, 0)
+    self.pullFactor = - diffZ/self.pullMaxDis
+    local handPos = nil
+    
+    if self.isLocked then
+        self.model.localPosition = self.defaultPos
+        handPos = self.model.position
+    else
+        handPos = self.trans.position + self.trans.forward * diffZ
+        self.model.position = handPos
+    end
+    self.attach.trans.position = handPos
+    
+    if UE.Time.time - self.startTime > 0.2 then
+        self.shootFactorDeltaAcc = self.shootFactorDeltaAcc + UE.Mathf.Abs(self.pullFactor - self.lastShootFactor)
+        if self.shootFactorDeltaAcc > 0.2 then
+            self.usingHand:HapticPulse(self.usingHand.character.hitHapticCurve, 0.1, UE.Random.Range(0.25, 0.5))
+            self:OnPulling()
+            self.shootFactorDeltaAcc = 0
+        end
+    end
+    
+    self.lastShootFactor = self.pullFactor
+    
+    local ph = self.ib:GetPrimaryHand()
+    if not IsNullOrDestroyed(ph) then
+        local handDir = self.usingHand.trans.position - ph.trans.position
+        local mainUp = ph.trans.up + ph.trans.forward * 0.1
+
+        local localRot = UE.Quaternion.LookRotation(handDir, mainUp)
+    
+        CL.PhysicsFollow.TrackRotation(self.ib.rb, localRot)
+        self.lastLocalRot = localRot
+    end
+end
+
+function Forestock:IgnoreCollisionWithHand(hand, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(hand.physicsHand.colliders, self.ib:GetCols(), ignore)
+end
+
+function Forestock:OnPulling()
+end
+
+-----------------
+
+function Forestock:NetworkShowHint(id, show)
+    self.isNetworkHint = show
+    if not CL.Network.VRNetworkManager.ServerOnly and CS.Mirror.NetworkClient.localPlayer.netId ~= id then
+        self.ib:HideHint(self.hintPoint)
+    else
+        if show then
+            if IsNullOrDestroyed(self.hintPoint) then
+                self.hintPoint = self.ib:CreateHint(self.model, UE.Vector3.zero)
+            else
+                self.ib:ShowHint(self.hintPoint)
+            end
+        else
+            self.ib:HideHint(self.hintPoint)
+        end
+    end
+end
+
+
+return Class(nil, nil, Forestock)

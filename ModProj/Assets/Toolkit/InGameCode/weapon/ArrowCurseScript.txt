@@ -1,0 +1,413 @@
+--luaBehaviour
+local ArrowCurse = {
+    shareDmg = nil,
+    
+    intensity = 0.25,
+    enhanceIntensity = 0.5,
+
+    --lifeTime = 10,
+    
+    shareArrow = {},
+    }
+
+--[[
+    arrow logic
+]]
+
+function ArrowCurse:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) 
+        and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    self.onStabFcDead = function(fc)
+        if not IsNullOrDestroyed(self.stab) then
+            self.stab:BreakAllStab()
+        end
+        fc:DeadEvent("-", self.onStabFcDead)
+    end
+    
+        
+    self.onStabEnterHandler = function(si)
+        self:OnStabEnter(si)
+    end
+    
+    self.OnStabExitHandler = function(si)
+        self:OnStabExit(si)
+    end
+end
+
+function ArrowCurse:OnShootArrow()
+    self:ShootEffect()
+end
+
+function ArrowCurse:ShootEffect()
+    if IsNullOrDestroyed(self.ib) then
+        return
+    end
+    CL.EffectMgr.Instance:PlayEffect(self.shootEffectName, self.ib.trans.position, 
+        self.ib.trans.rotation)
+end
+
+function ArrowCurse:AddShareArrow(arrow)
+    table.insert(self.shareArrow, arrow)
+end
+
+function ArrowCurse:SetCurseObj(curseObj)
+    self.curseObj = curseObj
+end
+
+function ArrowCurse:RemoveAllShareArrow()
+    for k, v in pairs(self.shareArrow) do
+        if v and not IsNullOrDestroyed(v.ib) and v.shareArrow then
+            for m, n in pairs(v.shareArrow) do
+                if n == self then
+                    table.remove(v.shareArrow, m)
+                    break
+                end
+            end
+        end
+    end
+    
+    self.shareArrow = {}
+end
+
+function ArrowCurse:AddHitListener()
+    if not self.hitInfoObj or IsNullOrDestroyed(self.hitInfoObj) then
+        return
+    end
+    
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if self.shareDmg then  --hitScan curse
+            self.cacheVelocityMlp = CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.velocityMlp
+            self.cacheDmgFinalAdd = CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd
+            self.cacheDmgFinalMlp = CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp
+            CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.velocityMlp = 0
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd = self.shareDmg
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = 1
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if self.cacheVelocityMlp then
+            CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.velocityMlp = self.cacheVelocityMlp
+            self.cacheVelocityMlp = nil
+        end
+        if self.cacheDmgFinalAdd then
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd = self.cacheDmgFinalAdd
+            self.cacheDmgFinalAdd = nil
+        end
+        if self.cacheDmgFinalMlp then
+            CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = self.cacheDmgFinalMlp
+            self.cacheDmgFinalMlp = nil
+        end
+        
+        self.shareDmg = nil
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+end
+
+function ArrowCurse:RemoveHitListener()
+    if not self.hitInfoObj or IsNullOrDestroyed(self.hitInfoObj) then
+        return
+    end
+    
+    if self.hitInfoObj.hitInfo and self.hitInfoObj.hitInfo.OnInteractRoleHitPhase1Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+    end
+    
+    if self.hitInfoObj.hitInfo and self.hitInfoObj.hitInfo.OnInteractRoleHitPhase2Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+    end
+end
+
+function ArrowCurse:IsShareArrowCol(col)
+    for k, v in ipairs(self.shareArrow) do
+        if v.arrowCol == col then
+            return true
+        end
+    end
+    return false
+end
+
+
+--this return value indicates whether FC has been check
+function ArrowCurse:ApplyHitScan(dmg)
+    --no stab not share
+    if not self.stabFc then
+        return false
+    end
+    
+    if not self.cacheInfo then
+        return false
+    end
+
+    if IsNullOrDestroyed(self.stabFc) then
+        return true
+    end
+    
+    self.shareDmg = dmg * (self.isEnhance and self.enhanceIntensity or self.intensity)
+    
+    if IsNullOrDestroyed(self.stabFc) or self.stabFc.attr:IsDead() then
+        return true
+    end
+    
+    if IsNullOrDestroyed(self.ib) or IsNullOrDestroyed(self.ib.rb) or IsNullOrDestroyed(self.arrowCol) or IsNullOrDestroyed(self.cacheInfo.thisCol) then
+        return true
+    end
+    
+    CL.InteractTrigger.doingHitScan = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(self.cacheInfo.thisCol, self.ib, self.ib.rb, self.arrowCol, self.cacheInfo.normal, CL.AIProxy.CampNone)
+    CL.InteractTrigger.EndHitScan()
+    CL.InteractTrigger.doingHitScan = false
+    
+    --print(self.stabFc.trans.name ..  ": share dmg to:" .. self.stabFc.trans.name .. "  dmg" .. dmg)
+    --effect
+    if self.effectInfo and self.effectInfo.line then
+        self.effectInfo.line:LightingInTime()
+    end
+    --    end
+    --, 0, 0, 0.02)
+    
+    return true
+end
+
+
+function ArrowCurse:OnStabEnter(si)
+    if IsNullOrDestroyed(si.stabTarget) then
+        return
+    end
+    local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+    if not IsNullOrDestroyed(fc) then
+        self.stabFc = fc
+        self.cacheInfo = {}
+        
+        local mu = fc.ra:GetMuscle(si.stabTarget)
+        if mu then
+            self.muscleRb = mu.rb
+            self.cacheInfo.thisCol = mu.col
+        end
+        if not IsNullOrDestroyed(self.ib) then
+            self.cacheInfo.normal = self.ib.trans.forward
+        end
+        
+        if self.curseObj then
+            self.curseObj:OnArrowStabFc(self, fc)
+        end
+        
+        if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+            if not IsNullOrDestroyed(self.ib) then
+                local state = GetIBNetworkState(self.ib)
+                if state ~= nil then
+                    state:ServerOnStabFc(fc, mu, self.ib.trans.forward)
+                    if not IsNullOrDestroyed(si.stabTargetRB) then
+                        state:ServerPlayStabEffect(si.stabTargetRB, si.stabLocalPos, self.ib.trans.rotation)
+                    end
+                end
+            end
+        end
+        if not IsNullOrDestroyed(si.stabTarget) and not IsNullOrDestroyed(self.ib) then
+            self:PlayStabEffect(si.stabTarget:TransformPoint(si.stabLocalPos), self.ib.trans.rotation)
+        end
+        
+        if self.shareArrow ~= nil then
+            for k, v in pairs(self.shareArrow) do
+                if v and not IsNullOrDestroyed(v.ib) then
+                    self:ParticleConnect(self, v)
+                end
+            end
+        end
+        
+        fc:DeadEvent("+", self.onStabFcDead)
+    end
+    
+    
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = false
+    end
+end
+
+function ArrowCurse:NetworkOnStabFc(fc, mu, dir)
+    self.stabFc = fc
+    self.cacheInfo = {}
+    if mu then
+        self.muscleRb = mu.rb
+        self.cacheInfo.thisCol = mu.col
+    end
+    self.cacheInfo.normal = dir
+        
+    if self.curseObj then
+        self.curseObj:OnArrowStabFc(self, fc)
+    end
+    
+    --local str = ""
+    if self.shareArrow ~= nil then
+        for k, v in pairs(self.shareArrow) do
+            if v and not IsNullOrDestroyed(v.ib) then
+                --str = str .. " " .. v.ib.trans.name
+                self:ParticleConnect(self, v)
+            end
+        end
+    end
+    
+    fc:DeadEvent("+", self.onStabFcDead)
+    
+    if not IsNullOrDestroyed(self.trail) then
+        self.trail.enabled = false
+    end
+end
+
+function ArrowCurse:OnStabExit(si)
+    local fc = nil
+    if not IsNullOrDestroyed(si.stabTarget) then
+        fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+    end
+    
+    if fc and not IsNullOrDestroyed(fc) then
+        if self.curseObj then
+            self.curseObj:OnArrowExitStabFc(self, fc)
+        end
+        
+        fc:DeadEvent("-", self.onStabFcDead)
+    end
+    
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer and not IsNullOrDestroyed(self.ib) then
+        local state = GetIBNetworkState(self.ib)
+        if state ~= nil and not IsNullOrDestroyed(si.stabTargetRB) then
+            state:ServerOnStabExit(si.stabTargetRB)
+        end
+    end
+    
+    for k, v in pairs(self.shareArrow) do
+        if v and not IsNullOrDestroyed(v.ib) then
+            self:CloseParticleEffect(self, v)
+        end
+    end
+    
+    self.stabFc = nil
+    self.cacheInfo = nil
+end
+
+function ArrowCurse:NetworkOnStabExit(stabTargetRB)
+    local fc = nil
+    if not IsNullOrDestroyed(stabTargetRB) then
+        fc = CL.CharacterMgr.Instance:GetFullCharacter(stabTargetRB.root)
+    end
+    
+    if not (fc and not IsNullOrDestroyed(fc)) then
+        fc = self.stabFc
+    end
+    
+    if fc and not IsNullOrDestroyed(fc) then
+        if self.curseObj then
+            self.curseObj:OnArrowExitStabFc(self, fc)
+        end
+        
+        fc:DeadEvent("-", self.onStabFcDead)
+    end
+    
+    for k, v in pairs(self.shareArrow) do
+        if v and not IsNullOrDestroyed(v.ib) then
+            self:CloseParticleEffect(self, v)
+        end
+    end
+    
+    self.stabFc = nil
+    self.cacheInfo = nil
+end
+
+function ArrowCurse:OnEnhance()
+    self.isEnhance = true
+end
+
+function ArrowCurse:OnEnable()
+    --self.__base.OnEnable(self)
+    self:StartLifeCircle()
+    
+    self:AddHitListener()
+    
+    if not IsNullOrDestroyed(self.stab) then
+        self.stab:StabEnterEvent("+", self.onStabEnterHandler)
+        self.stab:StabExitEvent("+", self.OnStabExitHandler)
+    end
+end
+
+function ArrowCurse:OnDisable()
+    --In order not to affect the Clear() after an Lua Error
+    if not IsNullOrDestroyed(self.ib) then
+        self.ib:Clear()
+    end
+    
+    --self.__base.OnDisable(self)
+    self:StopLifeCircle()
+    
+    self:RemoveHitListener()
+    
+    if self.stabFc and not IsNullOrDestroyed(self.stabFc) then
+        if self.curseObj then
+            self.curseObj:OnArrowExitStabFc(self, self.stabFc)
+        end
+        self.stabFc:DeadEvent("-", self.onStabFcDead)
+    end
+    
+    for k, v in pairs(self.shareArrow) do
+        if v and not IsNullOrDestroyed(v.ib) then
+            self:CloseParticleEffect(self, v)
+        end
+    end
+    self:RemoveAllShareArrow()
+    
+    self.shareDmg = nil
+    self.cacheInfo = nil
+    self.isEnhance = false
+    
+    if not IsNullOrDestroyed(self.stab) then
+        self.stab:StabEnterEvent("-", self.onStabEnterHandler)
+        self.stab:StabExitEvent("-", self.OnStabExitHandler)
+    end
+    
+    self.stabFc = nil
+    
+    self.curseObj = nil
+end
+
+
+function ArrowCurse:OnCancel(bow)
+    self.__base.OnCancel(self, bow)
+end
+
+--[[
+    effect
+]]
+
+function ArrowCurse:ParticleConnect(arrow1, arrow2)
+    if not self.curseObj then
+        return
+    end
+    self.effectInfo = self.curseObj:ApplyConnectEffect(arrow1, arrow2)
+end
+
+function ArrowCurse:CloseParticleEffect(arrow1, arrow2)
+    if not self.curseObj then
+        return
+    end
+    
+    self.curseObj:ApplyStopEffect(arrow1, arrow2)
+    self.effectInfo = nil
+end
+
+function ArrowCurse:NetworkPlayStabEffect(rb, localPos, rot)
+    if IsNullOrDestroyed(rb) then
+        return
+    end
+    self:PlayStabEffect(rb.transform:TransformPoint(localPos), rot)
+end
+
+function ArrowCurse:PlayStabEffect(pos, rot)
+    if self.stabEffectName then
+        CL.EffectMgr.Instance:PlayEffect(self.stabEffectName, pos, rot)
+    end
+end
+
+
+return Class(Require("Weapon/ArrowBaseScript"), nil, ArrowCurse)

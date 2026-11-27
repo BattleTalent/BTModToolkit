@@ -13,9 +13,13 @@ namespace CrossLink
         public GameObject fbxPrefab; // The FBX model prefab to spawn
 
         [Header("——————Settings——————")]
+        [Tooltip("Local hand-bone axis pointing from the wrist toward the palm.")]
         public Vector3 wristToPalmAxisLeft;
+        [Tooltip("Local hand-bone axis pointing from the wrist toward the palm.")]
         public Vector3 wristToPalmAxisRight;
+        [Tooltip("Local hand-bone axis pointing from the palm toward the thumb. ProjSAO maps this field to FinalIK palmToThumbAxis.")]
         public Vector3 palmUpAxisLeft;
+        [Tooltip("Local hand-bone axis pointing from the palm toward the thumb. ProjSAO maps this field to FinalIK palmToThumbAxis.")]
         public Vector3 palmUpAxisRight;
         public HandPoseControl handposeControlLeft;
         public HandPoseControl handposeControlRight;
@@ -40,6 +44,10 @@ namespace CrossLink
 
 
 #if UNITY_EDITOR
+        private const string HudTargetName = "hudTarget";
+        private const float HandDirectionSqrEpsilon = 0.00000001f;
+        private const float HandAxesCrossSqrEpsilon = 0.0001f;
+
         [EasyButtons.Button]
         public void AutoConfigBuilder()
         {
@@ -59,7 +67,7 @@ namespace CrossLink
 
             if (handposeControlLeft == null||handposeControlRight == null)
             {
-                Debug.LogError("Please assign values to handPoseControlLeft and handPoseControlLeft");
+                Debug.LogError("Missing handposeControlLeft or handposeControlRight. Please use Assets/Toolkit/AvatarBuilder/RuntimeAvatarBuilder.prefab: drag it into the scene, put the target FBX under this RuntimeAvatarBuilder object, assign the FBX Prefab field, then click AutoConfigBuilder.");
                 return;
             }
 
@@ -98,10 +106,153 @@ namespace CrossLink
             PutSlots();
 
             AutoCorrectRenderer();
+            CharacterBuilderTools.Open(fbxPrefab, characterHeight);
 
 
             Debug.LogWarning("Please check if this is correct after use. If not, " +
                 "please assign the handTrans of the handPoseControl manually.");
+        }
+
+        [EasyButtons.Button("Auto Configure Hand Axes")]
+        public void AutoConfigureHandAxes()
+        {
+            if (fbxPrefab == null)
+            {
+                Debug.LogError("Auto Configure Hand Axes failed: assign Fbx Prefab first.", this);
+                return;
+            }
+
+            Animator animator = fbxPrefab.GetComponentInChildren<Animator>(true);
+            if (animator == null || animator.avatar == null || !animator.avatar.isValid || !animator.avatar.isHuman)
+            {
+                Debug.LogError("Auto Configure Hand Axes failed: Fbx Prefab must contain a valid Humanoid Animator.", this);
+                return;
+            }
+
+            Transform leftForearm = animator.GetBoneTransform(HumanBodyBones.LeftLowerArm);
+            Transform leftHand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            Transform leftThumb = animator.GetBoneTransform(HumanBodyBones.LeftThumbProximal);
+            Transform rightForearm = animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
+            Transform rightHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+            Transform rightThumb = animator.GetBoneTransform(HumanBodyBones.RightThumbProximal);
+
+            if (!TryCalculateHandAxes(
+                    leftForearm,
+                    leftHand,
+                    leftThumb,
+                    "left",
+                    out Vector3 calculatedLeftWristAxis,
+                    out Vector3 calculatedLeftThumbAxis)
+                || !TryCalculateHandAxes(
+                    rightForearm,
+                    rightHand,
+                    rightThumb,
+                    "right",
+                    out Vector3 calculatedRightWristAxis,
+                    out Vector3 calculatedRightThumbAxis))
+            {
+                return;
+            }
+
+            Undo.RecordObject(this, "Auto Configure Hand Axes");
+            wristToPalmAxisLeft = calculatedLeftWristAxis;
+            wristToPalmAxisRight = calculatedRightWristAxis;
+            palmUpAxisLeft = calculatedLeftThumbAxis;
+            palmUpAxisRight = calculatedRightThumbAxis;
+            EditorUtility.SetDirty(this);
+
+            if (PrefabUtility.IsPartOfPrefabInstance(this))
+            {
+                PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+            }
+
+            Debug.Log(
+                "Auto Configure Hand Axes succeeded. " +
+                "Left wrist-to-palm=" + wristToPalmAxisLeft +
+                ", left palm-to-thumb=" + palmUpAxisLeft +
+                ", right wrist-to-palm=" + wristToPalmAxisRight +
+                ", right palm-to-thumb=" + palmUpAxisRight + ".",
+                this);
+        }
+
+        private bool TryCalculateHandAxes(
+            Transform forearm,
+            Transform hand,
+            Transform thumb,
+            string handLabel,
+            out Vector3 wristToPalmAxis,
+            out Vector3 palmToThumbAxis)
+        {
+            wristToPalmAxis = Vector3.zero;
+            palmToThumbAxis = Vector3.zero;
+
+            if (forearm == null || hand == null || thumb == null)
+            {
+                Debug.LogError(
+                    "Auto Configure Hand Axes failed: the " + handLabel +
+                    " lower arm, hand, or thumb proximal Humanoid bone is missing.",
+                    this);
+                return false;
+            }
+
+            Vector3 wristToPalmWorld = hand.position - forearm.position;
+            Vector3 handToThumbWorld = thumb.position - hand.position;
+            if (wristToPalmWorld.sqrMagnitude <= HandDirectionSqrEpsilon
+                || handToThumbWorld.sqrMagnitude <= HandDirectionSqrEpsilon)
+            {
+                Debug.LogError(
+                    "Auto Configure Hand Axes failed: the " + handLabel +
+                    " hand bones overlap and do not define a usable direction.",
+                    this);
+                return false;
+            }
+
+            Vector3 handNormal = Vector3.Cross(wristToPalmWorld.normalized, handToThumbWorld.normalized);
+            if (handNormal.sqrMagnitude <= HandAxesCrossSqrEpsilon)
+            {
+                Debug.LogError(
+                    "Auto Configure Hand Axes failed: the " + handLabel +
+                    " wrist and thumb directions are collinear. Configure the Humanoid T-Pose first.",
+                    this);
+                return false;
+            }
+
+            Vector3 palmToThumbWorld = Vector3.Cross(handNormal, wristToPalmWorld.normalized);
+            wristToPalmAxis = GetClosestLocalCardinalAxis(hand, wristToPalmWorld);
+            palmToThumbAxis = GetClosestLocalCardinalAxis(hand, palmToThumbWorld);
+
+            if (Mathf.Abs(Vector3.Dot(wristToPalmAxis, palmToThumbAxis)) > 0.001f)
+            {
+                Debug.LogError(
+                    "Auto Configure Hand Axes failed: the calculated " + handLabel +
+                    " wrist-to-palm and palm-to-thumb axes are not perpendicular. Configure the Humanoid T-Pose first.",
+                    this);
+                wristToPalmAxis = Vector3.zero;
+                palmToThumbAxis = Vector3.zero;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static Vector3 GetClosestLocalCardinalAxis(Transform bone, Vector3 worldDirection)
+        {
+            Vector3 localDirection = bone.InverseTransformDirection(worldDirection.normalized);
+            float absX = Mathf.Abs(localDirection.x);
+            float absY = Mathf.Abs(localDirection.y);
+            float absZ = Mathf.Abs(localDirection.z);
+
+            if (absX >= absY && absX >= absZ)
+            {
+                return localDirection.x >= 0f ? Vector3.right : Vector3.left;
+            }
+
+            if (absY >= absX && absY >= absZ)
+            {
+                return localDirection.y >= 0f ? Vector3.up : Vector3.down;
+            }
+
+            return localDirection.z >= 0f ? Vector3.forward : Vector3.back;
         }
 
         void GenerateSlots(Animator animator)
@@ -212,6 +363,53 @@ namespace CrossLink
             PutSlots();
         }
 
+        [EasyButtons.Button("Configure HUD Target (HP bar)")]
+        public void ConfigHudTarget()
+        {
+            if (fbxPrefab == null)
+            {
+                Debug.LogError("Please assign a value to \"FbxPrefab\".");
+                return;
+            }
+
+            var animator = fbxPrefab.transform.root.GetComponentInChildren<Animator>(true);
+            if (animator == null)
+            {
+                Debug.LogError("Please ensure that the fbxPrefab has an Animator " +
+                    "and that the AnimationType option in the fbx file is Humanoid.");
+                return;
+            }
+
+            if (animator.avatar == null || !animator.avatar.isValid || !animator.avatar.isHuman)
+            {
+                Debug.LogError("ConfigHudTarget failed: Animator Avatar must be a valid Humanoid.");
+                return;
+            }
+
+            Transform head = animator.GetBoneTransform(HumanBodyBones.Head);
+            if (head == null)
+            {
+                Debug.LogError("ConfigHudTarget failed: HumanBodyBones.Head is missing.");
+                return;
+            }
+
+            Transform hudTarget = head.Find(HudTargetName);
+            if (hudTarget == null)
+            {
+                GameObject hudTargetObject = new GameObject(HudTargetName);
+                UnityEditor.Undo.RegisterCreatedObjectUndo(hudTargetObject, "Create hudTarget");
+                hudTarget = hudTargetObject.transform;
+                hudTarget.SetParent(head, false);
+                hudTarget.localPosition = Vector3.zero;
+                hudTarget.localRotation = Quaternion.identity;
+                hudTarget.localScale = Vector3.one;
+                UnityEditor.EditorUtility.SetDirty(head.gameObject);
+            }
+
+            UnityEditor.Selection.activeGameObject = hudTarget.gameObject;
+            UnityEditor.EditorGUIUtility.PingObject(hudTarget.gameObject);
+        }
+
         [Range(-1f, 1f)]
         public float leftHandPreview = 0f;
 
@@ -299,7 +497,8 @@ namespace CrossLink
 
         public bool showExampleAvatarGizmo = false;
         private Mesh mesh;
-
+        private Color wireColor = new Color(1, 0, 0, 0.1f);
+        const float roleScale = 1.09f;
         private void OnDrawGizmos()
         {
             if(!showExampleAvatarGizmo)
@@ -309,9 +508,10 @@ namespace CrossLink
                 mesh = AssetDatabase.LoadAssetAtPath<Mesh>($"Assets/Toolkit/Gizmos/Avatar.fbx");
             }
 
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireMesh(mesh, new Vector3(0,0,0), new Quaternion(0,0,0,0).normalized, new Vector3(1f,1f,1f));
+            Gizmos.color = wireColor;
+            Gizmos.DrawWireMesh(mesh, transform.position, new Quaternion(0,0,0,0).normalized, new Vector3(roleScale, roleScale, roleScale));
         }
 #endif
     }
+
 }

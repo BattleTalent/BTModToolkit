@@ -1,0 +1,75 @@
+
+local FlyWave = {
+}
+
+function FlyWave:OnTrigger(pu, other)
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+end
+
+function FlyWave:OnTriggerWithStaticScene(other)
+    if self.destoryWhenHitEnv ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlyWave:OnTriggerWithRole(fc, col)
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+end
+
+function FlyWave:SetStartColor(color)
+    local i = 1
+    color.a = 1
+    local struct = nil
+    while self["particle"..i] do
+        if not struct then
+            struct = self["particle"..i].main.startColor
+            struct.color = color
+        end
+        
+        self["particle"..i].main.startColor = struct
+        i = i + 1
+    end
+    
+    self.startColor = color
+end
+
+
+function FlyWave:SetEffectColor(effectObj, color)
+    local struct = nil
+    for i = 0, effectObj.particles.Length - 1 do
+        if not struct then
+            struct = effectObj.particles[i].main.startColor
+            struct.color = color
+        end
+        
+        effectObj.particles[i].main.startColor = struct
+    end
+end
+
+function FlyWave:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlyWave:OnTriggerWithPlayerHand(col, hand)
+
+end
+
+function FlyWave:OnTriggerWithPlayer(collision, player)
+
+end
+
+return Class(nil, nil, FlyWave)

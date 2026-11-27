@@ -1,0 +1,224 @@
+
+local spellIce = {
+    onSkill = false,
+    
+    enchantingEffect = "IceEnchanting",
+    enchantEffectFly = "IceEnchantFly",
+    enchantEffectLoop = "IceEnchantLoop",
+    enchantEffectEnd = "IceEnchantEnd",
+}
+
+
+function spellIce:OnChargeBegin()
+    if self.onSkill then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if SafeIsOwnerLocalPlayer(self.host.interact) then
+            if CL.Network.VRNetworkManager.ClientOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:CommandChargeBegin() end
+                self.onSkill = true
+                return
+            end
+        else
+            return
+        end
+    end
+    
+    self:DoChargeBegin()
+end
+
+function spellIce:DoChargeBegin()
+    --print("OnChargeBegin")
+    local fo = self:SpawnSpellOnHand(self.flyObjName, self.createPoint)    
+    
+    if self.host.interact:IsEnhance() then
+        fo.script.self:EnhanceSpell()
+    end
+    fo.script.self:SetOwner(self)
+    
+    self:SetHandPose(true)
+    -- you can access base function in this way:
+    -- self.__base.StartVelSample(self)    
+    self:StartVelSample()
+    
+    self.onSkill = true
+end
+
+function spellIce:OnChargeReady()
+    if IsNullOrDestroyed(self.fo) then
+        return
+    end
+    
+    self:PrepareSpellOnHand()
+    
+    if self.isEnchantable >= 1 then
+        self:StartDetectingEnchant(self.createPoint)
+    end
+
+    self.skillReadySound:PlaySound()
+
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        CL.Scheduler.RemoveSchedule(self.localActId)
+        self.localActId = CL.Scheduler.Create(self.trans, 
+            function(sche, t, s)
+                if not self.slotHand or IsNullOrDestroyed(self.slotHand) then
+                    return
+                end
+                if self.slotHand.inputs[CL.VRTKInputButton.ButtonType.Trigger].PressUp then
+                    self:OnChargeRelease(true)
+                    sche:Stop()
+                end
+            end,
+        0, -1).actionId
+    end
+end
+
+
+
+
+function spellIce:OnChargeCancel()
+    --print("OnChargeCancel")
+
+    self:ReleaseSpell()
+    
+    self:SetHandPose(false)
+    self:StopVelSample()
+    
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+    
+    self.onSkill = false
+
+    if self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        CL.Scheduler.RemoveSchedule(self.localActId)
+    end
+end
+
+
+function spellIce:OnChargeRelease(isLocal)
+    --throw
+    self.onSkill = false
+    self:SetHandPose(false)
+    
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+
+    if self.isOnline and not isLocal then
+        return
+    end
+
+    if self.isOnline then
+        CL.Scheduler.RemoveSchedule(self.localActId)
+    end
+
+    if not self:TryThrow() then
+        self:ReleaseSpell()
+    end
+
+    if not self.isOnline then
+        self.fo = nil
+    end
+
+    if self.isEnchantable >= 1 then
+        self:StopDetectingEnchant()
+    end
+end
+
+
+function spellIce:OnFoDestroyed(fo)
+    if self.fo and self.fo.script.self == fo then
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerCloseSkill() end
+            end
+        end
+        self.host:CloseSkill()
+        
+        if self.isEnchantable >= 1 then
+            self:StopDetectingEnchant()
+        end
+    end
+end
+
+--[[
+    enchant
+]]
+
+function spellIce.OnEnchantSkillWithRole(ib, fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+    ib:EnchantSkillCountUpdate()
+    spellIce.Freeze(fc, 0.5)
+end
+
+function spellIce.OnEnchantSkillByStab(ib, si)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+    if pu.unitType ~= CL.Tagger.Tag.InteractRole then
+        return
+    end
+    
+    ib:EnchantSkillCountUpdate()
+    spellIce.Freeze(pu, 0.5)
+end
+
+function spellIce.OnEnchantSkillWithPlayer(ib, rb, thisCol, otherCol, point, normal, relaVel, character)
+    ib:EnchantSkillCountUpdate()
+    
+    local pos = point
+    if thisCol.sharedMesh and not thisCol.convex then
+        pos = point
+    else
+        pos = thisCol:ClosestPoint(point)
+    end
+    
+    spellIce.FreezePlayer(character, true)
+end
+
+function spellIce.FreezePlayer(character, enchant)
+    local sec = enchant and 2 or 0.5
+    character.aiProxy:FreezeForAWhile(sec)
+end
+
+function spellIce.Freeze(fc, time)
+    fc.muscleState:EnableFreeze(true, nil, false)
+    fc.muscleState:UnFreezeAgain(time)
+end
+
+--[[
+    summon
+]]
+
+function spellIce:OpenSkill()
+    if not self.host.interact:IsEnhance() then
+        return
+    end
+    
+    self:StartCharge()
+    
+    self:SetHandPose(true)
+end
+
+function spellIce:OnCondition()
+    self.onSkill = true
+    
+    self.__base.OnCondition(self)
+end
+
+
+function spellIce:SpawnObj(ObjName, slotHand, otherHand)
+    return self.__base.SpawnObj(self, ObjName, slotHand, otherHand)
+end
+
+function spellIce:CancelGo()
+    self.__base.CancelGo(self)
+end
+
+function spellIce:IsAllowSkill()
+    return (not self.onSkill) and self.__base.IsAllowSkill(self)
+end
+
+return Class(Require("Weapon/SpellSummonScript"), nil, spellIce)

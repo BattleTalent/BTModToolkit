@@ -1,0 +1,40 @@
+local LightningArc = {
+}
+
+function LightningArc:OnDisable()
+    CL.Scheduler.RemoveSchedule(self.actTimeId)
+    self.lightningBolt.enabled = false
+    self.start.localPosition = UE.Vector3.zero
+    self.target.localPosition = UE.Vector3.zero
+end
+
+function LightningArc:PlayLightningEffect(startTrans, targetTrans)
+    local isActive = false
+    self.actTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if not self.trans.gameObject.activeSelf then
+                sche:Stop()
+            end
+            
+            if startTrans ~= nil and not IsNullOrDestroyed(startTrans) then
+                self.start.position = startTrans.position
+            end
+            if targetTrans ~= nil and not IsNullOrDestroyed(targetTrans) then
+                self.target.position = targetTrans.position
+            end
+            
+            if not isActive then
+                self.lightningBolt.enabled = true
+                isActive = true
+            end
+        end
+    , 0, self.time).actionId
+end
+
+function LightningArc:PlayLightningEffectAtPoint(pos)
+    local initDis = UE.Vector3.Distance(self.trans.position, pos)
+    self.target.position = pos
+    self.lightningBolt.enabled = true
+end
+
+return Class(nil, nil, LightningArc)

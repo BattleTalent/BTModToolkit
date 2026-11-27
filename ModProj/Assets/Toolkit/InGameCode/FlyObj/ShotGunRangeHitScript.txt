@@ -1,0 +1,82 @@
+
+local shotGunRangeHit= {
+    pushIntensity = 30,
+    panPushIntensity = 150,
+}
+
+function shotGunRangeHit:FlyStart()
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if (not fc.muscleState:IsPowerfulCharacter() and fc.attr.hp.BaseValue < CL.CombatAttr.MiniAmountHpLeft) or fc.attr:IsDead() then
+            local frag = fc.reactAnim:CheckHitDismemberPoint(mu:GetProxyMuscleName(), point)
+            if frag and frag.Name ~= CL.RagdollBoneInfo.Spine then
+                CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag
+            end
+        end
+        
+        local dir = (thisCol.transform.position - self.shotPos).normalized
+        local vec = (thisCol.transform.position - self.shotPos).magnitude
+        local rate = math.max((1 - vec / (self.distance + self.radius * 2)), 0)
+        self:PushCharecter(fc, dir, rate)
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    
+    self.shotPos = self.host.trans.position
+    self.__base.FlyStart(self)
+
+    -- CL.FullBodyMuscleState.Phase2Modifier:Add(function(fc, mu, thisCol,
+    --     otherRB, otherCol, point, normal, relaVel)
+    
+    --     if not fc.attr:IsDead() then
+    --         return
+    --     end
+        
+    --     local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point);
+    --     CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag;
+    
+    -- end)
+end
+
+
+function shotGunRangeHit:OnHit(hitPoint, beHitPu, beHitCol, selfPu, rb, col, hitDir)
+    if not self.shotPos then
+        return
+    end
+    --print("OnHit------------------------" .. beHitPu.trans.name)
+    local dir = (beHitCol.transform.position - self.shotPos).normalized
+    local vec = (beHitCol.transform.position - self.shotPos).magnitude
+    local rate = math.max((1 - vec / (self.distance + self.radius * 2)), 0)
+    if beHitPu.unitType == CL.Tagger.Tag.FlyObject or
+        beHitPu.unitType == CL.Tagger.Tag.InteractObj or 
+        beHitPu.unitType == CL.Tagger.Tag.InteractWeapon then
+        self:AddForce(beHitPu, dir, rate)
+    elseif beHitPu.unitType == CL.Tagger.Tag.InteractRole then
+        self:PushCharecter(beHitPu, dir, rate)
+    end
+    
+    self.__base.OnHit(self, hitPoint, beHitPu, beHitCol, selfPu, rb, col, hitDir)
+end
+
+function shotGunRangeHit:AddForce(pu, dir, rate)
+    if IsNullOrDestroyed(pu.rb) then
+        return
+    end
+    pu.rb:AddForce(rate * self.pushIntensity * dir)
+end
+
+function shotGunRangeHit:PushCharecter(fc, dir, rate)
+    if rate > 0.5 then
+        fc.motion:Knockout()
+    end
+    fc.controller:AddForce(dir * self.panPushIntensity
+        * rate, UE.ForceMode.Force)
+end
+
+function shotGunRangeHit:ResetState()
+    if self.hitInfoObj.hitInfo.OnInteractRoleHitPhase1Event then
+       self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+    end
+    --CL.FullBodyMuscleState.Phase2Modifier:Remove(self.flying)
+    self.shotPos = nil
+end
+
+return Class(Require("FlyObj/RangeHitObjScript"), nil, shotGunRangeHit)

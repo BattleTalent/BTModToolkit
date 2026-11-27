@@ -1,0 +1,158 @@
+
+local ArmEquipment = {}
+
+function ArmEquipment:Awake()
+    self.onCallHandler = function(hand)
+        self:OnCall(hand)
+    end
+    
+    self.onCallEndHandler = function()
+        self:OnCallEnd()
+    end
+    self.host.interact:CallBeginEvent("+", self.onCallHandler)
+    self.host.interact:CallEndEvent("+", self.onCallEndHandler)
+   self:OnAwake() 
+end
+
+function ArmEquipment:OnAwake()
+end
+
+function ArmEquipment:OnGrab(a, g)
+    if (g) then
+        self.isOnGrab = true
+
+        self:SetArmPartVisible(not self:IsAvatarModEnabled())
+        
+        self:GrabEquipment(a)
+                
+        self:BindArmBone(a.attachedHand)
+    else
+        self.isOnGrab = false
+        
+        self:ResetRotation()
+        
+        self:UnGrabEquipment()
+
+        CL.Scheduler.RemoveSchedule(self.bindTimeId)
+        
+        self.callTime = nil
+        self.flyTime = nil
+    end
+end
+
+function ArmEquipment:OnCall(hand)
+    self:BindArmBone(hand)
+    
+    local dis = (self.host.interact.trans.position - hand.trans.position).magnitude
+    self.callTime = UE.Time.time
+    self.flyTime = UE.Mathf.Max(dis / 14, 0.1) + 1.1
+end
+
+function ArmEquipment:OnCallEnd()
+    if not self.isOnGrab then
+        self:ResetRotation()
+    end
+end
+
+function ArmEquipment:BindArmBone(hand)
+    self:SetArmPartVisible(not self:IsAvatarModEnabled())
+
+    local player = hand.character
+    if player == nil then
+        return
+    end
+    
+    local isRight = hand:GetHandIndex() == 0
+    local ikRef = player.ik.references;
+    local armBone = isRight and ikRef.rightForearm or ikRef.leftForearm        
+    local handBone = isRight and ikRef.rightHand or ikRef.leftHand
+
+    local targetQua = isRight and UE.Quaternion.Euler(-10.159, 87.721, -56.883) or UE.Quaternion.Euler(9.759, 266.206, -118.786)        
+    local targetPos = isRight and UE.Vector3(0.18244, 0.007685, 0.02973) or UE.Vector3(-0.1799, -0.0118, -0.0318)
+    
+    local upDot = UE.Mathf.Abs( UE.Vector3.Dot((handBone.position-armBone.position).normalized, armBone.up) )
+    local forwardDot = UE.Mathf.Abs( UE.Vector3.Dot((handBone.position-armBone.position).normalized, armBone.forward) )
+    CL.Scheduler.RemoveSchedule(self.bindTimeId)
+    self.bindTimeId = CL.Scheduler.Create(self.host,
+    function(sche, t, s)
+        if self.callTime then
+            if UE.Time.time - self.callTime >= self.flyTime then
+                if self.isOnGrab then
+                    self.callTime = nil
+                    self.flyTime = nil
+                else
+                    self.isOnGrab = false
+                    self:ResetRotation()
+                    sche:Stop()
+                end
+            end
+        end
+        
+        --rotation
+        if not self:IsAvatarModEnabled() then
+            self.rotTrans.localRotation =  UE.Quaternion.Lerp(self.rotTrans.localRotation, targetQua, t*4)
+            self.modelTrans.rotation = UE.Quaternion.Lerp(self.modelTrans.rotation, armBone.rotation, t*4)
+            self.rotTrans.localPosition = UE.Vector3.Lerp(self.rotTrans.localPosition, targetPos, t)
+        end
+    
+        if self.isOnGrab then
+            if self:IsAvatarModEnabled() then
+                self.modelTrans.position = handBone.position
+
+                self.modelTrans.rotation = UE.Quaternion.LookRotation(handBone.position-armBone.position, upDot < forwardDot and armBone.up or armBone.forward)
+                self.rotTrans.localRotation =  UE.Quaternion.identity
+                self.rotTrans.localPosition = UE.Vector3.zero
+            else
+                local midPoint = (armBone.position + handBone.position) / 2
+            self.modelTrans.position = midPoint
+            end
+        end
+    end
+    , 0.01, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ArmEquipment:ResetRotation()
+    self:SetArmPartVisible(true)
+
+    local r = self.rotTrans.rotation
+    self.rotTrans.localRotation = UE.Quaternion.identity
+    self.rotTrans.localPosition = UE.Vector3.zero
+    
+    self.modelTrans.localRotation = UE.Quaternion.identity
+    self.modelTrans.localPosition = UE.Vector3(0,0,0.1)
+    
+    self.host.interact.trans.rotation = r
+end
+
+function ArmEquipment:GrabEquipment(a)
+end
+
+function ArmEquipment:UnGrabEquipment()
+end
+
+function ArmEquipment:IsAvatarModEnabled()
+    return CL.DebugPanel ~= nil and CL.DebugPanel.IsAvatarModEnabled()
+end
+
+function ArmEquipment:SetArmPartVisible(isVisible)
+    if self.armPart == nil or IsNullOrDestroyed(self.armPart) then
+        return
+    end
+
+    self.armPart.localScale = isVisible and UE.Vector3.one or UE.Vector3.one * 0.001
+end
+
+
+function ArmEquipment:OnDestroy()
+    self.host.interact:CallBeginEvent("-", self.onCallHandler)
+    self.host.interact:CallEndEvent("-", self.onCallEndHandler)
+    CL.Scheduler.RemoveSchedule(self.bindTimeId)
+    self:Destroy()
+end
+
+function ArmEquipment:Destroy()
+    
+end
+
+return Class(nil,nil, ArmEquipment)

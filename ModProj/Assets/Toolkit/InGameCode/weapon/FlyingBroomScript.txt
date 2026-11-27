@@ -1,0 +1,124 @@
+local FlyingBroom = {
+    maxSpeed = 6,
+    minDrag = 0.05,
+    
+    curSpeed = 0,
+}
+
+--function FlyingBroom:Awake()
+--    self.cacheLinearForce = self.host.interact.linearForce
+--    self.cacheAngularForce = self.host.interact.angularForce
+--end
+
+function FlyingBroom:OnGrab(a, g)
+    if g then
+        self.character = a.attachedHand.character
+    else
+        self:StopFlyingUpdate()
+        
+        self.character = nil
+    end
+end
+
+function FlyingBroom:OpenSkill()
+    --skil on effect or sound
+    if not self.isFlying then
+        self:StartFlyingUpdate()
+    end
+    
+    self.isPush = true
+end
+
+function FlyingBroom:CloseSkill()
+    self.isPush = false
+end
+
+function FlyingBroom:StartFlyingUpdate()
+    local oriDrag = self.character:GetOriginalDragPower()
+    --print("oriDrag---------:" .. oriDrag)
+    local dragRange = oriDrag - self.minDrag
+    
+    if not self.curDrag then
+        self.curDrag = oriDrag
+    end
+    
+    local dragAcc = 0.06
+    local airDragDec = 0.03
+    local groudDragDec = 0.1
+    local lastUpdateTime = UE.Time.time
+    
+    if self.windSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.windSoundInfo)
+        self.windSoundInfo = nil
+    end
+    self.windSoundInfo = self.windSound:PlaySoundInfo()
+    self.windSoundInfo.ao.trans:SetParent(self.host.interact.trans)
+    
+    self.sparkEffect:Play()
+    --self.host.interact.linearForce = 100000
+    --self.host.interact.angularForce = 80000
+    self.flyingTimer = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if (not self.isPush and self.curDrag >= oriDrag) or IsNullOrDestroyed(self.character) then
+                self:StopFlyingUpdate()
+                return
+            end
+            
+            if self.isPush then
+                if self.curDrag > self.minDrag then
+                    self.curDrag = self.curDrag - (UE.Time.time - lastUpdateTime) * dragAcc
+                end
+                
+                if self.curSpeed < self.maxSpeed then
+                    self.curSpeed = self.curSpeed + (UE.Time.time - lastUpdateTime) * self.speedAcc
+                end
+            else
+                if self.curDrag < oriDrag then
+                    self.curDrag = self.curDrag + (UE.Time.time - lastUpdateTime) * (self.character:IsMidAir() and airDragDec or groudDragDec)
+                end
+                if self.curSpeed > 0 then
+                    self.curSpeed = self.curSpeed - (UE.Time.time - lastUpdateTime) * self.speedDec
+                end
+            end
+        
+            lastUpdateTime = UE.Time.time
+            
+            
+            --print("curDrag ::" .. self.curDrag .. " curSpeed::" .. self.curSpeed)
+            self.character.capsuleRB.velocity = self.host.interact.trans.forward * self.curSpeed
+
+            --self.character:AddForce(self.host.interact.trans.forward * self.curForce)
+            self.character:SetDragPower(self.curDrag)
+            
+            
+            self.windSoundInfo.audio.pitch = math.min(3, math.max(0.01, 0.4 * self.curSpeed/self.maxSpeed + 0.8))
+            self.windSoundInfo.audio.volume = 0.5 * self.curSpeed/self.maxSpeed
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    
+    self.isFlying = true
+end
+
+function FlyingBroom:StopFlyingUpdate()
+    --print("stop flying------------------")
+    
+    RemoveSchedule(self, self.flyingTimer)
+    if not IsNullOrDestroyed(self.character) then
+        self.character:SetDragPower(self.character:GetOriginalDragPower())
+    end
+    
+    --self.host.interact.linearForce = self.cacheLinearForce
+    --self.host.interact.angularForce = self.cacheAngularForce
+    
+    self.isFlying = false
+    
+    if self.windSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.windSoundInfo)
+        self.windSoundInfo = nil
+    end
+    
+    self.sparkEffect:Stop()
+end
+
+return Class(nil,nil,FlyingBroom)

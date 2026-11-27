@@ -1,0 +1,305 @@
+
+local ThunderWeapon = {
+    costMana = 20,
+    
+    thunderRadius = 10,
+    chargeTime = 1,
+    startTime = 0,
+    thunderOnTime = 0,
+    
+    thunderCooldown = 0.5,
+}
+
+function ThunderWeapon:Awake()
+    self.sqrRadius = self.thunderRadius * self.thunderRadius
+    
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function ThunderWeapon:SetThunderEffectMaxParticleCount(count)
+    if IsNullOrDestroyed(self.thunderEffect) then
+        return false
+    end
+
+    self.thunderEffect:SetMaxParticleCount(count)
+    return true
+end
+
+
+function ThunderWeapon:OpenSkill()
+    if self.onCharge then
+        return
+    end
+        
+    self.hand = self.host:GetTriggeringHand()
+    if IsNullOrDestroyed(self.hand) then
+        return
+    end
+    
+    self.onCharge = true
+    self.releaseSkill = false
+    self.startTime = UE.Time.time
+    self.headset = self.hand.character:GetHeadset()
+    
+    
+    --chargeEffect
+    self:GiveBackChargeEffect()
+    
+    self.thunderEffect = CL.EffectMgr.Instance:PlayEffect(self.chargeEffect, self.effectPoint.position, 
+        self.effectPoint.rotation)
+    self:SetThunderEffectMaxParticleCount(2)
+    if not IsNullOrDestroyed(self.thunderEffect) and not IsNullOrDestroyed(self.thunderEffect.trans) then
+        self.thunderEffect.trans:SetParent(self.effectPoint)
+    end
+    self.endEffect = false
+end
+
+function ThunderWeapon:UpdateSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if IsNullOrDestroyed(self.hand) then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerCloseSkill()
+            end
+        end
+        self.host:CloseSkill()
+        return
+    end
+    
+    if IsNullOrDestroyed(self.hand.attachTo) or self.hand.attachTo.interact ~= self.host.interact then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerCloseSkill()
+            end
+        end
+        self.host:CloseSkill()
+        return
+    end
+    
+    local chargeTime = self.chargeTime
+    if self.hand.character:IsGround() == false then
+        chargeTime = chargeTime - 1
+    end
+    
+    if UE.Time.time - self.startTime < chargeTime then
+        return
+    else
+        if not self.endEffect then
+            if self.isOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerChargeEnd()
+                end
+            end
+            self:SetThunderEffectMaxParticleCount(15)
+            self:ChargeEndEffect()
+            self.endEffect = true
+        end
+    end
+    
+
+    
+    if self:ConditionMet() then
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerThunderOn()
+            end
+        end
+        self.thunderOnTime = UE.Time.time
+        self:ThunderOn()
+        self:SkillReleaseEffect()
+        
+        self.releaseSkill = true
+        self.host:CloseSkill()
+    end
+end
+
+function ThunderWeapon:NetworkChargeEnd()
+    if not self:SetThunderEffectMaxParticleCount(15) then
+        return
+    end
+
+    self:ChargeEndEffect()
+    self.endEffect = true
+end
+
+function ThunderWeapon:NetworkThunderOn()
+    self:ThunderOn()
+    self:SkillReleaseEffect()
+    
+    self.releaseSkill = true
+    self.host:CloseSkill()
+end
+
+function ThunderWeapon:ChargeEndEffect()
+    self.chargeEndSound:PlaySound()
+    self:PlayThunderReadyLoopSound(true)
+end
+
+function ThunderWeapon:SkillReleaseEffect()
+    self.releaseSound:PlaySound()
+    self:PlayThunderReadyLoopSound(false)
+
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.releaseEffect, self.effectPoint.position, 
+        self.effectPoint.rotation)
+    --eo.trans:SetParent(self.effectPoint)
+    
+    if not eo then
+        return
+    end
+    
+    local skyThunder = eo.trans:GetComponentInChildren(typeof(CL.SkyThunderEffect))
+    if IsNullOrDestroyed(skyThunder) then
+        return
+    end
+    skyThunder.endPoint.position = skyThunder.startPoint.position + UE.Vector3.up * 100
+end
+
+function ThunderWeapon:CloseSkill()
+    self.onCharge = false
+    
+    self:GiveBackChargeEffect()
+    
+    if not self.isOnline or 
+    (self.isOnline and SafeIsOwnerLocalPlayer(self.host.interact)) then
+        if not self.releaseSkill then
+            CL.SoundTable.PlaySound("Error")
+            CL.TextPanel.ShowTipsByTextIdAndCheckInterval("Sword_Thunder_Tips", 3)
+        end    
+    end
+end
+
+function ThunderWeapon:GiveBackChargeEffect()
+    if not IsNullOrDestroyed(self.thunderEffect) then
+        CL.EffectMgr.Instance:GiveBack(self.thunderEffect)
+    end
+    self.thunderEffect = nil
+    self:PlayThunderReadyLoopSound(false)
+end
+
+function ThunderWeapon:SkillTips()
+    
+end
+
+function ThunderWeapon:ThunderOn()
+    if IsNullOrDestroyed(self.hand) or IsNullOrDestroyed(self.hand.character) then
+        return
+    end
+
+    local center = self:GetGroundPoint(self.hand.character.trans)
+    if not center then
+        return
+    end
+    
+    local targets = CL.PhysicsUnit.QueryNPCsInRadius(center or self.hand.character.trans.position, self.thunderRadius)
+    
+    local list = {}
+    local dot = 0
+    local vec = nil
+    for i = 0, targets.Count - 1 do
+        if not IsNullOrDestroyed(targets[i]) then
+            vec = targets[i].ra:GetRoot().rbTrans.position - center
+            dot = UE.Vector3.Dot(vec.normalized
+                , self.hand.character.trans.forward)
+            if dot > 0 then
+                table.insert(list, {
+                    ["fc"] = targets[i],
+                    ["dot"] = dot,
+                    ["sqrDis"] = vec.sqrMagnitude
+                    })
+            end
+        end
+    end
+    
+    local v1 = 0
+    local v2 = 0
+    --filter 
+    table.sort(list, 
+    function(a, b)
+        if not a.fc.attr:IsDead() and b.fc.attr:IsDead() then
+            return true
+        elseif a.fc.attr:IsDead() and not b.fc.attr:IsDead() then
+            return false
+        end
+        
+        if not a.fc.motion:IsKnockout() and b.fc.motion:IsKnockout() then
+            return true
+        elseif a.fc.motion:IsKnockout() and not b.fc.motion:IsKnockout() then
+            return false
+        end
+    
+        v1 = a.dot * 0.5 + (1-a.sqrDis/self.sqrRadius)
+        v2 = b.dot * 0.5 + (1-b.sqrDis/self.sqrRadius)               
+        return v1 > v2
+    end)
+
+    if self.hand.character:IsMidAir() then
+        CL.SkyThunder.SkipPrepare = true
+        if self.hand.character:CostMana(self.host, self.host.manaCost) then
+            if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_AirStay") then
+                self.hand.character:StartAerialStay(self.hand, self.target)
+            end
+        end
+    end    
+    
+    if #list > 0 then
+        
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                self.host:NetworkCreateFlyObj(self.flyObjName, list[1].fc.ra:GetRoot().rbTrans.position, UE.Vector3.up)
+            end
+        else
+            self.host:CreateFlyObj(self.flyObjName, list[1].fc.ra:GetRoot().rbTrans.position, UE.Vector3.up)
+        end
+    else
+        
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                self.host:NetworkCreateFlyObj(self.flyObjName, center +
+                    self.hand.character.trans.forward * 2, UE.Vector3.up)
+            end
+        else
+                self.host:CreateFlyObj(self.flyObjName, center +
+                    self.hand.character.trans.forward * 2, UE.Vector3.up)
+        end
+    end
+    CL.SkyThunder.SkipPrepare = false
+end
+
+function ThunderWeapon:GetGroundPoint(trans)
+    local center = trans.position
+    local isHit, raycastHit  = UE.Physics.SphereCast(center + trans.up * 0.5, 0.05, UE.Vector3.down, self.thunderRadius, CL.LayerDefine.EnvLayerMask.value)
+    --if isHit and UE.Vector3.Angle(raycastHit.normal, UE.Vector3.up) < 10 then
+    if isHit then
+        return raycastHit.point
+    else
+        return nil
+    end
+end
+
+function ThunderWeapon:ConditionMet()
+    if self.hand.trans.position.y > self.headset.position.y then
+        return UE.Time.time - self.thunderOnTime > self.thunderCooldown
+    else
+        return false
+    end
+end
+
+function ThunderWeapon:PlayThunderReadyLoopSound(play)
+    if play then
+        if not self.loopSoundInfo then
+            self.loopSoundInfo = self.thunderReadyLoopSound:PlaySoundInfo()
+        end
+    else
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.loopSoundInfo)
+        self.loopSoundInfo = nil
+    end
+end
+
+return Class(nil, nil, ThunderWeapon)

@@ -1,0 +1,259 @@
+
+local electricSaw = {
+    maxRotSpeed = 15,
+    curRotSpeed = 0,
+    rotAcc = 1,
+    per = 0.1,
+    
+    responseTime = 0.3,
+    
+    soundPitch = 1.6,
+    soundVoulme = 0.5,
+    reflashTime = 0.01,
+    
+    maxParticle = 30,
+    
+    curColor = UE.Color(0, 0, 0, 0),    
+    endColor = UE.Color(2.00189, 1.311136, 1.104817, 0),
+    startColor = UE.Color(0, 0, 0, 0),
+    
+    shootForce = 25,
+    flyTime = 1,
+    flyReflashTime = 0.01,
+    
+    curForce = 0,
+    
+    maxDis = 10,
+    maxVel = 0.5,
+    
+    --control
+    minSqrSpeed = 15,
+    intensity = 0,
+    
+    hapticPulseTime = 0,
+}
+
+function electricSaw:Start()
+    self.bladeTb = self.blade.script:GetSelf()
+    
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if not self.bladeTb.isActive then
+            return
+        end
+        
+        if mu:IsThisRipped() then
+            return
+        end
+        CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp = CL.FullBodyMuscleState.dmgHitData.dmgFinalMlp * self.activeDmgMp
+    end
+    self.bladeHitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if otherCol ~= self.bladeTb.bladeCol  or not self.bladeTb.isActive then
+            return
+        end
+        
+        if mu:IsThisRipped() then
+            return
+        end
+
+        if self.bladeTb.cutBodyFragment == nil or self.bladeTb.cutMuscle ~= mu then
+            CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel = self.bladeTrans.forward/100
+            self.bladeTb:ApplyDesmember(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        else
+            if self.bladeTb.cutBodyFragment.reactType == CS.BodyFragment.ReactType.Dead then
+                local hpFactor = fc.attr:GetHpFactor()
+                if hpFactor > 0.5 then
+                    return
+                end
+            end
+            
+            CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel = self.bladeTrans.forward/100
+
+            if math.random(0, 100) < 50 then
+                --print("self.isDestroyBodyFragment -- ".. tostring(self.isDestroyBodyFragment))
+                CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = self.bladeTb.cutBodyFragment
+            else
+                CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = self.bladeTb.cutBodyFragment
+            end
+            self.bladeTb.cutMuscle = nil
+            self.bladeTb.cutBodyFragment = nil
+        end
+    end
+    self.bladeHitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    
+    self.hitPhase2 = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalCharacter)
+        if not self.bladeTb.isActive then
+            return
+        end
+        character.aiProxy.finalDmgMlp = self.activeDmgMp
+    end
+    self.bladeHitInfoObj.hitInfo:OnInteractCharacterHitPhase1Event("+", self.hitPhase2)
+end
+
+function electricSaw:GrabEquipment(a)
+    self.player = a.attachedHand.character
+    if self.player == nil then
+        return
+    end
+    
+    self.hand = a.attachedHand
+    self.upArmBone = a.attachedHand:GetHandIndex() == 0 
+    and self.player.ik.references.rightUpperArm
+    or self.player.ik.references.leftUpperArm
+    
+    self.ph = self.host.interact:GetPrimaryHand()
+    
+    self:SetBladeTransform(a)
+    
+    self.onGrab = true
+end
+
+function electricSaw:UnGrabEquipment()
+    self.ph = nil
+    self:ResetBladeTransform()
+    
+    self.onGrab = false
+end
+
+function electricSaw:SetBladeTransform(a)
+    self.handBine:SetParent(self.host.interact.trans)
+    if a.attachedHand:GetHandIndex() == 0 then
+        self.handBine.localPosition = UE.Vector3(-0.013, 0.0002, 0.203)
+        self.handBine.localRotation = UE.Quaternion.Euler(UE.Vector3(0, -51.72, 13.19))
+    else
+        self.handBine.localPosition = UE.Vector3(0.02, 0.03, 0.203)
+        self.handBine.localRotation = UE.Quaternion.Euler(UE.Vector3(0, -51.72, 177.4))
+    end
+end
+
+function electricSaw:ResetBladeTransform()
+    self.handBine.localPosition = UE.Vector3(0,0,0.1755)
+    self.handBine.localRotation = UE.Quaternion.identity
+    self.handBine:SetParent(self.rotTrans)
+end
+
+function electricSaw:OpenSkill()
+    local isActive = false
+    
+    local lRotSpeed = self.curRotSpeed    
+    local lPitch = self.rotAudioInfo and self.rotAudioInfo.audio.pitch or 0
+    local lVolume = self.rotAudioInfo and self.rotAudioInfo.audio.volume or 0
+    local lParticle = self.effect.maxParticles    
+    local lColor = self.curColor
+
+
+    self.rotActionId = CL.Scheduler.RemoveSchedule(self.rotActionId)
+    self.rotActionId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            if not self.onGrab then
+                self.host:CloseSkill()
+                sche:Stop()
+                return
+            end
+            
+            if t < self.responseTime then
+                return
+            end
+            
+            if not isActive then
+                isActive = true
+                self:OnSawStart()
+            end
+            local tt = t-self.responseTime
+            self.curRotSpeed = CL.EasingEquations.EaseOutCubic(lRotSpeed, self.maxRotSpeed, tt/6)
+            if self.rotAudioInfo then
+                self.rotAudioInfo.audio.pitch = math.min(3, math.max(0.01, CL.EasingEquations.EaseOutCubic(lPitch, self.soundPitch, tt/6)))
+                self.rotAudioInfo.audio.volume = CL.EasingEquations.EaseOutCubic(lVolume, self.soundVoulme, tt/6)
+            end
+            self.effect.main.maxParticles = CL.EasingEquations.EaseOutCubic(lParticle, self.maxParticle, tt/8)
+            self.curColor = UE.Color.Lerp(lColor, self.endColor, tt/6)
+            SetMaterialEmission(self.render, self.curColor)
+        end
+    ,self.reflashTime, 5)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    --self:ShieldStab(true)
+    
+    self.sound_open:PlaySound()
+end
+
+function electricSaw:UpdateSkill()
+    self:RotBlade(self.curRotSpeed)
+    
+    if self.ph and UE.Time.time - self.hapticPulseTime >= 0.2 then
+        self.hapticPulseTime = UE.Time.time
+        self.ph:HapticPulse(self.player.skillOpenHapticCurve, 0.22, UE.Random.Range(0.8, 1))
+    end
+end
+
+function electricSaw:RotBlade(angle)
+    self.bladeTrans:Rotate(0, angle, 0)
+end
+
+function electricSaw:CloseSkill()
+    local totalTime = 0.2*((self.curRotSpeed+1)/self.rotAcc)
+    local lRotSpeed = self.curRotSpeed
+    local lPitch = self.rotAudioInfo and self.rotAudioInfo.audio.pitch or 0
+    local lVolume = self.rotAudioInfo and self.rotAudioInfo.audio.volume or 0
+    local lParticle = self.effect.main.maxParticles    
+    local lColor = self.curColor
+
+    local isStop = false
+
+    self.rotActionId = CL.Scheduler.RemoveSchedule(self.rotActionId)
+    self.rotActionId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            self.curRotSpeed = UE.Mathf.Lerp(lRotSpeed, 0, t/totalTime)
+            self:RotBlade(self.curRotSpeed)
+            
+            if self.rotAudioInfo then
+                self.rotAudioInfo.audio.pitch = math.min(3, math.max(0.01, UE.Mathf.Lerp(lPitch, 0, t/totalTime)))
+                self.rotAudioInfo.audio.volume = UE.Mathf.Lerp(lVolume, 0, t/totalTime)
+            end
+            
+            self.effect.main.maxParticles = CL.EasingEquations.EaseInCubic(lParticle, 0, t)
+            self.curColor = UE.Color.Lerp(lColor, self.startColor, t/totalTime)
+            SetMaterialEmission(self.render, self.curColor)
+            
+            if totalTime - t < self.reflashTime * 2 and not isStop then
+                CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.rotAudioInfo)
+                self.rotAudioInfo = nil
+                
+                self.effect:Stop()
+            end
+        end
+    ,self.reflashTime, totalTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self:OnSawStop()
+
+    --self.sound_open:PlaySound()
+end
+
+
+function electricSaw:OnSawStart()
+    self.effect:Play()
+    if not self.rotAudioInfo then
+        self.rotAudioInfo = self.sound:PlaySoundInfo()
+        if self.rotAudioInfo then
+            self.rotAudioInfo.ao.transform:SetParent(self.bladeTrans)
+        end
+    end
+    
+    self.blade.script.self:SetSawActive(true)
+end
+
+function electricSaw:OnSawStop()
+    self.blade.script.self:SetSawActive(false)
+end
+
+function electricSaw:OnEnhance()
+    self.blade.script.self:Enhance()
+end
+
+
+function electricSaw:Destroy()
+end
+
+return Class(Require("Weapon/ArmEquipmentScript"),nil,electricSaw)

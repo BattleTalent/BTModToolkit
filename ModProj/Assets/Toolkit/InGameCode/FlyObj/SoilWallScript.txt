@@ -1,0 +1,214 @@
+local soilWall = {
+    flyDis = 0.08,
+    maxSpeed = 50,
+    
+    sqrHandSpeed = 10,
+    brokenSpeed = 60,
+    brustEffect = "WallImpact",
+    
+    brokenEffect = "WallBroken",
+    flyObjName = "FlyRock",
+    
+    minSplitNum = 3,
+    maxSplitNum = 5,
+    
+    
+    pushInterval = 0.5,
+    lastPushTime = 0,
+    
+    
+    impactIntensity = 5,
+}
+
+
+function soilWall:OnSpawn()
+    self.height = self.heightPoint.position.y - self.host.trans.position.y
+    self:InitPosition()
+    
+    self:StartFloat(self.height, 
+        function(trans, target)
+            trans.position = UE.Vector3.Lerp(trans.position, target, 0.5)
+        end)
+end
+
+function soilWall:InitPosition()
+    self.host.trans.position = UE.Vector3(self.host.trans.position.x, 
+        self.host.trans.position.y - self.height, self.host.trans.position.z)
+end
+
+function soilWall:FloatBegin()
+    self.isFloatEnd = false
+    self.host.rb.isKinematic = true
+    self.lastPoint = nil
+    
+    CL.TransformHelper.SetLayerAll(self.host.trans, CL.LayerDefine.EnvLayer.value)
+    
+    self.raiseAudioInfo = self.raiseSound:PlaySoundInfo()
+end
+
+function soilWall:FloatEnd()
+    self.isFloatEnd = true
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.raiseAudioInfo)
+end
+
+function soilWall:IsFloatEnd()
+    return self.isFloatEnd
+end
+
+function soilWall:OnCollisionWithScene(collision)
+end
+
+
+-------------------------------------------------Push---------------------------------------------
+
+function soilWall:Push(force)
+    if not self.isFloatEnd then
+        return
+    end
+    
+    self.host.rb.isKinematic = false
+    self.host.rb.freezeRotation = true
+    CL.TransformHelper.SetLayerAll(self.host.trans, CL.LayerDefine.InteractLayer.value)
+    
+    self.host:AddForce(self.host.trans.forward * force, UE.ForceMode.Impulse)
+    
+    self:PullToGround()
+end
+
+function soilWall:PullToGround()
+    local isHit, raycastHit = nil, nil
+    local radius = 0.1
+    local vec = UE.Vector3(0, radius, 0)
+    
+    local isPull = true
+    
+    local checkInterval = 0.5
+    local nextCheckTime = 0
+    local vel = nil
+    
+    --sound
+    self.moveSoundInfo = self.moveSound:PlaySoundInfo()
+    if self.moveSoundInfo then
+        self.moveSoundInfo.ao.trans:SetParent(self.host.trans)
+    end
+    local speed = 0
+    
+    --self.soundInfo.audio.pitch = 
+    
+    self.pullActionTimer = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if not IsNullOrDestroyed(self.host.rb) then
+                --move sound
+                if self.moveSoundInfo then
+                    speed = self.host.rb.velocity.magnitude
+                    if speed > 2 then
+                        self.moveSoundInfo.audio.volume = math.max(speed/40, 0)
+                    else
+                        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.moveSoundInfo)
+                        self.moveSoundInfo = nil
+                    end
+                end
+                
+                if not self.host.rb.isKinematic then
+                    if UE.Time.time > nextCheckTime and self.host.rb.velocity.sqrMagnitude < 1 then
+                        isHit, raycastHit  = UE.Physics.SphereCast(self.host.trans.position + vec, radius, UE.Vector3.down, radius*1.2, CL.LayerDefine.EnvLayerMask.value)
+                            
+                        if isHit then
+                            self.host.rb.isKinematic = true
+                            self.host.trans.position = raycastHit.point
+                            self.host.trans:SetParent(raycastHit.transform)
+                            sche:Stop()
+                            return
+                        end
+                        
+                        nextCheckTime = UE.Time.time + checkInterval
+                    end
+                    self.host.rb:AddForce(UE.Vector3.down * self.dragToGround, UE.ForceMode.Force)
+                    
+                    vel = self.host.trans:InverseTransformVector(self.host.rb.velocity)
+                    vel = self.host.trans:TransformVector(0, math.min(vel.y, 0), vel.z)
+                    self.host.rb.velocity = vel
+                end
+            end
+        end
+    , 0, -1)
+end
+
+function soilWall:StopPull()
+    RemoveSchedule(self.host.gameObject, self.pullActionTimer)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.moveSoundInfo)
+end
+
+
+
+function soilWall:PlayImpact(point, normal)
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.brustEffect, self.host.trans.position, self.host.trans.rotation)
+    local lb = eo.trans:GetComponent(typeof(CL.LuaBehaviour))
+    if lb and lb.script:GetSelf().feactureRoot then
+        local list = lb.script:GetSelf().feactureRoot:GetComponentsInChildren(typeof(UE.Rigidbody))
+        local dir = nil
+        local velDir = self.host.rb.velocity.normalized
+        local speedValue = self.host.rb.velocity.magnitude/self.host.rb.mass * 1/2
+        for i = 0, list.Length - 1 do
+            dir = (list[i].transform.position - point).normalized + velDir
+            
+            list[i]:AddForce(dir * speedValue * list[i].mass, UE.ForceMode.VelocityChange)
+        end
+    end
+end
+
+
+function soilWall:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:CollisionEffect(point, normal)
+end
+
+function soilWall:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:CollisionEffect(point, normal)
+end
+
+function soilWall:OnTimeOut()
+    self.__base.OnTimeOut(self)
+    
+    self:StopPull()
+    
+    --self:ExplodeRock()
+end
+
+function soilWall:ExplodeRock()
+    local num = math.random(self.minSplitNum, self.maxSplitNum)
+    
+    local pos = nil
+    local radius = 0.4
+    
+    local randomPos = nil
+    local dir = nil
+    for i = 1, num do
+        pos = UE.Random.insideUnitSphere * radius
+        pos.z = 0
+        pos = self.host.trans:TransformPoint(pos)
+        
+        randomPos = UE.Random.insideUnitSphere * radius / 2
+        dir = randomPos + self.host.trans.forward * radius * 2
+        CL.FlyObject.CreateFlyObj(self.flyObjName, self.host.owner, pos, dir, math.random(25, 30))
+    end
+end
+
+function soilWall:EnhanceSkill()
+    self.minSplitNum = 5
+    self.maxSplitNum = 7
+end
+
+function soilWall:ResetState()
+    self.host.trans:SetParent(nil)
+    self.host.trans.localScale = UE.Vector3.one
+    
+    self:StopPull()
+    
+    self.__base.ResetState(self)
+    self.minSplitNum = 3
+    self.maxSplitNum = 5
+end
+
+return Class(Require("FlyObj/FloatObjScript"), nil, soilWall)

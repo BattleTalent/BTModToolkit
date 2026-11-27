@@ -1,0 +1,265 @@
+
+local flyFireBallCluster = {
+    radius = 1,
+    protectTime = 0.3,
+}
+
+function flyFireBallCluster:FlyStart()
+
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if fc.attr.hp.BaseValue < CL.CombatAttr.MiniAmountHpLeft or fc.attr:IsDead() then
+            local frag = fc.reactAnim:CheckHitDismemberPoint(mu.muscleName, point,5);
+            CL.FullBodyMuscleState.dmgEffectData.destroyBodyFragment = frag;
+        end
+    end
+ 
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+
+    self.__base.FlyStart(self)
+    
+    self.protectEndTime = UE.Time.time + self.protectTime
+
+
+end
+
+function flyFireBallCluster:EnhanceSpell()
+    self.disperse = true
+end
+
+--[[
+    collison
+]]
+
+
+function flyFireBallCluster:OnCollision(collision, pu)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, pu)
+end
+
+function flyFireBallCluster:RpcOnCollision(rb, col, point, normal, relaVel, pu)
+    self:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+end
+
+function flyFireBallCluster:OnCollisionHandler(rb, col, point, normal, relaVel, pu)
+    self:ResetCamp()
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    if self.disperse then
+        self:Disperse(normal, point)
+    end
+end
+
+
+function flyFireBallCluster:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithSceneHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity)
+end
+
+function flyFireBallCluster:RpcOnCollisionWithScene(rb, col, point, normal, relaVel)
+    self:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+end
+
+function flyFireBallCluster:OnCollisionWithSceneHandler(rb, col, point, normal, relaVel)
+    self:ResetCamp()
+    self.host:PlayImpact(point, normal)
+    self.host:PlaySceneImpactEffect(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    if self.disperse then
+        self:Disperse(normal, point)
+    end
+end
+
+function flyFireBallCluster:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    self:ResetCamp()
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    if self.disperse then
+        self:Disperse(normal, point)
+    end
+end
+
+function flyFireBallCluster:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:OnCollisionWithPlayerHandler(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+
+function flyFireBallCluster:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+end
+
+function flyFireBallCluster:OnCollisionWithPlayerHandler(rb, col, point, normal, relaVel, player)
+    if self.host.ownerHolder and self.host.ownerHolder.character == player then
+        if UE.Time.time < self.protectEndTime then
+            return
+        end
+    end
+    
+    self:ResetCamp()
+    self.host:PlayImpact(point, normal)
+    self.host:CollisionCountUpdate()
+    
+    if self.disperse then
+        self:Disperse(normal, point)
+    end
+end
+
+--[[
+    trigger
+]]
+function flyFireBallCluster:OnTrigger(pu, col)
+    if not col or IsNullOrDestroyed(col) then
+        return
+    end
+
+    if pu.unitType == CL.Tagger.Tag.InteractWeapon or pu.unitType == CL.Tagger.Tag.InteractObj then
+        if pu:IsEnchantble() then --need to enchant
+            return
+        end
+    end
+    
+    self:ResetCamp()
+    self.__base.OnTrigger(self, pu, col)
+
+    if self.disperse then
+        self:Disperse()
+    end
+end
+
+function flyFireBallCluster:OnTriggerWithStaticScene(col)
+    self:ResetCamp()
+    self.__base.OnTriggerWithStaticScene(self, col)
+    
+    if self.disperse then
+        self:Disperse()
+    end
+end
+
+function flyFireBallCluster:OnTriggerWithRole(fc, col)
+    self:ResetCamp()
+    self.__base.OnTriggerWithRole(self, fc, col)
+    
+    if self.disperse then
+        self:Disperse()
+    end
+end
+
+function flyFireBallCluster:TryGroundIgnite()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local pos = self:GetIgnirePos()
+    if not pos then
+        return false
+    end
+    
+    CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.zoneObjName, self.host.owner, pos, UE.Vector3(self.host.trans.forward.x, 0,
+                    self.host.trans.forward.z), -1)
+                end
+            else
+                CL.FlyObject.CreateFlyObj(self.zoneObjName, self.host.owner, pos, UE.Vector3(self.host.trans.forward.x, 0,
+                    self.host.trans.forward.z))
+            end
+        end
+    , 0, 0, 0.2)
+    return true
+end
+
+function flyFireBallCluster:GetIgnirePos()
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.host.trans.position, 0.05, UE.Vector3.down,
+        0.5, CL.LayerDefine.EnvLayerMask.value)
+    if isHit then
+        return raycastHit.point
+    else
+        return nil
+    end
+end
+
+function flyFireBallCluster:Disperse(normal, point)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.isDisperse then
+        return
+    end
+    self.isDisperse = true
+    
+    local count = math.random(self.minSize, self.maxSize)
+    local speed = 0
+    local dir = nil
+    
+    self:TryGroundIgnite()
+    
+    if normal then
+        self.dirHelper.rotation = UE.Quaternion.LookRotation(normal)
+    else
+        self.dirHelper.rotation = UE.Quaternion.LookRotation(-self.host.rb.velocity)
+    end
+    
+    local dirs = self:GetDisperseDir(count, self.dirHelper)
+    for i = 1, count do
+        speed = math.random(self.minSpeed, self.maxSpeed)
+        
+        dir = normal and dirs[i] or UE.Random.insideUnitSphere
+        
+        if self.isOnline then
+            if CL.Network.VRNetworkManager.Instance.IsServer then
+                CL.Network.NetworkSpawnMgr.Instance:NetworkCreateFlyObj(self.objName, self.host.owner, (point or self.host.trans.position) + dir * 0.3, dir, speed)
+            end
+        else
+            CL.FlyObject.CreateFlyObj(self.objName, self.host.owner, (point or self.host.trans.position) + dir * 0.3, dir, speed)
+        end
+    end
+end
+
+function flyFireBallCluster:GetDisperseDir(count, trans)
+    local per = 360/count
+    local sAngle = nil
+    local eAngle = nil
+    local curAngle = nil
+    local list = {}
+    for i = 1, count do
+        sAngle = (i - 1) * per
+        eAngle = i * per
+        
+        curAngle = math.random(sAngle, eAngle) * math.pi/180
+        list[i] = UE.Vector3(math.cos(curAngle), math.sin(curAngle), math.random(0.2, 0.5))
+        --print(curAngle.."  x:".. math.sin(curAngle) .. "   y:".. math.cos(curAngle))
+        list[i] = trans:TransformPoint(list[i]) - trans.position
+    end
+    
+    return list
+end
+
+
+--curse dmg to player
+function flyFireBallCluster:ResetCamp()
+    --self.host.camp = nil
+    --self.host.ownerHolder = nil
+end
+
+function flyFireBallCluster:ResetState()
+    self.__base.ResetState(self)
+
+    self.isDisperse = nil
+    self.disperse = false
+
+    -- if self.hitInfoObj then
+    --     if self.hitInfoObj.hitInfo.OnInteractRoleHitPhase2Event then
+    --         self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+    --     end
+    -- end
+
+
+end
+
+return Class(Require("FlyObj/FlySpellBaseScript"),nil,flyFireBallCluster)

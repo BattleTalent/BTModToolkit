@@ -1,0 +1,66 @@
+local PathGen = {
+    pathPoint = {},
+}
+
+function PathGen:Awake()
+    self:InitPath()
+    self:DrawPath()
+    
+    self.pathNode:SetActive(false)
+end
+
+function PathGen:OnEnable()
+    self:InitPath()
+    self:DrawPath()
+end
+
+function PathGen:InitPath()
+    self.pathPoint = {}
+    local transList = self.pathNode:GetComponentsInChildren(typeof(UE.Transform))
+    local list_trans = CS.System.Collections.Generic.List(UE.Transform)
+    local list = list_trans()
+    for i = 0, transList.Length - 1 do
+        if transList[i] ~= self.pathNode.transform then
+            list:Add(transList[i])
+        end
+    end
+    
+    local midPoints = {}
+    local point = nil
+    local max = list.Count - 1
+    for i = 0, max do
+        if i < max then
+            point = (list[i].position + list[i + 1].position) / 2
+            table.insert(midPoints, point)
+        else
+            point = (list[i].position + list[0].position) / 2
+            table.insert(midPoints, point)
+        end
+    end
+    
+    local dis = 0
+    for i = 0, max do
+        if i < max then
+            dis = UE.Vector3.Distance(list[i].position, list[i + 1].position)
+        else
+            dis = UE.Vector3.Distance(list[i].position, list[0].position)
+        end
+        local count = math.ceil(dis)
+        local bezier = CL.Bezier(count > 0 and count or 3)
+        local prevIdx = i == 0 and #midPoints or i
+        local nextIdx = i % #midPoints + 1
+        local pointList = bezier:GetQuadraticCurvePoints(midPoints[prevIdx], list[i].position, midPoints[nextIdx])
+        for j = 0, pointList.Length - 1 do
+            table.insert(self.pathPoint, pointList[j])
+        end
+    end
+end
+
+function PathGen:DrawPath()
+    self.lineRenderer.positionCount = #self.pathPoint
+    for k, v in ipairs(self.pathPoint) do
+        self.lineRenderer:SetPosition(k - 1, v)
+    end
+end
+
+return Class(nil, nil, PathGen)

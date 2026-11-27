@@ -1,0 +1,24 @@
+
+local FlyRock = {
+}
+
+function FlyRock:OnSpawn()
+    self:RandomMesh()
+end
+
+function FlyRock:RandomMesh()
+    if self.curIdx then
+        self["rock"..self.curIdx]:SetActive(false)
+    end
+    
+    local count = 0
+    while self["rock"..count + 1] do
+        count = count + 1
+    end
+    
+    self.curIdx = math.random(count)
+    self.host.col = self["rock"..self.curIdx]:GetComponentInChildren(typeof(UE.MeshCollider))
+    self["rock"..self.curIdx]:SetActive(true)
+end
+
+return Class(nil, nil, FlyRock)

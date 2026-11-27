@@ -1,0 +1,270 @@
+
+local WandMeteorite = {
+    throwSpeed = 3,
+    forceIntensity = 10,
+    trailTime = 0.15,
+    
+    perDis = 0.5,
+    enhanceCount = 1,
+    count = 1,
+    curCount = 1,
+    
+    vecList = {},
+}
+
+function WandMeteorite:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+
+function WandMeteorite:OnChargeBegin()
+    self:ShowSkillEffect(true)
+end
+
+function WandMeteorite:OnChargeReady()
+    self:StartSampleDir()
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self.foInfoList then
+        self:SpawnMeteorite(nil, nil, self.curCount)
+    end
+    self.host.interact:CostDurability()
+end
+
+function WandMeteorite:SpawnMeteorite(point, height, count)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not point then
+        point = self:GetSummonPoint()
+    end
+    if not height then
+        height = self:GetSummonHeight()
+    end
+        
+    --local onComplete = function(ib)
+    --    self:MeteoriteStandBy(ib)
+    --end
+    
+    local total = (count - 1) * self.perDis
+    local ph = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return nil
+    end
+    
+    local centerTrans = ph.character.trans
+    local pos = nil
+    self.foInfoList = {}
+    for i = 1, count do
+        self.foInfoList[i] = {}
+        pos = centerTrans.right * (-total/2 + (i - 1) * self.perDis) + point
+        
+        local fo = nil
+        if self.isOnline then
+            fo = self.host:NetworkCreateFlyObj(self.flyObjName, pos, UE.Vector3.up)
+        else
+            fo = self.host:CreateFlyObj(self.flyObjName, pos, UE.Vector3.up)
+        end
+        
+        self.foInfoList[i].fo = fo
+        self.foInfoList[i].scp = self.foInfoList[i].fo.gameObject:GetComponent(typeof(CL.FlyObjectX)).script.self
+        self.foInfoList[i].scp:StartFloat(height, nil, nil)
+        self.foInfoList[i].scp:ShowFloatEffect(true)
+        self.foInfoList[i].dir = pos - centerTrans.position
+        
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerRecordMeteorite(i, fo, height, self.foInfoList[i].dir) end
+        end
+    end
+end
+
+function WandMeteorite:NetworkRecordMeteorite(idx, fo, height, dir)
+    if not self.foInfoList then
+        self.foInfoList = {}
+    end
+    self.foInfoList[idx] = {}
+    self.foInfoList[idx].fo = fo
+    self.foInfoList[idx].scp = self.foInfoList[idx].fo.gameObject:GetComponent(typeof(CL.FlyObjectX)).script.self
+    self.foInfoList[idx].scp:StartFloat(height, nil, nil)
+    self.foInfoList[idx].scp:ShowFloatEffect(true)
+    self.foInfoList[idx].dir = dir
+end
+
+function WandMeteorite:InitMeteorite(fo, height, pos)
+    local ph = self.host.interact:GetPrimaryHand()
+    local centerTrans = ph.character.trans
+    
+end
+
+function WandMeteorite:GetSummonPoint()
+    local ph = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return self.host.interact.trans.position
+    end
+    local charecterTrans = ph.character.trans
+    return charecterTrans.position + UE.Vector3.down * 0.3 --0.3 is offset, I want rock spawn undergound
+        + charecterTrans.forward * ph.character:GetBodyHeight()/2
+end
+
+function WandMeteorite:GetSummonHeight()
+    local ph = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(ph) then
+        return 1.5
+    end
+    return ph.character:GetBodyHeight() * 0.83 + 0.1 --0.1 is offset, I want rock spawn undergound
+end
+
+function WandMeteorite:MeteoriteStandBy(ib)
+    
+end
+
+function WandMeteorite:OnChargeRelease()
+    self:StopEffectOnAWhile()
+    if self.isOnline then
+        local ph = self.host.interact:GetPrimaryHand()
+        if not IsNullOrDestroyed(ph) and ph.character.IsLocalPlayer then
+            local dir = self:GetSampleDir()
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:CommandThrowMeteorite(ph.character.networkPlayer.netId, dir) end
+            self:DoThrowMeteorite(self:GetSampleDir(), true)
+        end
+    else
+        self:DoThrowMeteorite(self:GetSampleDir(),true)
+    end
+    
+    self:StopSampleDir()
+end
+
+function WandMeteorite:NetworkThrowMeteorite(dir)
+    self:DoThrowMeteorite(dir, false)
+end
+
+function WandMeteorite:DoThrowMeteorite(dir, needForce)
+    local soundInfo = self.throwSound:PlaySoundInfo()
+    if soundInfo then
+        soundInfo.ao.trans:SetParent(self.host.interact.trans)
+    end
+    
+    if not self.foInfoList then
+        return
+    end
+    
+    for i = 1, self.curCount do
+        if not IsNullOrDestroyed(self.foInfoList[i].fo) then
+            self.foInfoList[i].scp:StopFloat()
+            self.foInfoList[i].scp:FloatEnd()
+            self.foInfoList[i].scp.host.rb.useGravity = true
+            self.foInfoList[i].scp:ShowFloatEffect(false)
+            if needForce then
+                local force = (dir + self.foInfoList[i].dir) * self.forceIntensity
+                self.foInfoList[i].fo:AddForce(force, UE.ForceMode.VelocityChange)
+            end
+        end
+    end
+    self.foInfoList = nil
+end
+
+function WandMeteorite:OnChargeCancel()
+    self:StopEffectOnAWhile()
+    
+    self:StopSampleDir()
+end
+
+function WandMeteorite:StartSampleDir()
+    self.vecList = {}
+    local lastPos = self.trans.position
+    local curVec = UE.Vector3.zero
+    CL.Scheduler.RemoveSchedule(self.sampleTimeId)
+    self.sampleTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            local ph = self.host.interact:GetPrimaryHand()
+            if IsNullOrDestroyed(ph) then
+                sche:Stop()
+                return
+            end
+            
+            if CL.Network.VRNetworkManager.IsOnline and not ph.character.IsLocalPlayer then
+                sche:Stop()
+                return
+            end
+            
+            if not ph.inputs[CL.VRTKInputButton.ButtonType.Trigger].IsPressed then
+                sche:Stop()
+                return
+            end
+            
+            if #self.vecList > 20 then
+                table.remove(self.vecList, 1)
+            end
+            curVec = (self.trans.position - lastPos) / UE.Time.deltaTime
+            --print(" cur vec-----:" .. curVec.x .. "  ".. curVec.y.. "  " .. curVec.z .. " speed:" .. curVec.magnitude)
+            lastPos = self.trans.position
+            table.insert(self.vecList, #self.vecList + 1, curVec)
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function WandMeteorite:StopSampleDir()
+    CL.Scheduler.RemoveSchedule(self.sampleTimeId)
+end
+
+function WandMeteorite:GetSampleDir()
+    local value = UE.Vector3.zero
+    if #self.vecList > 0 then
+        for k, v in ipairs(self.vecList) do
+            value = v + value
+        end
+        value = value / #self.vecList
+    end
+    return value
+end
+
+function WandMeteorite:ShowSkillEffect(isShow)
+    if isShow then
+        self.skillEffect:Play()
+        self.trailEffect.time = self.trailTime
+        self.trailEffect.enabled = true
+        
+        if self.effActTimeId ~= nil then
+            CL.Scheduler.RemoveSchedule(self.effActTimeId)
+            self.effActTimeId = nil
+        end
+    else
+        self.skillEffect:Stop()
+    end
+end
+
+function WandMeteorite:StopEffectOnAWhile()
+    if self.effActTimeId ~= nil then
+        return
+    end
+    self:ShowSkillEffect(false)
+    self.effActTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not IsNullOrDestroyed(self.trailEffect) then
+                self.trailEffect.time = self.trailTime * (1 - t/s)
+            end
+            if t >= s then
+                CL.Scheduler.RemoveSchedule(self.effActTimeId)
+                self.effActTimeId = nil
+                
+                if not IsNullOrDestroyed(self.trailEffect) then
+                    self.trailEffect.enabled = false
+                end
+            end
+        end
+    , 0, 1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function WandMeteorite:OnEnhance()
+    self.curCount = self.enhanceCount
+end
+
+return Class(nil, nil, WandMeteorite)

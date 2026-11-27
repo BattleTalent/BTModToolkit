@@ -1,0 +1,22 @@
+local BowPropeller = {
+    enhanceIntensity = 1.5
+    }
+
+function BowPropeller:SpawnArrow()
+    local arrowGO = CL.PrefabPool.SpawnPrefab(self.arrowPrefab, CL.InteractTrigger.WeaponPath)
+    local putedWeapon = arrowGO:GetComponent(typeof(CL.InteractTrigger)).interact
+        
+    local lb = arrowGO:GetComponent(typeof(CL.LuaBehaviour))
+    if IsNullOrDestroyed(lb) or lb.script == nil then
+        return putedWeapon, nil
+    end
+    local putedArrow = lb.script.self
+    
+    if self.host.interact:IsEnhance() then
+        putedArrow.intensity = self.enhanceIntensity
+    end
+    
+    return putedWeapon, putedArrow 
+end
+
+return Class(Require("Weapon/BowBaseScript"), nil, BowPropeller)

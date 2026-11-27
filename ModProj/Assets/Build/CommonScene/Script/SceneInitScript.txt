@@ -16,10 +16,18 @@ function SceneInit:Awake()
     --pathFinder
     self.sceneCtl = CL.SceneModController()
     self.sceneCtl:AddPathFinder(self.pathFinderNode)
-    
+
     local boxCol = self.pathFinderNode:GetComponent(typeof(UE.BoxCollider))
     if boxCol then
-        self.sceneCtl:InitPathFinder(boxCol.center, boxCol.size, self.pathFinderNode.rotation.eulerAngles)
+        local boxColTrans = boxCol.transform
+        local boxColScale = boxColTrans.lossyScale
+        local boundsCenter = boxColTrans:TransformPoint(boxCol.center)
+        local boundsSize = UE.Vector3(
+            math.abs(boxCol.size.x * boxColScale.x),
+            math.abs(boxCol.size.y * boxColScale.y),
+            math.abs(boxCol.size.z * boxColScale.z)
+        )
+        self.sceneCtl:InitPathFinder(boundsCenter, boundsSize, boxColTrans.rotation.eulerAngles)
         boxCol.enabled = false
     end
     

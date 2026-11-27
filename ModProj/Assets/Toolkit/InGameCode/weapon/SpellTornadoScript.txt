@@ -1,0 +1,202 @@
+
+local SpellBase = Require("Weapon/SpellBaseScript")
+
+local SpellTornado = {
+    manaCost = 20,
+    maxCount = 100,
+    
+    minCostTime = 0.2,
+}
+
+function SpellTornado:CleanupTornadoRuntime()
+    self.eoTimeId = SafeRemoveSchedule(self.eoTimeId)
+    self:StopMotionDetect()
+    self:RemoveChargeEffect()
+end
+
+function SpellTornado:OnDestroy()
+    self:CleanupTornadoRuntime()
+    SpellBase.OnDestroy(self)
+end
+
+function SpellTornado:UnSlotSpell(slot)
+    self:CleanupTornadoRuntime()
+end
+
+function SpellTornado:CloseSkill()
+    self:CleanupTornadoRuntime()
+    SpellBase.CloseSkill(self)
+end
+
+function SpellTornado:OpenSkill()
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    local character = hand.character
+    local needMana = self.minCostTime * self.host.manaCostOnCharge
+    if not character:HasEnoughMana(needMana) then
+        NoManaTips()
+        self.host:CloseSkill()
+        return
+    end
+    
+    self.isRelease = false
+    
+    self:ChargeEffect()
+    
+    --local hand = self:GetSlotHand()
+    --if hand == nil then
+    --    hand:HapticPulse(hand.character.skillChargeHapticCurve, 0.2, 0.5)
+    --end
+    self.beginChargeTime = UE.Time.time
+    self:StartMotionCheck()
+end
+
+function SpellTornado:OnChargeReady()
+    if self.isRelease then
+        return
+    end
+    
+    self.isRelease = true
+    self:CleanupTornadoRuntime()
+    
+    --if self:CostMana() then
+        self:CreateTornado()
+    --end
+    
+    self.host:CloseSkill()
+end
+
+function SpellTornado:OnChargeCancel()
+    self:CleanupTornadoRuntime()
+end
+
+function SpellTornado:RemoveChargeEffect()
+    self.eoTimeId = SafeRemoveSchedule(self.eoTimeId)
+    if self.eo and not IsNullOrDestroyed(self.eo) then
+        self.eo:Stop()
+    end
+    self.eo = nil
+end
+
+function SpellTornado:ChargeEffect()
+    
+end
+
+function SpellTornado:ReadyEffect()
+
+end
+
+function SpellTornado:StartMotionCheck()
+    local slotHand = self:GetSlotHand()
+    local volocity = nil
+    local dot = nil
+    
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.effectName, slotHand.trans.position, slotHand.trans.rotation)
+    self.eo = eo
+    self.eo.trans:SetParent(slotHand.trans)
+    self.eo.trans.localPosition = UE.Vector3.zero
+    self.eo:SetMaxParticleCount(0)
+    local maxCount = 0
+    self:MotionDetectByDir(UE.Vector3.up, 3, 
+        function()
+            return not self.isRelease
+        end, 
+        function(prog)
+            if IsNullOrDestroyed(slotHand) or self.eo == nil or IsNullOrDestroyed(self.eo) then
+                return
+            end
+            volocity = slotHand.velocityEstimator:GetVelocityEstimateLocal()
+            dot = UE.Vector3.Dot(UE.Vector3.up, volocity.normalized)
+            if dot >= self.motionMinDot then
+                maxCount = self.maxCount * prog
+            else
+                maxCount = maxCount - UE.Time.deltaTime * 500
+            end
+            self.eo:SetMaxParticleCount(maxCount)
+        end
+        ,
+        function()
+            if IsNullOrDestroyed(slotHand) or eo == nil or IsNullOrDestroyed(eo) then
+                return
+            end
+            self.eo = nil
+
+            self.host:CloseSkill()
+            self:StopMotionDetect()
+            if self.isRelease then
+                return
+            end
+            
+            eo:SetMaxParticleCount(maxCount)
+            self.eoTimeId = CL.Scheduler.Create(self.host,
+                function(sche, t, s)
+                    if IsNullOrDestroyed(slotHand) or eo == nil or IsNullOrDestroyed(eo)
+                        or IsNullOrDestroyed(self.host) then
+                        sche:Stop()
+                        return
+                    end
+                    volocity = slotHand.velocityEstimator:GetVelocityEstimateLocal()
+                    dot = UE.Vector3.Dot(UE.Vector3.up, volocity.normalized)
+                    if volocity.sqrMagnitude > 0.1 then
+                        if dot < 0.6 then
+                            eo:Stop()
+                            self.eoTimeId = SafeRemoveSchedule(self.eoTimeId)
+                        else
+                        end
+                    end
+                end
+            , 0, 0.3).actionId
+        
+            
+            if self:CostMinMana() then
+                self:CreateTornado()
+            end
+            self.isRelease = true
+        end)
+end
+
+function SpellTornado:CostMinMana()
+    if not self.beginChargeTime then
+        return
+    end
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    local character = hand.character
+    
+    if UE.Time.time - self.beginChargeTime < self.minCostTime then
+        return CostMana(self.host, self.minCostTime * self.host.manaCostOnCharge, character)
+    else
+        return true
+    end
+end
+
+function SpellTornado:CreateTornado()
+    local hand = self:GetSlotHand()
+    if hand == nil then
+        return
+    end
+    
+    self.spawnSound:PlaySound()
+    
+    local character = hand.character
+    if IsNullOrDestroyed(character) then
+        return
+    end
+    local headset = character:GetHeadset()
+    
+    self.slashPos = character.trans.position + headset.forward
+    self.slashPos.y = character.trans.position.y
+        
+    self.slashDir = headset.forward - self.createPoint.up
+    self.slashDir.y = 0
+    self.slashDir = self.slashDir.normalized
+    
+    local slash = self.host:CreateFlyObj(self.flyObjName, self.slashPos, self.slashDir)
+    slash.trans.rotation = UE.Quaternion.LookRotation(self.slashDir, UE.Vector3.up)
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellTornado)

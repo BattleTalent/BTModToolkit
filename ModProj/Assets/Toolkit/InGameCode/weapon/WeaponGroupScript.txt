@@ -1,0 +1,15 @@
+
+local WeaponGroup = {
+}
+
+function WeaponGroup:Awake()
+    local i = 1
+    while self["part".. i] do
+        self["part" .. i].transform:SetParent(nil)
+        i = i + 1
+    end
+    
+    UE.Object.Destroy(self.host.gameObject)
+end
+
+return Class(nil, nil, WeaponGroup)

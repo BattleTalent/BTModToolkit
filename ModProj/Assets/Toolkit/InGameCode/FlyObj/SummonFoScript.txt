@@ -1,0 +1,203 @@
+local SummonFo = {
+    delayTime = 0,
+}
+
+function SummonFo:OnSpawn()
+    self:PlayLoopSound(true)
+end
+
+function SummonFo:FlyStart()
+    self.faceDir = self.host.rb.velocity
+    self:TrySummon()
+end
+    
+function SummonFo:TrySummon()
+    self:StopSummon()
+    self.summonActTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if self:CheckGrounded() then
+                self:OnSummon()
+                self:DistroySelf()
+            end
+        end
+    ,0.1, -1, self.delayTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function SummonFo:CheckGrounded()
+    if self.host.rb.velocity.sqrMagnitude > 1 then
+        return false
+    end
+    
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.host.trans.position, 0.05, UE.Vector3.down, 0.1, CL.LayerDefine.EnvLayerMask.value)
+    return isHit
+end
+
+function SummonFo:OnSummon()
+    self:StopSummon()
+    
+    local name = self.defaultSummon
+    if not IsNullOrDestroyed(self.host.owner) and self.host.owner:IsEnhance() then
+        name = self.enhanceSummon
+    end
+    self:SpawnMonster(name, self.host.trans.position)
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        CL.Network.NetworkEffectMgr.Instance:NetworkPlayEffect(self.spawnEffect, self.host.trans.position, self.host.trans.rotation)
+    else
+        CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, self.host.trans.position, self.host.trans.rotation)
+    end
+    
+    self:PlayLoopSound(false)
+    if self.explodeSound then
+        self.explodeSound:PlaySound()
+    end
+end
+
+function SummonFo:StopSummon()
+    RemoveSchedule(self, self.summonActTimer)
+end
+
+function SummonFo:OnSpawnMonster(fc)
+    fc.controller.gameObject:SetActive(false)
+    fc.bone.ragdollRoot.gameObject:SetActive(false)
+    
+    
+    if fc then
+        fc.attr.camp = self.host.camp
+        fc.trans.rotation = UE.Quaternion.LookRotation(UE.Vector3(self.faceDir.x, 0, self.faceDir.z))
+    end
+    
+    local value = nil
+    local curScale = nil
+    local orgScale = fc.trans.localScale.x
+    fc.trans.localScale = UE.Vector3.one * 0.01
+    self.increaseActTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not IsNullOrDestroyed(fc) then
+                value = math.min(CL.EasingEquations.EaseOutExpo(0, 1, t * 1.5), 1)
+                curScale = orgScale * value
+                fc.trans.localScale = UE.Vector3(curScale, curScale, curScale)
+            end
+        end
+    ,0, 0.3)
+    :SetOnStop(
+        function()
+            local ib = nil
+            for i = 0, fc.reactAnim.pendants.Count - 1 do
+                fc.reactAnim.pendants[i].transform.localScale = UE.Vector3.one
+                ib = fc.reactAnim.pendants[i].ib
+                fc.reactAnim.pendants[i]:DoRelease()
+                
+                ib:Dead()
+            end
+            fc.attr.camp = CL.AIProxy.CampBad
+            fc.bone.ragdollRoot.gameObject:SetActive(true)
+            fc.controller.gameObject:SetActive(true)
+
+            self.increaseActTimeId = nil
+        end
+        )
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    --local meshRenderers = fc.gameObject:GetComponentsInChildren(typeof(UE.SkinnedMeshRenderer))
+    --for i = 0, meshRenderers.Length - 1 do
+    --    self.captureRenderer.materials[0] = meshRenderers[i].materials[0]
+    --    meshRenderers[i].materials = self.captureRenderer.materials
+    --    --setColor
+    --    SetMaterialEmissionWithinTime(self, {meshRenderers[i]}, self.captureColor, 0.25)
+    --end
+end
+
+function SummonFo:SpawnMonster(name, pos)
+    name = CL.RoleGroupTable.TryRandomPickRoleName(name)
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        if self.host.networkFO then
+            CL.Network.NetworkSpawnMgr.Instance:LuaCallSpawnCharacter(name, pos, UE.Quaternion.LookRotation(UE.Vector3(self.faceDir.x, 0, self.faceDir.z)), self.host.networkFO)
+        end
+        return
+    elseif CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    local capture = CL.PrefabPool.SpawnPrefab(name, CL.CreatureGenerator.GenCharacterPath)
+    local fc = capture:GetComponent(typeof(CL.FullCharacterControl))
+    
+    
+    fc.controller.gameObject:SetActive(false)
+    fc.bone.ragdollRoot.gameObject:SetActive(false)
+    
+    
+    if fc then
+        fc.attr.camp = self.host.camp
+        fc.trans.rotation = UE.Quaternion.LookRotation(UE.Vector3(self.faceDir.x, 0, self.faceDir.z))
+        
+        fc.trans.position = pos
+    end
+    
+    local value = nil
+    local curScale = nil
+    local orgScale = fc.trans.localScale.x
+    fc.trans.localScale = UE.Vector3.one * 0.01
+    self.increaseActTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not IsNullOrDestroyed(fc) then
+                value = math.min(CL.EasingEquations.EaseOutExpo(0, 1, t * 1.5), 1)
+                curScale = orgScale * value
+                fc.trans.localScale = UE.Vector3(curScale, curScale, curScale)
+            end
+        end
+    ,0, 0.3)
+    :SetOnStop(
+        function()
+            local ib = nil
+            for i = 0, fc.reactAnim.pendants.Count - 1 do
+                fc.reactAnim.pendants[i].transform.localScale = UE.Vector3.one
+                ib = fc.reactAnim.pendants[i].ib
+                fc.reactAnim.pendants[i]:DoRelease()
+                
+                ib:Dead()
+            end
+            fc.bone.ragdollRoot.gameObject:SetActive(true)
+            fc.controller.gameObject:SetActive(true)
+
+            self.increaseActTimeId = nil
+        end
+        )
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    --local meshRenderers = fc.gameObject:GetComponentsInChildren(typeof(UE.SkinnedMeshRenderer))
+    --for i = 0, meshRenderers.Length - 1 do
+    --    self.captureRenderer.materials[0] = meshRenderers[i].materials[0]
+    --    meshRenderers[i].materials = self.captureRenderer.materials
+    --    --setColor
+    --    SetMaterialEmissionWithinTime(self, {meshRenderers[i]}, self.captureColor, 0.25)
+    --end
+end
+
+function SummonFo:PlayLoopSound(show)
+    if show then
+        if not self.loopSoundInfo then
+            if self.lightingSound then
+                self.loopSoundInfo = self.lightingSound:PlaySoundInfo()
+                if self.loopSoundInfo then
+                    self.loopSoundInfo.ao.transform:SetParent(self.host.trans)
+                end
+            end
+        end
+    else
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.loopSoundInfo)
+        self.loopSoundInfo = nil
+    end
+end
+
+function SummonFo:ResetState()
+    self:StopSummon()
+end
+
+function SummonFo:DistroySelf()
+    self.host:OnFinish()
+end
+
+return Class(nil, nil, SummonFo)

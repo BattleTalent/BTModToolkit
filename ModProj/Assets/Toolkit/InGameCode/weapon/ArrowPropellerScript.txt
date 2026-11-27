@@ -1,0 +1,239 @@
+--luaBehaviour
+local ArrowPropeller = {
+    force = 50,
+    accTime = 1.5,
+    intensity = 1,
+    
+    closeTime = 1,
+    endTime = 0,
+    
+    --pushDir = nil,
+    --lastCheckTime = 0,
+    --stuckTime = -1,
+    --checkInterval = 0.5,
+    
+}
+
+
+function ArrowPropeller:Start()
+    if IsNullOrDestroyed(self.ib) then
+        return
+    end
+
+    self.OnStabEnter = function(si)
+        if not IsNullOrDestroyed(self.trail) then
+            CL.Scheduler.RemoveSchedule(self.delayTrailId)
+            self.trail.enabled = false
+        end
+        
+        self.stabRb = si.stabTargetRB
+        
+        local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+        if not IsNullOrDestroyed(fc) then
+            self.stabFc = fc
+            
+            --local mu = fc.ra:GetMuscle(si.stabTarget)
+            --if mu then
+            --    if mu.muscleName == CL.RagdollBoneInfo.Head then
+            --    end
+            --end
+        end
+        
+        if self.endTime - UE.Time.time > 2 then
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetIBNetworkState(self.ib)
+                    if state ~= nil then state:ServerOpenPropeller() end
+                else
+                    return
+                end
+            end
+            self:OpenPropeller()
+        end
+    end
+    
+    self.OnStabExit = function(si)
+        self.stabFc = nil
+        self.stabRb = nil
+    end
+    
+    local so = self.ib:GetStabObject()
+    if so ~= nil then
+        so:StabEnterEvent("+", self.OnStabEnter)
+        so:StabExitEvent("+", self.OnStabExit)
+    end
+end
+
+function ArrowPropeller:OnShoot(bow)
+    self.endTime = UE.Time.time + self.lifeTime - self.closeTime * 1.2
+    
+    self.__base.OnShoot(self, bow)
+end
+
+function ArrowPropeller:OnNpcShoot()
+    self.endTime = UE.Time.time + self.lifeTime - self.closeTime * 1.2
+    self.__base.OnNpcShoot(self)
+end
+
+function ArrowPropeller:Update()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.isOpen then
+        if UE.Time.time >= self.endTime then
+            if self.isOnline then
+                local state = GetIBNetworkState(self.ib)
+                if state ~= nil then state:ServerClosePush() end
+            end
+            self:ClosePush()
+        else
+            self:Push()
+        end
+    end
+    
+    self.__base.Update(self)
+end
+
+function ArrowPropeller:ClosePush()
+    self:StopPropeller()
+    
+    self.curForce = 0
+    
+    self.intensity = 1
+end
+
+--[[
+    propeller
+]]
+function ArrowPropeller:OpenPropeller()
+    self.isOpen = true
+    self.openTime = UE.Time.time
+    
+    self:AddEffect()
+end
+
+function ArrowPropeller:StopPropeller()
+    self.isOpen = false
+    self.openTime = nil
+    
+    self:CloseEffectAnim()
+end
+
+function ArrowPropeller:AddEffect()
+    CL.Scheduler.RemoveSchedule(self.animTimeId)
+    if self.effect then
+        return
+    end
+
+    if IsNullOrDestroyed(self.effectTrans) then
+        return
+    end
+    
+    self.effect = CL.EffectMgr.Instance:PlayEffect(self.properllerEffect, self.effectTrans.position, self.effectTrans.rotation)
+    if self.effect and not IsNullOrDestroyed(self.effect.trans) then
+        self.effect.trans:SetParent(self.effectTrans)
+    end
+end
+
+function ArrowPropeller:RemoveEffect()
+    CL.EffectMgr.Instance:GiveBack(self.effect)
+    self.effect = nil
+end
+
+function ArrowPropeller:CloseEffectAnim()
+    if not self.effect then
+        return
+    end
+    
+    self.effect:Stop()
+    
+    self.animTimeId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.effect) then
+                sche:Stop()
+                return
+            end
+            self:RemoveEffect()
+        end,
+    0, 0, self.closeTime).actionId
+end
+
+
+function ArrowPropeller:Push()
+    if IsNullOrDestroyed(self.ib) then
+        self:StopPropeller()
+        return
+    end
+    
+    local time = UE.Time.time - self.openTime
+    if time <= self.accTime then
+        self.curForce = CL.EasingEquations.EaseOutCubic(0, self.force * self.intensity, time/self.accTime)
+    end
+    
+    if self.stabFc and not IsNullOrDestroyed(self.stabFc) then
+        
+        if self.stabFc.muscleState:IsPowerfulCharacter() then
+            if not self.stabFc:IsDead() then
+                self.curForce = self.curForce / 10
+            end
+        end
+        if not IsNullOrDestroyed(self.stabRb) then
+            self.stabFc:AddForceOnPart(self.stabRb, self.ib.trans.forward * self.curForce, UE.ForceMode.Force)
+        end
+    else
+        self.ib:AddForce(self.ib.trans.forward * self.curForce/5, UE.ForceMode.Force)
+    end
+end
+
+function ArrowPropeller:CalcPushDir()
+    if IsNullOrDestroyed(self.ib) then
+        return UE.Vector3.zero
+    end
+    --Change direction if no movement for a period of time
+    local dir = self.ib.trans.forward
+    if not self.lastPos then
+        self.lastCheckTime = UE.Time.time
+        self.lastPos = self.ib.trans.position
+        return dir
+    end
+        
+    if UE.Time.time - self.lastCheckTime > self.checkInterval then
+        self.lastCheckTime = UE.Time.time
+        
+        if (self.ib.trans.position - self.lastPos).sqrMagnitude < 1 then
+            if self.stuckTime < 0 then
+                self.stuckTime = UE.Time.time
+            end
+            
+            local value = math.min(UE.Time.time - self.stuckTime, 3)
+            local randomX = math.random(0, 1)
+            local localDir = UE.Vector3(randomX, 1 - randomX, 0)
+            dir = (dir + self.ib.trans:TransformDirection(localDir) * value).normalized
+            
+            self.lastDir = localDir
+        else
+            self.lastDir = nil
+            self.stuckTime = -1
+        end
+        self.lastPos = self.ib.trans.position
+    else
+        if self.lastDir then
+            local value = math.min(UE.Time.time - self.stuckTime, 3)
+            dir = (dir + self.ib.trans:TransformDirection(self.lastDir) * value).normalized
+        end
+    end
+    
+    return dir
+end
+
+function ArrowPropeller:OnResetState()
+    self.stabFc = nil
+    self.stabRb = nil
+    self.curForce = 0
+    
+    self.lastDir = nil
+    self.stuckTime = -1
+end
+
+return Class(Require("Weapon/ArrowBaseScript"), nil, ArrowPropeller)

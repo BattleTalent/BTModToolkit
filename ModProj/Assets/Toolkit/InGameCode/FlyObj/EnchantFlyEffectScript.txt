@@ -1,0 +1,41 @@
+--control particle face to velocity's direction.
+local EnchantFlyEffect = {
+    flyToSec = 0.3,
+    maxOffset = 0.3,
+}
+
+function EnchantFlyEffect:FlyTo(target, point)
+    local startPos = self.trans.position
+    local nearByPos = self.trans.position + UE.Random.insideUnitSphere * self.maxOffset
+    
+    self.flyToActId = CL.Scheduler.RemoveSchedule(self.flyToActId)
+    self.flyToActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(target) then
+                CL.EffectMgr.Instance:GiveBack(self.eo)
+                sche:Stop()
+                return
+            end
+            local curPos = UE.Vector3.Lerp(startPos, nearByPos, t/s)
+            local value = CL.EasingEquations.EaseOutCubic(0, 1, t/s)
+            self.trans.position =UE.Vector3.Lerp(curPos, target:TransformPoint(point), value)
+            if t >= self.flyToSec then
+                CL.EffectMgr.Instance:GiveBack(self.eo)
+                self:PlayHitEffect(target, target:TransformPoint(point))
+                return
+            end
+        end
+    , 0, self.flyToSec).actionId
+end
+
+function EnchantFlyEffect:PlayHitEffect(trans, point)
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.effectHitName, point, UE.Quaternion.identity)
+    eo.trans:SetParent(trans)
+end
+
+function EnchantFlyEffect:Disable()
+    self.flyToActId = CL.Scheduler.RemoveSchedule(self.flyToActId)
+    CL.EffectMgr.Instance:GiveBack(self.eo)
+end
+
+return Class(nil, nil, EnchantFlyEffect)

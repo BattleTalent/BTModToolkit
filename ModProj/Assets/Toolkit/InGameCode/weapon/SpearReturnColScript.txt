@@ -1,0 +1,113 @@
+
+local SpearReturnCol = {
+    isStabbed = false,
+    minStabSpeed = 2,
+    lastTime = 0,
+}
+
+function SpearReturnCol:Start()
+    self.spearReturn = self.interactTriggerX.script:GetSelf()
+    self.stabObj = self.interactTriggerX.interact:GetStabObject()
+    self.OnBreak = function(sinfo)
+        print("OnStab break-------")
+        self.isStabbed = false
+        self.stabRb = nil
+        --self.interactTriggerX.interact.rb.detectCollisions = true
+        sinfo.joint.enableCollision = true
+        self:IgnoreCollisionsWithCol(self.stabCol, false)
+        self.lastTime = UE.Time.time
+        self.spearReturn:OnStabEnv(false)
+        self.stabCol = nil
+    end
+    
+    self.stabEnterHandler = function(si)
+        if si.stabTargetRB == self.stabRb then
+            si.joint.enableCollision = false
+            print("stab enter--------------han col")
+        end
+    end
+    self.stabObj:StabEnterEvent("+", self.stabEnterHandler)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.velRecordId)
+    self.velRecordId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            self.lastVel = self.curVel
+            self.curVel = self.interactTriggerX.interact.rb.velocity
+        end
+    ,0, -1):SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpearReturnCol:OnColliderEnter(collision)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    if collision.collider.gameObject.layer ~= CL.LayerDefine.EnvLayer.value then
+        return  
+    end
+    
+    local rb = collision.collider.attachedRigidbody
+    if IsNullOrDestroyed(rb) then
+        return
+    end
+
+    if self.isStabbed then
+        return
+    end
+    
+    if self.spearReturn:IsPush() then
+        return
+    end
+    
+    if UE.Time.time - self.lastTime < 0.2 then
+        return
+    end
+    
+    if self.lastVel.magnitude < self.minStabSpeed then
+        return
+    end
+    
+    local thisCol, otherCol, point = collision:GetContactPoint(0)
+    print("oncolliderEnter------------------lastVel:" ..self.interactTriggerX.interact.rb.velocity.magnitude .. " stabpos:" .. point.x .. "   " 
+        ..point.y .. "   " .. point.z .. "  col:" .. thisCol.transform.name)
+    
+    self:TryBuildStab(thisCol, otherCol, point)
+end
+
+function SpearReturnCol:TryBuildStab(weaponCol, col, point)
+    local weaponStabPoint = weaponCol:ClosestPoint(point)
+    local targetPoint = col:ClosestPoint(point)-- + geo:GetForwardWorld(self.trans) * 0.3
+
+    local geo = self.stabObj:CheckStab(self.lastVel.normalized, weaponStabPoint)
+    if not geo then
+        print("oncolliderEnter------------------not geo")
+        return false
+    end
+    weaponStabPoint = weaponStabPoint - geo:GetForwardWorld(self.trans) * math.abs(geo.stabMin)
+
+    self.isStabbed = true
+    self.stabRb = col.attachedRigidbody
+    self.spearReturn:OnStabEnv(true)
+    
+    self.stabPoint:SetParent(nil)
+    self.stabPoint.position = point
+    
+    print("OnColliderEnter-------buildstab")
+    self.stabCol = col
+    self:IgnoreCollisionsWithCol(col, true)
+    local si = self.stabObj:BuildStab(geo, weaponCol, col, targetPoint, weaponStabPoint, self.OnBreak)
+    
+    self.spearReturn.host.interact.rb.velocity = UE.Vector3.zero
+    
+    return true
+end
+
+function SpearReturnCol:IgnoreCollisionsWithCol(col, isIgnore)
+    self.spearReturn:IgnoreCollisionsWithCol(col, isIgnore)
+    print("IgnoreCollisionsWithCol-----------" .. tostring(isIgnore) .. "  col:" .. col.transform.root.name .. "  col num:" ..self.spearReturn.cols.Length)
+end
+
+return Class(nil, nil, SpearReturnCol)

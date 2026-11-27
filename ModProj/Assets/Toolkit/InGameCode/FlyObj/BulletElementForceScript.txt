@@ -1,0 +1,329 @@
+
+local BulletElementForce = {
+    isUsed = false,
+    maxRange = 100,
+    
+    searchDot = 0.7,
+}
+
+function BulletElementForce:FlyStart()    
+    self.isOnline = CL.Network.VRNetworkManager.IsOnline
+    
+    if self.isOnline then
+        if not self.host.networkFO:LocalTrackPhysics() then
+            return
+        end
+    end
+    
+    local target, point = nil, nil
+    --if not target or IsNullOrDestroyed(pu) then
+        --local newTarget, newPoint = self:SearchTarget(2)
+        --if newTarget then
+        --    target = newTarget
+        --    point = newPoint
+        --end
+    
+    
+        local trans = self:FindTarget()
+        if trans and not IsNullOrDestroyed(trans) then
+            target = trans
+            point = trans.position
+        end
+    --end
+    
+    --if not target or IsNullOrDestroyed(target) then
+    --    target, point = self:GetForwardTarget()
+    --end
+    
+    if target and not IsNullOrDestroyed(target) then
+        self:StartTracking(target, point)
+    end
+end
+
+function BulletElementForce:GetForwardTarget()
+    local isHit, raycastHit  = UE.Physics.SphereCast(self.trans.position + self.trans.forward * 0.1, 0.05, self.trans.forward, self.maxRange,
+        UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollFakeLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value),
+                UE.LayerMask.LayerToName(CL.LayerDefine.CharacterLayer.value)))
+    if not isHit then
+        return nil, nil
+    end
+    
+    return raycastHit.collider.transform, raycastHit.point
+end
+
+function BulletElementForce:FindTarget()
+    local pus = CL.PhysicsUnit.QueryRolesInRadius(self.trans.position, self.maxRange)
+    local pu = nil
+    local boneInfo = nil
+    --local fcDot = -1
+    --local fcDis = self.maxRange
+    local targetValue = 0
+    local ctrans = nil
+    --local pu = nil
+    --local maxDot = -1
+    local curDot = -1
+    local curAng = -1
+    --local curDis = 0
+    local pPoint = nil
+    local curValue = 0
+    local maxDis = self.maxRange * self.maxRange
+    --CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + self.trans.forward, UE.Color.red, 5)
+    for i = 0, pus.Count - 1 do
+        if pus[i].unitType == CL.Tagger.Tag.InteractRole then
+            ctrans = pus[i].ra:GetMuscle(CL.RagdollBoneInfo.Spine).rbTrans
+            pPoint = self:GetPerpendicularPoint(ctrans.position)
+            curDot = UE.Vector3.Dot(self.trans.forward, (ctrans.position - self.trans.position).normalized)
+            curAng = (ctrans.position - pPoint).sqrMagnitude
+            --curDis = (ctrans.position - self.trans.position).sqrMagnitude
+            curValue = (1 - curAng/self.maxRange) * self.dotWeightMlp + (not pus[i].attr:IsDead() and self.aliveWeight or 0)
+            --print("pus idx-------::" .. i .. "  " .. pus[i].trans.name .. 
+            --    " dot:" .. curAng .. " dotvalue:" .. (1 - curAng/self.maxRange) * self.dotWeightMlp .. 
+            --    --" dis:" .. curDis .. " disValue:" .. (1 - curDis/self.maxRange) * self.disWeightMlp ..
+            --    " curValue:" .. curValue)
+            
+            --CL.DebugDraw.DrawLine(ctrans.position, pPoint, UE.Color.red, 5)
+            if curDot > 0.7 and curValue > targetValue then
+                pu = pus[i]
+                targetValue = curValue
+            end
+        --else
+        --    if curDot > maxDot then
+        --        pu = pus[i]
+        --        maxDot = curDot
+        --    end
+        elseif pus[i].unitType == CL.Tagger.Tag.PlayerRole then
+            --print("find target:" .. self.host.camp .. "  " .. pus[i].character.attr.camp)
+            if self.host.camp ~= pus[i].character.attr.camp then 
+                local info = pus[i].character.trans:GetComponentInChildren(typeof(CL.RagdollBoneInfo))
+                ctrans = info:GetBone("Spine2").transform
+                pPoint = self:GetPerpendicularPoint(ctrans.position)
+                curDot = UE.Vector3.Dot(self.trans.forward, (ctrans.position - self.trans.position).normalized)
+                curAng = (ctrans.position - pPoint).sqrMagnitude
+                --curDis = (ctrans.position - self.trans.position).sqrMagnitude
+                curValue = (1 - curAng/self.maxRange) * self.dotWeightMlp + (not pus[i].character.attr:IsDead() and self.aliveWeight or 0)
+                --print("pus idx-------::" .. i .. "  " .. pus[i].trans.name .. 
+                --    " dot:" .. curAng .. " dotvalue:" .. (1 - curAng/self.maxRange) * self.dotWeightMlp .. 
+                --    --" dis:" .. curDis .. " disValue:" .. (1 - curDis/self.maxRange) * self.disWeightMlp ..
+                --    " curValue:" .. curValue)
+                
+                --CL.DebugDraw.DrawLine(ctrans.position, pPoint, UE.Color.red, 5)
+                if curDot > 0.7 and curValue > targetValue then
+                    pu = pus[i]
+                    targetValue = curValue
+                    boneInfo = info
+                end
+            end
+        end
+    end
+    if pu and not IsNullOrDestroyed(pu) then
+        if pu.unitType == CL.Tagger.Tag.InteractRole then
+            --print("locked target fc-------::" .. fc.trans.name)
+            --if pu.unitType == CL.Tagger.Tag.InteractRole then
+            local ite = pu.ra:GetAllMuscles():GetEnumerator()
+            local mu = nil
+            local maxDot = -1
+            local curDot = -1
+            while ite:MoveNext() do
+                if ite.Current.Value.rbTrans.gameObject.activeInHierarchy then
+                    curDot = UE.Vector3.Dot(self.trans.forward, (ite.Current.Value.rbTrans.position - self.trans.position).normalized)
+                    if curDot > maxDot then
+                        mu = ite.Current.Value
+                        maxDot = curDot
+                    end
+                end
+            end
+            
+            return mu.rbTrans
+        elseif pu.unitType == CL.Tagger.Tag.PlayerRole then
+            local bone = nil
+            local maxDot = -1
+            local curDot = -1
+            local list = boneInfo.boneInfoList
+            for i = 0, list.Length - 1 do
+                if list[i].bone.gameObject.activeInHierarchy then
+                    curDot = UE.Vector3.Dot(self.trans.forward, (list[i].bone.transform.position - self.trans.position).normalized)
+                    if curDot > maxDot then
+                        bone = list[i].bone
+                        maxDot = curDot
+                    end
+                end
+            end
+            --print("locked target player-------::" .. bone.transform.name)
+            return bone.transform
+        end
+    end
+    --[[local aiproxy =  CL.AIProxy.GetCloestAndAngleTarget(self.host.trans, self.searchDot, self.host.camp, false, true)
+    if not IsNullOrDestroyed(aiproxy) then
+        print("found target---------------")
+        local ite = aiproxy.fc.ra:GetAllMuscles():GetEnumerator()
+        local mu = nil
+        local maxDot = -1
+        local curDot = -1
+        while ite:MoveNext() do
+            curDot = UE.Vector3.Dot(self.trans.forward, (ite.Current.Value.rbTrans.position - self.trans.position).normalized)
+            if curDot > maxDot then
+                mu = ite.Current.Value
+                maxDot = curDot
+                print("check mu---------::" .. ite.Current.Value.muscleName .. " dot:" ..curDot .. "max :" .. maxDot )
+            end
+            
+        end
+        
+        return mu.rbTrans
+    end
+    --]]
+    
+    return nil
+end
+
+function BulletElementForce:GetPerpendicularPoint(target)
+    local ba = target - self.trans.position
+    local nbc = self.trans.forward
+    local dbp = UE.Vector3.Dot(ba, nbc)
+    return self.trans.position + dbp * nbc
+end
+
+--[[
+function BulletElementForce:SearchTarget(radius)
+    local dir = self.trans.forward
+    CL.DebugDraw.DrawLine(self.trans.position, self.trans.position + dir, UE.Color.red, 5)
+    local raycastHit  = UE.Physics.SphereCastAll(self.trans.position + dir * (0.15 + radius), radius, dir, self.maxRange,
+        UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollFakeLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.InteractLayer.value)))
+    local curDot = 0
+    local maxDot = 0
+    local targetPoint = nil
+    local targetCol = nil
+    local closetPoint = nil
+    local puWeight = 0
+    for i = 0, raycastHit.Length - 1 do
+        if raycastHit[i].collider.sharedMesh and not raycastHit[i].collider.convex then
+            closetPoint = raycastHit[i].point
+        else
+            closetPoint = raycastHit[i].collider:ClosestPoint(raycastHit[i].point)
+        end
+        curDot = UE.Vector3.Dot((closetPoint - self.trans.position).normalized, dir)
+        local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(raycastHit[i].collider)
+        if puWeight > 0 then
+            if not IsNullOrDestroyed(pu) then
+                local weight = self:GetPuWeight(pu)
+                if weight > puWeight then
+                    targetPoint = closetPoint
+                    targetCol = raycastHit[i].collider
+                    maxDot = curDot
+                    puWeight = weight
+                elseif weight == puWeight then 
+                    if curDot > maxDot then
+                        targetPoint = closetPoint
+                        targetCol = raycastHit[i].collider
+                        maxDot = curDot
+                    end
+                end
+            end
+        else
+            if not IsNullOrDestroyed(pu) then
+                targetPoint = closetPoint
+                targetCol = raycastHit[i].collider
+                maxDot = curDot
+                puWeight = self:GetPuWeight(pu)
+            elseif curDot > maxDot then
+                targetPoint = closetPoint
+                targetCol = raycastHit[i].collider
+                maxDot = curDot
+            end
+        end
+    end
+    if maxDot < 0.7 then
+        return nil, nil
+    else
+        return targetCol, targetPoint
+    end
+end
+
+function BulletElementForce:GetPuWeight(pu)
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        return 100
+    elseif pu.unitType == CL.Tagger.Tag.InteractWeapon then
+        return 90
+    elseif pu.unitType == CL.Tagger.Tag.InteractObj then
+        return 80
+    elseif pu.unitType == CL.Tagger.Tag.FlyObject then
+        return 60
+    elseif pu.unitType == CL.Tagger.Tag.PlayerRole or pu.unitType == CL.Tagger.Tag.PlayerHand then
+        return 50
+    else
+        return 40
+    end
+end
+]]
+function BulletElementForce:StartTracking(trans, point)
+    local localPoint = trans:InverseTransformPoint(point)
+    local targetPoint = trans:TransformPoint(localPoint)
+    local targetDir = nil
+    local rotIntensity = 0
+    local maxIntensity = 0
+    local maxDis = UE.Vector3.Distance(self.trans.position, targetPoint)
+    local dis = nil
+    CL.Scheduler.RemoveSchedule(self.trackingActId)
+    self.trackingActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(trans) then
+                sche:Stop()
+                return
+            end
+            targetPoint = trans:TransformPoint(localPoint)
+            targetDir = (targetPoint - self.trans.position).normalized
+            dis = UE.Vector3.Distance(self.trans.position, targetPoint)
+            if dis <= self.host.rb.velocity.magnitude * UE.Time.deltaTime then
+                self.host.trans.position = targetPoint
+                sche:Stop()
+                return
+            end
+            rotIntensity = (1 - math.min(dis/maxDis, 1))
+            if maxIntensity > rotIntensity then
+                rotIntensity = maxIntensity
+            else
+                maxIntensity = rotIntensity
+            end
+            
+            self.trans.forward = UE.Vector3.Slerp(self.trans.forward, targetDir, math.min( UE.Time.deltaTime * (self.rotAdd + self.rotMlp * rotIntensity), 1))
+            
+            --print("rot-----------:" ..  "int:" .. rotIntensity .. "  " .. UE.Time.deltaTime * (self.rotAdd + self.rotMlp * rotIntensity))
+            self.host.rb.velocity = self.trans.forward * self.host.force
+            self.host.rb.angularVelocity = UE.Vector3.zero
+        end,
+    0, self.host.maxFlyTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+--function BulletElementForce:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+--    if self.isUsed then
+--        return
+--    end
+--    
+--    self.host:CollisionCountUpdate()
+--    self.host:PlayImpact(point, normal)
+--    
+--    if not self.isOnline then
+--        return
+--    end
+--    
+--    self.isUsed = true
+--    CL.InteractTrigger.BeginScanDmg()
+--    CL.InteractTrigger.ApplyHitScanDamage(mu.col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+--    CL.InteractTrigger.EndHitScan()
+--end
+
+function BulletElementForce:ResetState()
+    CL.Scheduler.RemoveSchedule(self.trackingActId)
+    
+    self.isUsed = false
+end
+
+return Class(Require("FlyObj/BulletBaseScript"), nil, BulletElementForce)

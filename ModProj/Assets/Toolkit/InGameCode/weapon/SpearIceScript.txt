@@ -1,0 +1,178 @@
+
+local SpearIce = {
+    lastSpeedRecord = 0,
+    activeTime = 3,
+    
+    closeTime = 0,
+    
+    maxSpeed = 15,
+    
+    throwIntensity = 3,
+    
+    maxRotLerp = 0.5,
+}
+
+function SpearIce:OnGrab(a,g)
+    if not g then
+        if UE.Time.time - self.closeTime < 0.1 then
+            self.isActive = true
+            self:OnActive()
+            self:TickToDisactive()
+            
+            self:TryAddForce(self.hand)
+        end
+        
+        self.hand = nil
+    else
+        self.hand = self.host.interact:GetPrimaryHand()
+        if not a.attachedHand:IsTriggering() then
+            self.isActive = false
+            self:OnDisactive()
+            
+            self:StopTickToDisactive()
+        end
+    end
+end
+
+function SpearIce:Awake()
+    self.onStabEnterHandler = function(si)
+        self:OnStabEnter(si)
+        
+        if self.isActive then
+            self.isActive = false
+            self:OnDisactive()
+            self:StopTickToDisactive()
+        end
+    end
+    
+    self.onCallBegin = function(h)
+        if self.isActive then
+            self.isActive = false
+            self:OnDisactive()
+            self:StopTickToDisactive()
+        end
+    end
+    
+    self.host.interact:CallBeginEvent("+", self.onCallBegin)
+    
+    self.so = self.host.interact:GetStabObject()
+    self.so:StabEnterEvent("+", self.onStabEnterHandler)
+end
+
+function SpearIce:Destroy()
+    if not IsNullOrDestroyed(self.host.interact) then
+        if self.host.interact.CallBeginEvent then
+            self.host.interact:CallBeginEvent("-", self.onCallBegin)
+        end
+    end
+    
+    if not IsNullOrDestroyed(self.so) then
+        if self.so.StabEnterEvent then
+            self.so:StabEnterEvent("-", self.onStabEnterHandler)
+        end
+    end 
+end
+
+function SpearIce:OnStabEnter(si)
+    if not self.isActive then
+        return
+    end
+    
+    local fc = CL.CharacterMgr.Instance:GetFullCharacterByChild(si.stabTarget)
+    if not fc then
+        return
+    end
+    
+    self:SpawnIceSpike(si:GetStabPos())
+    
+    self.host:CloseSkill()
+end
+
+
+function SpearIce:OpenSkill()
+    self.isActive = true
+    
+    self:OnActive()
+end
+
+function SpearIce:CloseSkill()
+    self.isActive = false
+    
+    self.closeTime = UE.Time.time
+    
+    self:OnDisactive()
+end
+
+function SpearIce:SpawnIceSpike(pos)
+    local spawnPos = nil
+    local dir = nil
+    for i = 1, 3 do
+        spawnPos = pos + (UE.Random.insideUnitSphere + UE.Vector3.up) * math.random(2, 5)
+        self.host:CreateFlyObj(self.flyObjName, spawnPos, pos - spawnPos)
+    end    
+end
+
+function SpearIce:OnActive()
+    if not IsNullOrDestroyed(self.activeEffect) then
+        self.activeEffect:Play()
+    end
+    
+    if not self.activeSoundInfo then
+        self.activeSoundInfo = self.activeSound:PlaySoundInfo()
+        if self.activeSoundInfo then
+            self.activeSoundInfo.ao.trans:SetParent(self.host.interact.trans)
+        end
+    end
+end
+
+function SpearIce:OnDisactive()
+    if not IsNullOrDestroyed(self.activeEffect) then
+        self.activeEffect:Stop()
+    end
+    
+    if self.activeSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.activeSoundInfo)
+        self.activeSoundInfo = nil
+    end
+end
+
+
+function SpearIce:TickToDisactive()
+    local rb = self.host.interact.rb
+    local value = 0
+    self.activeTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if self.host.interact:CheckGrounded() then
+                self:StopTickToDisactive()
+                self:OnDisactive()
+            else
+                if t >= self.activeTime then
+                    self:OnDisactive()
+                end
+                
+                if not IsNullOrDestroyed(rb) then
+                    --corrective rotation
+                    value = CL.EasingEquations.EaseInOutQuart(0, self.maxRotLerp, math.min((rb.velocity.magnitude - 1)/self.spearMaxSpeed, 1))
+                    --print("spearSpeed-----------::" .. rb.velocity.magnitude, value)
+                    rb:MoveRotation(UE.Quaternion.Lerp(rb.transform.rotation, UE.Quaternion.LookRotation(rb.velocity), value))
+                end
+            end
+        end
+    , 0, self.activeTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function SpearIce:StopTickToDisactive()
+    CL.Scheduler.RemoveSchedule(self.activeTimeId)
+    self.activeTimeId = nil
+end
+
+function SpearIce:TryAddForce(hand)
+    local vel = hand.velocityEstimator:GetVelocityEstimateLocal()
+    
+    local speed = CL.EasingEquations.EaseInOutQuart(0, self.maxSpeed, math.min(vel.magnitude/self.maxSpeed, 1))
+    --print("hand speed-------::" .. vel.magnitude .. "  speed:" .. speed .. " velue::" .. math.min(vel.magnitude/self.maxSpeed, 1) .. "  force:".. speed * self.throwIntensity)
+    self.host.interact:AddForce(vel.normalized * speed * self.throwIntensity, UE.ForceMode.Force)
+end
+
+return Class(nil, nil, SpearIce)

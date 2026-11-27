@@ -1,0 +1,104 @@
+
+local ChainOfHammer = {
+    lastSwingSound = -1,
+}
+
+function ChainOfHammer:Awake()
+    self.cols = self.trans:GetComponentsInChildren(typeof(UE.Collider))
+    self.rb = self.cols[0].attachedRigidbody
+    self.joint = self.trans:GetComponent(typeof(UE.ConfigurableJoint))
+    self.gameObject = self.trans.gameObject
+    self.renderers = self.trans:GetComponentsInChildren(typeof(UE.MeshRenderer))
+    self.defaultMats = self.renderers[0].materials
+    self.parent = self.trans.parent
+end
+
+function ChainOfHammer:IsExistCols(col)
+    for i = 0, self.cols.Length - 1 do
+        if self.cols[i] == col then
+            return true
+        end
+    end
+    
+    return false
+end
+
+function ChainOfHammer:GetCol(idx)
+    if not idx or idx >= self.cols.Length then
+        idx = 0
+    end
+    
+    return self.cols[idx]
+end
+
+function ChainOfHammer:GetRigidbody()
+    return self.rb
+end
+
+function ChainOfHammer:OnColliderEnter(collision)
+    if not self:IsCondition(collision) then
+        return
+    end
+    
+    if not self.allColPass and not self:IsLegalCol(collision) then
+        return
+    end
+    
+    self:ColliderEnterHandler(collision)
+end
+
+function ChainOfHammer:IsLegalCol(collision)
+    local thisCol = collision:GetContactPoint(0)
+    local pass = false
+    
+    local i = 1
+    while self["legalCol"..i] do
+        if self["legalCol"..i] == thisCol then
+            pass = true
+            break
+        end
+        i = i + 1
+    end
+
+    return pass
+end
+
+function ChainOfHammer:SetMaterials(mats)
+    for i = 0, self.renderers.Length - 1 do
+        self.renderers[i].materials = mats
+    end
+end
+
+function ChainOfHammer:ResetMaterials()
+    for i = 0, self.renderers.Length - 1 do
+        self.renderers[i].materials = self.defaultMats
+    end
+end
+
+function ChainOfHammer:PlayWhooshSound()
+    if not self.whooshSoundInfo then
+        self.whooshSoundInfo = self.whooshSound:PlaySoundInfo()
+        if self.whooshSoundInfo then
+            self.whooshSoundInfo.ao.transform:SetParent(self.trans)
+            self.whooshSoundInfo.ao.transform.localPosition = UE.Vector3.zero
+        end
+    end
+    return self.whooshSoundInfo
+end
+
+function ChainOfHammer:StopWhooshSound()
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.whooshSoundInfo)
+    self.whooshSoundInfo = nil
+end
+
+function ChainOfHammer:IsCondition(collision)
+    return true
+end
+
+function ChainOfHammer:ColliderEnterHandler(collision)
+    if self.interactTriggerX then
+        self.interactTriggerX.script.self:OnChainCollision(collision, self.chainIdx)
+    end
+end
+
+return Class(nil, nil, ChainOfHammer)

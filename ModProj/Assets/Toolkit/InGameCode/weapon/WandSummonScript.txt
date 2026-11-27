@@ -1,0 +1,28 @@
+
+local WandSummon = {
+}
+
+function WandSummon:OnSpawn(ib)
+    local scp = ib.trans:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    if self.isEnhance then
+        scp:Enhance()
+    end
+    
+    if self.isOnline then
+        scp:ServerOnSpawn()
+    else
+        scp:OnSpawn()
+    end
+end
+
+function WandSummon:OnBreakConnection()
+    local scp = self.spawnedObj.trans:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        local character = self.host.interact:GetPrimaryHand().character
+        scp:TrySummon(character)
+    end
+end
+
+return Class(Require("Weapon/WeaponSummonObjBaseScript"), nil, WandSummon)

@@ -1,0 +1,153 @@
+
+local FlyLightning = {
+}
+
+function FlyLightning:OnSpawn()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        CL.FullBodyMuscleState.ApplyParalysisDamageEffect(fc)
+    end
+
+    self.hitInfoObj = self.host:GetRagdollHitInfoObj()
+    if self.hitInfoObj then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    end
+end
+
+function FlyLightning:OnCollisionWithScene(collision)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self.host:PlayImpact(point, self.host.trans.forward)
+    self:PlayLightningEffect(point)
+    self.host:CollisionCountUpdate()
+end
+
+function FlyLightning:RpcOnCollisionWithScene(rb, col, point, normal, relaVel, pu)
+    self.host:PlayImpact(point, self.host.trans.forward)
+    self:PlayLightningEffect(point)
+    self.host:CollisionCountUpdate()
+end
+
+
+function FlyLightning:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+    self.host:PlayImpact(point, self.host.trans.forward)
+    self:PlayLightningEffect(point)
+    self.host:CollisionCountUpdate()
+end
+
+function FlyLightning:OnCollisionWithPlayer(collision, player)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:DoOnCollsionWithPlayer(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, player)
+end
+
+function FlyLightning:RpcOnCollisionWithPlayer(rb, col, point, normal, relaVel, player)
+    self:DoOnCollsionWithPlayer(rb, col, point, normal, relaVel, player)
+end
+
+function FlyLightning:DoOnCollsionWithPlayer(rb, col, point, normal, relaVel, player)
+    self.host:CollisionCountUpdate()
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        local owner = self.host.ownerHolder.character and self.host.ownerHolder.character or nil
+        if owner == player then
+            return
+        end
+    end
+    
+    self.host:PlayImpact(point, self.host.trans.forward)
+    self:PlayLightningEffect(point)
+end
+
+function FlyLightning:OnCollisionWithPlayerHand(collision, hand)
+    local thisCol, otherCol, point, normal = collision:GetContactPoint(0)
+    self:DoOnCollisionWithPlayerHand(collision.rigidbody, collision.collider, point, normal, collision.relativeVelocity, hand)
+end
+
+function FlyLightning:RpcOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self:DoOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+end
+
+function FlyLightning:DoOnCollisionWithPlayerHand(rb, col, point, normal, relaVel, hand)
+    self.host:CollisionCountUpdate()
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        local owner = self.host.ownerHolder.character and self.host.ownerHolder.character or nil
+        if owner == hand.player then
+            return
+        end
+    end
+    
+    self.host:PlayImpact(point, self.host.trans.forward)
+    self:PlayLightningEffect(point)
+end
+
+function FlyLightning:ResetState()
+    if self.hitInfoObj and self.hitPhase1 and self.hitInfoObj.hitInfo and self.hitInfoObj.hitInfo.OnInteractRoleHitPhase1Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+    end
+
+    self.isContinuous = true
+    self.hitInfoObj = nil
+    self.hitPhase1 = nil
+end
+
+--[[
+    Lightning Effect
+]]
+function FlyLightning:SetOrigin(pu)
+    self.originTrans = pu.trans
+end
+
+function FlyLightning:SetOriginFo(fo)
+    self.originTrans = fo.trans
+    self.owner = fo.script:GetSelf()
+end
+
+function FlyLightning:SetInfo(owner, isContinuous)
+    self.originTrans = owner.trans
+    self.owner = owner
+    
+    self.isContinuous = isContinuous
+end
+
+function FlyLightning:OnTimeOut()
+    --self:PlayLightningEffect()
+end
+
+function FlyLightning:OnCollisionUpdate(rb, col, point, normal, relaVel)
+    if self.owner then
+        if self.owner.ignoreCols ~= nil then
+            if self.owner.ignoreCols[col] then
+                return
+            end
+        end
+    end
+    
+    self.host:PlayImpact(point, self.host.trans.forward)
+    
+    self:PlayLightningEffect(point)
+    self.host:CollisionCountUpdate()
+end
+
+function FlyLightning:PlayLightningEffect(point)
+    if IsNullOrDestroyed(self.originTrans) then
+        return
+    end
+    local start = self.originTrans
+    local target = self.trans
+    if point then
+        self.trans.position = point
+    end
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.lightningEffect, start.position, UE.Quaternion.identity)
+    if eo then
+        local lb = eo.trans:GetComponent(typeof(CL.LuaBehaviour))
+        if lb then
+            local tb = lb.script:GetSelf()
+            if self.isContinuous then
+                tb:PlayLightningEffect(start, target)
+            else
+                tb:PlayLightningEffectAtPoint(self.trans.position)
+            end
+        end
+    end
+end
+
+return Class(nil,nil,FlyLightning)

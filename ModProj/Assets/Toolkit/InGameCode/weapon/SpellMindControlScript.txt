@@ -1,0 +1,415 @@
+
+local SpellMindControl = {
+    chargeTime = 2,
+}
+
+MindControlFc = {}
+
+function SpellMindControl:Awake()
+    local grabIb = nil
+    
+    self.__base.Awake(self)
+
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    self.grabFunc = function(attach)
+        if IsNullOrDestroyed(attach) then
+            self:StopControlCharge()
+        else
+            --grab sth need to hide menu
+            if self.isOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerShowControlMenu(false)
+                end
+            else
+                self:HideControlMenu()
+            end
+            grabIb = self:GetGrabHead()
+            if grabIb then                
+                if self.hand then
+                    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(grabIb.trans)
+                    if not IsNullOrDestroyed(pu) and pu.unitType == CL.Tagger.Tag.InteractRole then
+                        if pu.ai:AIExtensionEnabled() then
+                            CL.TextPanel.ShowTipsByTextIdAndCheckInterval("Spell_MindControl_Meme", 5)
+                            return false
+                        end
+                    end
+                    
+                    local needMana = self.host.manaCostOnCharge
+                    if self.hand.character:HasEnoughMana(needMana) then
+                        --print("hand control charge------------------ ")
+                        self:StartControlCharge() 
+                    else
+                        if not self.isOnline or (self.isOnline 
+                                                and not CL.Network.VRNetworkManager.ServerOnly 
+                                                and CS.Mirror.NetworkClient.localPlayer.netId == self:GetSlotHand().character.networkPlayer.netId) then
+                            NoManaTips()
+                        end
+                        return false
+                    end
+                end
+            elseif grabIb == false then
+                if not self.isOnline or (self.isOnline 
+                                        and not CL.Network.VRNetworkManager.ServerOnly 
+                                        and CS.Mirror.NetworkClient.localPlayer.netId == self:GetSlotHand().character.networkPlayer.netId) then
+                    CL.TextPanel.ShowTipsByTextIdAndCheckInterval("Spell_MindControl_Tips", 5)
+                end
+            end
+        end
+    end
+    
+    --for show mana....
+    self.host.skillChargeEndTime = 1.2
+    
+end
+
+function SpellMindControl:Start()
+    self.menu = self.menuLb.script:GetSelf()
+end
+
+function SpellMindControl:SlotSpell(slot)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.hand = self:GetSlotHand()
+    self.hand:GrabEvent("+", self.grabFunc)
+    
+    if not self.isOnline then
+        self.menu:PreLoadReconizer()
+    end
+    
+    --for show mana....
+    self.host.skillChargeEndTime = 0.25
+end
+
+function SpellMindControl:UnSlotSpell(slot)
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.hand then
+        self.hand:GrabEvent("-", self.grabFunc)
+        self.hand = nil
+    end
+    
+    --for show mana....
+    self.host.skillChargeEndTime = 1.2
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerShowControlMenu(false)
+        end
+    else
+        self:HideControlMenu()
+    end
+    
+    if not self.isOnline then
+        self.menu:KeepVoiceProcessing(false)
+        self.menu:StopVoiceReconizer()
+    end
+end
+
+function SpellMindControl:StartControlCharge()
+    local head = self:GetGrabHead()
+    if IsNullOrDestroyed(head) then
+        return
+    end
+    
+    local fc = CL.PhysicsUnit.GetPhysicsUnitTopDown(head.trans)
+    if not fc then --or fc.attr.camp == self.hand.character.aiProxy:GetCamp() 
+        return
+    end
+    if IsNullOrDestroyed(fc) or fc.muscleState:IsPowerfulCharacter() or fc.attr:IsDead() then
+        return
+    end
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerChargeEffectStart()
+        end
+    else
+        self:PlayControlChargeEffect()
+    end
+
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.chargeTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            self.hand:HapticPulse(self.hand.character.skillChargeHapticCurve, 0.1, 0.5)
+            if t >= self.chargeTime then
+                local isSuc = false
+                if self:TryMindControl(head) then
+                    if self.isOnline then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then
+                            state:ServerMindControl(self.hand.character, fc)
+                        end
+                    end
+                    
+                    self:AddToControlFc(fc)
+                    isSuc = true
+                end
+                self:RefleshControlFc()
+                
+                if self.isOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state:ServerControlEnd(isSuc)
+                    end
+                else
+                    if isSuc then
+                        self:ReadyEffect()
+                    end
+                    self:StopControlChargeEffect()
+                end
+                local hand = self:GetSlotHand()
+                if hand and not IsNullOrDestroyed(hand) then
+                    hand.character:CostMana(self.host, self.host.manaCostOnCharge)
+                end
+            end
+        end
+    , 0.1, self.chargeTime).actionId
+end
+
+function SpellMindControl:NetworkControlEnd(isSuc)
+    if isSuc then
+        self:ReadyEffect()
+    end
+    self:StopControlChargeEffect()
+end
+
+function SpellMindControl:AddToControlFc(fc)
+    local hand = self:GetSlotHand()
+    if not hand then
+        return nil
+    end
+    
+    if not MindControlFc[hand.character] then
+        MindControlFc[hand.character] = {}
+    end
+    
+    for k, v in ipairs(MindControlFc[hand.character]) do
+        if v == fc then
+            return
+        end
+    end
+    table.insert(MindControlFc[hand.character], fc)
+end
+
+function SpellMindControl:StopControlCharge()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerChargeEffectEnd()
+            end
+        end
+    else
+        self:StopControlChargeEffect()
+    end
+    CL.Scheduler.RemoveSchedule(self.chargeTimeId)
+end
+
+function SpellMindControl:OnChargeReady()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerShowControlMenu(true)
+        end
+    else
+        self:ShowControlMenu()
+    end
+end
+
+function SpellMindControl:OnChargeRelease()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.menu then
+        --order
+        self.menu:Order()
+        
+        if self.isOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:ServerShowControlMenu(false)
+            end
+        else
+            self:HideControlMenu()
+        end
+    end
+end
+
+function SpellMindControl:PlayControlChargeEffect()
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    
+
+    self.chargeEo = CL.EffectMgr.Instance:PlayEffect(self.chargeEffect, self.host.interact.trans.position, UE.Quaternion.identity)
+    self.chargeEo.trans:SetParent(self.host.interact.trans)
+    
+
+    local ikRef = hand.character.ik.references
+    local armBone = hand:GetHandIndex() == 0 and ikRef.rightForearm or ikRef.leftForearm 
+    
+    self.chargeEffectTimer = CL.Scheduler.Create(self.host,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then
+                sche:Stop()
+                return
+            end
+            if IsNullOrDestroyed(self.host.interact) then
+                sche:Stop()
+                return
+            end
+            if IsNullOrDestroyed(armBone) then
+                sche:Stop()
+                return
+            end
+            if IsNullOrDestroyed(self.chargeEo) then
+                sche:Stop()
+                return
+            end
+            
+            self.chargeEo.trans.rotation = UE.Quaternion.LookRotation(self.host.interact.trans.position - armBone.position)
+        end
+    , 0, -1)
+end
+
+
+function SpellMindControl:StopControlChargeEffect()
+    CL.EffectMgr.Instance:GiveBack(self.chargeEo)
+    
+    RemoveSchedule(self, self.chargeEffectTimer)
+end
+
+function SpellMindControl:ReadyEffect()
+    CL.EffectMgr.Instance:PlayEffect(self.onControlEffect, self.host.interact.trans.position, UE.Quaternion.identity)
+end
+
+function SpellMindControl:GetGrabHead()
+    local hand = self:GetSlotHand()
+    if not hand then
+        return nil
+    end
+    
+    if IsNullOrDestroyed(hand.attachTo) then
+        return nil
+    end
+    
+    local rmc = hand.attachTo.interact.gameObject:GetComponent(typeof(CL.RagdollMuscleCollision))
+    if not IsNullOrDestroyed(rmc) then
+        if rmc.muName == CL.RagdollBoneInfo.Head then
+            return hand.attachTo.interact
+        else
+            if rmc.muName == CL.RagdollBoneInfo.RWeapon or 
+            rmc.muName == CL.RagdollBoneInfo.LWeapon then
+                return nil
+            else
+                return false
+            end
+        end
+    end
+    
+    return nil
+end
+
+function SpellMindControl:TryMindControl(head)
+    local fc = CL.PhysicsUnit.GetPhysicsUnitTopDown(head.trans)
+    --cast(fc, typeof(CL.FullCharacterControl))
+    if IsNullOrDestroyed(fc) then
+        return nil
+    end
+    
+    if IsNullOrDestroyed(fc.attr) then
+        return nil
+    end
+    
+    if fc.attr:IsDead() then
+        return nil
+    end
+    
+    self:DoMindControl(self.hand.character, fc)
+    return fc
+end
+
+function SpellMindControl:DoMindControl(character, fc)
+    if fc.attr.camp ~= character.aiProxy:GetCamp() then
+        fc.attr:ChangeCamp(character.attr.camp)
+        fc.ai:FollowCommand(character.aiProxy)
+    end
+end
+
+function SpellMindControl:RefleshControlFc()
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    
+    if not MindControlFc[hand.character] then
+        return
+    end
+    
+    for i = #MindControlFc[hand.character], 1, -1 do
+        if IsNullOrDestroyed(MindControlFc[hand.character][i]) or MindControlFc[hand.character][i].attr:IsDead() then
+            table.remove(MindControlFc[hand.character], i)
+        end
+    end
+end
+
+function SpellMindControl:ShowControlMenu()
+    local hand = self:GetSlotHand()
+    if not hand then
+        return
+    end
+    
+    if not MindControlFc[hand.character] then
+        MindControlFc[hand.character] = {}
+    end
+    
+    self.menu:OnMenuStart(MindControlFc[hand.character], hand, self.createPoint, self)
+    self.menu:Show()
+end
+
+function SpellMindControl:HideControlMenu()
+    if not self.menu then
+        return
+    end
+    self.menu:Hide()
+end
+
+function SpellMindControl:NetworkShowControlMenu(show)
+    if show then
+        self:ShowControlMenu()
+    else
+        self:HideControlMenu()
+    end
+end
+
+function SpellMindControl:DoAction(action)
+    self.menu:OrderAction(action)
+end
+
+function SpellMindControl:CommandAction(action)
+    if CL.Network.VRNetworkManager.ClientOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:CommandAciton(action, CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+        end
+    end
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellMindControl)

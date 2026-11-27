@@ -1,0 +1,58 @@
+local DiveStomp = {
+    hitPlayerMlp = 50,
+    hitFlyMlp = 50,
+}
+
+function DiveStomp:FlyStart()
+    CL.EffectMgr.Instance:PlayEffect(self.effectName, self.trans.position, UE.Quaternion.LookRotation(UE.Vector3.forward))
+    self:DoStomp()
+end
+
+function DiveStomp:DoStomp()
+    local pus = CL.PhysicsUnit.QueryLogicTargetInRadiusTemp(self.trans.position, self.radius)
+    for i = 0, pus.Count - 1 do
+        self:PushAndHitPu(pus[i])
+    end
+end
+
+function DiveStomp:PushAndHitPu(pu)
+    local dir = nil
+    local center = self.trans.position
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        if not IsNullOrDestroyed(self.host.ownerHolder) and pu.ai == self.host.ownerHolder then
+            return
+        end
+        
+        if not pu:IsDead() then
+            pu.attr:AddHp(-self.hitInfoObj.hitInfo.damageMlp)
+        end
+        if not pu.muscleState:IsPowerfulCharacter() then
+            pu.motion:Knockout()
+            dir = UE.Vector3.up
+            local f = self.hitRoleMlp * dir
+            pu:AddForce(f, UE.ForceMode.Impulse)
+            print("hit InteractRole:" .. pu.trans.name)
+            --pu.ra:AddTorque(UE.Random.insideUnitSphere * 50, UE.ForceMode.Impulse)
+        end
+    elseif pu.unitType == CL.Tagger.Tag.PlayerRole then
+        if not IsNullOrDestroyed(self.host.ownerHolder) and pu.ai == self.host.ownerHolder then
+            return
+        end
+        print("hit player:" .. pu.trans.name)
+        dir = UE.Vector3.up
+        pu.character:SetDragForAWhile()
+        pu.character:AddForce(dir * self.hitPlayerMlp, UE.ForceMode.Impulse)
+        pu.character:AddPushbackByForce(dir * self.pushBackForce)
+        --pu.character.aiProxy:ApplyDamage(self.trans.position, self.host:GetRagdollHitInfo(), 1, dir, self.host.col)
+    else
+        if not (pu.unitType == CL.Tagger.Tag.InteractObj and pu:IsBodyPart()) then
+            print("hit interact obj:" .. pu.trans.name)
+            dir = UE.Vector3.up
+            local f = self.hitFlyMlp * dir
+            pu:AddForce(f, UE.ForceMode.Impulse)
+            --pu:AddTorque(UE.Random.insideUnitSphere * 50, UE.ForceMode.Impulse)
+        end
+    end
+end
+
+return Class(nil, nil, DiveStomp)

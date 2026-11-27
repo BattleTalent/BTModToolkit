@@ -1,0 +1,198 @@
+
+local FlyWaveTracking = {
+    searchRange = 5,
+    impactEffect = "FlyWaveImpact",
+}
+
+function FlyWaveTracking:CommandStartTracking(col, delay)
+    self.host.networkFO:CommandStartTracking(col, delay)
+end
+
+function FlyWaveTracking:CommandStartTrackingRB(rb, delay)
+    self.host.networkFO:CommandStartTrackingRB(rb, delay)
+end
+
+function FlyWaveTracking:StartTracking(trans, delay) 
+    self.startTracking = true
+    if CL.Network.VRNetworkManager.IsOnline then
+        if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.networkFO) then
+            return
+        end
+        
+        if not self.host.networkFO:LocalTrackPhysics() then
+            return
+        end
+    end
+    delay = delay or 0
+    CL.Scheduler.RemoveSchedule(self.trackingTimerId)
+    self.trackingTimerId = CL.Scheduler.Create(self.trans,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) or IsNullOrDestroyed(self.host.rb) then
+                sche:Stop()
+                return
+            end
+
+            if IsNullOrDestroyed(trans) then
+                sche:Stop()
+                return
+            end
+
+            CL.PhysicsFollow.TrackPosition(self.host.rb, trans.position, 0.5)
+        end
+    , 0, -1, delay)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function FlyWaveTracking:CommandFloatUp()
+    self.host.networkFO:CommandFloatUp()
+end
+
+function FlyWaveTracking:FloatUp()
+    self.originDrag = self.host.rb.drag
+    self.host.rb.drag = 0
+    
+    self.originDelayToAcc = self.host.delayToAcc
+    self.host.delayToAcc = 0.4
+    
+    self.originForce = self.host.force
+    self.host.rb.velocity = UE.Vector3.up * math.random(13, 15)
+end
+
+function FlyWaveTracking:OnDelayEnd()
+    self.host.trans.forward = UE.Vector3.up
+end
+
+function FlyWaveTracking:OnTrigger(pu, other)
+    if not self.startTracking then
+        return
+    end
+    
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+    self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+    local eff = CL.EffectMgr.Instance:PlayEffect(self.impactEffect, self.host.trans.position, UE.Quaternion.LookRotation(-self.host.rb.velocity))
+    self:SetEffectColor(eff, self.startColor)
+    
+    self.host:OnFinish()
+end
+
+function FlyWaveTracking:OnTriggerWithStaticScene(other)
+    if not self.startTracking then
+        return
+    end
+    
+    if self.destoryWhenHitEnv ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)     
+        local eff = CL.EffectMgr.Instance:PlayEffect(self.impactEffect, self.host.trans.position, UE.Quaternion.LookRotation(-self.host.rb.velocity))
+        self:SetEffectColor(eff, self.startColor)
+
+        self.host:OnFinish()
+    end
+end
+
+function FlyWaveTracking:OnTriggerWithRole(fc, col)
+    if not self.startTracking then
+        return
+    end
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+    self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+    local eff = CL.EffectMgr.Instance:PlayEffect(self.impactEffect, self.host.trans.position, UE.Quaternion.LookRotation(-self.host.rb.velocity))
+    self:SetEffectColor(eff, self.startColor)
+
+    self.host:OnFinish()
+end
+
+function FlyWaveTracking:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlyWaveTracking:OnTriggerWithPlayerHand(col, hand)
+    if not self.startTracking then
+        return
+    end
+    
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        local owner = self.host.ownerHolder.character and self.host.ownerHolder.character or nil
+        if owner == hand.character then
+            return
+        end
+    end
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+    
+    self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+    local eff = CL.EffectMgr.Instance:PlayEffect(self.impactEffect, self.host.trans.position, UE.Quaternion.LookRotation(-self.host.rb.velocity))
+    self:SetEffectColor(eff, self.startColor)
+
+    self.host:OnFinish()
+end
+
+function FlyWaveTracking:OnTriggerWithPlayer(pu, col)
+    if not self.startTracking then
+        return
+    end
+    
+    if not IsNullOrDestroyed(self.host.ownerHolder) then
+        local owner = self.host.ownerHolder.character and self.host.ownerHolder.character or nil
+        if owner == pu.character then
+            return
+        end
+    end
+    
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+    
+    self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+    local eff = CL.EffectMgr.Instance:PlayEffect(self.impactEffect, self.host.trans.position, UE.Quaternion.LookRotation(-self.host.rb.velocity))
+    self:SetEffectColor(eff, self.startColor)
+
+    self.host:OnFinish()
+end
+
+
+function FlyWaveTracking:ResetState()
+    self.startTracking = false
+    CL.Scheduler.RemoveSchedule(self.trackingTimerId)
+    
+    if self.destroyCb then
+        self.destroyCb(self)
+        self.destroyCb = nil
+    end
+    
+    if self.originDrag then
+        self.host.rb.drag = self.originDrag
+        self.originDrag = nil
+    end
+    
+    if self.originDelayToAcc then
+        self.host.delayToAcc = self.originDelayToAcc
+        self.originDelayToAcc = nil
+    end
+    if self.originForce then
+        self.host.force = self.originForce
+        self.originForce = nil
+    end
+end
+
+return Class(Require("FlyObj/FlyWaveBaseScript"), nil, FlyWaveTracking)

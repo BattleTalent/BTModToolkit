@@ -1,0 +1,175 @@
+
+local ManualLoadGun = {
+    motionVel = 2,
+    
+    --bulletCount = 6,
+    
+    useBulletCount = 0,
+    
+    readyShoot = true,
+}
+
+function ManualLoadGun:UpdateSkill()
+    if not self.readyShoot then
+        --play emptysound
+        self.host:CloseSkill()
+        return
+    end
+    
+    if not CostMana(self.host, self.manaCost or 0) then
+        return
+    end
+    
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        local bullet = self:PlayShootAction()
+    end
+    self:OnUpdateSkill()
+    
+    self.useBulletCount = self.useBulletCount + 1
+    self.readyShoot = false
+
+    if self.useBulletCount >= self.bulletCount then
+        self:PlayLoadAnim(false, 0.3)
+        
+        self:OpenLoadDetect()
+    else
+        self:PlayDrumAnim(0.5)
+    end
+end
+
+function ManualLoadGun:OpenLoadDetect()
+    local fun = function()
+        self:FinishRotateImmediately()
+        self:PlayLoadAnim(true, 0.3)
+    end
+    self:MotionDetectByDir(-self.host.interact.trans.up, self.motionVel, nil, nil, fun, true)
+end
+
+function ManualLoadGun:PlayLoadAnim(isLoad, time)
+    if isLoad then
+        local func = function()
+            self.useBulletCount = 0
+            self.readyShoot = true
+        end
+        
+        self:RotateOnTime(self.barrelTrans, UE.Quaternion.identity, time, func)
+    else
+        self:RotateOnTime(self.barrelTrans, UE.Quaternion.Euler(UE.Vector3(-30, 0, 0)), time, nil)
+    end
+    self:PlayLoadSound(isLoad)
+end
+
+function ManualLoadGun:PlayLoadSound(isLoad)
+
+end
+
+function ManualLoadGun:PlayDrumAnim(time)
+    local completefunc = function()
+        self.readyShoot = true
+    end
+    
+    local easingfunc = function(time, total)
+        return CL.EasingEquations.EaseInOutBack(0, 1, time/total)
+    end
+    
+    local qua =  UE.Quaternion.Euler(UE.Vector3(60 * self.useBulletCount, 0, 0))
+    self:RotateOnTime(self.drumTrans, qua, time, completefunc, easingfunc)
+    
+    self:PlayDrumSound()
+end
+
+function ManualLoadGun:PlayDrumSound()
+
+end
+
+function ManualLoadGun:RotateOnTime(trans, quaternion, time, completefunc, easingfunc)
+    local beginQua = trans and trans.localRotation or nil
+    local value = nil
+    local curQua = nil
+    self.rotateTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if not trans then
+                return
+            end
+            
+            if easingfunc then
+                value = easingfunc(t, time)
+            else
+                value = CL.EasingEquations.EaseOutExpo(0, 1, t/time)
+            end
+            
+            curQua = UE.Quaternion.Lerp(beginQua, quaternion, value)
+            trans.localRotation = curQua
+        end
+    , 0, time)
+    :SetOnStop(function()
+        if trans then
+            trans.localRotation = quaternion
+        end
+        
+        if completefunc then
+            completefunc()
+        end
+    end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ManualLoadGun:FinishRotateImmediately()
+    CL.Scheduler.RemoveSchedule(self.rotateTimeId)
+end
+
+function ManualLoadGun:GetMotionHand()
+    return self.host.interact:GetPrimaryHand()
+end
+
+function ManualLoadGun:MotionDetectByDir(dir, speed, checkfunc, progressCb, reachCb, isLocal)
+    self:StopMotionDetect()
+    
+    local volocity = 0
+    local realSpeed = 0
+    
+    local curPos = 0
+    local angle = 0
+    local curDir = nil
+    
+    local hand = self:GetMotionHand()
+    self.dtTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            hand = self:GetMotionHand()
+            if IsNullOrDestroyed(hand) then
+                return
+            end
+            
+            volocity = hand.velocityEstimator:GetVelocityEstimateLocal()
+            realSpeed = volocity.magnitude
+            if progressCb then
+                progressCb((realSpeed / speed) % 1)
+            end
+            if realSpeed >= speed and ((checkfunc and checkfunc()) or not checkfunc) then
+                if isLocal then
+                    angle = UE.Vector3.Angle(self.host.interact.trans:TransformDirection(dir), volocity)
+                else
+                    angle = UE.Vector3.Angle(dir, volocity)
+                end
+
+                if angle <= 60 then
+                    if reachCb then
+                        reachCb()
+                    end
+                    self:StopMotionDetect()
+                end
+            end        
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)    
+end
+
+function ManualLoadGun:StopMotionDetect()
+    if IsNullOrOwnerChanged(self.dtTimer, self) == false then
+        self.dtTimer:Stop()
+        self.dtTimer = nil
+    end
+end
+
+
+return Class(Require("Weapon/WeaponFlyObjBaseScript"), nil, ManualLoadGun)

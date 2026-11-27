@@ -1,0 +1,44 @@
+
+local BladeCollision = {
+    lastEffectTime = 0,
+    effectInterval = 0.2,
+}
+
+function BladeCollision:Awake()
+end
+
+function BladeCollision:OnColliderEnter(collision)
+    if self.interactTrigger and not self.interactTrigger:IsOpeningSkill() then
+        return
+    end
+    if collision.relativeVelocity.sqrMagnitude < self.sqrSpeed then
+        return
+    end
+    
+    local thisCol, otherCol, point = collision:GetContactPoint(0)
+    local pass = false
+    local idx = 1
+    while self["col" .. idx] do
+        if self["col" .. idx] == thisCol then
+            pass = true
+            break
+        end
+        idx = idx + 1
+    end
+    if not pass then
+        return
+    end
+    
+    local pos = collision.collider:ClosestPoint(point)
+    
+    if UE.Time.time - self.lastEffectTime >= self.effectInterval then
+        CL.EffectMgr.Instance:PlayEffect(self.effectName, pos, UE.Quaternion.identity)
+        self.lastEffectTime = UE.Time.time
+    end
+
+    if self.impactSound then
+        self.impactSound.soundInfo:Play(pos)
+    end
+end
+
+return Class(nil, nil, BladeCollision)

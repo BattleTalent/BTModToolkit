@@ -1,0 +1,539 @@
+local SpellSummonFo = Require("Weapon/SpellSummonFoScript")
+
+local particleCurve = UE.ParticleSystem.MinMaxCurve(1)
+
+local spellWind = {
+    radius = 1, --capsule radius
+    pushRange = 1.5, --capsule height 
+
+    pushBackDis = 1.5, --player pushBack dis. player to evn.
+    
+    dragPower = 0,
+    
+    pushRoleForce = 5,
+    pushPuSpeed = 3,
+    
+    basePitch = 0.9,
+    baseVolume = 0.5,
+    
+    
+    --fly
+    dragForce = 0,
+    dragMaxForce = 0.5,
+    
+    openTime = 0,
+    
+    particleSpeed = 0,
+    particleMaxSpeed = 5,
+    
+    --sound
+    curVolume = 0,
+    maxVolume = 0.5,
+    curPitch = 1,
+    maxPitch = 1.2,
+    
+    
+    --height limit
+    maxHeight = 0,
+    fallSpeed = 0.5,
+    
+    
+    --skill Type
+    skillType = 0,
+    baseSkill = 1,
+    summmonSkill = 2,
+}
+
+function spellWind:OnAwake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+end
+
+function spellWind:SlotSpell(slot)
+end
+
+function spellWind:CleanupWindRuntime()
+    self.closeActId = SafeRemoveSchedule(self.closeActId)
+    self.closeTrackTimeId = SafeRemoveSchedule(self.closeTrackTimeId)
+
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.audioInfo)
+    self.audioInfo = nil
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.soundInfo)
+    self.soundInfo = nil
+
+    if self.effect then
+        self.effect:Stop()
+    end
+    if self.trailEffect then
+        self.trailEffect:Stop()
+    end
+
+    if self.character and not IsNullOrDestroyed(self.character) then
+        self:SetDragPower(self.character:GetOriginalDragPower())
+    end
+end
+
+function spellWind:OnDestroy()
+    self:CleanupWindRuntime()
+    SpellSummonFo.OnDestroy(self)
+end
+
+function spellWind:UnSlotSpell(slot)
+    self:CleanupWindRuntime()
+    SpellSummonFo.UnSlotSpell(self, slot)
+end
+
+function spellWind:OpenSkill()
+    self.skillType = 0
+    self.character = nil
+    -- Spell Wind don't need to skill here
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    self.hand = self:GetSpellHand() --hand.character
+    if IsNullOrDestroyed(self.hand) then
+        return
+    end
+    local otherHand = self.hand:GetAnotherHand()
+    if not otherHand then
+        return
+    end
+    self.character = self.hand.character
+    
+
+    local skillType = self.baseSkill
+    if not self.host.interact:IsEnhance() or not self:CheckHandCondition(self.hand, otherHand, self.checkDis, self.dotValue) then
+        self.skillType = self.baseSkill
+    else
+        self.skillType = self.summmonSkill
+    end
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:CommandOpenSkill(self.skillType) end
+    end
+    
+    if self.skillType == self.baseSkill then
+        self:OpenBaseSkill()
+    else
+        self:OpenSummonSkill()
+    end
+end
+
+function spellWind:NetworkOpenSkillByType(skillType)
+    if SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if self.character == nil then
+        self.hand = self:GetSpellHand()
+        self.character = self.hand.character
+    end
+
+    self.skillType = skillType
+    if self.skillType == self.baseSkill then
+        self:OpenBaseSkill()
+    else
+        self:OpenSummonSkill()
+    end
+end
+
+function spellWind:OpenBaseSkill()
+    self:ShowEffect(true)
+    
+    self:SetHandPose(true)
+    
+    --fly
+    self:OpenTrackEffect()
+    
+    self:OpenFlySkill()
+end
+
+function spellWind:OpenSummonSkill()
+    self:SetHandPose(true)
+    
+    if self.isOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    self:StartCharge()
+end
+
+
+function spellWind:UpdateSkill()
+    if self.skillType == self.baseSkill then
+        --interact
+        local pushCount = self:PushPu()
+        
+        self:RefleshSound(pushCount)
+        
+        --fly
+        self:UpdateFly()
+    end
+end
+
+function spellWind:CloseSkill()
+    if self.skillType == self.baseSkill then
+        self:ShowEffect(false)
+        self:SetHandPose(false)
+        self:StopFly()
+    else
+        self.__base.CloseSkill(self)
+    end
+end
+
+
+
+----------------------------------------------------------
+
+function spellWind:PushPu()
+    local point1 = self.createPoint.position + self.createPoint.forward * self.radius
+    local point2 = point1 + self.createPoint.forward * self.pushRange
+    
+    local raycastHit = UE.Physics.OverlapCapsule (point1, point2, self.radius) --UE.QueryTriggerInteraction.UseGlobal
+    
+
+    
+    local puList = {}
+    local pu = nil
+    local dir = nil
+    
+    local count = 0
+    for i = 0, raycastHit.Length - 1 do
+        pu = CL.PhysicsUnit.GetPhysicsUnit(raycastHit[i])
+        
+        if not IsNullOrDestroyed(pu) and not puList[pu] then
+            puList[pu] = pu
+            if pu.trans.root ~= self.character.trans.root then
+                if pu.unitType == CL.Tagger.Tag.InteractRole then
+                    dir = pu.controller.trans.position - self.createPoint.position
+                    
+                    if pu.muscleState:IsPowerfulCharacter() then
+                        pu.controller:AddPushbackByForce(self.pushRoleForce/10 * dir)
+                        count = count + 10
+                    else
+                        pu.controller:AddPushbackByForce(self.pushRoleForce * dir)
+                        count = count + 5
+                    end
+                    
+                elseif pu.unitType == CL.Tagger.Tag.FlyObject then
+                    if pu.script and pu.script:GetScriptName() ~= "FlyObj/FlyTornadoScript" then
+                        dir = pu.trans.position - self.createPoint.position
+                        pu:AddForce(self.pushPuSpeed * dir, UE.ForceMode.VelocityChange)
+                        
+                        count = count + 1
+                    end
+                elseif pu.unitType == CL.Tagger.Tag.InteractObj or 
+                pu.unitType == CL.Tagger.Tag.InteractWeapon then
+                    local ph = pu:GetPrimaryHand()
+                    local pass = true
+                    if not IsNullOrDestroyed(ph) then
+                        if ph.character == self.character then
+                            pass = false
+                        end
+                    end
+                    
+                    if pass then
+                        if not IsNullOrDestroyed(pu.rb) then
+                            dir = pu.trans.position - self.createPoint.position
+                            pu:AddForce(self.pushPuSpeed * dir, UE.ForceMode.VelocityChange)
+                            pu:AddTorque(self.pushPuSpeed * dir, UE.ForceMode.VelocityChange)
+                            count = count + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return count
+end
+
+
+function spellWind:ShowEffect(show)
+    if show then
+        --if IsNullOrDestroyed(self.eo) then
+        --    self.eo = CL.EffectMgr.Instance:PlayEffect("Wind", self.host.transform.position, UE.Quaternion.LookRotation(self.createPoint.forward))
+        --end
+        self.effect:Play()
+        
+        if not self.audioInfo then
+            self.audioInfo = self.windSound:PlaySoundInfo()
+            if self.audioInfo then
+                self.audioInfo.ao.transform:SetParent(self.modelTrans)
+            end
+        end
+    else
+        --CL.EffectMgr.INstance:GiveBack(self.eo)
+        --self.eo = nil
+        self.effect:Stop()
+        
+        if self.audioInfo then
+            CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.audioInfo)
+            self.audioInfo = nil
+        end
+    end
+end
+
+function spellWind:RefleshSound(count)
+    if not self.audioInfo then
+        return
+    end
+    
+    self.audioInfo.audio.pitch = math.min(3, math.max(0.01, self.basePitch + math.min(count * 0.04, 0.4)))
+    self.audioInfo.audio.volume = self.baseVolume + math.min(count * 0.03, 0.3)
+end
+
+function spellWind:OnEnhance()
+    self.pushRange = self.pushRange * 1.5
+    self.pushRoleForce = self.pushRoleForce * 2
+    self.pushBackDis = self.pushBackDis * 1.3
+    
+    self.maxAltitude = self.maxAltitude + 2
+    self.dragMaxForce = self.dragMaxForce * 1.5
+    
+    particleCurve.constant = 6
+    self.effect.main.startSpeed = particleCurve
+end
+
+----------------------------------------------------------------------------------------------
+function spellWind:OpenFlySkill()
+    CL.Scheduler.RemoveSchedule(self.closeActId)
+    
+    if self.character and not IsNullOrDestroyed(self.character) then
+        self:SetDragPower(self.dragPower)
+        self.character:BreakAllStuckActions()
+    end
+    
+    --dragForce
+    self.dragForce = 0
+    
+    --sound
+    self.curPitch = 0
+    self.curVolume = 0
+    if not self.soundInfo then
+        self.soundInfo = self.flySound:PlaySoundInfo()
+        if self.soundInfo then
+            self.soundInfo.ao.transform:SetParent(self.modelTrans)
+            self.soundInfo.audio.volume = self.curVolume
+            self.soundInfo.audio.pitch = math.min(3, math.max(0.01, self.curPitch))
+        end
+    end
+    
+    self.openTime = UE.Time.time
+end
+
+
+function spellWind:UpdateFly()
+    if not self.character or IsNullOrDestroyed(self.character) then
+        return
+    end
+    
+    local isHit, hitInfo = UE.Physics.SphereCast(self.character.trans.position + UE.Vector3.up, 0.05, 
+        UE.Vector3.down, self.maxAltitude, CL.LayerDefine.EnvLayerMask.value)
+    
+    if isHit then
+        self.hitInfoY = hitInfo.point.y
+    else
+        if not self.hitInfoY then
+            self.hitInfoY = self.character.trans.position.y
+        end
+        self.hitInfoY = self.hitInfoY - self.fallSpeed * UE.Time.deltaTime
+    end
+    
+    local value = CL.EasingEquations.EaseOutCubic(0, 1, (UE.Time.time - self.openTime) / 1)
+    --self.dragForce = self:CalcCurValue(self.dragForce, self.dragMaxForce, value)
+    self.dragForce = self.dragMaxForce
+    local vec = -self.createPoint.forward
+    
+    vec = UE.Vector3(vec.x * 1.2, vec.y * 0.8, vec.z * 1.2)
+    --vec = UE.Vector3(0, vec.y * 0.8, 0)
+    
+    --upforce add pullforce
+    local maxY = self.hitInfoY + self.maxAltitude
+    if not isHit then
+        if self.character.trans.position.y > maxY then
+            local pull = math.max(((self.character.trans.position.y - self.hitInfoY)/self.maxAltitude), 1) * self.dragForce
+            vec.y = vec.y - pull
+        end
+    end
+    
+    if (self.character.capsuleRB.velocity.y > self.maxSpeedY and vec.y > 0) or 
+    (self.character.capsuleRB.velocity.y < -self.maxSpeedY and vec.y < 0) then
+        vec.y = 0
+    end
+    
+    self.character:AddForce(vec * self.dragForce)
+    
+    
+    --effect
+    self.particleSpeed = self:CalcCurValue(self.particleSpeed, self.particleMaxSpeed, value)
+    self:SetTrackEffectSpeed(self.particleSpeed)
+    
+    --sound
+    self.curVolume = self:CalcCurValue(self.curVolume, self.maxVolume, value)
+    if self.soundInfo then
+        self.soundInfo.audio.volume = self.curVolume
+    end
+    self.curPitch = self:CalcCurValue(self.curPitch, self.maxPitch, value)
+    if self.soundInfo then
+        self.soundInfo.audio.pitch = math.min(3, math.max(0.01, self.curPitch))
+    end
+end
+
+function spellWind:CalcCurValue(cur, max, value)
+    return cur + (max - cur) * value
+end
+
+function spellWind:StopFly()
+    if not self.character or IsNullOrDestroyed(self.character) then
+        return
+    end
+
+    local targer = self.character:GetOriginalDragPower()
+    local curDragPower = self.dragPower
+    
+    --sound
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.soundInfo)
+    self.soundInfo = nil
+    
+    local downtime = nil
+    local maxDragTime = 0.5
+    CL.Scheduler.RemoveSchedule(self.closeActId)
+    self.closeActId = CL.Scheduler.Create(self.trans, 
+        function(sche, t, s)
+            if not self.character or IsNullOrDestroyed(self.character) then
+                sche:Stop()
+                return
+            end
+
+            if not self.character:IsMidAir() then
+                if not downtime then
+                    downtime = UE.Time.time + self.character.capsuleRB.velocity.magnitude * 0.2
+                    downtime = math.min(downtime, UE.Time.time + maxDragTime)
+                    --print("maxDragTime:" .. (downtime - UE.Time.time) .. " time::" .. downtime .. " vel:" ..self.character.capsuleRB.velocity.magnitude)
+                end
+                curDragPower = 0.5 * (1 - (downtime - UE.Time.time)/maxDragTime) + 0.02
+                --print("curDragPower:" .. curDragPower)
+                if downtime - UE.Time.time < 0 then
+                    sche:Stop()
+                    return
+                end
+                
+                self:SetDragPower(curDragPower)
+            else
+                downtime = nil
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+    
+    self:CloseTrackEffect()
+end
+
+function spellWind:SetDragPower(value)
+    self.character:SetDragPower(value)
+end
+-------------------------------------------SmokeEffect----------------------------------------
+function spellWind:OpenTrackEffect()
+    CL.Scheduler.RemoveSchedule(self.closeTrackTimeId)
+    self.trailEffect:Play()
+end
+
+function spellWind:SetTrackEffectSpeed(value)
+    particleCurve.constant = value
+    self.trailEffect.main.startSpeed = particleCurve
+end
+
+function spellWind:CloseTrackEffect()
+    local particleSpeed = self.particleSpeed
+    local time = 0.3
+    
+    CL.Scheduler.RemoveSchedule(self.closeTrackTimeId)
+    self.closeTrackTimeId = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.trailEffect) then
+                self.closeTrackTimeId = SafeRemoveSchedule(self.closeTrackTimeId)
+                sche:Stop()
+                return
+            end
+            self.particleSpeed = particleSpeed * (1 - t / time)
+            self:SetTrackEffectSpeed(self.particleSpeed)
+            
+            if t >= time then
+                self.particleSpeed = 0
+                
+                self.closeTrackTimeId = SafeRemoveSchedule(self.closeTrackTimeId)
+                self.trailEffect:Stop()
+                sche:Stop()
+            end
+        end
+    , UE.Time.deltaTime, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+-----------------------------------------------------------------------------------------------------
+
+
+--[[
+    summon
+]]
+
+function spellWind:CostSummonMana()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    local slotHand = self:GetSlotHand()
+    if not slotHand then
+        return false
+    end
+    return slotHand.character:CostMana(self.host, self.host.manaCost * 3)
+end
+
+function spellWind:SpawnFo()
+    local hand = self:GetSlotHand()
+    if hand == nil then
+        return
+    end
+    local otherHand = hand:GetAnotherHand()
+    local character = self:GetSlotHand().character
+    local headset = character:GetHeadset()
+    
+    local pos = character.trans.position + headset.forward
+    pos.y = character.trans.position.y
+        
+    local dir = UE.Vector3.Cross(UE.Vector3.up, (hand.trans.position - otherHand.trans.position))
+    dir = UE.Vector3.Dot(character.trans.forward, dir) > 0 and dir or -dir
+    local fo = nil
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            fo = self.host:NetworkCreateFlyObj(self.flyObjName, pos, dir.normalized, self:CalVel(hand, otherHand))
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerOnSummonFo(fo, dir, pos) end
+        end
+    else
+        fo = self.host:CreateFlyObj(self.flyObjName, pos, dir.normalized, self:CalVel(hand, otherHand))
+    end
+    
+    fo.trans.rotation = UE.Quaternion.LookRotation(dir, UE.Vector3.up)
+    self.spawnSound:PlaySound()
+    CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, pos, UE.Quaternion.identity)
+end
+
+
+function spellWind:NetworkOnSummonFo(fo, dir, pos)
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    fo.trans.rotation = UE.Quaternion.LookRotation(dir, UE.Vector3.up)
+    self.spawnSound:PlaySound()
+    CL.EffectMgr.Instance:PlayEffect(self.spawnEffect, pos, UE.Quaternion.identity)
+    self.host:CloseSkill()
+end
+
+function spellWind:CancelGo()
+    self.__base.CancelGo(self)
+end
+
+
+return Class(Require("Weapon/SpellSummonFoScript"), nil, spellWind)

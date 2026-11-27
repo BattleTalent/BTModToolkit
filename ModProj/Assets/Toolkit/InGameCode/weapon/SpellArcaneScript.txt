@@ -1,0 +1,17 @@
+
+local spellArcaneScript = {
+}
+
+function spellArcaneScript:CreateArcaneBall()
+    local pos = self.createPoint.position
+    local dir = self.createPoint.forward
+    local arcaneball = self.host:CreateFlyObj(self.flyObjName, pos, dir)
+    arcaneball.trans.rotation = UE.Quaternion.LookRotation(dir, -self.host.interact.trans.right)
+end
+
+function spellArcaneScript:OnChargeReady()
+    self:CreateArcaneBall()
+    self.host:CloseSkill()
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, spellArcaneScript)

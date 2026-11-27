@@ -1,0 +1,61 @@
+
+local CombatStick = {
+    damageMlp = nil,
+    maxDamageValue = 10,
+    
+    lastHitTime = 0,
+    
+    
+    hitTime = 0.6,
+    atkIntensity = 0.2,
+    
+    hitEffect = "hitLight",
+}
+function CombatStick:Awake()
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        self.lastHitTime = UE.Time.time
+        
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult <= 0 then
+            return
+        end
+        
+        if self.curDamageMlp then
+            local damage = math.min(self.curDamageMlp + self.curDamageMlp * self.atkIntensity, self.damageMlp * self.maxDamageValue)
+            self.curDamageMlp = damage
+        else
+            self.curDamageMlp = CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.damageMlp
+            self.damageMlp = self.curDamageMlp
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if UE.Time.time - self.lastHitTime <= self.hitTime then
+            if self.curDamageMlp then
+                CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.damageMlp = self.curDamageMlp
+                self:ShowSkillEffect(self.hitEffect, point, normal)
+            end
+        else
+            if self.damageMlp then
+                CL.FullBodyMuscleState.dmgHitData.basicData.hitInfo.damageMlp = self.damageMlp
+            end
+            self.curDamageMlp = nil
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+end
+
+function CombatStick:ShowSkillEffect(effect, point, normal)
+    CL.EffectMgr.Instance:PlayEffect(effect, point, UE.Quaternion.LookRotation(normal))
+end
+
+function CombatStick:Destroy()
+    if self.hitInfoObj.hitInfo.OnInteractRoleHitPhase2Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("-", self.hitPhase2)
+    end
+    
+    if self.hitInfoObj.hitInfo.OnInteractRoleHitPhase1Event then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("-", self.hitPhase1)
+    end
+end
+return Class(nil,nil,CombatStick)

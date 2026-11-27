@@ -1,0 +1,112 @@
+local FirecracterBase = {
+    isIgnite = false,
+    recyclable = false,
+    fuseTime = 0.3,
+}
+
+function FirecracterBase:OpenSkill()
+    self:Ignite()
+end
+
+function FirecracterBase:Ignite()
+    -- Hand input is already relayed by NetworkInteractHand; collisions are checked on the server.
+    if self.isIgnite or CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+       
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerDoIgnite() end
+    end
+    
+    self:DoIgnite()
+end
+
+function FirecracterBase:DoIgnite()
+    self:OnIgnite()
+    self.isIgnite = true
+    
+    self.fuseAnim:Play(self.fuseAnimName)
+    
+    self.fuseSoundInfo = self.fuseSound:PlaySoundInfo()
+    if self.fuseSoundInfo and not IsNullOrDestroyed(self.fuseSoundInfo.ao) then
+        self.fuseSoundInfo.ao.trans:SetParent(self.trans)
+    end
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+    
+    CL.Scheduler.RemoveSchedule(self.fuseActId)
+    self.fuseActId = CL.Scheduler.Create(self.host.gameObject, 
+        function(sche, t, s)
+            if CL.Network.VRNetworkManager.ServerOnline then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerTrigger() end
+            end
+            if self.fuseSoundInfo then
+                CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.fuseSoundInfo)
+                self.fuseSoundInfo = nil
+            end
+            self.fuseCol.enabled = false
+            self:Trigger()
+        end
+    , 0, 0, self.fuseTime)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.Update).actionId
+end
+
+function FirecracterBase:OnIgnite()
+    self.ignitionCol.enabled = true
+end
+
+function FirecracterBase:NetworkTrigger()
+    if self.fuseSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.fuseSoundInfo)
+        self.fuseSoundInfo = nil
+    end
+    self.fuseCol.enabled = false
+    self:Trigger()
+end
+
+function FirecracterBase:Trigger()
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        hand:Grab(nil)
+    end
+    
+    self:Explode()
+end
+
+function FirecracterBase:Explode()
+    if CL.Network.VRNetworkManager.ClientOnline then
+        return
+    end
+
+    if CL.Network.VRNetworkManager.ServerOnline then
+        self.host:NetworkCreateFlyObj(self.explodeObjName, self.trans.position, self.trans.forward)
+    else
+        self.host:CreateFlyObj(self.explodeObjName, self.trans.position, self.trans.forward)
+    end
+    
+    if self.recyclable then
+        self:GiveBack()
+    else
+        self.host.interact:Dead()
+    end
+end
+
+function FirecracterBase:GiveBack()
+    self.isIgnite = false
+end
+
+function FirecracterBase:OnDestroy()
+    CL.Scheduler.RemoveSchedule(self.fuseActId)
+    CL.Scheduler.RemoveSchedule(self.flyActId)
+    if self.fuseSoundInfo then
+        CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.fuseSoundInfo)
+        self.fuseSoundInfo = nil
+    end
+    self:GiveBack()
+end
+
+return Class(nil, nil, FirecracterBase)

@@ -1,0 +1,88 @@
+
+local ManualLoadByJoint = {
+    motionVel = 2,
+    
+    --bulletCount = 6,
+    
+    useBulletCount = 0,
+    
+    readyShoot = true,
+}
+
+function ManualLoadByJoint:UpdateSkill()
+    if not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self.readyShoot then
+        --play emptysound
+        self.host:CloseSkill()
+        return
+    end
+    
+    if not self.dontShootOnInstant or self.dontShootOnInstant == 0 then
+        local bullet = self:PlayShootAction()
+    end
+    self:OnUpdateSkill()
+    
+    self.useBulletCount = self.useBulletCount + 1
+
+    if self.useBulletCount >= self.bulletCount then
+        self.readyShoot = false
+        self:UnLockGunBarrel()
+        
+        self.barrelRb.angularVelocity = self.barrelRb.angularVelocity + UE.Vector3(0, -10, 0)
+        
+        CL.Scheduler.Create(self,
+            function(sche, t, s)
+                self:OpenLoadDetect()
+            end
+        , 0, 0, 1)
+        :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+    end
+    
+    self.host:CloseSkill()
+end
+
+function ManualLoadByJoint:OpenLoadDetect()
+    RemoveSchedule(self, self.loadDetectTimer)
+    self.loadDetectTimer = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if self:CheckLoadCondition() then
+                self:LockGunBarrel()
+                self:PlayLoadSound()
+                
+                RemoveSchedule(self, self.loadDetectTimer)
+                
+                self:Reload()
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate)
+end
+
+function ManualLoadByJoint:Reload()
+    self.useBulletCount = 0
+    self.readyShoot = true
+    RemoveSchedule(self, self.loadDetectTimer)
+end
+
+function ManualLoadByJoint:CheckLoadCondition()
+    return self.barrelTrans.localRotation.eulerAngles.x <= 3
+end
+
+function ManualLoadByJoint:UnLockGunBarrel()
+    self.joint.angularXMotion = UE.ConfigurableJointMotion.Limited
+end
+
+function ManualLoadByJoint:LockGunBarrel()
+    self.barrelTrans.localRotation = UE.Quaternion.identity
+    self.joint.angularXMotion = UE.ConfigurableJointMotion.Locked
+end
+
+function ManualLoadByJoint:PlayLoadSound(isLoad)
+
+end
+
+return Class(Require("Weapon/WeaponFlyObjBaseScript"), nil, ManualLoadByJoint)

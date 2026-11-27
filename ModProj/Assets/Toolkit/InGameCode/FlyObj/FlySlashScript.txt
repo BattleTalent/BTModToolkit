@@ -1,0 +1,119 @@
+
+local FlySlash = {
+    isHit = false,
+    noPushBack = 0,
+}
+
+function FlySlash:OnSpawn()
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        local frag = fc.reactAnim:CheckHitDismemberPoint(mu:GetProxyMuscleName(), point)
+        
+        if not frag then
+            return
+        end
+        
+        if not fc.muscleState:IsBodyFragmentCuttable(frag, thisCol) then
+            return
+        end
+        
+        if frag.reactType == CS.BodyFragment.ReactType.Dead then
+            if fc.attr.hp.BaseValue > 5 then
+                return
+            end
+        end
+        
+        if frag then
+            CL.FullBodyMuscleState.dmgEffectData.cutBodyFragment = frag
+        end
+    end
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if self.noPushBack == 1 then
+            CL.FullBodyMuscleState.dmgEffectData.pushbackDir = UE.Vector3.zero
+            
+            CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel = self.relaVel
+                * CL.FullBodyMuscleState.dmgEffectData.basicData.relaVel.normalized
+        end
+    end
+    
+    self.hitInfoObj = self.host:GetRagdollHitInfoObj()
+    if self.hitInfoObj then
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+        self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    end
+end
+
+function FlySlash:OnTrigger(pu, other)
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    self.isHit = true
+    
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.hitScanProtect = true
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlash:OnTriggerWithStaticScene(other)
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    self.isHit = true
+    
+    if self.destoryWhenHitEnv ~= 0 or self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlash:OnTriggerWithRole(fc, col)
+    if self.destroyOnHit ~= 0 and self.isHit then
+        return
+    end
+    
+    self.isHit = true
+    
+    CL.FullBodyMuscleState.SlashDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.SlashDmg = false
+
+    if self.destroyOnHit ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlySlash:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlySlash:OnTriggerWithPlayerHand(col, hand)
+end
+
+function FlySlash:OnTriggerWithPlayer(collision, player)
+end
+
+function FlySlash:ResetState()
+    self.isHit = false
+end
+
+return Class(nil, nil, FlySlash)

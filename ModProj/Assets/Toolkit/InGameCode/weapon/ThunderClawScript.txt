@@ -1,0 +1,1066 @@
+
+local ThunderClaw = {
+    isLoading = false,
+    bladeCount = 3,
+    loadTime = 0.15,
+    
+    isLightning = false,
+    chargeNum = 3,
+    chargeCount = 0,
+    
+    blades = {},
+    preloadBlades = {},
+    
+    lightningReadyTime = 0,
+    
+    
+    recoilCurve = UE.AnimationCurve(UE.Keyframe(0, 500), UE.Keyframe(0.1, 0)),
+    recoilRotate = -15,
+    recoilRandomBias = 3,
+    
+    reloadMana = 20,
+    
+    initNetIds = {},
+    
+    hitScanInterval = 0.2,
+    nextHitTime = 0,
+}
+
+function ThunderClaw:UseLocalPvpBlades()
+    return CL.Network.VRNetworkManager.IsOnline and CL.Network.NetworkRoomMgr.IsInPvpMode
+end
+
+function ThunderClaw:Start()
+    self.trail1:AddLinkTrail(self.trail2)
+    self.trail1:AddLinkTrail(self.trail3)
+
+    self.shotMana = self.host.manaCost
+    if self.host.interact:IsShadow() then
+        return
+    end
+    
+    self.onStabEnterHandler = function(si)
+        self.isStabed = true
+    end
+    self.onStabExitHandler = function(si)
+        self.isStabed = false
+    end
+    self.so = self.host.interact:GetStabObject()
+    if self.so then
+        self.so:StabEnterEvent("+", self.onStabEnterHandler)
+        self.so:StabExitEvent("+", self.onStabExitHandler)
+    end
+    
+    local isKill = false
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        isKill = fc.attr:IsDead()
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+    
+    self.hitPhase2 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        if UE.Time.time < self.lightningReadyTime then
+            return
+        end
+        if CL.FullBodyMuscleState.dmgHitData.dmgFinalResult <= 0 then
+            return
+        end
+        
+        if isKill then
+            return
+        end
+        
+        self.lightningReadyTime = UE.Time.time + 0.2
+        
+        if CL.Network.VRNetworkManager.IsOnline then
+            --if SafeIsOwnerLocalPlayer(self.host.interact) then
+                if CL.Network.VRNetworkManager.ClientOnline then
+                    if SafeIsOwnerLocalPlayer(self.host.interact) then
+                        if CL.FullBodyMuscleState.dmgEffectData.stab then
+                            --print("stab on hit phase2-----------cmdtriggerlightning")
+                            local state = GetNetworkIBState(self)
+                            if state ~= nil then
+                                state:CmdTriggerLightning()
+                                state:CmdElectricStorage(CL.InteractCharacter.PlayerInstance.networkPlayer.netId,self.chargeCount, false)
+                            end
+                            self:ElectricStorage()
+                        end
+                    end
+                else
+                    if not self.isLightning then
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerElectricStorage(self.chargeCount, false) end
+                        self:ElectricStorage()
+                    end
+                    self:TriggerLightning()
+                end
+            --end
+        else
+            if not self.isLightning then
+                self:ElectricStorage()
+            end
+            
+            self:TriggerLightning()
+        end
+    end
+    
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase2Event("+", self.hitPhase2)
+    
+        
+    self.hitCharacterPhase = function(character, hitCol, beHitCol, point, normal, relaVel, fromLocalPlayer)
+        if not fromLocalPlayer then
+            return
+        end
+        
+        if UE.Time.time < self.lightningReadyTime then
+            return
+        end
+        
+        self.lightningReadyTime = UE.Time.time + 0.2
+        
+        if CL.Network.VRNetworkManager.IsOnline then
+            if SafeIsOwnerLocalPlayer(self.host.interact) then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:CmdTriggerLightning()
+                    state:CmdElectricStorage(CL.InteractCharacter.PlayerInstance.networkPlayer.netId,self.chargeCount, false)
+                end
+                self:ElectricStorage()
+            end
+        else
+            if not self.isLightning then
+                self:ElectricStorage()
+            end
+            
+            self:TriggerLightning()
+        end
+    end
+    self.hitInfoObj.hitInfo:OnInteractCharacterHitPhase1Event("+", self.hitCharacterPhase)
+    
+    self.hitPhase3 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        local pu = CL.PhysicsUnit.GetPhysicsUnit(otherCol)
+        if IsNullOrDestroyed(pu) then
+            return
+        end
+        if pu ~= self.host.interact then
+            if pu.unitType ~= CL.Tagger.Tag.PlayerHand then
+                return
+            end
+            
+            local primaryHand = self.host.interact:GetPrimaryHand()
+            if IsNullOrDestroyed(primaryHand) or primaryHand.physicsHand ~= pu then
+                return
+            end
+        end
+        local pass = false
+        if fc.muscleState:IsPowerfulCharacter() then
+            if CL.FullBodyMuscleState.dmgEffectData.blockType == CL.BlockType.BlockAndStuckContinue then
+                --print("hit phase3--------------------block powerfulCharacter BlockAndStuckContinue")
+            end
+            if CL.FullBodyMuscleState.dmgEffectData.blockType == CL.BlockType.BlockAndBlockContinue then
+                pass = true
+                --print("hit phase3--------------------block powerfulCharacter BlockAndBlockContinue:" .. thisCol.transform.name .. "  otherCol:" .. otherCol.transform.name)
+            end
+            
+            if CL.FullBodyMuscleState.dmgEffectData.blockType == CL.BlockType.BlockAndStopAtk
+            or CL.FullBodyMuscleState.dmgEffectData.blockType == CL.BlockType.BlockAndAway 
+            or CL.FullBodyMuscleState.dmgEffectData.blockType == CL.BlockType.BlockAndDizzy then
+                --print("hit phase3--------------------block powerfulCharacter  stop action:" .. thisCol.transform.name .. "  otherCol:" .. otherCol.transform.name)
+                pass = true
+            end
+        else
+            if CL.FullBodyMuscleState.dmgEffectData.blockType == CL.BlockType.BlockAndDizzy then
+                --print("hit phase3--------------------blockAndDizzy" .. thisCol.transform.name .. "  otherCol:" .. otherCol.transform.name)
+                pass = true
+            end
+        end
+        
+        if pass then
+            if CL.Network.VRNetworkManager.IsOnline then
+                if CL.Network.VRNetworkManager.ServerOnline then
+                    if not self.isLightning then
+                        self:ElectricStorage(true)
+                        local state = GetNetworkIBState(self)
+                        if state ~= nil then state:ServerElectricStorage(self.chargeCount, true) end
+                    end
+                end
+            else
+                if not self.isLightning then
+                    self:ElectricStorage(true)
+                end
+            end
+        end
+    end
+    
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase3Event("+", self.hitPhase3)
+    self.armorHitInfoObj.hitInfo:OnInteractRoleHitPhase3Event("+", self.hitPhase3)
+    
+    
+    if not CL.Network.VRNetworkManager.ClientOnline then
+        xpcall(
+        function()
+            self:PreloadClaw()
+        end, function(err)
+            print("PreloadClaw Error: " .. tostring(err))
+        end)
+    
+        if CL.Network.VRNetworkManager.IsOnline then
+            local state = GetNetworkIBState(self)
+            if state ~= nil then state:ServerSetBladeCount(self.bladeCount) end
+        end
+    end
+    
+    
+    self.OnSpawnNetworkIB = function(netId)
+        if self.initNetIds[netId] then
+            local idx = self.initNetIds[netId]
+            self.initNetIds[netId] = nil
+            
+            local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+            if IsNullOrDestroyed(netIb) then
+                return
+            end
+            
+            
+            self:ClawInit(netIb.ib, idx)
+        end
+    end
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("+", self.OnSpawnNetworkIB)
+        
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:CmdInitBladeClaw(CL.InteractCharacter.PlayerInstance.networkPlayer.netId) end
+    end
+end
+
+function ThunderClaw:OnDestroy()
+    if CL.Network.VRNetworkManager.ClientOnline and self.OnSpawnNetworkIB then
+        CL.Network.NetworkSpawnMgr.Instance:OnSpawnNetworkIB("-", self.OnSpawnNetworkIB)
+    end
+end
+
+function ThunderClaw:SendBladeClawInfo(netId)
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state:ServerSendBladeClawInfo(netId, self.bladeCount, self.chargeCount) end
+end
+
+function ThunderClaw:OnGrab(a, g)
+    self.aimWidget.gameObject:SetActive(g)
+    if g then
+        a.attachedHand.handPoseControl:SubmitHandPose(1, true)
+        
+        --Prevents being blocked by the hand, leading to BlockAndDizzy detection errors
+        --if self.fistCol and not IsNullOrDestroyed(self.fistCol) then
+        --    self.fistCol.enabled = true
+        --end
+        --self.fistCol = a.attachedHand.physicsHand.fist:GetComponent(typeof(UE.Collider))
+        --self.fistCol.enabled = false
+        if self.fistHitInfo then
+            self.fistHitInfo:OnInteractRoleHitPhase3Event("-", self.hitPhase3)
+        end
+        
+        self.fistHitInfo = CL.RagdollHitMgr.Instance.commonHitInfo
+        self.fistHitInfo:OnInteractRoleHitPhase3Event("+", self.hitPhase3)
+        
+        if CL.UnlockContentConfig.IsItemUnlockedAndEnabled("Func_Laser_Aim") then
+            self.aimWidget.enabled = true
+        end
+        
+        self.host.manaCost = self.bladeCount == 0 and self.reloadMana or self.shotMana
+    else
+        --if self.fistCol and not IsNullOrDestroyed(self.fistCol) then
+        --    self.fistCol.enabled = true
+        --end
+        if self.fistHitInfo then
+            self.fistHitInfo:OnInteractRoleHitPhase3Event("-", self.hitPhase3)
+            self.fistHitInfo = nil
+        end
+        
+        self.aimWidget.enabled = false
+        
+        self.host.manaCost = self.shotMana
+    end
+end
+
+function ThunderClaw:UpdateSkill()
+    if CL.Network.VRNetworkManager.IsOnline and not SafeIsOwnerLocalPlayer(self.host.interact) then
+        return
+    end
+    
+    if self.isLoading then
+        return
+    end
+    if self.bladeCount > 0 then
+        if self:UseLocalPvpBlades() then
+            if self.so:GetStabingCount() > 0 then
+                if CL.Network.VRNetworkManager.ClientOnline then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:CmdPushStabObj(self.trans.forward) end
+                else
+                    self:PushStabObj(self.trans.forward)
+                end
+                self:ShotAllBladeAndStab()
+            else
+                self:ShotBlade(self.bladeCount)
+            end
+        elseif not CL.Network.VRNetworkManager.ClientOnline then
+            if self.so:GetStabingCount() > 0 then
+                self:PushStabObj(self.trans.forward)
+                self:ShotAllBladeAndStab()
+            else    
+                self:ShotBlade(self.bladeCount)
+            end
+        else
+            local state = GetNetworkIBState(self)
+            if self.so:GetStabingCount() > 0 then
+                if state ~= nil then state:CmdPushStabObj(self.trans.forward) end
+                self:PreshotAllBladeAndStab()
+            else
+                local pu = self.preloadBlades[self.bladeCount]
+                --print("try shot-------------:" .. self.bladeCount)
+                if not pu or IsNullOrDestroyed(pu) then
+                    return
+                end
+                --print("cmd shot-------------:" .. self.bladeCount)
+                self:PreshotBlade(self.bladeCount)
+                
+                if state ~= nil then state:CmdShotBlade(pu.netId) end
+            end
+        end
+    else
+        local state = GetNetworkIBState(self)
+        if CL.Network.VRNetworkManager.ClientOnline or self:UseLocalPvpBlades() then
+            if state ~= nil then
+                state:CmdElectrocute()
+                state:CmdReload(CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+            end
+        else
+            self:Electrocute()
+        end
+        
+        if CL.Network.VRNetworkManager.ServerOnline and not self:UseLocalPvpBlades() then
+            if state ~= nil then state:ServerReload() end
+        end
+        self:Reload()
+    end
+end
+
+function ThunderClaw:PreshotBlade(idx)
+    local pu = self.preloadBlades[idx]
+    if not pu or IsNullOrDestroyed(pu) then
+        return nil
+    end
+
+    self["trail" .. idx]:StopSmoothly(0.1)
+    local trans = self["blade" .. idx]
+    trans.localScale = UE.Vector3.zero
+    trans.gameObject:SetActive(false)
+
+    pu.trans.gameObject:SetActive(true)
+    local tb = pu.trans:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    tb:OnShoot(self, self.isLightning)
+
+    local hand = self.host.interact:GetPrimaryHand()
+    if hand then
+        pu:SetLatestHolder(hand.character.aiProxy)
+    end
+    pu:MarkThrowAssist(2)
+    
+    pu.trans:SetParent(nil)
+    pu.trans.localScale = UE.Vector3.one
+    pu.trans.position = trans.position
+    pu.trans.rotation = trans.rotation
+    
+    -- Fly locally until the server replies, without pushing or stabbing NPCs.
+    pu:SetRBCols(false)
+    pu:SetKinematic(false)
+    pu.rb.velocity = pu.trans.forward * self.shootSpeed
+    pu.rb.angularVelocity = UE.Vector3.zero
+    pu.rb.useGravity = true
+
+    self.blades[tb] = true
+    self.preloadBlades[idx] = nil
+    self.bladeCount = self.bladeCount - 1
+    if self.bladeCount == 0 then
+        self.chargeCount = 0
+        self.isLightning = false
+        self.host.manaCost = self.reloadMana
+    end
+    
+    CL.EffectMgr.Instance:PlayEffect(self.onShootEffect, trans.position + trans.forward * 0.05, trans.rotation)
+
+    self:Recoil()
+end
+
+function ThunderClaw:RecvShotBlade(netId)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    end
+    
+    for k, v in pairs(self.preloadBlades) do
+        if not IsNullOrDestroyed(v) then
+            if v.netId == netId then
+                self:ShotBlade(k)
+                return
+            end
+        end
+    end
+end
+
+function ThunderClaw:RecvShotBladeAndStab(netId, rbNetId, rbKey, connectAnchor)
+    self:RecvShotBlade(netId)
+    
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    end
+    
+    local rb = CL.Network.NetworkRigidbodyMgr.Instance:GetRigidbody(rbNetId, rbKey)
+    if IsNullOrDestroyed(rb) then
+        return
+    end
+    
+    local tb = netIb.ib.trans:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    tb:ServerLockedStab(rb, connectAnchor, true)
+end
+
+function ThunderClaw:ShotBlade(idx)
+    if self:UseLocalPvpBlades() then
+        local hand = self.host.interact:GetPrimaryHand()
+        if IsNullOrDestroyed(hand) then
+            return nil
+        end
+        local trans = self["blade" .. idx]
+        local position, rotation = trans.position, trans.rotation
+        local velocity = trans.forward * self.shootSpeed
+        local isLightning = self.isLightning
+        local playerNetId = hand.character.networkPlayer.netId
+        local blade = self:LocalPvpShotBlade(idx, position, rotation, velocity, isLightning, playerNetId)
+        if blade then
+            self:Recoil()
+            local state = GetNetworkIBState(self)
+            if state ~= nil then
+                state:SyncLocalPvpShotBlade(idx, position, rotation, velocity, isLightning, playerNetId)
+            end
+        end
+        return blade
+    end
+
+    self["trail" .. idx]:StopSmoothly(0.1)
+    
+    local trans = self["blade" .. idx]
+    trans.localScale = UE.Vector3.zero
+    trans.gameObject:SetActive(false)
+    
+    local pu = self.preloadBlades[idx]
+    if not pu or IsNullOrDestroyed(pu) then
+        return nil
+    end
+    --print("shot blade ------------------:".. idx .. "  islightning:" .. tostring(self.isLightning))
+    
+    pu.trans.gameObject:SetActive(true)
+    pu.trans:SetParent(nil)
+    local hand = self.host.interact:GetPrimaryHand()
+    pu:SetLatestHolder(hand.character.aiProxy)
+    
+    local tb = pu.trans:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    tb:OnShoot(self, self.isLightning)
+    pu:MarkThrowAssist(2)
+    
+    pu.trans.localScale = UE.Vector3.one
+    pu.trans.position = trans.position
+    pu.trans.rotation = trans.rotation
+        
+    pu.rb.velocity = pu.trans.forward * self.shootSpeed
+    
+    self.blades[tb] = true
+    self.preloadBlades[idx] = nil
+    
+    
+    CL.EffectMgr.Instance:PlayEffect(self.onShootEffect, trans.position + trans.forward * 0.05, trans.rotation)
+    self:Recoil()
+    
+    self.bladeCount = self.bladeCount - 1
+    if self.bladeCount == 0 then
+        self.chargeCount = 0
+        self.isLightning = false
+        self.host.manaCost = self.reloadMana
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        pu.networkIB.networkRB.enabled = true
+    end
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ServerShotBlade(pu.netId, idx)
+            state:ServerSetBladeCount(self.bladeCount)
+        end
+    end
+    
+    return tb
+end
+
+-- PVP sends only the shot; every peer owns its own pooled projectile.
+function ThunderClaw:LocalPvpShotBlade(idx, position, rotation, velocity, isLightning, playerNetId)
+    local player = CL.Network.NetworkRoomMgr.Instance:GetNetworkPlayer(playerNetId)
+    if IsNullOrDestroyed(player) then
+        return nil
+    end
+
+    local go = CL.PrefabPool.SpawnPrefab(self.bladeName, CL.InteractTrigger.WeaponPath)
+    local pu = CL.PhysicsUnit.GetPhysicsUnit(go.transform)
+    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), pu:GetCols(), true)
+    player.interactCharacter.aiProxy.ra:SetCollisionIgnoreWith(pu:GetCols(), true)
+    pu.trans:SetParent(nil)
+    pu.trans.localScale = UE.Vector3.one
+    pu.trans.position = position
+    pu.trans.rotation = rotation
+    pu:SetLatestHolder(player.interactCharacter.aiProxy)
+    pu:SetKinematic(false)
+    pu:SetRBCols(true)
+    pu.rb.useGravity = true
+    pu.rb.velocity = velocity
+    pu.rb.angularVelocity = UE.Vector3.zero
+    pu:MarkThrowAssist(2)
+
+    local blade = pu.trans:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    blade:OnShoot(self, isLightning)
+    blade.hostPlayer = player.interactCharacter
+    self.blades[blade] = true
+
+    self["trail" .. idx]:StopSmoothly(0.1)
+    self["blade" .. idx].localScale = UE.Vector3.zero
+    self["blade" .. idx].gameObject:SetActive(false)
+    self.bladeCount = math.max(0, self.bladeCount - 1)
+    if self.bladeCount == 0 then
+        self.chargeCount = 0
+        self.isLightning = false
+        self.host.manaCost = self.reloadMana
+    end
+    CL.EffectMgr.Instance:PlayEffect(self.onShootEffect, position, rotation)
+    return blade
+end
+
+function ThunderClaw:NetworkShotBlade(netId, idx)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        return
+    end
+    local pu = netIb.ib
+    if not pu or IsNullOrDestroyed(pu) then
+        return
+    end
+
+    local tb = pu.trans:GetComponent(typeof(CL.LuaBehaviour)).script.self
+    if self.blades[tb] then
+        -- The local shot already consumed this blade; only resume server tracking.
+        pu:SetRBCols(true)
+        pu.rb.useGravity = true
+        pu.networkIB.networkRB.enabled = true
+        return
+    end
+    
+    self["trail" .. idx]:StopSmoothly(0.1)
+    
+    local trans = self["blade" .. idx]
+    trans.localScale = UE.Vector3.zero
+    trans.gameObject:SetActive(false)
+    
+    pu.trans:SetParent(nil)
+    pu.trans.localScale = UE.Vector3.one
+    pu.trans.gameObject:SetActive(true)
+    local hand = self.host.interact:GetPrimaryHand()
+    if hand then
+        pu:SetLatestHolder(hand.character.aiProxy)
+    end
+    pu:MarkThrowAssist(2)
+
+    tb:OnShoot(self, self.isLightning)
+    
+    self.blades[tb] = true
+    self.preloadBlades[idx] = nil
+    
+    pu:SetRBCols(true)
+    pu.rb.useGravity = true
+    --CL.EffectMgr.Instance:PlayEffect(self.onShootEffect, trans.position + trans.forward * 0.05, trans.rotation)
+    --self:Recoil()
+    
+    self.bladeCount = self.bladeCount - 1
+    if self.bladeCount == 0 then
+        self.chargeCount = 0
+        self.isLightning = false
+        self.host.manaCost = self.reloadMana
+    end
+    
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        pu.networkIB.networkRB.enabled = true
+    end
+end
+
+function ThunderClaw:PreloadClaw()
+    if CL.Network.VRNetworkManager.IsOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state.netIds:Clear() end
+    end
+
+    if self:UseLocalPvpBlades() then
+        return
+    end
+    
+    for i = 1, 3 do
+        if self.preloadBlades[i] and not IsNullOrDestroyed(self.preloadBlades[i]) then
+            return
+        end
+        
+        local trans = self["blade" .. i]
+        if CL.Network.VRNetworkManager.IsOnline then
+            CL.Network.NetworkSpawnMgr.Instance:NetworkSpawnIB(
+                self.bladeName, 
+                trans.position, trans.rotation,
+                false, false, self.host.interact.netId, true, 
+                function(netIb, go)
+                    if IsNullOrDestroyed(go) then
+                        return
+                    end
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state:ServerOnClawInit(netIb.ib.netId, self:GetPreloadCount() + 1)
+                        state.netIds:Add(netIb.ib.netId)
+                    end
+                    self:ClawInit(netIb.ib)
+                end
+            )
+        else
+            local bladeGO = CL.PrefabPool.SpawnPrefab(self.bladeName, CL.InteractTrigger.WeaponPath)
+            local pu = CL.PhysicsUnit.GetPhysicsUnit(bladeGO.transform)
+            self:ClawInit(pu)
+        end
+        
+    end
+end
+
+function ThunderClaw:ClawInit(pu, index)
+    self:IgnoreCollision(pu, true)
+    
+    local idx = index and index or self:GetPreloadCount() + 1
+    local trans = self["blade" .. idx]
+    
+    pu.trans.gameObject:SetActive(false)
+    pu.trans:SetParent(trans)
+    
+    pu.trans.position = trans.position
+    pu.trans.rotation = trans.rotation
+    
+    self.preloadBlades[idx] = pu
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        pu.networkIB.networkRB.enabled = false
+    end
+end
+
+function ThunderClaw:GetPreloadCount()
+    local count = 0
+    for k, v in pairs(self.preloadBlades) do
+        count = count + 1
+    end
+    return count
+end
+
+function ThunderClaw:NetworkClawInit(netId, idx)
+    local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(netId)
+    if IsNullOrDestroyed(netIb) then
+        self.initNetIds[netId] = idx
+        return
+    end
+    
+    self.initNetIds[netId] = nil
+    self:ClawInit(netIb.ib, idx)
+end
+
+function ThunderClaw:Recoil()
+    local bias = UE.Random.Range(-self.recoilRandomBias, self.recoilRandomBias)
+    self.recoilActId = CL.Scheduler.RemoveSchedule(self.recoilActId)
+    self.recoilActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            self.host.interact.rb:AddForce(-self.trans.forward *
+                self.recoilCurve:Evaluate(t), UE.ForceMode.Acceleration)
+            
+            --self.host.interact.rb:AddRelativeTorque(UE.Vector3(self.recoilRotate, bias, 0), UE.ForceMode.Impulse)
+        end
+    ,0, self.recoilCurve.keys[self.recoilCurve.length - 1].time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function ThunderClaw:ShotAllBlade()
+    for i = 1, self.bladeCount do
+        self:ShotBlade(i)
+    end
+end
+
+--only for client
+function ThunderClaw:PreshotAllBladeAndStab()
+    local dir = self.trans.forward
+    local hand = self.host.interact:GetPrimaryHand()
+    local isActive = false
+    if hand then
+        isActive = hand.physicsHand.fist.activeSelf
+        if isActive then
+            hand.physicsHand.fist:SetActive(false)
+        end
+    end
+    
+    self.stabShotSound:PlaySound()
+    
+    local stab = false
+    local state = GetNetworkIBState(self)
+    if state ~= nil then state.netIds:Clear() end
+    for i = 1, self.bladeCount do
+        stab = false
+        local pu = self.preloadBlades[i]
+        if pu and not IsNullOrDestroyed(pu) then
+            self:PreshotBlade(i)
+            local blade = pu.trans:GetComponent(typeof(CL.LuaBehaviour)).script.self
+            if state ~= nil then state.netIds:Add(pu.netId) end
+            
+            local trans = self["blade" .. i]
+            local isHit, raycastHit  = UE.Physics.SphereCast(trans.position, 0.02, dir,
+                0.5, UE.LayerMask.GetMask(
+                    UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value), 
+                    UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value)))
+            if isHit then
+                --print("isHit----------------------------:" .. raycastHit.collider.transform.name .. " root :" .. raycastHit.collider.transform.root.name)
+                if blade:AllowStab(raycastHit.collider, false) then
+                    local point = raycastHit.collider:ClosestPoint(raycastHit.point)
+                    point = raycastHit.collider.attachedRigidbody.transform:InverseTransformPoint(point)
+                    
+                    if state ~= nil then state:CmdShotBladeAddStab(blade.ib.netId, raycastHit.collider.attachedRigidbody, point) end
+                    stab = true
+                end
+            end
+            
+            if not stab then
+                if state ~= nil then state:CmdShotBlade(blade.ib.netId) end
+            end
+        end
+    end
+
+    if isActive then
+        hand.physicsHand.fist:SetActive(true)
+    end
+end
+
+function ThunderClaw:ShotAllBladeAndStab()
+    local dir = self.trans.forward
+    local hand = self.host.interact:GetPrimaryHand()
+    local isActive = false
+    if hand then
+        isActive = hand.physicsHand.fist.activeSelf
+        if isActive then
+            hand.physicsHand.fist:SetActive(false)
+        end
+    end
+    self.stabShotSound:PlaySound()
+    
+    for i = 1, self.bladeCount do
+        local blade = self:ShotBlade(i)
+        
+        local trans = self["blade" .. i]
+        local isHit, raycastHit  = UE.Physics.SphereCast(trans.position, 0.02, dir,
+            0.5, UE.LayerMask.GetMask(
+                UE.LayerMask.LayerToName(CL.LayerDefine.EnvLayer.value), 
+                UE.LayerMask.LayerToName(CL.LayerDefine.RagdollLayer.value)))
+        if isHit then
+            --print("isHit----------------------------:" .. raycastHit.collider.transform.name .. " root :" .. raycastHit.collider.transform.root.name)
+            if blade:AllowStab(raycastHit.collider, false) then
+                local point = raycastHit.collider:ClosestPoint(raycastHit.point)
+                point = raycastHit.collider.attachedRigidbody.transform:InverseTransformPoint(point)
+                if CL.Network.VRNetworkManager.IsOnline and not self:UseLocalPvpBlades() then
+                    blade:ServerLockedStab(raycastHit.collider.attachedRigidbody, point, true)
+                else
+                    blade:LockedStab(raycastHit.collider.attachedRigidbody, point)
+                    blade:UpdateStabLightning()
+                end
+            end
+        end
+    end
+    if isActive then
+        hand.physicsHand.fist:SetActive(true)
+    end
+end
+
+function ThunderClaw:IgnoreCollision(ib, ignore)
+    CL.PhysicsHelper.IgnoreCollisions(self.host.interact:GetCols(), ib:GetCols(), ignore)
+    local hand = self.host.interact:GetPrimaryHand()
+    if not IsNullOrDestroyed(hand) then
+        hand.character.aiProxy.ra:SetCollisionIgnoreWith(ib:GetCols(), ignore)
+    end
+end
+
+function ThunderClaw:Electrocute()
+    for k, v in pairs(self.blades) do
+        if k and not IsNullOrDestroyed(k.trans) then
+            k:LightningForAWhile()
+        end
+    end
+end
+
+function ThunderClaw:OnBladeGiveBack(blade)
+    if self.blades[blade] then
+        self.blades[blade] = nil
+    end
+end
+
+function ThunderClaw:RefleshClaw(bladeCount)
+    for i = 1, 3 do
+        local trans = self["blade" .. i]
+        trans.gameObject:SetActive(i <= self.bladeCount)
+        trans.localScale = i > self.bladeCount and UE.Vector3.zero or UE.Vector3.one
+    end
+end
+
+function ThunderClaw:Reload()
+    self.bladeCount = 3
+    
+    self.host.manaCost = self.shotMana
+    
+    if CL.Network.VRNetworkManager.ServerOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerSetBladeCount(self.bladeCount) end
+    end
+    
+    self.isLoading = true
+    self.so.scalingForward = true
+    CL.Scheduler.RemoveSchedule(self.reloadActId)
+    for i = 1, 3 do
+        if not IsNullOrDestroyed(self["blade" .. i]) then
+            self["blade" .. i].gameObject:SetActive(true)
+            local eo = CL.EffectMgr.Instance:PlayEffect(self.loadBladeEffect, self["blade" .. i].position, self["blade" .. i].rotation)
+            eo.trans:SetParent(self.trans)
+        end
+        if not IsNullOrDestroyed(self["trail" .. i]) then
+            self["trail" .. i]:Deactivate()
+        end
+    end
+    
+    local vec = UE.Vector3.one
+    self.reloadActId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if t >= self.loadTime then
+                self.isLoading = false
+                self.so.scalingForward = false
+                for i = 1, 3 do
+                    self["blade" .. i].localScale = UE.Vector3.one
+                end
+            else
+                for i = 1, 3 do
+                    self["blade" .. i].localScale = vec * (t / self.loadTime)
+                end
+            end
+        end,
+    0, self.loadTime).actionId
+    
+    self.host.interact.rb:AddForce(-self.trans.forward *
+        500, UE.ForceMode.Acceleration)
+    
+    self.showBladeSound:PlaySound()
+
+    if not CL.Network.VRNetworkManager.ClientOnline then
+        xpcall(
+        function()
+            self:PreloadClaw()
+        end, function(err)
+            print("PreloadClaw Error: " .. tostring(err))
+        end)
+    end
+end
+
+function ThunderClaw:InitPreloadBlade(list, bladeCount, chargeCount)
+    local exist = false
+    for i = 0, list.Count - 1 do
+        local netIb = CL.Network.NetworkSpawnMgr.Instance:GetNetworkIB(list[i])
+        if not IsNullOrDestroyed(netIb) then
+            if not self.preloadBlades[i + 1] or IsNullOrDestroyed(self.preloadBlades[i + 1]) then
+                self:ClawInit(netIb.ib, i + 1)
+                exist = true
+            end
+            
+            self.preloadBlades[i + 1] = netIb.ib
+        else
+            self.initNetIds[list[i]] = i + 1
+        end
+        --print(" idx-------::" .. (i + 1) .. "  netId:" .. list[i])
+    end
+    
+    self.bladeCount = bladeCount
+    self:RefleshClaw(bladeCount)
+    
+    self.chargeCount = chargeCount
+    if self.chargeCount == self.chargeNum then
+        self:ElectrificationSorageEffect(true)
+        self.isLightning = true
+    end
+end
+
+function ThunderClaw:ClientGrabBreakAllStab()
+    if self.so:GetStabingCount() <= 0 then
+        return
+    end
+    
+    local dic = self.so:GetStabInfo()
+    local ite = dic:GetEnumerator()
+    local stabInfos = {}
+    while ite:MoveNext() do
+        table.insert(stabInfos, ite.Current.Value)
+    end
+    
+    for k, v in ipairs(stabInfos) do
+        --self.so.netStabObj:OnBreakStabServer(v)
+        self.so:BreakStabInfo(v)
+    end
+    
+    dic:Clear()
+end
+
+function ThunderClaw:PushStabObj(dir)
+    local dic = self.so:GetStabInfo()
+    local ite = dic:GetEnumerator()
+    local stabInfos = {}
+    while ite:MoveNext() do
+        table.insert(stabInfos, ite.Current.Value)
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        if SafeIsOwnerLocalPlayer(self.host.interact) then
+            self.so:BreakAllStab()
+        else
+            self:ClientGrabBreakAllStab()
+        end
+    else
+        self.so:BreakAllStab()
+    end
+
+    for k, v in ipairs(stabInfos) do
+        local pu = CL.PhysicsUnit.GetPhysicsUnit(v.stabTarget.root)
+        --print("PushStabObj----------:" .. pu.trans.name)
+        if not IsNullOrDestroyed(pu) then
+            if pu.unitType == CL.Tagger.Tag.InteractRole then
+                if pu.muscleState:IsPowerfulCharacter() then
+                    pu:AddForceOnPart(v.stabTargetRB, dir * self.powerfulPushForce)
+                else
+                    --print("add force on fc part----------:" .. pu.trans.name)
+                    
+                    pu.motion:Knockout()
+                    pu:AddForceOnPart(v.stabTargetRB, dir * self.pushSpeed, UE.ForceMode.VelocityChange)
+                end
+            else
+                --print("add force on rb part----------:" .. pu.trans.name)
+                v.stabTargetRB:AddForce(dir * self.pushSpeed, UE.ForceMode.VelocityChange)
+            end
+        end
+    end
+end
+
+function ThunderClaw:TriggerLightning()
+	local exist = false
+    for k, v in pairs(self.blades) do
+        if k and not IsNullOrDestroyed(k.trans) and k.isLightning then
+            if not CL.Network.VRNetworkManager.ClientOnline or self:UseLocalPvpBlades() then
+                k:TrySpawnLightning()
+            end
+			exist = true
+        end
+    end
+    --print("TriggerLightning-------exist------------:" .. tostring(exist) .. "  isLightning:" .. tostring(self.isLightning))
+	if exist then
+        self.lightningEffect:Play()
+        self.triggerLightningSound:PlaySound()
+    end
+end
+
+function ThunderClaw:ElectricStorage(isFull, isNetwork)
+    if not self.host.interact:IsGrabbed() and not isNetwork then
+        return
+    end
+    
+    --print("ElectricStorage----:".. self.chargeCount)
+    if self.chargeCount >= self.chargeNum then
+        self.lightningEffect:Play()
+        self.triggerLightningSound:PlaySound()
+    else
+        self:ElectrificationSorageEffect()
+        if isFull then
+            self.chargeCount = self.chargeNum
+        else
+            self.chargeCount = self.chargeCount + 1
+        end
+        if self.chargeCount == self.chargeNum then
+            --print("ElectricStorage------------full")
+            self:ElectrificationSorageEffect(true)
+            self.isLightning = true
+        end
+    end
+end
+
+function ThunderClaw:NetElectricStorage(count, isFull)
+    self.chargeCount = count
+    self:ElectricStorage(isFull, true)
+end
+
+function ThunderClaw:ElectrificationSorageEffect(isLoop)
+    local trans = nil
+    for i = 1, 3 do
+        trans = self["blade" .. i]
+        if trans.gameObject.activeSelf then
+            if isLoop then
+                self["blade" .. i .. "Lightning"]:Play()
+            else
+                local eo = CL.EffectMgr.Instance:PlayEffect(self.chargeEffect, trans.position, trans.rotation)
+                eo.trans:SetParent(trans)
+                eo.trans.localPosition = UE.Vector3.zero
+                eo.trans.localRotation = UE.Quaternion.identity
+                eo.trans.localScale = UE.Vector3.one
+            end
+        end
+    end
+end
+
+function ThunderClaw:OnColliderEnter(collision)
+    if not self.isLoading or not self.so.scalingForward then
+        return
+    end
+    
+    if self.isStabed then
+        return
+    end
+    --local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(collision.collider)
+    --if IsNullOrDestroyed(pu) then
+    --    return
+    --end
+    --
+    --if pu.unitType ~= CL.Tagger.Tag.InteractRole then
+    --    return
+    --end
+    --
+    if UE.Time.time < self.nextHitTime then
+        return
+    end
+    
+    local hand = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(hand) then
+        return
+    end
+    
+    local thisCol = collision:GetContactPoint(0)
+    CL.FullBodyMuscleState.StayDmg = true
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(collision.collider, self.host.interact, self.host.interact.rb, thisCol, self.trans.forward, hand.character.aiProxy:GetCamp(), false)
+    CL.InteractTrigger.EndHitScan()
+    CL.FullBodyMuscleState.StayDmg = false
+    self.nextHitTime = UE.Time.time + self.hitScanInterval
+end
+
+return Class(nil, nil, ThunderClaw)

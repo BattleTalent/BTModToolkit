@@ -1,0 +1,1174 @@
+local MassSpringFactor = 500
+local SpringMin = 1000
+local WhipSword = {
+    maxLowXLimit = -7.5,
+    maxHighXLimit = 7.5,
+    maxZLimit = 15,
+    
+    segmentTime = 0.05,
+    rbs = {},
+    
+    weaponMode = 1, -- 1 sword,  2 whip
+    whipMode = 2,
+    swordMode = 1,
+    whipToSword = 3,
+    swordToWhip = 4,
+    
+    targetAnchor = {},
+    defaultAnchor = {},
+    
+    segmentCount = 0,
+    
+    connectDrag = 5,
+    connectAngularDrag = 3,
+    normalDrag = 0.5,
+    normalAngularDrag = 0.2,
+    
+    banConnect = true,
+    
+    muscleLerpSpeed = 100,
+    pullToTarget = 10,
+    
+    ejectSpeed = 10,
+    
+    anchorLerpValue = 100,
+}  
+
+function WhipSword:OnGrab(a, g)
+    if g then
+        if self.weaponMode == self.whipMode then --stab will be active sometime
+            local stab = self.host.interact:GetStabObject()
+            stab.isActive = false
+        end
+    end
+    
+    
+    if not g then
+        if CL.Network.VRNetworkManager.IsOnline then
+            if a.attachedHand.character.IsLocalPlayer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    if CL.Network.VRNetworkManager.ServerOnline then
+                        state:ServerBreakConnect(a.attachedHand.character.networkPlayer.netId)
+                    else
+                        state:CommandBreakConnect(a.attachedHand.character.networkPlayer.netId)
+                    end
+                end
+                
+                self:BreakConnect()
+            end
+        else
+            self:BreakConnect()
+        end
+    end
+end
+
+function WhipSword:Start()
+    self.whipStabAnchor = UE.Vector3(0, 0.14, 0)
+    
+    --self:StartLineRenderer()
+    self:IgnoreCollisionWithProtectCol()
+    
+    if not self.isRecord then
+        self:InitJointAndRecord()
+        
+        self.isRecord = true
+    end
+    
+    local stab = self.host.interact:GetStabObject()
+    
+    --stabListener
+    self.onStabEnter = function(si)
+        local hp = self.host.interact:GetPrimaryHand()
+        if IsNullOrDestroyed(hp) then
+            return
+        end
+        
+        if CL.Network.VRNetworkManager.IsOnline and not hp.character.IsLocalPlayer then
+            return
+        end
+        
+        if self.weaponMode ~= self.swordToWhip then
+            return
+        end
+        local canStab = self:CheckWhipStabable(si) --whip stab
+        if not canStab then
+            self:DelayToBreakStab()
+            return
+        end
+        if self.banConnect then
+            return
+        end
+        
+        if not self.connectionBuilt then
+            self:DelayToBreakStab()
+            stab.isActive = false
+            
+            self:TryConnect(si)
+            --if not self:TryConnect(si) then
+                --self:WhipConnectToUnitWithBreakForce(si.stabTargetRB.mass, si)
+            --end
+        end
+    end
+
+    if not IsNullOrDestroyed(stab) then
+        stab:StabEnterEvent("+", self.onStabEnter)
+    end
+    
+    
+    local idx = 1
+    while self["joint" .. idx] do
+        self.rbs[idx] = self["joint" .. idx].gameObject:GetComponent(typeof(UE.Rigidbody))
+        if self.rbs[idx] then
+        end
+        
+        idx = idx + 1
+    end
+    
+    self.singleHandSpeed = self.host.interact.singleHandSpeed
+    self.twoHandSpeed = self.host.interact.twoHandSpeed
+    
+    self.protectCol.enabled = true
+    
+    self:GetTargetAnchor()
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state:ReqSwordState(CL.InteractCharacter.PlayerInstance.networkPlayer.netId)
+        end
+    end
+end
+
+function WhipSword:DelayToBreakStab()
+    self.breakStabId = CL.Scheduler.Create(self.host.interact,
+        function(sche, t, s)
+            local stab = self.host.interact:GetStabObject()
+            if not IsNullOrDestroyed(stab) then
+                stab:BreakAllStab()
+            end
+        end
+    , 0, 0, 0.02)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function WhipSword:GetTargetAnchor()
+    table.insert(self.targetAnchor, self.rootTargetTrans.localPosition)
+    
+    local idx = 2
+    while self["joint" .. idx] do
+        if self["joint" .. idx].transform.childCount > 0 then
+            table.insert(self.targetAnchor, self["joint" .. idx].transform:GetChild(0).localPosition)
+        end
+        idx = idx + 1
+    end
+    
+    self.segmentCount = idx - 1
+end
+
+function WhipSword:InitJointAndRecord()
+    local idx = 1
+    while self["joint" .. idx] do
+        local anchor = self["joint" .. idx].connectedAnchor
+        table.insert(self.defaultAnchor, UE.Vector3(anchor.x, anchor.y, anchor.z))
+        self["joint" .. idx].autoConfigureConnectedAnchor = false
+        
+        idx = idx + 1
+    end
+end
+
+function WhipSword:OpenSkill()
+    local hp = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(hp) then
+        return
+    end
+        
+    if CL.Network.VRNetworkManager.IsOnline and not hp.character.IsLocalPlayer then
+        return
+    end
+    
+    if CL.Network.VRNetworkManager.IsOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerBreakConnect(hp.character.networkPlayer.netId)
+            else
+                state:CommandBreakConnect(hp.character.networkPlayer.netId)
+            end
+        end
+    end
+        
+    self:BreakConnect()
+    
+    self:ChangeMode()
+end
+
+function WhipSword:ChangeMode()
+    local hp = self.host.interact:GetPrimaryHand()
+    if IsNullOrDestroyed(hp) then
+        return
+    end
+    
+    local state = GetNetworkIBState(self)
+    if self.weaponMode == self.swordMode or self.weaponMode == self.whipToSword then
+        if CL.Network.VRNetworkManager.IsOnline and state ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerSwitchToWhip(hp.character.networkPlayer.netId, true)
+            else
+                state:CommandSwitchToWhip(hp.character.networkPlayer.netId, true)
+            end
+        end
+        
+        self:SwitchToWhip()
+        
+        self.banConnect = false
+    else
+        if CL.Network.VRNetworkManager.IsOnline and state ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerSwitchToWhip(hp.character.networkPlayer.netId, false)
+            else
+                state:CommandSwitchToWhip(hp.character.networkPlayer.netId, false)
+            end
+        end
+        
+        self:SwitchToSword()
+        
+        self.banConnect = true
+    end
+end
+
+function WhipSword:NetworkSwitchToWhip(isWhip)
+    if isWhip then
+        self:SwitchToWhip()
+        self.banConnect = false
+    else
+        self:SwitchToSword()
+        self.banConnect = true
+    end
+end
+
+function WhipSword:SwitchToWhip()
+    local stab = self.host.interact:GetStabObject()
+    if not IsNullOrDestroyed(stab) then
+        stab:BreakAllStab()
+    end
+    
+    stab.isActive = true
+    
+    self.weaponMode = self.swordToWhip
+    
+    self.swordNode:SetActive(false)
+    self.whipNode:SetActive(true)
+    
+    self.host.interact:EnableShadow(false)
+    
+    self.stabCol.isTrigger = false
+    self.protectCol.enabled = false
+    
+    local hand = self.host.interact:GetPrimaryHand()
+    if hand then
+        local rb = hand:GetFingerGrabObj()
+        if not IsNullOrDestroyed(rb) and rb.transform == self.host.interact.trans then
+            hand:ReleaseFingerGrab()
+        end
+        local other = hand:GetAnotherHand()
+        if other then
+            rb = other:GetFingerGrabObj()
+            if not IsNullOrDestroyed(rb) and rb.transform == self.host.interact.trans then
+                other:ReleaseFingerGrab()
+            end
+        end
+    end
+    
+    self.host.interact:GetStabObject().scalingForward = true
+    
+    --set angular limit
+    CL.Scheduler.RemoveSchedule(self.animTimerId)
+    local idx = self.segmentCount
+    local lowAngularXLimit = self["joint" .. 1].lowAngularXLimit
+    --local lLimit = lowAngularXLimit.limit
+    local highAngularXLimit = self["joint" .. 1].highAngularXLimit
+    --local hLimit = highAngularXLimit.limit
+    local angularZLimit = self["joint" .. 1].angularZLimit
+    --local zLimit = angularZLimit.limit
+    --local time = self.switchTime/self.maxZLimit * (self.maxZLimit - zLimit)
+    
+    lowAngularXLimit.limit = self.maxLowXLimit
+    highAngularXLimit.limit = self.maxHighXLimit
+    angularZLimit.limit = self.maxZLimit
+    
+    local interval = self.segmentTime/2
+    local nextSetTime = 0
+    local time = interval * (self.segmentCount + 1)
+    
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state.isChanging = true
+        end
+    end
+    
+    self.animTimerId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then sche:Stop(); return end
+            if t < time then
+                local joint = self["joint" .. idx]
+                if t > nextSetTime and joint and not joint:IsNull() then
+                    if self.targetAnchor[idx] then
+                        joint.lowAngularXLimit = lowAngularXLimit
+                        joint.highAngularXLimit = highAngularXLimit
+                        joint.angularZLimit = angularZLimit
+                        joint.connectedAnchor = self.targetAnchor[idx]
+                    end
+                    if self.toWhipSound then
+                        self.toWhipSound:PlaySound()
+                    end
+                
+                    if self.rbs[idx] and not self.rbs[idx]:IsNull() then
+                        self.rbs[idx]:AddForce(self.host.interact.trans.forward * self.ejectSpeed, UE.ForceMode.VelocityChange)
+                    end
+                    
+                    idx = idx - 1
+                    nextSetTime = t + interval
+                end
+                
+                --lowAngularXLimit.limit = UE.Mathf.Lerp(lLimit, self.maxLowXLimit, t/time)
+                --highAngularXLimit.limit = UE.Mathf.Lerp(hLimit, self.maxHighXLimit, t/time)
+                --angularZLimit.limit = UE.Mathf.Lerp(zLimit, self.maxZLimit, t/time)
+                --while self["joint" .. idx] do
+                --    self["joint" .. idx].lowAngularXLimit = lowAngularXLimit
+                --    self["joint" .. idx].highAngularXLimit = highAngularXLimit
+                --    self["joint" .. idx].angularZLimit = angularZLimit
+                --    
+                --    idx = idx + 1
+                --end
+                --idx = 1
+            else
+                sche:Stop()
+                self.weaponMode = self.whipMode
+                
+                self.banConnect = true
+                stab.isActive = false
+                stab.scalingForward = true
+                --self.host.interact:GetStabObject().scalingForward = true
+                
+                if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state.isChanging = false
+                    end
+                end
+            end
+        end
+    , 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function WhipSword:SwitchToSword()
+    local stab = self.host.interact:GetStabObject()
+    if not IsNullOrDestroyed(stab) then
+        stab:BreakAllStab()
+    end
+    
+    self.weaponMode = self.whipToSword
+    --I don't want to stab when switch.
+    self.stabCol.isTrigger = true
+    
+    self.protectCol.enabled = true
+    
+    --set angular limit
+    CL.Scheduler.RemoveSchedule(self.animTimerId)
+    local idx = 1
+    local lowAngularXLimit = self["joint" .. 1].lowAngularXLimit
+    --local lLimit = lowAngularXLimit.limit
+    local highAngularXLimit = self["joint" .. 1].highAngularXLimit
+    --local hLimit = highAngularXLimit.limit
+    local angularZLimit = self["joint" .. 1].angularZLimit
+    --local zLimit = angularZLimit.limit
+    --local time = self.switchTime/self.maxZLimit * zLimit
+    --print("switch to Sword time:" .. time)
+    
+    self.host.interact:GetStabObject().scalingForward = false
+    
+    lowAngularXLimit.limit = 0
+    highAngularXLimit.limit = 0
+    angularZLimit.limit = 0
+    
+    local interval = self.segmentTime
+    local nextSetTime = 0
+    local time = interval * (self.segmentCount + 1)
+    
+    if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then
+            state.isChanging = true
+        end
+    end
+    
+    self.animTimerId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.host) then sche:Stop(); return end
+            if t < time then
+                local joint = self["joint" .. idx]
+                -- PvP安全检查：确保joint和connectedBody都有效
+                if t > nextSetTime and joint and not joint:IsNull() then
+                    if IsNullOrDestroyed(joint.connectedBody) then
+                        sche:Stop()
+                        return
+                    end
+                    joint.lowAngularXLimit = lowAngularXLimit
+                    joint.highAngularXLimit = highAngularXLimit
+                    joint.angularZLimit = angularZLimit
+                    if self.defaultAnchor[idx] then
+                        joint.connectedAnchor = self.defaultAnchor[idx]
+                    end
+
+                    self.toSwordSound:PlaySound()
+
+                    idx = idx + 1
+                    nextSetTime = t + interval
+                end
+            --if t < time then
+                --lowAngularXLimit.limit = UE.Mathf.Lerp(lLimit, 0, t/time)
+                --highAngularXLimit.limit = UE.Mathf.Lerp(hLimit, 0, t/time)
+                --angularZLimit.limit = UE.Mathf.Lerp(zLimit, 0, t/time)
+                --while self["joint" .. idx] do
+                --    self["joint" .. idx].lowAngularXLimit = lowAngularXLimit
+                --    self["joint" .. idx].highAngularXLimit = highAngularXLimit
+                --    self["joint" .. idx].angularZLimit = angularZLimit
+                --    
+                --    idx = idx + 1
+                --end
+                --
+                --idx = 1
+            else
+                sche:Stop()
+                self.weaponMode = self.swordMode
+                self.protectCol.enabled = true
+                                
+                self.whipNode:SetActive(false)
+                self.swordNode:SetActive(true)
+                
+                --reset trans
+                idx = 1
+                while self["joint" .. idx] and not self["joint" .. idx]:IsNull() do
+                    self["joint" .. idx].transform.localPosition = UE.Vector3.zero
+                    self["joint" .. idx].transform.localRotation = UE.Quaternion.identity
+                    
+                    idx = idx + 1
+                end
+                
+                if CL.Network.VRNetworkManager.IsOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then
+                        state.isChanging = false
+                    end
+                end
+            end
+        end
+    , 0, time)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+
+function WhipSword:StartLineRenderer()
+    local pos = nil
+    --self.lineRendererTimer = CL.Scheduler.Create(self,
+    --    function(sche, t, s)
+    --        for i = 0, 1 do
+    --            pos = self.host.interact.trans:InverseTransformPoint(self["connectPoint"..(i+1)].position)
+    --            self.lineRenderer:SetPosition(i, pos)
+    --        end
+    --    end
+    --, 0, -1)
+end
+
+function WhipSword:IgnoreCollisionWithProtectCol()
+    CL.PhysicsHelper.IgnoreCollisions(self.protectCol, self.host.interact:GetCols(), true)
+end
+
+
+function WhipSword:CheckWhipStabable(si)
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+    if (pu == nil             
+        or pu.unitType == CL.Tagger.Tag.PlayerRole
+        or pu.unitType == CL.Tagger.Tag.PlayerHand
+        or pu:IsStaticScene()
+        ) then
+        return false
+    end
+    
+    if IsNullOrDestroyed(si.stabGeo.subObj) then
+        return false
+    end
+    
+    local mass = 0
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        if pu.muscleState:IsPowerfulCharacter() then
+            --self.host.interact:GetStabObject():BreakAllStab()
+            return false
+        end
+    end
+    
+    if self.banConnect then
+        return false
+    end
+    
+    return true
+end
+
+--connect
+function WhipSword:TryConnect(si)
+    print("Try connect----------------------")
+    local pu = CL.PhysicsUnit.GetPhysicsUnitTopDown(si.stabTarget)
+    if (pu == nil             
+        or pu.unitType == CL.Tagger.Tag.PlayerRole
+        or pu.unitType == CL.Tagger.Tag.PlayerHand
+        or pu:IsStaticScene()
+        ) then
+        return false
+    end
+    
+    if IsNullOrDestroyed(si.stabGeo.subObj) then
+        return false
+    end
+    
+    local mass = 0
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        if pu.muscleState:IsPowerfulCharacter() then
+            --self.host.interact:GetStabObject():BreakAllStab()
+            return false
+        end
+        
+        if pu.motion:Standing() then
+            pu.muscleState:DoStiff(1)
+        end                
+        
+        if pu.muscleState:IsPowerfulCharacter() then
+            mass = 0.01
+        else
+            --mass = 60                    
+            local mu = pu.ra:GetMuscle(si.stabTargetRB.transform)
+            if mu then
+                local mus = pu.bone:GetTemporaryListMuscleChain(mu.muscleName)
+                for i = 0, mus.Count - 1 do
+                    local rm = pu.ra:GetMuscle(mus[i])
+                    if rm then
+                        mass = mass + rm.rb.mass
+                    end
+                end                    
+            else
+                mass = si.stabTargetRB.mass
+            end                                    
+        end     
+    else
+        mass = pu:GetTotalMass()
+    end
+
+    local spring = MassSpringFactor * mass
+    if spring < SpringMin then
+        spring = SpringMin
+    end        
+
+    local hand = self.host.interact:GetPrimaryHand()
+    if not hand then
+        return false
+    end
+    
+    local handToUnit = self:HandConnectToUnit(hand, pu, spring, si.stabTargetRB, si.stabLocalPos, si.stabGeo.subObj, si.stabberLocalPos, mass)
+    local state = GetNetworkIBState(self)
+    if handToUnit and CL.Network.VRNetworkManager.IsOnline and state ~= nil then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            state:ServerHandConnectToUnit(hand, spring, si.stabTargetRB, si.stabLocalPos, si.stabGeo.subObj, si.stabberLocalPos, mass)
+        else
+            state:CommandHandConnectToUnit(hand, spring, si.stabTargetRB, si.stabLocalPos, si.stabGeo.subObj, si.stabberLocalPos, mass)
+        end
+    end
+    
+
+    
+    --print("try connect-----------------:" .. pu.trans.name .. "  rb:" .. si.stabTargetRB.transform.name .. " stabberLocalPos:" .. si.stabberLocalPos.x .. "  " .. si.stabberLocalPos.y .. "  " .. si.stabberLocalPos.z)
+    local whipToUnit = self:WhipConnectToUnit(pu, spring, si.stabTargetRB, si.stabGeo.subObj, si.stabberLocalPos, si.joint.connectedAnchor, mass)
+    if whipToUnit and CL.Network.VRNetworkManager.IsOnline and state ~= nil then
+        if CL.Network.VRNetworkManager.ServerOnline then
+            state:ServerWhipConnectToUnit(hand.character.networkPlayer.netId, spring, si.stabTargetRB, si.stabGeo.subObj, si.stabberLocalPos, si.joint.connectedAnchor, mass)
+        else
+            state:CommandWhipConnectToUnit(hand.character.networkPlayer.netId, spring, si.stabTargetRB, si.stabGeo.subObj, si.stabberLocalPos, si.joint.connectedAnchor, mass)
+        end
+    end
+    if handToUnit then
+        self.isConnect = true
+        
+        self.stabSound:PlaySound()
+        
+        self:UpdateConnect()
+        
+        self:SlowDownOnConnect(true)
+        self:IgnoreCollisionWithPu(pu, true)
+        
+        if CL.Network.VRNetworkManager.IsOnline and state ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerClientOwnerConnect(hand.character.networkPlayer.netId, si.stabTargetRB)
+            else
+                state:CommandClientOwnerConnect(hand.character.networkPlayer.netId, si.stabTargetRB)
+            end
+        end
+        --self.host.interact:GetStabObject():BreakAllStab()
+    else
+        self:BreakConnect()
+        if CL.Network.VRNetworkManager.IsOnline and state ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerBreakConnect(hand.character.networkPlayer.netId)
+            else
+                state:CommandBreakConnect(hand.character.networkPlayer.netId)
+            end
+        end
+        self:SlowDownOnConnect(false)
+        
+        if CL.Network.VRNetworkManager.IsOnline and state ~= nil then
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerSlowDownOnConnect(hand.character.networkPlayer.netId, false)
+            else
+                state:CommandSlowDownOnConnect(hand.character.networkPlayer.netId, false)
+            end
+        
+            if CL.Network.VRNetworkManager.ServerOnline then
+                state:ServerIgnoreCollisionWithPu(hand.character.networkPlayer.netId, si.stabTargetRB, false)
+            else
+                state:CommandIgnoreCollisionWithPu(hand.character.networkPlayer.netId, si.stabTargetRB, false)
+            end
+        end
+        self:IgnoreCollisionWithPu(pu, false)
+    end
+    
+    return true
+end
+
+function WhipSword:ClientOwnerConnect(rb, pu)
+    --print("ClientOwnerConnect--------------:" .. pu.trans.name .. "  rb:" .. rb.transform.name)
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        pu.networkCharacter.networkRagdoll.physicsFollow = false
+    --elseif pu.unitType == CL.Tagger.Tag.InteractBase or pu.unitType == CL.Tagger.Tag.InteractWeapon then
+    --    pu.networkIB.networkRB.enabled = false
+    end
+
+    local stab = self.host.interact:GetStabObject()
+    if not IsNullOrDestroyed(stab) then
+        stab:BreakAllStab()
+    end
+    
+    self:UpdateConnect()
+
+    self:SlowDownOnConnect(true)
+    self:IgnoreCollisionWithPu(pu, true)
+    
+    if CL.Network.VRNetworkManager.ClientOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+        local stab = self.host.interact:GetStabObject()
+        stab.isActive = false
+    end
+end
+
+function WhipSword:IgnoreCollisionWithPu(pu, ignore)
+    if IsNullOrDestroyed(pu) then
+        return
+    end
+    
+    if not self.cols then
+        self.cols = self.host.interact:GetComponentsInChildren(typeof(UE.Collider))
+    end
+    --print("IgnoreCollisionWithPu--------------:" .. pu.trans.name .. " flag:" .. tostring(ignore))
+    local puCols = pu.unitType == CL.Tagger.Tag.InteractRole and pu.ra:GetCols() or pu:GetCols()
+    
+    for i = 0, self.cols.Length - 1 do
+        CL.PhysicsHelper.IgnoreCollisions(self.cols[i], puCols, ignore)
+    end
+end
+
+function WhipSword:SlowDownOnConnect(flag)
+    local idx = 1
+    
+    local fc = (self.attachPu and self.attachPu.unitType == CL.Tagger.Tag.InteractRole) and self.attachPu or nil
+    if not IsNullOrDestroyed(self.attachRB) then
+        local muc = fc and fc.ra:GetMuscle(self.attachRB.transform) or nil
+        local isMainPart = fc and (muc.muscleName == CL.RagdollBoneInfo.Spine
+            or muc.muscleName == CL.RagdollBoneInfo.Head
+            or muc.muscleName == CL.RagdollBoneInfo.Pelvis
+            or muc.muscleName == CL.RagdollBoneInfo.Chest
+            ) or nil
+        
+        while self.rbs[idx] do
+            self.rbs[idx].drag = flag and 
+            (isMainPart and self.connectDrag or self.connectDrag * 3) or self.normalDrag
+            self.rbs[idx].angularDrag = flag and 
+            (isMainPart and self.connectAngularDrag or self.connectAngularDrag * 3) or self.normalAngularDrag
+            
+            if self["subPartMass" .. idx] then
+                self.rbs[idx].mass = flag and self["subPartMass" .. idx] or 1
+            end
+            
+            idx = idx + 1
+        end
+    end
+    
+    self.host.interact.singleHandSpeed = flag and self.singleHandSpeed/2 or self.singleHandSpeed
+    
+    for i = 0, self.host.interact.attachList.Length - 1 do
+        if self.host.interact.attachList[i]:IsBeingHeld() then
+            self.host.interact.attachList[i].attachedHand.handTracker:SetTrackSpeed(self.host.interact.singleHandSpeed)
+            
+        end
+    end
+end
+
+function WhipSword:NetworkSlowDownOnConnect(flag)
+    for i = 0, self.host.interact.attachList.Length - 1 do
+        if self.host.interact.attachList[i]:IsBeingHeld() then
+            self.host.interact.attachList[i].attachedHand.handTracker:SetTrackSpeed(self.host.interact.singleHandSpeed)
+            
+        end
+    end
+end
+
+function WhipSword:UpdateConnect()
+    local stabberAnchorPos = nil
+    
+    local ld = self.joint.xDrive        
+    local sd = self.joint.slerpDrive
+    local maxSpring = ld.positionSpring
+   
+    local fc = self.attachPu.unitType == CL.Tagger.Tag.InteractRole and self.attachPu or nil
+    
+    local muc = fc and fc.ra:GetMuscle(self.attachRB.transform) or nil
+    local mucs = fc and fc.bone:GetTemporaryListMuscleChain(muc.muscleName) or nil
+    local mu = nil
+
+    --pull part to target
+    local dir = nil
+    local speed = 0
+    local value = 0
+    local lastPos = nil
+    self.jointActTimeId = CL.Scheduler.Create(self.host.gameObject,
+        function(sche, t, s)
+            if IsNullOrDestroyed(self.joint) or not self.connectionBuilt then
+                sche:Stop()
+                return
+            end
+            
+            if IsNullOrDestroyed(self.stabberRB) then
+                sche:Stop()
+                return
+            end
+            
+            speed = self.stabberRB.velocity.magnitude
+            
+            stabberAnchorPos = self.stabberTrans:TransformPoint(self.stabberLocalPos)
+            
+            --if lastPos then            
+            --    stabberAnchorPos = UE.Vector3.Lerp(lastPos, stabberAnchorPos, (self.anchorLerpAdd + speed * self.anchorLerpValue) * UE.Time.unscaledDeltaTime)
+            --end
+            
+            self.joint.anchor = self.joint.transform:InverseTransformPoint(stabberAnchorPos)
+            --lastPos = stabberAnchorPos
+            --self.testPos1:SetParent(nil)
+            --self.testPos1.position = stabberAnchorPos
+            --print("cur joint force:" .. self.subJoint.currentForce.magnitude)
+            --print("cur joint currentTorque :" .. self.subJoint.currentTorque.magnitude)
+            --value = math.max(self.subJoint.currentForce.magnitude/5000, 0)
+            --ld.positionSpring = value * maxSpring
+            --ld.positionDamper = value * maxSpring * 0.002
+            --self.joint.xDrive = ld
+            --self.joint.yDrive = ld
+            --self.joint.zDrive = ld
+            --sd.positionSpring = value * maxSpring * 0.005
+            --sd.positionDamper = value * maxSpring * 0.002
+            --self.joint.slerpDrive = sd
+            
+            if fc and not IsNullOrDestroyed(fc) then
+                for i = 0, mucs.Count - 1 do
+                    mu = fc.bone.ragdoll:GetMuscle(mucs[i])
+                    if mu and mu.muscleName ~= muc.muscleName then
+                        if not IsNullOrDestroyed(mu.rb) then
+                            mu.rb.velocity = UE.Vector3.Lerp(mu.rb.velocity, mu.rb.velocity/2,  speed * self.muscleLerpSpeed * UE.Time.unscaledTime)
+                        end
+                    end
+                end
+            end
+            
+            dir = self.stabberRB.transform.position - stabberAnchorPos
+            self.stabberRB:AddForce(dir * self.pullToTarget * UE.Time.unscaledDeltaTime)
+            
+            
+            --whip joint drive change with speed
+            value = math.min(speed/10, 1)
+            ld.positionSpring = (maxSpring * value * self.springToTargetMlp) + self.springToTargetAdd
+            ld.positionDamper = ((maxSpring * value * self.springToTargetMlp) + self.springToTargetAdd) * 0.01
+            self.whipJoint.xDrive = ld
+            self.whipJoint.yDrive = ld
+            self.whipJoint.zDrive = ld
+            
+            self.whipJoint.anchor = self.whipStabAnchor
+            
+            --local velocity = hand.character.capsuleRB.velocity
+            --if velocity.magnitude > self.maxSwingSpeed * self.maxSwingSpeed then
+            --    hand.character.capsuleRB.velocity = hand.character.capsuleRB.velocity.normalized * self.maxSwingSpeed
+            --end
+            
+            
+            --limit whipPart speed
+            if speed > self.maxPartSpeed then
+                for k, v in ipairs(self.rbs) do
+                    v.velocity = UE.Vector3.Lerp(v.velocity, v.velocity/2, UE.Time.unscaledDeltaTime)
+                end
+            end
+            
+            if CL.Network.VRNetworkManager.ServerOnline and SafeIsOwnerLocalPlayer(self.host.interact) then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then
+                    state:ServerUpdateJoint(self.joint.anchor, ld.positionSpring, ld.positionDamper)
+                end
+            end
+        end
+    , 0, -1)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function WhipSword:NetworkUpdateJoint(anchor, spring, damper)
+    if self.joint and not IsNullOrDestroyed(self.joint) then
+        self.joint.anchor = anchor
+    end
+    
+    if self.whipJoint and not IsNullOrDestroyed(self.whipJoint) then
+        local ld = self.whipJoint.xDrive  
+        ld.positionSpring = spring
+        ld.positionDamper = damper
+        self.whipJoint.xDrive = ld
+        self.whipJoint.yDrive = ld
+        self.whipJoint.zDrive = ld
+    end
+end
+
+function WhipSword:HandConnectToUnit(hand, pu, spring, stabTargetRB, stabLocalPos, stabberRB, stabberLocalPos, mass)
+    --print("hand connect to unit---------------:" .. pu.trans.name .. "  " .. stabTargetRB.transform.name .. "  handPlayer:" .. hand.trans.root.name)
+    self.attachHand = hand
+    self.attachRB = stabTargetRB
+    self.attachPu = pu
+    self.stabberLocalPos = stabberLocalPos
+    self.stabberTrans = stabberRB.transform
+    self.stabberRB = stabberRB
+    
+    --print(" HandConnectToUnit stabberTrans:".. self.stabberTrans.name .. " stabberRB:" .. stabberRB.transform.name)
+    --print(" HandConnectToUnit  stabberLocalPos:" .. self.stabberLocalPos.x .. "  " .. self.stabberLocalPos.y .. "  " .. self.stabberLocalPos.z)
+    
+    if not self.joint or IsNullOrDestroyed(self.joint) then
+        self.joint = hand.grabJoint.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.joint.autoConfigureConnectedAnchor = false
+    end
+
+    self.connectionBuilt = true
+    
+    local stabberAnchorPos = self.stabberTrans:TransformPoint(stabberLocalPos)
+    
+    --joint Contect
+    self.joint.connectedBody = stabTargetRB
+    self.joint.anchor = self.joint.transform:InverseTransformPoint(stabberAnchorPos)
+    self.joint.connectedAnchor = stabLocalPos
+    
+    pu:OnAttachBuild(hand.physicsHand, self.joint, stabTargetRB)
+    
+    if pu.unitType == CL.Tagger.Tag.InteractRole then
+        pu.ra:SetCollisionIgnoreWith(self.host.interact:GetCols(), true)
+    end
+    
+    local damper = spring * 0.005
+    local ld = self.joint.xDrive        
+    ld.positionSpring = spring
+    ld.positionDamper = damper
+    self.joint.xDrive = ld
+    self.joint.yDrive = ld
+    self.joint.zDrive = ld
+    local sd = self.joint.slerpDrive
+    sd.positionSpring = spring * 0.005
+    sd.positionDamper = damper * 0.002
+    self.joint.slerpDrive = sd
+    self.joint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    
+    return true
+end
+
+function WhipSword:UnitConnectToWhip(pu, spring, stabTargetRB, stabberRB, stabberLocalPos, anchor, connectedAnchor, mass)
+    if self.subJoint and not IsNullOrDestroyed(self.subJoint) then
+        UE.Object.DestroyImmediate(self.subJoint)
+    end
+
+    self.subJoint = stabTargetRB.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+    self.subJoint.autoConfigureConnectedAnchor = false
+
+    self.connectionBuiltSub = true
+    
+    local stabberAnchorPos = stabberRB.transform:TransformPoint(stabberLocalPos)
+    
+    local cb = stabberRB
+    if not cb or IsNullOrDestroyed(cb) then
+        --In chained state, only those with a subobj can stab
+        return false
+    end
+    
+    if CL.Network.VRNetworkManager.ClientOnline then
+        self.subJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.subJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.subJoint.zMotion = UE.ConfigurableJointMotion.Free
+    else
+        self.subJoint.xMotion = UE.ConfigurableJointMotion.Limited
+        self.subJoint.yMotion = UE.ConfigurableJointMotion.Limited
+        self.subJoint.zMotion = UE.ConfigurableJointMotion.Limited
+    end
+    --joint Contect
+    self.subJoint.connectedBody = cb
+    self.subJoint.anchor = connectedAnchor
+    
+    self.subJoint.connectedAnchor = anchor
+    
+    local damper = spring * 0.001
+    local ld = self.subJoint.xDrive        
+    ld.positionSpring = spring * 0.002
+    ld.positionDamper = damper
+    self.subJoint.xDrive = ld
+    self.subJoint.yDrive = ld
+    self.subJoint.zDrive = ld
+    local sd = self.subJoint.slerpDrive
+    sd.positionSpring = spring * 0.005
+    sd.positionDamper = damper * 0.002
+    self.subJoint.slerpDrive = sd
+    self.subJoint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    
+    return true
+end
+
+function WhipSword:WhipConnectToUnitWithBreakForce(spring, si)
+    if not self.secondJoint or IsNullOrDestroyed(self.secondJoint) then
+        self.secondJoint = si.stabGeo.subObj.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.secondJoint.autoConfigureConnectedAnchor = false
+    end
+    
+    local stabberAnchorPos = si.joint.transform:TransformPoint(si.stabberLocalPos)
+    
+    --joint Contect
+    self.secondJoint.connectedBody = si.joint.connectedBody
+    self.secondJoint.anchor = UE.Vector3(0, 0.14, 0)
+    self.secondJoint.connectedAnchor = si.joint.connectedAnchor
+    
+    self.secondJoint.xMotion = UE.ConfigurableJointMotion.Locked
+    self.secondJoint.yMotion = UE.ConfigurableJointMotion.Locked
+    self.secondJoint.zMotion = UE.ConfigurableJointMotion.Locked
+    self.secondJoint.angularXMotion = UE.ConfigurableJointMotion.Locked
+    self.secondJoint.angularYMotion = UE.ConfigurableJointMotion.Locked
+    self.secondJoint.angularZMotion = UE.ConfigurableJointMotion.Locked
+    
+    spring = spring * 0.02
+    local damper = spring * 0.1
+    local ld = self.secondJoint.xDrive        
+    ld.positionSpring = spring
+    ld.positionDamper = damper
+    self.secondJoint.xDrive = ld
+    self.secondJoint.yDrive = ld
+    self.secondJoint.zDrive = ld
+    local sd = self.secondJoint.slerpDrive
+    sd.positionSpring = spring * 0.5
+    sd.positionDamper = damper * 0.2
+    self.secondJoint.slerpDrive = sd
+    self.secondJoint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    self.secondJoint.breakForce = 3000
+    self.secondJoint.breakTorque = 3000
+    return true
+end
+
+
+function WhipSword:WhipConnectToUnit(pu, spring, stabTargetRB, stabberRB, stabberLocalPos, connectedAnchor, mass)
+    --print("whip connect to unit---------------:" .. pu.trans.name .. "  rb:" .. stabTargetRB.transform.name)
+    
+    if not self.whipJoint or IsNullOrDestroyed(self.whipJoint) then
+        if IsNullOrDestroyed(stabberRB) then
+            return
+        end
+        
+        self.whipJoint = stabberRB.gameObject:AddComponent(typeof(UE.ConfigurableJoint))
+        self.whipJoint.autoConfigureConnectedAnchor = false
+    end
+    
+    local stabberAnchorPos = stabberRB.transform:TransformPoint(stabberLocalPos)
+    
+    --joint Contect
+    self.whipJoint.connectedBody = stabTargetRB
+    self.whipJoint.anchor = self.whipStabAnchor
+    self.whipJoint.connectedAnchor = connectedAnchor
+    
+    --self.whipJoint.angularXMotion = UE.ConfigurableJointMotion.Locked
+    --self.whipJoint.angularYMotion = UE.ConfigurableJointMotion.Locked
+    --self.whipJoint.angularZMotion = UE.ConfigurableJointMotion.Locked
+    
+    spring = spring * 0.02
+    local damper = spring * 0.1
+    local ld = self.whipJoint.xDrive        
+    ld.positionSpring = spring
+    ld.positionDamper = damper
+    self.whipJoint.xDrive = ld
+    self.whipJoint.yDrive = ld
+    self.whipJoint.zDrive = ld
+    local sd = self.whipJoint.slerpDrive
+    sd.positionSpring = spring * 0.5
+    sd.positionDamper = damper * 0.2
+    self.whipJoint.slerpDrive = sd
+    self.whipJoint.rotationDriveMode = UE.RotationDriveMode.Slerp
+    
+    return true
+end
+
+
+function WhipSword:BreakConnect()
+    self:SlowDownOnConnect(false)
+    
+    self:IgnoreCollisionWithPu(self.attachPu, false)
+    self:PlayBreakSound()
+    
+    if CL.Network.VRNetworkManager.ClientOnline and not IsNullOrDestroyed(self.attachPu) then
+        if self.attachPu.unitType == CL.Tagger.Tag.InteractRole then
+            self.attachPu.networkCharacter.networkRagdoll.physicsFollow = true
+        end
+    end
+    
+    self:BreakWhipConnect()
+    self:BreakHandConnect()
+    
+
+    
+    --self:BreakWhipConnectWithBreakForce()
+    self.isConnect = false
+    
+    --if CL.Network.VRNetworkManager.ServerOnline then
+    --    self.host.interact.networkIB.networkIBState:ServerSyncBlade(true)
+    --end
+    
+    local stab = self.host.interact:GetStabObject()
+    stab.isActive = true
+end
+
+function  WhipSword:BreakWhipConnectWithBreakForce()
+    if IsNullOrDestroyed(self.secondJoint) == false then
+        self.secondJoint.xMotion = UE.ConfigurableJointMotion.Free
+        self.secondJoint.yMotion = UE.ConfigurableJointMotion.Free
+        self.secondJoint.zMotion = UE.ConfigurableJointMotion.Free
+        self.secondJoint.angularXMotion = UE.ConfigurableJointMotion.Free
+        self.secondJoint.angularYMotion = UE.ConfigurableJointMotion.Free
+        self.secondJoint.angularZMotion = UE.ConfigurableJointMotion.Free
+        
+        self.secondJoint.connectedBody = nil
+        local ld = self.secondJoint.xDrive
+        ld.positionSpring = 0
+        ld.positionDamper = 0
+        self.secondJoint.xDrive = ld
+        self.secondJoint.yDrive = ld
+        self.secondJoint.zDrive = ld
+        local sd = self.secondJoint.slerpDrive
+        sd.positionSpring = 0
+        sd.positionDamper = 0
+        self.secondJoint.slerpDrive = sd
+        
+
+    end
+end
+
+function WhipSword:PlayBreakSound()
+    if not self.attachRB or IsNullOrDestroyed(self.attachRB) then
+        return
+    end
+    
+    local info = self.breakSound:PlaySoundInfo()
+    local intensity = math.min(self.attachRB.velocity.magnitude/10, 1)
+    if info then
+        info.audio.pitch = math.min(3, math.max(0.01, 0.8 + 0.4 * intensity))
+        info.audio.volume = intensity * 0.5
+    end
+end
+
+function WhipSword:BreakWhipConnect()
+    self.connectionBuiltSub = false
+    if IsNullOrDestroyed(self.subJoint) == false then
+        UE.Object.DestroyImmediate(self.subJoint)
+        self.subJoint = nil
+    end
+    
+    if IsNullOrDestroyed(self.whipJoint) == false then
+        self.whipJoint.connectedBody = nil
+        local ld = self.whipJoint.xDrive
+        ld.positionSpring = 0
+        ld.positionDamper = 0
+        self.whipJoint.xDrive = ld
+        self.whipJoint.yDrive = ld
+        self.whipJoint.zDrive = ld
+        local sd = self.whipJoint.slerpDrive
+        sd.positionSpring = 0
+        sd.positionDamper = 0
+        self.whipJoint.slerpDrive = sd
+        
+        self.whipJoint.angularXMotion = UE.ConfigurableJointMotion.Free
+        self.whipJoint.angularYMotion = UE.ConfigurableJointMotion.Free
+        self.whipJoint.angularZMotion = UE.ConfigurableJointMotion.Free
+    end
+end
+
+function WhipSword:BreakHandConnect()
+    if not self.connectionBuilt then
+        return
+    end
+
+    self.connectionBuilt = false
+    if IsNullOrDestroyed(self.attachPu) == false then
+        self.attachPu:OnAttachBreak(self.attachHand.physicsHand, self.joint, self.attachRB)
+        
+        local needForce = (self.attachPu.unitType == CL.Tagger.Tag.InteractRole 
+            and self.attachPu.motion:IsKnockoutDown() == false) == false
+        
+        if needForce then
+            local rb = self.stabberTrans:GetComponent(typeof(UE.Rigidbody))
+            if rb then
+                local vel = rb.velocity
+                
+                if vel.sqrMagnitude > 0.8*0.8 then
+                    local forceFactor = 5
+                    local limitVel = 20
+                    if self.attachPu.unitType == CL.Tagger.Tag.InteractRole then
+                        self.attachPu.muscleState:DoThrowing()
+                        forceFactor = 2
+                        limitVel = 10 -- 30 is already very large, since npc have multiple rigidbodies
+                    end
+                    
+                    --if self.attachPu.reactAnim:IsTear() or self.attachPu.reactAnim:IsDismember() then
+                        self.attachRB:AddForce(CL.PhysicsHelper.LimitVelocityForce((vel) * forceFactor, 6, limitVel), UE.ForceMode.VelocityChange)
+                    --else
+                    --    self.attachPu:AddForceOnPart(self.attachRB, CL.PhysicsHelper.LimitVelocityForce((vel) * forceFactor, 6, limitVel), UE.ForceMode.VelocityChange)
+                    --end
+                end
+            end
+        end                    
+    end
+    self.attachHand = nil
+    self.attachRB = nil
+    self.attachPu = nil
+
+    if self.joint and not IsNullOrDestroyed(self.joint) then
+        self.joint.connectedBody = nil
+        local ld = self.joint.xDrive
+        ld.positionSpring = 0
+        ld.positionDamper = 0
+        self.joint.xDrive = ld
+        self.joint.yDrive = ld
+        self.joint.zDrive = ld
+        local sd = self.joint.slerpDrive
+        sd.positionSpring = 0
+        sd.positionDamper = 0
+        self.joint.slerpDrive = sd
+    end
+end
+
+
+return Class(nil, nil, WhipSword)   

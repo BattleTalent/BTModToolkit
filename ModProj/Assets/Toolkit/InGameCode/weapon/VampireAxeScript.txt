@@ -1,0 +1,394 @@
+
+local vampireAxe = {
+    absorbValue = 10,  --absorb hp.
+    
+    duration = 30,  --absorb time.
+    interval = 0.5,
+    
+    fcList = {}, --be absorb's fc.
+    listLength = 20,
+    listCount = 0,
+    
+    rate = 0.8,
+    
+    absorbTotal = 0,
+    maxValue = 100,
+    
+    absorbColor = UE.Color(3, 2.5, 0.01),
+    defaultColor = UE.Color(0, 0, 0),
+    
+    maxColor = UE.Color(5, 4, 0.01),
+    
+    skillTime = 30,
+    
+    enhance = 1.5,
+    
+    dmgAdd = 0,
+}
+
+
+function vampireAxe:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    self.onStabEnterHandler = function(si)
+        local fc = CL.CharacterMgr.Instance:GetFullCharacter(si.stabTarget.root)
+        if not IsNullOrDestroyed(fc) then
+            self.stabFc = fc
+        end
+    end
+    self.OnStabExitHandler = function(si)
+        self.stabFc = nil
+        self.host:CloseSkill()
+    end
+    self.stabObj:StabEnterEvent("+", self.onStabEnterHandler)
+    self.stabObj:StabExitEvent("+", self.OnStabExitHandler)
+    
+    self.riginDamageMlp = self.hitInfoObj.hitInfo.damageMlp
+    
+    
+    self.hitPhase1 = function(fc, mu, thisCol, otherRB, otherCol, point, normal, relaVel)
+        CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd = CL.FullBodyMuscleState.dmgHitData.dmgFinalAdd + self.dmgAdd
+    end
+    self.hitInfoObj.hitInfo:OnInteractRoleHitPhase1Event("+", self.hitPhase1)
+end
+
+function vampireAxe:OpenSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self:IsReadyToAbsorb() then
+        self.host:CloseSkill()
+        return
+    end
+    
+    self:StartAbsorb()
+
+    --if self.absorbTotal >= self.maxValue then
+    --    local hand = self.host.interact:GetPrimaryHand()
+    --    if IsNullOrDestroyed(hand) then
+    --        return
+    --    end
+    --    hand:HapticPulse(hand.character.skillOpenHapticCurve, 0.5, 2)
+    --    self.host:CloseSkill()
+    --    return
+    --else
+    --    self.absorbFinish = false
+    --end
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerShowAbsorbEffect(true, self.stabFc.networkCharacter.netId) end
+    else
+        self:ShowAbsorbEffect(true, self.stabFc)
+    end
+end
+
+function vampireAxe:StartAbsorb()
+    self.startTime = UE.Time.time
+    
+    self.lastTime = UE.Time.time
+    
+    self:StopCountdown()
+end
+
+function vampireAxe:UpdateSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    --if UE.Time.time - self.startTime > self.duration then
+    --    self.startTime = nil
+    --    self.host:CloseSkill()
+    --    return
+    --end
+    if self:IsReadyToAbsorb() then
+        self:Absorbing()
+    else
+        self.host:CloseSkill()
+    end
+end
+
+function vampireAxe:CloseSkill()
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if not self.startTime then
+        return
+    end
+    
+    self.startTime = nil
+    local state = GetNetworkIBState(self)
+    if self.isOnline then
+        if state ~= nil then state:ServerShowAbsorbEffect(false, -1) end
+    else
+        self:ShowAbsorbEffect(false)
+    end
+    --if self.absorbTotal >= self.maxValue then
+    if self.absorbTotal > 0 then
+        self:SkillCountdown()
+        
+        if self.isOnline then
+            if state ~= nil then state:ServerEmissionFade() end
+        else
+            self:EmissionFade()
+        end
+    end
+end
+
+function vampireAxe:EmissionFade()
+    RemoveSchedule(self, self.colorTimer)
+    self.colorTimer = SetMaterialEmissionWithinTime(self, {self.renderer}, self.maxColor * self.absorbTotal/self.maxValue, 0.3)
+end
+
+
+function vampireAxe:IsReadyToAbsorb()
+    return self.stabFc ~= nil and not self.stabFc.attr:IsDead()
+end
+
+
+function vampireAxe:IsFristAbsorb()
+    return not self.startTime
+end
+
+function vampireAxe:Absorbing()
+    if UE.Time.time - self.lastTime < self.interval then
+        return
+    end
+    self.lastTime = UE.Time.time
+    if not self.stabFc.attr:IsDead() then
+        local hp = self.absorbValue
+        
+        local hand = self.host.interact:GetPrimaryHand()
+        if IsNullOrDestroyed(hand) then
+            return
+        end
+        hand:HapticPulse(hand.character.skillOpenHapticCurve, 0.5, 2)
+        
+        --if self.absorbTotal + hp > self.maxValue then
+        --    hp = self.maxValue - self.absorbTotal
+        --end
+        self.stabFc.attr:AddHp(-hp)
+        
+        if self.stabFc.attr:IsDead() then
+            self:RemoveFromList(self.stabFc)
+        end
+        
+        self:RecordAbsorb(self.stabFc, hp)
+        
+        if self.absorbTotal + hp > self.maxValue then
+            hp = self.maxValue - self.absorbTotal
+        end
+        self:ImproveAtk(hp)
+        
+        local isMaxBefore = self.absorbTotal >= self.maxValue
+        self.absorbTotal = self.absorbTotal + hp
+        --print("absorb Tatal----:" .. self.absorbTotal)
+        
+        --Greater than the maximum only absorb hp, but does not increase maximum attack.
+        if self.absorbTotal >= self.maxValue and not isMaxBefore then
+            --self.host:CloseSkill()
+            
+            if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                local state = GetNetworkIBState(self)
+                if state ~= nil then state:ServerAbsorbMaxEffect() end
+            else
+                self:AbsorbMaxEffect()
+            end
+        end
+    else
+        self.host:CloseSkill()
+    end
+end
+
+function vampireAxe:ClientShowAbsorbEffect(isShow, netId)
+    if netId < 0 then
+        self:ShowAbsorbEffect(isShow)
+    else
+        local nfc = CL.Network.NetworkSpawnMgr.Instance:GetNetworkCharacter(netId)
+        if not IsNullOrDestroyed(nfc) then
+            self:ShowAbsorbEffect(isShow, nfc.fc)
+        end
+    end
+end
+
+function vampireAxe:ShowAbsorbEffect(isShow, fc)
+    RemoveSchedule(self, self.particleTimer)
+    RemoveSchedule(self, self.colorTimer)
+    CL.AudioMgr.Instance:GiveBackAndLerpToZero(self.absorbSoundInfo)
+            
+    if isShow then
+        if IsNullOrDestroyed(fc) then
+            return
+        end
+        --self.effect.main.duration = self.interval
+        
+        local minMaxCurve = self.effect.main.startLifetime
+        local from = fc.ra:GetMuscle(CL.RagdollBoneInfo.Head).rbTrans
+        local to = self.tarTrans
+        local time = 0
+        self.particleTimer = CL.Scheduler.Create(self, 
+        function(sche, t, s)
+            self:UpdateParticle(from.position, to.position, false)
+            
+            time = UE.Vector3.Distance(from.position, to.position)/1.3
+            minMaxCurve.constantMax = time * 1.1
+            minMaxCurve.constantMin = time * 1
+            self.effect.main.startLifetime = minMaxCurve
+        end, 0, -1)
+    
+        self.colorTimer = SetMaterialEmissionWithinTime(self, {self.renderer}, self.absorbColor, 0.3)
+        
+        --sound
+        self.absorbSoundInfo = self.absorbSound:PlaySoundInfo()
+        if self.absorbSoundInfo then
+            self.absorbSoundInfo.ao.trans:SetParent(self.tarTrans)
+        end
+    else
+        self.colorTimer = SetMaterialEmissionWithinTime(self, {self.renderer}, self.defaultColor, 0.5)
+    end
+end
+
+
+function vampireAxe:UpdateParticle(from, to, curve)
+    self.particlePath:SetPath({from, to}, self.host.interact.trans.up)
+    self.pathFlow:DoEmitAtPath()
+end
+
+
+function vampireAxe:ImproveAtk(hp)
+    self.dmgAdd = self.dmgAdd + hp * self.rate
+    --print("damageMlp----------:" .. self.dmgAdd )
+end
+
+function vampireAxe:ResetAtk()
+    self.dmgAdd = 0
+end
+
+
+
+function vampireAxe:RecordAbsorb(fc, value)
+    if not self.fcList[fc.trans] then
+        self:AddToAbsorbList(fc)
+    end
+    self.fcList[fc.trans].time = UE.Time.time
+    self.fcList[fc.trans].value = self.fcList[fc.trans].value + value
+end
+
+function vampireAxe:AddToAbsorbList(fc)
+    self.listCount = self.listCount + 1
+    
+    if self.listCount >= self.listLength then
+        local earliest = self.fcList[1]
+        
+        for k, v in pairs(self.fcList) do
+            if IsNullOrDestroyed(v.fc) or v.fc.attr:IsDead() then
+                self:RemoveFromList(v.fc)
+            else
+                if v.time < earliest.time then
+                    earliest = v
+                end
+            end
+        end
+        
+        if self.listCount >= self.listLength then
+            self:RemoveFromList(earliest.fc)
+        end
+    end
+    
+    self.fcList[fc.trans] = {}
+    self.fcList[fc.trans].fc = fc
+    self.fcList[fc.trans].value = 0
+end
+
+function vampireAxe:RemoveFromList(fc)
+    self.listCount = self.listCount - 1
+    self.fcList[fc.trans] = nil
+end
+
+
+function vampireAxe:SkillEnd()
+    if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerSetDefaultState() end
+    else
+        self:SetDefaultState()
+    end
+    
+    
+    self.countdownTimeId = nil
+    self.absorbTotal = 0
+    
+    
+    self:ResetAtk()
+end
+
+function vampireAxe:SetDefaultState()
+    self.trailRender1.enabled = false
+    self.trailRender2.enabled = false
+    
+    if not self.startTime then
+        RemoveSchedule(self, self.colorTimer)
+        self.colorTimer = SetMaterialEmissionWithinTime(self, {self.renderer}, self.defaultColor, 0.2)
+    end
+end
+
+function vampireAxe:SkillEndEffect(intensity)
+    local eo = CL.EffectMgr.Instance:PlayEffect(self.skillEndEffect, self.effect.transform.position, UE.Quaternion.identity)
+    eo:SetIntensity(intensity)
+end
+
+function vampireAxe:AbsorbMaxEffect()
+    self.absorbFinishSound:PlaySound()
+    self.absorbFinishEffect:Play()
+        
+    if not self.trailRender1.enabled then
+        self.trailRender1.enabled = true
+    end
+    if not self.trailRender2.enabled then
+        self.trailRender2.enabled = true
+    end
+end
+
+
+function vampireAxe:OnEnhance()
+    self.interval = self.interval / self.enhance
+    self.isEnhance = true
+end
+
+--[[
+    skill duration
+]]
+
+function vampireAxe:SkillCountdown()
+    if self.countdownTimeId then
+        return
+    end
+    
+    self.countdownTimeId = CL.Scheduler.Create(self.host, 
+        function(sche, t, s)
+            if t >= self.skillTime then
+                if self.isOnline and CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerSkillEndEffect(self.absorbTotal/self.maxValue) end
+                else
+                    self:SkillEndEffect(self.absorbTotal/self.maxValue)
+                end
+                
+                self:SkillEnd()
+            end
+        end
+    , 0, 0, self.skillTime).actionId
+end
+
+function vampireAxe:StopCountdown()
+    CL.Scheduler.RemoveSchedule(self.countdownTimeId)
+    self.countdownTimeId = nil
+end
+
+return Class(nil, nil, vampireAxe)

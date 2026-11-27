@@ -1,0 +1,282 @@
+
+local SpellBloodSacrifice = {
+    skillOn = false,
+    activeColor = UE.Color(1.9, 0.4, 0.4, 1.35),
+    disableColor = UE.Color(0.6, 0, 0, 0),
+    isActive = false,
+}
+
+BloodSacrifice_ActiveList = {}
+
+function SpellBloodSacrifice:Awake()
+    self.isOnline = not IsNullOrDestroyed(CL.Network.VRNetworkManager.Instance) and not CL.Network.VRNetworkManager.Instance.IsOffline
+    
+    self.__base.Awake(self)
+    
+    self.onCharacterDead = function()
+        self:BreakDura()
+        self:LoseEffective()
+        self:RemoveEffect()
+        self:AddDeadHandle(self.affectCharacter, false)
+    end
+end
+
+function SpellBloodSacrifice:OnChargeBegin()
+    if self.isActive or (not IsNullOrDestroyed(self.affectCharacter) and BloodSacrifice_ActiveList[self.affectCharacter] ~= nil) then
+        if not self.isOnline or (self.isOnline 
+                                and not CL.Network.VRNetworkManager.ServerOnly
+                                and CS.Mirror.NetworkClient.localPlayer.netId == self:GetSlotHand().character.networkPlayer.netId) then
+            CL.SoundTable.PlaySound("Error")
+            CL.TextPanel.ShowTipsByTextIdAndCheckInterval("Spell_BloodSacrifice_Tips", 3)
+        end
+        self.host:CloseSkill()
+        return
+    end
+    
+    if self.skillOn then
+        self.host:CloseSkill()
+        return
+    elseif self.cdTimeId then
+        if not self.isOnline or (self.isOnline 
+                                and not CL.Network.VRNetworkManager.ServerOnly
+                                and CS.Mirror.NetworkClient.localPlayer.netId == self:GetSlotHand().character.networkPlayer.netId) then
+            CL.SoundTable.PlaySound("Error")
+            CL.TextPanel.ShowTipsByTextIdAndCheckInterval("Spell_Cooldown_Tips", 3)
+        end
+    end
+
+    self:SetHandPose(true)
+end
+
+function SpellBloodSacrifice:OnChargeCancel()
+    self:SetHandPose(false)
+end
+
+function SpellBloodSacrifice:OnChargeReady()
+
+    self:SetHandPose(false)
+
+    local hand = self:GetSlotHand()    
+    if not hand then
+        self.host:CloseSkill()
+        return
+    end
+    
+    self.skillOn = true
+    
+    self.affectCharacter = hand.character 
+    
+
+    self:BloodSacrifice()
+
+    self:DisableState()
+    
+    self:AddEffect(self.affectCharacter)
+    
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self:StartDura()
+        end
+    else
+        self:StartDura()
+    end
+    self:AddDeadHandle(self.affectCharacter, true)
+    
+    self.isActive = true
+    
+    BloodSacrifice_ActiveList[self.affectCharacter] = self
+    
+    self.host:CloseSkill()
+end
+
+
+function SpellBloodSacrifice:BloodSacrifice()
+    self.cacheHp = self.affectCharacter.attr.hp.BaseValue
+    --hpMax
+    if self.cacheHp * self.ratio > self.affectCharacter.attr.hpMax.BaseValue then
+        self.cacheHpMax = self.affectCharacter.attr.hpMax.BaseValue
+        self.affectCharacter.attr.hpMax:SetBaseValue(self.cacheHp * self.ratio)
+    end
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    --hp
+    local needHp = self.cacheHp * (self.ratio - 1)
+    self.affectCharacter.attr:AddHp(needHp, true)
+    
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerBloodSacrifice(self.affectCharacter, self.affectCharacter.attr.hpMax.BaseValue, needHp) end
+    end
+end
+
+function SpellBloodSacrifice:NetworkBloodSacrifice(affectCharacter, hpMax, add)
+    if IsNullOrDestroyed(affectCharacter) then
+        return
+    end
+    self.affectCharacter = affectCharacter
+    
+    affectCharacter.attr.hpMax:SetBaseValue(hpMax)
+    self.affectCharacter.attr:AddHp(add, true)
+end
+
+function SpellBloodSacrifice:LoseEffective()
+    self.isActive = false
+    BloodSacrifice_ActiveList[self.affectCharacter] = nil
+    if IsNullOrDestroyed(self.affectCharacter) then
+        return
+    end
+    
+    if self.isOnline and not CL.Network.VRNetworkManager.Instance.IsServer then
+        return
+    end
+    
+    if self.cacheHpMax then
+        self.affectCharacter.attr.hpMax:SetBaseValue(self.cacheHpMax)
+    end
+    
+    local value = 0
+    if self.affectCharacter.attr.hp.BaseValue < self.cacheHp then
+        --double pay back
+        value = (self.cacheHp - self.affectCharacter.attr.hp.BaseValue) * 2
+        self.affectCharacter.attr:AddHp(-value)
+    else
+        value = self.affectCharacter.attr.hp.BaseValue - self.cacheHp
+        self.affectCharacter.attr:AddHp(-value)
+    end
+    if self.isOnline then
+        local state = GetNetworkIBState(self)
+        if state ~= nil then state:ServerLoseEffective(self.affectCharacter, self.cacheHpMax) end
+    end
+    self.cacheHpMax = nil
+end
+
+function SpellBloodSacrifice:NetworkLoseEffective(affectCharacter, hpMax)
+    if IsNullOrDestroyed(affectCharacter) then
+        return
+    end
+    
+    self.affectCharacter.attr.hpMax:SetBaseValue(hpMax)
+end
+
+function SpellBloodSacrifice:DisableState()
+    SetMaterialEmissionWithinTime(self.modelTrans, {self.host.skillChangeColors[0]}
+        , self.disableColor, 0.3)
+end
+
+function SpellBloodSacrifice:ActiveState()
+    SetMaterialEmissionWithinTime(self.modelTrans, {self.host.skillChangeColors[0]}
+        , self.activeColor, 0.1)
+    
+    local hand = self:GetSlotHand()
+    if hand then
+        hand:HapticPulse(hand.character.skillOpenHapticCurve, 0.3, 0.8)
+    end
+end
+
+function SpellBloodSacrifice:StartDura()
+    self.duraTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerOnDuraEnd() end
+                end
+                return
+            end
+            self:LoseEffective()
+            self:RemoveEffect()
+            self:StartCd()
+        end
+    , 0, 0, self.duration).actionId
+end
+
+function SpellBloodSacrifice:NetworkOnDuraEnd()
+    self:LoseEffective()
+    self:RemoveEffect()
+    if self.isOnline then
+        if CL.Network.VRNetworkManager.Instance.IsServer then
+            self:StartCd()
+        end
+        return
+    else
+        self:StartCd()
+    end
+end
+
+function SpellBloodSacrifice:BreakDura()
+    CL.Scheduler.RemoveSchedule(self.duraTimeId)
+end
+
+function SpellBloodSacrifice:StartCd()
+    self.cdTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if self.isOnline then
+                if CL.Network.VRNetworkManager.Instance.IsServer then
+                    local state = GetNetworkIBState(self)
+                    if state ~= nil then state:ServerOnCdEnd() end
+                end
+                return
+            end
+            self.skillOn = false
+            self:ActiveState()
+            
+            self.cdTimeId = nil
+        end
+    , 0, 0, self.cd).actionId
+end
+
+function SpellBloodSacrifice:NetworkOnCdEnd()
+    self.skillOn = false
+    self:ActiveState()
+    self.cdTimeId = nil
+end
+
+function SpellBloodSacrifice:AddDeadHandle(character, add)
+    if not IsNullOrDestroyed(character) then
+        if add then
+            character.attr:DeadEvent("+", self.onCharacterDead)
+        else
+            character.attr:DeadEvent("-", self.onCharacterDead)
+        end
+    end
+end
+
+function SpellBloodSacrifice:AddEffect(character)
+    local trans = character.hands[1].trans
+    self.effect_l = CL.EffectMgr.Instance:PlayEffect(self.effectName, trans.position, trans.rotation)
+    self.effect_l.trans:SetParent(trans.parent)
+    self.effect_l:OnResetToPlay()
+    
+    trans = character.hands[0].trans
+    self.effect_r = CL.EffectMgr.Instance:PlayEffect(self.effectName, trans.position, trans.rotation)
+    self.effect_r.trans:SetParent(trans.parent)
+    self.effect_r:OnResetToPlay()
+end
+
+function SpellBloodSacrifice:RemoveEffect()
+    local time = 1
+    local intensity = 1
+    self.effect_l:Stop()
+    self.effect_r:Stop()
+    local timeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            if t >= time then
+                CL.EffectMgr.Instance:GiveBack(self.effect_l)
+                CL.EffectMgr.Instance:GiveBack(self.effect_r)
+            end
+        end
+    , 0, time).actionId
+end
+
+function SpellBloodSacrifice:OnDestroy()
+    for k, v in pairs(BloodSacrifice_ActiveList) do
+        if v == self then
+            BloodSacrifice_ActiveList[k] = nil
+        end
+    end
+end
+
+return Class(Require("Weapon/SpellBaseScript"), nil, SpellBloodSacrifice)

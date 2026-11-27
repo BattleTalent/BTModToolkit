@@ -30,7 +30,7 @@ namespace CrossLink
             var targetTranList = to.gameObject.GetComponentsInChildren<Transform>();
             for (int i = 0; i < selfTranList.Length; ++i)
             {
-                if (excludeList.Contains(selfTranList[i]))
+                if (excludeList != null && excludeList.Contains(selfTranList[i]))
                     continue;
 #if false
                 targetTranList[i].localPosition = selfTranList[i].localPosition;

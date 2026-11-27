@@ -1,0 +1,92 @@
+
+local FlyWaveChargeMark = {
+    markTarget = nil,
+    markTime = 5,
+}
+
+function FlyWaveChargeMark:MarkTarget(fc)
+    self.markTarget = fc
+    --show mark
+    local symbol = self:AddSymbol()
+    self.markTimeId = CL.Scheduler.Create(self,
+        function(sche, t, s)
+            --refresh symbol
+            
+        end
+    , 0, self.markTime)
+    :SetOnStop(function()
+        self:RemoveSymbol()
+        self.markTarget = nil
+        
+        if self.MarkRoleCb then
+            self.MarkRoleCb(fc, false)
+        end
+    end)
+    :SetUpdateChannel(CL.Scheduler.UpdateChannel.FixedUpdate).actionId
+end
+
+function FlyWaveChargeMark:RemoveMark()
+    CL.Scheduler.RemoveSchedule(self.markTimeId)
+end
+
+function FlyWaveChargeMark:AddSymbol()
+    
+end
+
+function FlyWaveChargeMark:RemoveSymbol()
+
+end
+
+
+function FlyWaveChargeMark:OnTrigger(pu, other)
+    if not other or IsNullOrDestroyed(other) then
+        return
+    end
+
+    local fo = CL.FlyObject.GetFlyObj(other.transform)
+    if not IsNullOrDestroyed(fo) then
+        return
+    end
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(other, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+end
+
+function FlyWaveChargeMark:OnTriggerWithStaticScene(other)
+    if self.destoryWhenHitEnv ~= 0 then
+        self.host:PlayImpact(self.host.trans.position, self.host.trans.forward)
+        self.host:OnFinish()
+    end
+end
+
+function FlyWaveChargeMark:OnTriggerWithRole(fc, col)
+    CL.InteractTrigger.BeginScanDmg()
+    CL.InteractTrigger.ApplyHitScanDamage(col, self.host, self.host.rb, self.host.col, self.host.trans.forward, self.host.camp)
+    CL.InteractTrigger.EndHitScan()
+    
+    self:RemoveMark()
+    self:MarkTarget(fc)
+    
+    if self.MarkRoleCb then
+        self.MarkRoleCb(fc, true)
+    end
+end
+
+function FlyWaveChargeMark:OnCollisionWithRole(fc, mu, rb, col, point, normal, relaVel)
+
+end
+
+function FlyWaveChargeMark:OnTriggerWithPlayerHand(col, hand)
+
+end
+
+function FlyWaveChargeMark:OnTriggerWithPlayer(collision, player)
+
+end
+
+function FlyWaveChargeMark:ResetState()
+    self.HitRoleCb = nil
+end
+
+return Class(Require("FlyObj/FlyWaveChargeScript"), nil, FlyWaveChargeMark)

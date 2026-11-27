@@ -1,0 +1,39 @@
+
+local BaseTrigger = {
+    isExitAct = 0
+}
+
+function BaseTrigger:OnTriggerStay(collider)
+    if not self:IsCondition(collider) then
+        return
+    end
+    
+    self:TriggerStayHandler(collider)
+end
+
+function BaseTrigger:OnTriggerExit(collider)
+    if not self:IsCondition(collider) then
+        return
+    end
+    
+    self:TriggerExitHandler(collider)
+end
+
+function BaseTrigger:IsCondition(collider)
+    return true
+end
+
+
+function BaseTrigger:TriggerStayHandler(collider)
+    if self.interactTriggerX then
+        self.interactTriggerX.script.self:TriggerStay(collider)
+    end
+end
+
+function BaseTrigger:TriggerExitHandler(collider)
+    if self.interactTriggerX and self.isExitAct > 0 then
+        self.interactTriggerX.script.self:TriggerExit(collider)
+    end
+end
+
+return Class(nil, nil, BaseTrigger)
